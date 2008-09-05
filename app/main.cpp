@@ -258,7 +258,7 @@ int MainApp::run(int argc, char **argv)
 		{
 			SmodelsOutput output(&std::cout);
 			ground(output);
-			if (options.verbose | options.stats)
+			if (options.stats)
 				printGrounderStats(output);
 			break;
 		}
@@ -266,7 +266,7 @@ int MainApp::run(int argc, char **argv)
 		{
 			PilsOutput output(&std::cout, options.aspilsOut);
 			ground(output);
-			if (options.verbose | options.stats)
+			if (options.stats)
 				printGrounderStats(output);
 			break;
 		}
@@ -274,7 +274,7 @@ int MainApp::run(int argc, char **argv)
 		{
 			LparseOutput output(&std::cout);
 			ground(output);
-			if (options.verbose | options.stats)
+			if (options.stats)
 				printGrounderStats(output);
 			break;
 		}
@@ -285,7 +285,6 @@ int MainApp::run(int argc, char **argv)
 #endif
 		default:;
 	}
-	// TODO: Statistics!!!!
 	return EXIT_SUCCESS;
 }
 

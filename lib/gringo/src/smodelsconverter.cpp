@@ -130,7 +130,7 @@ void SmodelsConverter::printHead(Aggregate *a)
 			handleSum(false, a, l, u);
 			break;
 		case Aggregate::MAX:
-			assert(false);
+			handleMax(a, l, u);
 			break;
 		case Aggregate::MIN:
 			handleMin(a, l, u);
