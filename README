@@ -1,0 +1,8 @@
+There are two possibilities to build the project:
+ 1. Simply type "make all".
+ 2. Use cmake. There is a script called init.sh, which initializes two out-of-source builds. A new folder build with the subfolders debug and release is created. To build the debug/release versions change into the corresponding folders and type make. In theory cmake can also create kdevelop and visual studio project files, but i haven't testet that.
+ 3. If u want to crosscompile for windows u need to:
+    - install a mingw toolchain
+    - install > cmake-2.6
+    - put a lemon excecutable for your platform somewhere in your PATH
+

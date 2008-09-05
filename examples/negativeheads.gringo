@@ -1,0 +1,5 @@
+#hide.
+#show neg/1.
+
+{ neg(1..2) }.
+1 { neg(3), not neg(1..3) } 1.

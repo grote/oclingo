@@ -1,0 +1,18 @@
+#const queens=50.
+#maxint=queens.
+
+%q(X,Y) | nq(X,Y) :- d(X), d(Y).
+q(X,Y) :- d(X), d(Y), not nq(X,Y).
+nq(X,Y) :- d(X), d(Y), not q(X,Y).
+
+:- q(X,Y), q(X1,Y), X1 != X.
+:- q(X,Y), q(X,Y1), Y1 != Y.
+
+dx(X1,X2,DX) :- d(X1), d(X2), X1 > X2, +(X2, DX, X1).
+dx(X1,X2,DX) :- d(X1), d(X2), X1 < X2, +(X1, DX, X2).
+:- q(X,Y), q(X1,Y1), dx(X, X1, DX), dx(Y, Y1, DY), DX == DY.
+
+:- d(X), not hasq(X).
+hasq(X) :- q(X,Y). 
+
+d(1..queens).

@@ -1,0 +1,23 @@
+square(3, 1).
+target_square(3, 1).
+square(1, 2).
+square(2, 2).
+initial_box(2, 2).
+square(3, 2).
+target_square(3, 2).
+square(1, 3).
+square(2, 3).
+initial_box(2, 3).
+square(3, 3).
+target_square(3, 3).
+square(1, 4).
+square(2, 4).
+initial_box(2, 4).
+square(3, 4).
+target_square(3, 4).
+square(1, 5).
+square(2, 5).
+initial_box(2, 5).
+initial_at(2,6).
+square(1, 6).
+square(2, 6).

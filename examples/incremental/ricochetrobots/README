@@ -1,0 +1,23 @@
+This bundle implements the board game "Ricochet Robots"
+(in German: Rasende Roboter) by Alex Randolph.
+
+More information is obtainable at
+- http://en.wikipedia.org/wiki/Ricochet_Robot
+- http://www.ricochetrobots.com
+
+The encoding is tight and full of cardinality constraints, 
+eg. lastime=2 gives Binary: 10.5% Ternary: 31.4% Other: 58.0%
+With clasp, vmtf and vsids sometimes perform better than berkmin 
+but this is no trend.
+
+The bundle comes in several files:
+
+- robots (the principal encoding, moving robots around)
+- optrob (some easy but few optimizations - Ideas???)
+- board16-1 (an authentic board description, comprising 16 queries)
+  NOTE: many more are obtainable by changing the 4 card board pieces
+- board5 (playing around :-)
+
+Here's a typical call (after uncommenting a query in 'board16-1'):
+
+gringo-2.0.0 --const lastime=11 robots optrob board16-1 | clasp-1.1.0 1
