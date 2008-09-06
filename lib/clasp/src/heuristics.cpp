@@ -40,8 +40,8 @@ void Lookahead::startInit(const Solver& s) {
 		// Because of equivalence-preprocessing some variables can be both
 		// an atom and a body at the same time.
 		for (Var v = 1; v <= s.numVars(); ++v) {
-			numAtoms	+= isAtom(s.type(v));
-			numBodies	+= isBody(s.type(v));
+			numAtoms  += isAtom(s.type(v));
+			numBodies += isBody(s.type(v));
 		}
 		type_ = (numAtoms<<1) < numBodies
 			? atom_lookahead
@@ -125,14 +125,14 @@ Literal Lookahead::heuristic(Solver& s) {
 		for (LitVec::size_type i = 0; i < deps_.size(); ++i) {
 			Var v = deps_[i];
 			VarScore& vs = scores_[v];
-			if (!vs.tested()) {			// no literal of v tested
+			if (!vs.tested()) {     // no literal of v tested
 				s.lookahead(negLit(v), scores_, deps_, varTypes_, false);
 				if (vs.score(negLit(v)) >= min) {
 					s.lookahead(posLit(v), scores_, deps_, varTypes_, false);
 					checkScore(min, max, v, vs, choice);
 				}
 			}
-			else if (!vs.testedBoth()) {	// one literal of v tested
+			else if (!vs.testedBoth()) {  // one literal of v tested
 				if (vs.tested(posLit(v)) && vs.score(posLit(v)) >= min) {
 					assert(!vs.tested(negLit(v)));
 					s.lookahead(negLit(v), scores_, deps_, varTypes_, false);
@@ -144,7 +144,7 @@ Literal Lookahead::heuristic(Solver& s) {
 					checkScore(min, max, v, vs, choice);
 				}
 			}
-			else {														// both literals of v tested
+			else {                            // both literals of v tested
 				checkScore(min, max, v, vs, choice);
 			}
 			vs.clear();
@@ -258,8 +258,8 @@ bool ClaspBerkmin::hasTopUnsat(Solver& s, uint32& maxIdx, uint32 minIdx, Constra
 }
 
 bool ClaspBerkmin::hasTopUnsat(Solver& s) {
-	topConflict_	= std::min(s.numLearntConstraints(), topConflict_);
-	topLoop_			= std::min(s.numLearntConstraints(), topLoop_);
+	topConflict_  = std::min(s.numLearntConstraints(), topConflict_);
+	topLoop_      = std::min(s.numLearntConstraints(), topLoop_);
 	freeLoopLits_.clear();
 	freeLits_.clear();
 	if (topConflict_ > topLoop_ && hasTopUnsat(s, topConflict_, topLoop_, Constraint_t::learnt_conflict)) {
@@ -275,14 +275,14 @@ bool ClaspBerkmin::hasTopUnsat(Solver& s) {
 			break;
 		}
 		else if (loops_ && freeLoopLits_.empty() && c.type() == Constraint_t::learnt_loop && !c.isSatisfied(s, freeLits_)) {
-			topLoop_	= topConflict_;
+			topLoop_  = topConflict_;
 			freeLits_.swap(freeLoopLits_);
 		}
 		--topConflict_;
 		freeLits_.clear();
 	}
-	if (freeLoopLits_.empty())	topLoop_ = topConflict_;
-	if (freeLits_.empty())			freeLoopLits_.swap(freeLits_);
+	if (freeLoopLits_.empty())  topLoop_ = topConflict_;
+	if (freeLits_.empty())      freeLoopLits_.swap(freeLits_);
 	return !freeLits_.empty();
 }
 
@@ -297,25 +297,25 @@ Literal ClaspBerkmin::doSelect(Solver& s) {
 	}
 	if (hasTopUnsat(s)) {
 		assert(!freeLits_.empty());
-		Var	candidates[BERK_NUM_CANDIDATES];
+		Var candidates[BERK_NUM_CANDIDATES];
 		candidates[0] = freeLits_[0].var();
 		uint32 c = 1;
-		uint32	ms	= static_cast<uint32>(-1);
-		uint32	ls	= 0;
+		uint32  ms  = static_cast<uint32>(-1);
+		uint32  ls  = 0;
 		for (LitVec::size_type i = 1; i < freeLits_.size(); ++i) {
 			Var v = freeLits_[i].var();
 			assert(s.value(v) == value_free);
 			if ( score_[v].activity(decay_) > score_[candidates[0]].activity(decay_) ) {
 				candidates[0] = v;
 				c = 1;
-				ms	= static_cast<uint32>(-1);
+				ms  = static_cast<uint32>(-1);
 			}
 			else if ( score_[v].activity_ == score_[candidates[0]].activity_) {
 				if (ms == static_cast<uint32>(-1)) ms = momsScore(s, candidates[0]);
 				if ((ls = momsScore(s,v)) > ms ) {
 					candidates[0] = v;
 					c = 1;
-					ms	= ls;
+					ms  = ls;
 				}
 				else if (ls == ms && c != BERK_NUM_CANDIDATES) {
 					candidates[c++] = v;
@@ -338,10 +338,10 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 	if (cacheFront_ != end) {
 		return selectLiteral(s, *cacheFront_, true);
 	}
-	for (; s.value( front_ ) != value_free; ++front_);	// Pre: At least one unassigned var!
+	for (; s.value( front_ ) != value_free; ++front_);  // Pre: At least one unassigned var!
 	Var var = front_;
 #if defined(BERK_TOP_LEVEL_MOMS) && BERK_TOP_LEVEL_MOMS == 1
-	if (score_[0].activity_!=0 || (numVsids_>50&&s.numFreeVars()>9999)) {		// populate cache with most active vars
+	if (score_[0].activity_!=0 || (numVsids_>50&&s.numFreeVars()>9999)) {   // populate cache with most active vars
 #endif
 		if (!cache_.empty() && cacheSize_ < s.numFreeVars()/10) {
 			cacheSize_ = static_cast<uint32>( (cacheSize_*BERK_CACHE_GROW) + .5 );
@@ -350,11 +350,11 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 		GreaterActivity comp(score_, decay_);
 		Var v = var;
 		LitVec::size_type cs = std::min(cacheSize_, s.numFreeVars());
-		for (;;) {										// add first cs free variables to cache
+		for (;;) {                    // add first cs free variables to cache
 			cache_.push_back(v);
 			std::push_heap(cache_.begin(), cache_.end(), comp);
 			if (cache_.size() == cs) break;
-			while ( s.value(++v) != value_free );	// skip over assigned vars
+			while ( s.value(++v) != value_free ); // skip over assigned vars
 		} 
 		for (v = cs == cacheSize_ ? v+1 : s.numVars()+1; v <= s.numVars(); ++v) {
 			// replace vars with low activity
@@ -369,13 +369,13 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 		var = cache_[0];
 #if defined(BERK_TOP_LEVEL_MOMS) && BERK_TOP_LEVEL_MOMS == 1
 	}
-	else {													// no conflicts, no activities. Select based on MOMS
+	else {                          // no conflicts, no activities. Select based on MOMS
 		uint32 ms = momsScore(s, var);
 		uint32 ls = 0;
 		for (Var v = front_+1; v <= s.numVars(); ++v) {
 			if (s.value(v) == value_free && (ls = momsScore(s, v)) > ms) {
 				var = v;
-				ms	= ls;
+				ms  = ls;
 			}
 		}
 	}
@@ -467,7 +467,7 @@ void ClaspVmtf::newConstraint(const Solver& s, const Literal* first, LitVec::siz
 		}
 		mtf_.clear();
 		front_ = vars_.begin();
-	}	
+	} 
 }
 
 Literal ClaspVmtf::getLiteral(const Solver& s, Var v) const {

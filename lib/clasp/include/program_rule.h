@@ -35,12 +35,12 @@ class ProgramBuilder;
  * \ingroup problem
  */
 enum RuleType{
-  ENDRULE					= 0,	/**< Not a valid rule, used as sentinel */
-  BASICRULE				= 1,	/**< A normal rule, i.e: A0 :- A1,...,Am, not Am+1,...,not An */
-  CONSTRAINTRULE	= 2,	/**< A cardinality constraint, i.e. A0 :- L{A1,...,Am,not Am+1,...,not An} */
-  CHOICERULE			= 3,	/**< A choice rule, i.e. {A0,...,An} :- BODY */
-  WEIGHTRULE			= 5,	/**< A weight constraint, i.e. A0 :- L[A1=W1,...,Am=Wm,not Am+1=Wm+1,...,not An=Wn] */
-	OPTIMIZERULE		= 6		/**< A minimize statement */
+  ENDRULE         = 0,  /**< Not a valid rule, used as sentinel */
+  BASICRULE       = 1,  /**< A normal rule, i.e: A0 :- A1,...,Am, not Am+1,...,not An */
+  CONSTRAINTRULE  = 2,  /**< A cardinality constraint, i.e. A0 :- L{A1,...,Am,not Am+1,...,not An} */
+  CHOICERULE      = 3,  /**< A choice rule, i.e. {A0,...,An} :- BODY */
+  WEIGHTRULE      = 5,  /**< A weight constraint, i.e. A0 :- L[A1=W1,...,Am=Wm,not Am+1=Wm+1,...,not An=Wn] */
+	OPTIMIZERULE    = 6   /**< A minimize statement */
 };
 
 //! Used during rule simplification
@@ -50,19 +50,19 @@ enum RuleType{
 class RuleState {
 public:
 	//! Does v appear in the head of the active rule?
-	bool inHead(Var v)				{ return hasFlag(v, head_flag); }
+	bool inHead(Var v)        { return hasFlag(v, head_flag); }
 	//! Does p appear in the body of the active rule?
-	bool inBody(Literal p)		{ return hasFlag(p.var(), pos_flag+(uint8)p.sign()); }
+	bool inBody(Literal p)    { return hasFlag(p.var(), pos_flag+(uint8)p.sign()); }
 	//! Mark v as a head of the active rule
-	void addToHead(Var v)			{ setFlag(v, head_flag); }	
+	void addToHead(Var v)     { setFlag(v, head_flag); }  
 	//! Mark p as a literal contained in the active rule
-	void addToBody(Literal p)	{ setFlag(p.var(), pos_flag+(uint8)p.sign()); }
+	void addToBody(Literal p) { setFlag(p.var(), pos_flag+(uint8)p.sign()); }
 	//! Remove v from the active rule
-	void popFromRule(Var v)		{ assert(v < vf_.size()); vf_[v] = 0; }
+	void popFromRule(Var v)   { assert(v < vf_.size()); vf_[v] = 0; }
 	//! Returns the number of variables known to this object
-	uint32 size() const				{ return (uint32)vf_.size(); }
+	uint32 size() const       { return (uint32)vf_.size(); }
 	//! Clears all flags
-	void clear()							{ VarFlags().swap(vf_); }
+	void clear()              { VarFlags().swap(vf_); }
 	
 	//! Checks whether the head-atom id is superfluous w.r.t the body
 	/*!
@@ -87,18 +87,18 @@ public:
 	template <class W>
 	bool selfblocker(RuleType t, weight_t sumW, weight_t bound, Var id, const W& weights) {
 		// a is part of B- and needed to make body true
-		return t != CHOICERULE	
-			&& inBody(negLit(id))									
+		return t != CHOICERULE  
+			&& inBody(negLit(id))                 
 			&& (sumW - weights(negLit(id)) < bound);
 	}
 private:
-	bool hasFlag(Var v, uint8 f)	{ resize(v); return (vf_[v] & f) != 0; }
-	void setFlag(Var v, uint8 f)	{ resize(v); vf_[v] |= f; }
-	void resize(Var v)						{	if (v >= vf_.size()) { vf_.resize(v+1); } }
+	bool hasFlag(Var v, uint8 f)  { resize(v); return (vf_[v] & f) != 0; }
+	void setFlag(Var v, uint8 f)  { resize(v); vf_[v] |= f; }
+	void resize(Var v)            { if (v >= vf_.size()) { vf_.resize(v+1); } }
 	typedef PodVector<uint8>::type VarFlags;
-	static const uint8 pos_flag		= 0x1u;
-	static const uint8 neg_flag		= 0x2u;
-	static const uint8 head_flag	= 0x4u;
+	static const uint8 pos_flag   = 0x1u;
+	static const uint8 neg_flag   = 0x2u;
+	static const uint8 head_flag  = 0x4u;
 	VarFlags vf_;
 };
 
@@ -113,10 +113,10 @@ class PrgRule {
 public:
 	//! Objects of this type store information about a simplified rule
 	struct RData {
-		uint32	hash;				// hash value of the rule body
-		int32		sumWeight;	// max achievable weight
-		uint32	posSize:30;	// size of positive body
-		uint32	value_: 2;	// truth-value of the body
+		uint32  hash;       // hash value of the rule body
+		int32   sumWeight;  // max achievable weight
+		uint32  posSize:30; // size of positive body
+		uint32  value_: 2;  // truth-value of the body
 	};
 	explicit PrgRule(RuleType t = ENDRULE) 
 		: bound_(0)
@@ -163,7 +163,7 @@ public:
 	/*!
 	 * \note for basic and choice rules, the lower bound is equal to the size of the rule's body.
 	 */
-	weight_t bound() const { return bound_;	}
+	weight_t bound() const { return bound_; }
 
 	//! Adds v as a head of this rule
 	PrgRule& addHead(Var v);
@@ -171,13 +171,13 @@ public:
 	PrgRule& addToBody(Var v, bool pos, weight_t w=1);
 
 	//! Simplifies the rule and returns information about the simplified rule
-	RData		simplify(RuleState& r);
+	RData   simplify(RuleState& r);
 	
 	//! Defines the possible transformation modes to be used when transforming constraint/weight rules.
 	enum TransformationMode {
-		dynamic_transform,		/**< Let the rule decide which algorithm to use */
+		dynamic_transform,    /**< Let the rule decide which algorithm to use */
 		exponential_tranform, /**< Use the exponential-algorithm (no aux-atoms needed) */
-		quadratic_transform		/**< Use the quadratic-algorithm (introduces aux-atoms) */
+		quadratic_transform   /**< Use the quadratic-algorithm (introduces aux-atoms) */
 	};
 	
 	//! Adds this rule as a set of equivalent normal rules to the given program
@@ -190,8 +190,8 @@ public:
 	 */
 	uint32 transform(ProgramBuilder& prg, TransformationMode m = dynamic_transform);
 
-	VarVec				heads;				/**< list of rule heads (note: conjunctive heads!) */
-	WeightLitVec	body;					/**< body of this rule */
+	VarVec        heads;        /**< list of rule heads (note: conjunctive heads!) */
+	WeightLitVec  body;         /**< body of this rule */
 private:
 	PrgRule(const PrgRule&);
 	PrgRule& operator=(const PrgRule&);
@@ -202,17 +202,17 @@ private:
 		}
 		const PrgRule* self_;
 	};
-	bool		selfblocker(RuleState& r, Var aId, weight_t sw) const;
+	bool    selfblocker(RuleState& r, Var aId, weight_t sw) const;
 	
-	uint32	transformChoice(ProgramBuilder&);
-	uint32	transformAggregate(ProgramBuilder&, TransformationMode m);
-	uint32	transformAggregateQuad(ProgramBuilder&, const WeightVec&);
-	uint32	transformAggregateExp(ProgramBuilder&, const WeightVec&);
+	uint32  transformChoice(ProgramBuilder&);
+	uint32  transformAggregate(ProgramBuilder&, TransformationMode m);
+	uint32  transformAggregateQuad(ProgramBuilder&, const WeightVec&);
+	uint32  transformAggregateExp(ProgramBuilder&, const WeightVec&);
 
 	weight_t weight(Var id, bool pos) const;
 	
-	weight_t				bound_;				// lower bound (i.e. number/weight of lits that must be true before rule fires)
-	RuleType				type_;				// type of rule
+	weight_t        bound_;       // lower bound (i.e. number/weight of lits that must be true before rule fires)
+	RuleType        type_;        // type of rule
 };
 
 

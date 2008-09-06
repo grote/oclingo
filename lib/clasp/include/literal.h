@@ -26,7 +26,7 @@
 #include <clasp/include/util/platform.h>
 #include <clasp/include/pod_vector.h>
 #include <ostream>
-#include <algorithm>	// std::swap
+#include <algorithm>  // std::swap
 #include <limits>
 
 
@@ -63,9 +63,9 @@ inline weight_t toWeight(int w) {
  *
  * \par Implementation: 
  * A literal's state is stored in a single 32-bit integer as follows:
- *  - 30-bits		: var-index
- *  - 1-bit			: sign, 1 if negative, 0 if positive
- *  - 1-bit			: watch-flag 
+ *  - 30-bits   : var-index
+ *  - 1-bit     : sign, 1 if negative, 0 if positive
+ *  - 1-bit     : watch-flag 
  */
 class Literal {
 public:
@@ -97,8 +97,8 @@ public:
 		return Literal(idx<<1);
 	}
 	
-	uint32& asUint()				{ return rep_; }
-	uint32	asUint() const	{ return rep_; }
+	uint32& asUint()        { return rep_; }
+	uint32  asUint() const  { return rep_; }
 
 	//! returns the variable of the literal.
 	Var var() const { return rep_ >> 2; }
@@ -122,8 +122,8 @@ public:
 
 	//! returns the complimentary literal of this literal.
 	/*!
-	 *	The complementary Literal of a Literal is a Literal referring to the
-	 *	same variable but with inverted sign.
+	 *  The complementary Literal of a Literal is a Literal referring to the
+	 *  same variable but with inverted sign.
 	 */
 	inline Literal operator~() const {
 		return Literal( (rep_ ^ 2) & ~static_cast<uint32>(1u) );
@@ -185,11 +185,11 @@ inline bool operator!=(const Literal& lhs, const Literal& rhs) {
 inline void swap(Literal& l, Literal& r) {
 	l.swap(r);
 }
-typedef PodVector<Var>::type VarVec;					/**< a vector of variables	*/
-typedef PodVector<Literal>::type LitVec;			/**< a vector of literals		*/
-typedef PodVector<weight_t>::type WeightVec;	/**< a vector of weights		*/
+typedef PodVector<Var>::type VarVec;          /**< a vector of variables  */
+typedef PodVector<Literal>::type LitVec;      /**< a vector of literals   */
+typedef PodVector<weight_t>::type WeightVec;  /**< a vector of weights    */
 
-typedef std::pair<Literal, weight_t> WeightLiteral;	 /**< a weight-literal */
+typedef std::pair<Literal, weight_t> WeightLiteral;  /**< a weight-literal */
 typedef PodVector<WeightLiteral>::type WeightLitVec; /**< a vector of weight-literals */
 
 //@}

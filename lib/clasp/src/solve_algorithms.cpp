@@ -27,11 +27,11 @@ namespace Clasp {
 ModelPrinter::~ModelPrinter() {}
 Enumerator::Enumerator() : printer_(0) {}
 Enumerator::~Enumerator() {}
-void Enumerator::updateModel(Solver& s)							{ if (printer_) printer_->printModel(s); }
-bool Enumerator::backtrackFromModel(Solver& s)			{	return s.backtrack();		}
-bool Enumerator::allowRestarts() const							{ return false;						}
-uint64 Enumerator::numModels(const Solver& s)	const	{ return s.stats.models;	}
-void Enumerator::report(const Solver&)				const { }
+void Enumerator::updateModel(Solver& s)             { if (printer_) printer_->printModel(s); }
+bool Enumerator::backtrackFromModel(Solver& s)      { return s.backtrack();   }
+bool Enumerator::allowRestarts() const              { return false;           }
+uint64 Enumerator::numModels(const Solver& s) const { return s.stats.models;  }
+void Enumerator::report(const Solver&)        const { }
 static Enumerator defaultEnum_s;
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -63,9 +63,9 @@ public:
 	RestartStrategy(uint32 base, double incA = 0.0, uint32 outer = 0) : incA_(incA), outer_(outer?outer:uint64(-1)), base_(base), idx_(0) {}
 	uint64 next() {
 		uint64 x;
-		if			(base_ == 0)			x = uint64(-1);
-		else if	(incA_ == 0)			x = lubyR();
-		else											x = innerOuterR();
+		if      (base_ == 0)      x = uint64(-1);
+		else if (incA_ == 0)      x = lubyR();
+		else                      x = innerOuterR();
 		++idx_;
 		return x;
 	}
@@ -86,16 +86,16 @@ private:
 	uint64 innerOuterR() {
 		uint64 x = arithR();
 		if (x > outer_) {
-			idx_		= 0;
-			outer_	= static_cast<uint64>(outer_*1.5);
+			idx_    = 0;
+			outer_  = static_cast<uint64>(outer_*1.5);
 			return arithR();
 		}
 		return x;
 	}
-	double	incA_;
-	uint64	outer_;
-	uint32	base_;
-	uint32	idx_;
+	double  incA_;
+	uint64  outer_;
+	uint32  base_;
+	uint32  idx_;
 };
 
 }
@@ -126,18 +126,18 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	// plus the number of bodies as basis for maxLearnt. 
 	// Translated into clauses: From Clark's completion Clasp counts only the 
 	// clauses that are not necessarily binary.
-	double lBase				= std::min(s.numVars(), s.numConstraints());
-	double maxLearnts		= p.reduceBase() != 0 ? (uint32)std::max(10.0, lBase / p.reduceBase()) : -1.0;
-	double boundLearnts	= p.reduceMax() != 0 ? lBase * p.reduceMax() : std::numeric_limits<double>::max();
+	double lBase        = std::min(s.numVars(), s.numConstraints());
+	double maxLearnts   = p.reduceBase() != 0 ? (uint32)std::max(10.0, lBase / p.reduceBase()) : -1.0;
+	double boundLearnts = p.reduceMax() != 0 ? lBase * p.reduceMax() : std::numeric_limits<double>::max();
 	if (maxLearnts < s.numLearntConstraints()) maxLearnts = s.numLearntConstraints();
 	RestartStrategy rs(p.restartBase(), p.restartInc(), p.restartOuter());
-	uint32 asFound	= 0;
+	uint32 asFound  = 0;
 	ValueRep result = value_free;
-	uint32 randRuns	= p.randRuns();
-	double randProp	= randRuns == 0 ? p.randomPropability() : 1.0;
-	uint64 maxCfl		= randRuns == 0 ? rs.next() : p.randConflicts();
-	uint32 shuffle	= p.shuffleBase();
-	bool	noRestartAfterModel = !p.enumerator()->allowRestarts() && !p.restartBounded();
+	uint32 randRuns = p.randRuns();
+	double randProp = randRuns == 0 ? p.randomPropability() : 1.0;
+	uint64 maxCfl   = randRuns == 0 ? rs.next() : p.randConflicts();
+	uint32 shuffle  = p.shuffleBase();
+	bool  noRestartAfterModel = !p.enumerator()->allowRestarts() && !p.restartBounded();
 	while (result == value_free) {
 #ifdef PRINT_SEARCH_PROGRESS
 		printf("c V: %7u, C: %8u, L: %8u, ML: %8u (%6.2f%%), IL: %8u\n"
@@ -181,7 +181,7 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 			else if (--randRuns == 0) {
 				maxCfl = rs.next();
 				randProp = p.randomPropability();
-			}	
+			} 
 		}
 	}
 	s.undoUntil(0);

@@ -39,8 +39,8 @@ namespace Clasp {
 void PrgRule::clear() {
 	heads.clear();
 	body.clear();
-	bound_	= 0;
-	type_		= ENDRULE;
+	bound_  = 0;
+	type_   = ENDRULE;
 }
 
 // Adds atomId as head to this rule.
@@ -64,22 +64,22 @@ PrgRule& PrgRule::addToBody(Var atomId, bool pos, weight_t weight) {
 
 // Simplifies the rule:
 // - NORMALIZE: make sure that each literal occurs at most once in the head/body, i.e.
-//	- drop duplicate head atoms
-//	- drop duplicate body-literals from normal/choice rules
-//		- h :- b, b -> h :- b.
-//	- merge duplicate body-literals in extended rules
-//		- h :- 2 {a, b, a} -> h :- 2 [a=2, b].
-//	- if the lower bound of a cardinality/weight constraint equals the maximal
-//	achievable weight, replace rule with a normal rule
-//		- h :- 5 [a=2, b=3] -> h :- a, b.
+//  - drop duplicate head atoms
+//  - drop duplicate body-literals from normal/choice rules
+//    - h :- b, b -> h :- b.
+//  - merge duplicate body-literals in extended rules
+//    - h :- 2 {a, b, a} -> h :- 2 [a=2, b].
+//  - if the lower bound of a cardinality/weight constraint equals the maximal
+//  achievable weight, replace rule with a normal rule
+//    - h :- 5 [a=2, b=3] -> h :- a, b.
 // - CONTRA: drop contradictory rules
-//	- if rule contains p and not p and both are strictly needed to satisfy the body, drop rule
-//	- if lower bound can't be reached, drop rule
+//  - if rule contains p and not p and both are strictly needed to satisfy the body, drop rule
+//  - if lower bound can't be reached, drop rule
 // - TAUT: check for tautologies
-//	- atoms that appear in the head and the positive part of the body are removed
-//	from the head if they are strictly needed to satisfy the body.
-//	- SIMP-CR: atoms that appear both in the head and the body of a choice rule are removed
-//	from the head.
+//  - atoms that appear in the head and the positive part of the body are removed
+//  from the head if they are strictly needed to satisfy the body.
+//  - SIMP-CR: atoms that appear both in the head and the body of a choice rule are removed
+//  from the head.
 PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	RData r = { 0, 0, 0, 0 };
 	// 1. Check body bounds
@@ -96,33 +96,33 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	// set lower bound to body.size().
 	if (type_ != CONSTRAINTRULE && type_ != WEIGHTRULE) bound_ = (weight_t)body.size();
 	if (bound_ <= 0) {
-		body.clear();	// body is satisfied - ignore contained lits
+		body.clear(); // body is satisfied - ignore contained lits
 		if (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE) {
 			type_ = BASICRULE;
 		}
 		r.value_ = value_true;
 	}
 	if (bound_ > r.sumWeight) {
-		type_ = ENDRULE;	// CONTRA - body can never be satisfied
-		body.clear();			// drop the rule
+		type_ = ENDRULE;  // CONTRA - body can never be satisfied
+		body.clear();     // drop the rule
 		r.value_ = value_false;
 		return r;
 	}
-	else if	(bound_ == r.sumWeight && (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE)) {
+	else if (bound_ == r.sumWeight && (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE)) {
 		// all subgoals must be true in order to satisfy body
 		// - just like in a normal rule, thus handle this rule as such.
-		type_				= BASICRULE;
-		r.sumWeight	= (weight_t)body.size();
+		type_       = BASICRULE;
+		r.sumWeight = (weight_t)body.size();
 	}
 
 	// 2. NORMALIZE body literals, check for CONTRA
 	WeightLitVec::iterator j = body.begin();
 	for (WeightLitVec::iterator it = body.begin(), bEnd = body.end(); it != bEnd; ++it) {
-		if (!rs.inBody(it->first)) {	// a not seen yet
-			*j++	= *it;								// keep it and 
-			rs.addToBody(it->first);		// mark as seen
+		if (!rs.inBody(it->first)) {  // a not seen yet
+			*j++  = *it;                // keep it and 
+			rs.addToBody(it->first);    // mark as seen
 			if (it->first.sign()) { r.hash += hashId(-it->first.var()); }
-			else									{ ++r.posSize; r.hash += hashId(it->first.var()); }
+			else                  { ++r.posSize; r.hash += hashId(it->first.var()); }
 		}
 		else if (type_ != BASICRULE && type_ != CHOICERULE) {
 			// a is already in the rule. Ignore the duplicate if rule is a normal or choice rule,
@@ -131,14 +131,14 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 			WeightLitVec::iterator lit = std::find_if(body.begin(), j, compose1(
 				std::bind2nd(std::equal_to<Literal>(), it->first),
 				select1st<WeightLiteral>()));
-			assert(lit !=	j);
+			assert(lit != j);
 			lit->second += it->second;
 		}
 		if (rs.inBody(~it->first)) {
 			// rule contains p and not p - check if both are needed to satisfy body
 			if ( type_ == BASICRULE || type_ == CHOICERULE || (type_ == WEIGHTRULE 
 				&& r.sumWeight - std::min(it->second, weight(it->first.var(), it->first.sign())) < bound_)) {
-				type_ = ENDRULE;	// CONTRA
+				type_ = ENDRULE;  // CONTRA
 				break;
 			}
 		}
@@ -154,7 +154,7 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 		VarVec::iterator j = heads.begin();
 		for (VarVec::iterator it = heads.begin(), end = heads.end();  it != end; ++it) {
 			if ( !rs.inHead(*it) && !rs.superfluousHead(type(), r.sumWeight, bound(), *it, w)) {
-				rs.addToHead(*it);	// mark as seen
+				rs.addToHead(*it);  // mark as seen
 				if (rs.selfblocker(type(), r.sumWeight, bound(), *it, w)) {
 					r.value_= value_false;
 				}
@@ -194,11 +194,11 @@ uint32 PrgRule::transform(ProgramBuilder& prg, TransformationMode m) {
 
 // A choice rule {h1,...hn} :- BODY
 // is replaced with:
-// h1		:- BODY, not aux1.
-// aux1	:- not h1.
+// h1   :- BODY, not aux1.
+// aux1 :- not h1.
 // ...
-// hn		:- BODY, not auxN.
-// auxN	:- not hn.
+// hn   :- BODY, not auxN.
+// auxN :- not hn.
 // If n is large or BODY contains many literals BODY is replaced with auxB and
 // auxB :- BODY.
 uint32 PrgRule::transformChoice(ProgramBuilder& prg) {
@@ -213,10 +213,10 @@ uint32 PrgRule::transformChoice(ProgramBuilder& prg) {
 	for (VarVec::iterator it = heads.begin(), end = heads.end(); it != end; ++it) {
 		r1.heads.clear(); r2.heads.clear();
 		Var aux = prg.newAtom();
-		r1.heads.push_back(*it);	r1.addToBody(aux, false, 1);
-		r2.heads.push_back(aux);	r2.addToBody(*it, false, 1);
-		prg.addRule(r1);	// h		:- body, not aux
-		prg.addRule(r2);	// aux	:- not h
+		r1.heads.push_back(*it);  r1.addToBody(aux, false, 1);
+		r2.heads.push_back(aux);  r2.addToBody(*it, false, 1);
+		prg.addRule(r1);  // h    :- body, not aux
+		prg.addRule(r2);  // aux  :- not h
 		r1.body.pop_back();
 		r2.body.pop_back();
 		newRules += 2;
@@ -247,7 +247,7 @@ uint32 PrgRule::transformAggregate(ProgramBuilder& prg, TransformationMode m) {
 			select2nd<WeightLiteral>()));
 	}
 	WeightVec sumWeights(body.size() + 1, 0);
-	LitVec::size_type i	= (uint32)body.size();
+	LitVec::size_type i = (uint32)body.size();
 	weight_t sum = 0;
 	while (i != 0) {
 		--i;
@@ -278,8 +278,8 @@ uint32 PrgRule::transformAggregateQuad(ProgramBuilder& prg, const WeightVec& sum
 	uint32 newRules = 0;
 	while (!todo.empty()) {
 		r.body.clear();
-		uint32		n = todo.front().first;
-		weight_t	w = todo.front().second;
+		uint32    n = todo.front().first;
+		weight_t  w = todo.front().second;
 		todo.pop_front();
 		Var a = atoms[(n * bound_) + (w-1)];
 		assert(a != varMax);
@@ -295,7 +295,7 @@ uint32 PrgRule::transformAggregateQuad(ProgramBuilder& prg, const WeightVec& sum
 			r.addToBody(atoms[nextKey], true);
 			prg.addRule(r);
 			r.body.clear();
-		}	
+		} 
 		weight_t nk = w - body[n].second;
 		if (nk <= 0 || sumWeights[n+1] >= nk) {
 			++newRules;
@@ -319,13 +319,13 @@ uint32 PrgRule::transformAggregateQuad(ProgramBuilder& prg, const WeightVec& sum
 // exponential transformation - creates minimal subsets, no aux atoms
 uint32 PrgRule::transformAggregateExp(ProgramBuilder& prg, const WeightVec& sumWeights) {
 	uint32 newRules = 0;
-	VarVec		nextStack;
-	WeightVec	weights;
+	VarVec    nextStack;
+	WeightVec weights;
 	PrgRule r(BASICRULE);
 	r.addHead(heads[0]);
-	uint32		end		= (uint32)body.size();
-	weight_t	cw		= 0;
-	uint32		next	= 0;
+	uint32    end   = (uint32)body.size();
+	weight_t  cw    = 0;
+	uint32    next  = 0;
 	if (next == end) { prg.addRule(r); return 1; }
 	while (next != end) {
 		r.addToBody(body[next].first.var(), body[next].first.sign() == false);

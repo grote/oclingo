@@ -69,8 +69,8 @@ public:
 	ConstraintType type() const { return Constraint_t::native_constraint; }
 private:
 	enum ActiveAggregate {
-		ffb_btb	= 1,	// watches con, ~l1, ..., ~ln
-		ftb_bfb	= 2		// watches ~con, l1, ..., ln
+		ffb_btb = 1,  // watches con, ~l1, ..., ~ln
+		ftb_bfb = 2   // watches ~con, l1, ..., ln
 	};
 	BasicAggregate(Solver& s, Literal con, const WeightLitVec& lits, uint32 bound, uint32 sumWeights, bool cardinality);
 	~BasicAggregate();
@@ -78,37 +78,37 @@ private:
 	// returns the idx-th literal of sub-constraints c, i.e.
 	// if c == ffb_btb: lits[idx]
 	// if c == ftb_bfb: ~lits[idx]
-	Literal	lit(uint32 idx, ActiveAggregate c) const {
+	Literal lit(uint32 idx, ActiveAggregate c) const {
 		return Literal::fromIndex(
 			lits_[idx].index() ^ (c-1)
 		);
 	}
-	void		addUndo(Solver& s, uint32 idx, ActiveAggregate a, bool markAsProcessed);
-	uint32	lastUndoLevel(Solver&);
-	uint32	undoStart() const { return wr_ == 0 ? size_ : size_<<1; }
-	uint32&	next()	{ assert(wr_ == 1); return lits_[size_*3].asUint(); }
-	uint32& bp()		{ assert(wr_ == 1); return lits_[(size_*3)+1].asUint(); }
+	void    addUndo(Solver& s, uint32 idx, ActiveAggregate a, bool markAsProcessed);
+	uint32  lastUndoLevel(Solver&);
+	uint32  undoStart() const { return wr_ == 0 ? size_ : size_<<1; }
+	uint32& next()  { assert(wr_ == 1); return lits_[size_*3].asUint(); }
+	uint32& bp()    { assert(wr_ == 1); return lits_[(size_*3)+1].asUint(); }
 	
 	// returns the weight of literal with the given index.
 	// Note: if aggregate is a cardinality constraint the returned weight is always 1
-	weight_t weight(uint32 index)	const {
+	weight_t weight(uint32 index) const {
 		return wr_ == 0
 			? weight_t(1)
 			: (weight_t)lits_[size_+index].asUint();
 	}
-	uint32	size_			: 30;		// number of lits in aggregate (incl. the literal associated with the constraint)
-	uint32	active_		: 2;		// which of the two sub-constraints is currently relevant?
-	uint32	undo_			: 31;		// undo position. Literals in the range [undoStart(), undo_) were processed in propagate
-	uint32	wr_				: 1;		// 1 if this is a weight constraint, otherwise 0
-	int32		bound_[2];				// bound_[0]: init: (sumW-bound)+1, if <= 0: FFB-BTB
+	uint32  size_     : 30;   // number of lits in aggregate (incl. the literal associated with the constraint)
+	uint32  active_   : 2;    // which of the two sub-constraints is currently relevant?
+	uint32  undo_     : 31;   // undo position. Literals in the range [undoStart(), undo_) were processed in propagate
+	uint32  wr_       : 1;    // 1 if this is a weight constraint, otherwise 0
+	int32   bound_[2];        // bound_[0]: init: (sumW-bound)+1, if <= 0: FFB-BTB
 														// bound_[1]: init: bound, if <= 0: FTB/BFB
 	// if size is n and wr_ == 1, then
-	// [0, n)				stores the literals of this aggregate, i.e. ~B, l1, ..., ln-1
-	// [n, 2n)			stores the weights of the literals
-	// [2n, 3n)			stores the assigned (and relevant) literals of this aggregate
-	// lits_[3n]		position of next literal to look at during backpropagation
-	// lits_[3n+1]	number of literals forced during backpropagation
-	Literal		lits_[0];	
+	// [0, n)       stores the literals of this aggregate, i.e. ~B, l1, ..., ln-1
+	// [n, 2n)      stores the weights of the literals
+	// [2n, 3n)     stores the assigned (and relevant) literals of this aggregate
+	// lits_[3n]    position of next literal to look at during backpropagation
+	// lits_[3n+1]  number of literals forced during backpropagation
+	Literal   lits_[0]; 
 };
 
 
@@ -128,10 +128,10 @@ private:
  * than previous solutions, otherwise, if mode is set to compare_less_equal a
  * solution is considered optimal if it is not greater than any previous solution.
  * Example: 
- *	m0: {a, b}
+ *  m0: {a, b}
  *  m1: {c, d}
- *	Solutions: {a, c,...}, {a, d,...} {b, c,...}, {b, d,...} {a, b,...} 
- *	Optimal compare_less: {a, c, ...} (m0 = 1, m1 = 1}
+ *  Solutions: {a, c,...}, {a, d,...} {b, c,...}, {b, d,...} {a, b,...} 
+ *  Optimal compare_less: {a, c, ...} (m0 = 1, m1 = 1}
  *  Optimal compare_less_equal: {a, c, ...}, {a, d,...}, {b, c,...}, {b, d,...} 
  * 
  */
@@ -147,8 +147,8 @@ public:
 	 * solution.
 	 */
 	enum Mode {
-		compare_less,				/**< optimize using < */
-		compare_less_equal	/**< optimize using <= */
+		compare_less,       /**< optimize using < */
+		compare_less_equal  /**< optimize using <= */
 	};
 	
 	//! creates an empty minimize-constraint.
@@ -188,7 +188,7 @@ public:
 	 * The found model is recorded as optimum and the decision level
 	 * on which search should continue is returned.
 	 * \return The decision level on which the search should continue or
-	 *	uint32(-1) if search space is exhausted w.r.t. this minimize-constraint.
+	 *  uint32(-1) if search space is exhausted w.r.t. this minimize-constraint.
 	 */
 	uint32 setModel(Solver& s);
 
@@ -196,8 +196,8 @@ public:
 	/*!
 	 * Calls setModel and backtracks to the returned decision level if possible.
 	 * \return
-	 *	- true if backtracking was successful and search can continue
-	 *	- false otherwise
+	 *  - true if backtracking was successful and search can continue
+	 *  - false otherwise
 	 */
 	bool backtrackFromModel(Solver& s);
 	
@@ -222,9 +222,9 @@ private:
 	
 	struct MinRule {
 		MinRule() : sum_(0), opt_(std::numeric_limits<weight_t>::max()) {}
-		weight_t			sum_;			// current sum
-		weight_t			opt_;			// optimial sum so far
-		WeightLitVec	lits_;		// sorted by decreasing weights
+		weight_t      sum_;     // current sum
+		weight_t      opt_;     // optimial sum so far
+		WeightLitVec  lits_;    // sorted by decreasing weights
 	};
 	// A literal occurrence in one MinRule
 	struct LitRef {
@@ -235,9 +235,9 @@ private:
 	// to false by this constraint.
 	struct UndoLit {
 		UndoLit(Literal p, uint32 key, bool pos) : lit_(p), key_(key), pos_(pos) {}
-		Literal lit_;				// assigned literal
-		uint32	key_ : 31;	// pos_ == 1: index into occurList, else: true lits of rules [0, key] are the reason for lit
-		uint32	pos_ : 1;		// 1 if assigned true
+		Literal lit_;       // assigned literal
+		uint32  key_ : 31;  // pos_ == 1: index into occurList, else: true lits of rules [0, key] are the reason for lit
+		uint32  pos_ : 1;   // 1 if assigned true
 	};
 	
 	typedef PodVector<LitRef>::type LitOccurrence;
@@ -246,25 +246,25 @@ private:
 	typedef PodVector<MinRule*>::type Rules;
 	typedef PodVector<uint32>::type Index;
 	
-	Literal		lit(const LitRef& r)		const { return minRules_[r.ruleIdx_]->lits_[r.litIdx_].first; }
-	MinRule*	rule(const LitRef& r)		const	{ return minRules_[r.ruleIdx_]; }
-	MinRule*	rule(uint32 pLevel)			const { return minRules_[pLevel]; }
-	weight_t	weight(const LitRef& r)	const { return minRules_[r.ruleIdx_]->lits_[r.litIdx_].second; }
-	uint32		pLevel(const LitRef& r) const	{ return r.ruleIdx_; }
+	Literal   lit(const LitRef& r)    const { return minRules_[r.ruleIdx_]->lits_[r.litIdx_].first; }
+	MinRule*  rule(const LitRef& r)   const { return minRules_[r.ruleIdx_]; }
+	MinRule*  rule(uint32 pLevel)     const { return minRules_[pLevel]; }
+	weight_t  weight(const LitRef& r) const { return minRules_[r.ruleIdx_]->lits_[r.litIdx_].second; }
+	uint32    pLevel(const LitRef& r) const { return r.ruleIdx_; }
 	void updateSum(uint32 key);
 	void addUndo(Solver& s, Literal p, uint32 key, bool forced);
 	bool conflict(uint32& level) const;
 	bool backpropagate(Solver& s, MinRule* r);
 
-	Index			index_;				// maps between Literal and Occur-List - only used during construction
-	OccurList	occurList_;		// occurList_[idx] sorted by increasing rule index
-	Rules			minRules_;		// all minimize rules in priority-order
-	UndoList	undoList_;		// stores indices into occurList
-	uint64		models_;			// number of optimal models so far
-	uint32		activePL_;		// priority level under consideration
-	uint32		activeIdx_;		// index into rule of current priority level
-	Mode			mode_;				// how to compare assignments?
-	bool			restart_;			// Restart after each optimal model?
+	Index     index_;       // maps between Literal and Occur-List - only used during construction
+	OccurList occurList_;   // occurList_[idx] sorted by increasing rule index
+	Rules     minRules_;    // all minimize rules in priority-order
+	UndoList  undoList_;    // stores indices into occurList
+	uint64    models_;      // number of optimal models so far
+	uint32    activePL_;    // priority level under consideration
+	uint32    activeIdx_;   // index into rule of current priority level
+	Mode      mode_;        // how to compare assignments?
+	bool      restart_;     // Restart after each optimal model?
 };
 
 }

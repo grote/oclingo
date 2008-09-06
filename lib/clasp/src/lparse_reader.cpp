@@ -37,7 +37,7 @@ void StreamSource::skipWhite() {
 // Pre: system uses ASCII
 bool StreamSource::parseInt( int& val) {
 	val = 0;
-	bool	pos = true;
+	bool  pos = true;
 	skipWhite();
 	if (**this == '-') {
 		pos = false;
@@ -84,8 +84,8 @@ LparseReader::~LparseReader() {
 void LparseReader::clear() {
 	rule_.clear();
 	extendedRules_.clear();
-	api_	= 0;
-	stats	= LparseStats();
+	api_  = 0;
+	stats = LparseStats();
 }
 
 bool LparseReader::parse(std::istream& prg, ProgramBuilder& api) {
@@ -166,7 +166,7 @@ bool LparseReader::readRule(int rt) {
 	if (bound >= 0) {
 		rule_.setBound(static_cast<uint32>(bound));
 	}
-	return readBody(static_cast<uint32>(lits), static_cast<uint32>(neg), rt >= 5);	
+	return readBody(static_cast<uint32>(lits), static_cast<uint32>(neg), rt >= 5);  
 }
 
 bool LparseReader::readBody(uint32 lits, uint32 neg, bool readWeights) {
@@ -181,7 +181,7 @@ bool LparseReader::readBody(uint32 lits, uint32 neg, bool readWeights) {
 			}
 			rule_.body[i].second = toWeight(w);
 		}
-	}	
+	} 
 	if ( ( (tm_&transform_weight)!=0 && (rule_.type() == CONSTRAINTRULE || rule_.type() == WEIGHTRULE)) || (rule_.type() == CHOICERULE && (tm_&transform_choice)!=0)) {
 		extendedRules_.push_back(new PrgRule());
 		extendedRules_.back()->swap(rule_);
@@ -227,7 +227,7 @@ bool LparseReader::readComputeStatement() {
 		skipAllWhite(*source_);
 		int id = -1;
 		while (source_->parseInt(id) && id != 0) {
-			if (id < 1) throw ReadError(source_->line(), "Compute Statement: Atom out of bounds");	
+			if (id < 1) throw ReadError(source_->line(), "Compute Statement: Atom out of bounds");  
 			api_->setCompute(static_cast<Var>(id), pos[i] == '+');
 			if (!match(*source_, '\n', true)) {
 				throw ReadError(source_->line(), "Newline expected!");
@@ -298,7 +298,7 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 		else if (*in == 'c' || *in == 'p') {
 			skipLine(in);
 		}
-		else if (numVars != -1) {	// read clause
+		else if (numVars != -1) { // read clause
 			int lit;
 			Literal rLit;
 			bool sat = false;
@@ -315,7 +315,7 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 				rLit = lit >= 0 ? posLit(lit) : negLit(-lit);
 				if (lit == 0) {
 					for (LitVec::iterator it = currentClause.begin(); it != currentClause.end(); ++it) {
-						s.data(it->var()) &= ~3u;	// clear "in clause"-flags
+						s.data(it->var()) &= ~3u; // clear "in clause"-flags
 						if (!sat) { 
 							// update "in problem"-flags
 							s.data(it->var()) |= ((1 + it->sign()) << 2);
@@ -339,8 +339,8 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 	if (p) s.strategies().satPrePro.reset(p);
 	for (Var i = 1; ret && i <= s.numVars(); ++i) {
 		uint8 d = (s.data(i)>>2);
-		if			(d == 0)								{ ret = s.force(negLit(i), 0); }
-		else if (d != 3 && assertPure)	{ ret = s.force(Literal(i, d != 1), 0); }
+		if      (d == 0)                { ret = s.force(negLit(i), 0); }
+		else if (d != 3 && assertPure)  { ret = s.force(Literal(i, d != 1), 0); }
 		s.data(i) = 0;
 	}
 	return ret;

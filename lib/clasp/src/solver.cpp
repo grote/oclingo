@@ -89,9 +89,9 @@ private:
 		assert(!"SelectRandom::doSelect() - precondition violated!\n");
 		return Literal();
 	}
-	VarVec						vars_;
-	double						randProp_;
-	VarVec::size_type	pos_;
+	VarVec            vars_;
+	double            randProp_;
+	VarVec::size_type pos_;
 };
 /////////////////////////////////////////////////////////////////////////////////////////
 // SolverStrategies
@@ -128,8 +128,8 @@ Solver::Solver()
 	, randHeuristic_(0)
 	, shuffle_(false) {
 	addVar( Var_t::atom_body_var );
-	vars_[0].value	= value_true;
-	vars_[0].seen		= 1;
+	vars_[0].value  = value_true;
+	vars_[0].seen   = 1;
 }
 
 Solver::~Solver() {
@@ -178,7 +178,7 @@ bool Solver::endAddConstraints(bool look) {
 	stats.native[1] = numBinaryConstraints();
 	stats.native[2] = numTernaryConstraints();
 	if (!hasConflict()) {
-		strategy_.heuristic->endInit(*this);	
+		strategy_.heuristic->endInit(*this);  
 		if (randHeuristic_) randHeuristic_->endInit(*this);
 	}
 	return !hasConflict();
@@ -197,7 +197,7 @@ void Solver::eliminate(Var v, bool elim) {
 		assert(vars_[v].value == value_free && "Can not eliminate assigned var!\n");
 		vars_[v].elim = 1;
 		vars_[v].seen = 1;
-		vars_[v].value= value_true;	// so that the var is ignored by heuristics
+		vars_[v].value= value_true; // so that the var is ignored by heuristics
 		++eliminated_;
 	}
 	else if (!elim && vars_[v].elim == 1) {
@@ -309,10 +309,10 @@ bool Solver::simplify() {
 	// therefore force some literals.
 	while (lastSimplify_ < trail_.size() || shuffle_) {
 		LitVec::size_type old = lastSimplify_;
-		if (!propagate()) return false;		// Top-Level-conflict
-		simplifySAT();										// removes SAT-Constraints
+		if (!propagate()) return false;   // Top-Level-conflict
+		simplifySAT();                    // removes SAT-Constraints
 		assert(lastSimplify_ == trail_.size());
-		strategy_.heuristic->simplify(*this, old);		
+		strategy_.heuristic->simplify(*this, old);    
 	}
 	return true;
 }
@@ -320,9 +320,9 @@ bool Solver::simplify() {
 void Solver::simplifySAT() {
 	for (; lastSimplify_ < trail_.size(); ++lastSimplify_) {
 		Literal p = trail_[lastSimplify_];
-		vars_[p.var()].seen = 1;						// ignore level 0 literals during conflict analysis
-		simplifyShort(p);										// remove satisfied binary- and ternary clauses
-		gwl(watches_[p.index()]).clear();		// updated during propagation. 
+		vars_[p.var()].seen = 1;            // ignore level 0 literals during conflict analysis
+		simplifyShort(p);                   // remove satisfied binary- and ternary clauses
+		gwl(watches_[p.index()]).clear();   // updated during propagation. 
 		gwl(watches_[(~p).index()]).clear();// ~p will never be true. List is no longer relevant.
 	}
 	if (shuffle_) {
@@ -339,7 +339,7 @@ void Solver::simplifyDB(ConstraintDB& db) {
 	for (i = j = 0; i != end; ++i) {
 		Constraint* c = db[i];
 		if (c->simplify(*this, shuffle_)) { c->destroy(); }
-		else															{ db[j++] = c;  }
+		else                              { db[j++] = c;  }
 	}
 	db.erase(db.begin()+j, db.end());
 }
@@ -359,7 +359,7 @@ void Solver::simplifyDB(ConstraintDB& db) {
 void Solver::simplifyShort(Literal p) {
 	bwl(watches_[p.index()]).clear(); // this list was already propagated
 	LitVec& pbList = watches_[(~p).index()].bins;
-	binCons_		-= (uint32)pbList.size();
+	binCons_    -= (uint32)pbList.size();
 	for (LitVec::size_type i = 0; i < pbList.size(); ++i) {
 		remove_first_if(watches_[(~pbList[i]).index()].bins, std::bind2nd(std::equal_to<Literal>(), p));
 	}
@@ -367,7 +367,7 @@ void Solver::simplifyShort(Literal p) {
 
 	// remove every ternary clause containing p -> clause is satisfied
 	TWL& ptList = watches_[(~p).index()].terns;
-	ternCons_		-= (uint32)ptList.size();
+	ternCons_   -= (uint32)ptList.size();
 	for (LitVec::size_type i = 0; i < ptList.size(); ++i) {
 		remove_first_if(watches_[(~ptList[i].first).index()].terns, PairContains<Literal>(p));
 		remove_first_if(watches_[(~ptList[i].second).index()].terns, PairContains<Literal>(p));
@@ -396,7 +396,7 @@ bool Solver::force(const Literal& p, const Antecedent& c) {
 		vars_[var].assign(trueValue(p), c, decisionLevel());
 		trail_.push_back(p);
 	}
-	else if (value(var) == falseValue(p)) {		// conflict
+	else if (value(var) == falseValue(p)) {   // conflict
 		if (strategy_.search != SolverStrategies::no_learning && !c.isNull()) {
 			c.reason(p, conflict_);
 		}
@@ -411,7 +411,7 @@ bool Solver::assume(const Literal& p) {
 	++stats.choices;
 	levels_.push_back(LevelInfo((uint32)trail_.size(), ConstraintDB()));
 	levConflicts_.push_back( (uint32)stats.conflicts );
-	return force(p, Antecedent());	// always true
+	return force(p, Antecedent());  // always true
 }
 
 bool Solver::propagate() {
@@ -431,7 +431,7 @@ bool Solver::unitPropagate() {
 		uint32 idx = p.index();
 		LitVec::size_type i, end;
 		WL& wl = watches_[idx];
-		// first, do binary BCP...		
+		// first, do binary BCP...    
 		for (i = 0, end = wl.bins.size(); i != end; ++i) {
 			if (!isTrue(wl.bins[i]) && !force(wl.bins[i], p)) {
 				return false;
@@ -457,7 +457,7 @@ bool Solver::unitPropagate() {
 			for (j = 0, i = 0, end = gWL.size(); i != gWL.size(); ) {
 				Watch& w = gWL[i++];
 				r = w.propagate(*this, p);
-				if (r.second) {	// keep watch
+				if (r.second) { // keep watch
 					gWL[j++] = w;
 				}
 				if (!r.first) {
@@ -501,7 +501,7 @@ bool Solver::failedLiteral(Var& var, VarScores& scores, VarType types, bool unif
 			scores[deps[i]].clear();
 		}
 		deps.clear();
-	}		
+	}   
 	return cfl;
 }
 
@@ -593,7 +593,7 @@ uint32 Solver::estimateBCP(const Literal& p, int rd) const {
 	self.vars_[p.var()].value = trueValue(p);
 	self.trail_.push_back(p);
 	do {
-		Literal x = trail_[i++];	
+		Literal x = trail_[i++];  
 		const LitVec& xList = watches_[x.index()].bins;
 		for (LitVec::size_type k = 0; k < xList.size(); ++k) {
 			Literal y = xList[k];
@@ -637,8 +637,8 @@ void Solver::undoLevel(bool sp) {
 uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 	// must be called here, because we unassign vars during analyzeConflict
 	strategy_.heuristic->undoUntil( *this, levels_.back().first );
-	uint32 onLevel	= 0;				// number of literals from the current DL in resolvent
-	uint32 abstr		= 0;				// abstraction of DLs in cc_
+	uint32 onLevel  = 0;        // number of literals from the current DL in resolvent
+	uint32 abstr    = 0;        // abstraction of DLs in cc_
 	Literal p;
 	strategy_.heuristic->updateReason(*this, conflict_, p);
 	cc_.clear();
@@ -675,7 +675,7 @@ uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 		strategy_.heuristic->updateReason(*this, conflict_, p);
 	}
 	outClause.reserve( cc_.size()+1 );
-	outClause.startAsserting(Constraint_t::learnt_conflict, ~p);	// store the 1-UIP
+	outClause.startAsserting(Constraint_t::learnt_conflict, ~p);  // store the 1-UIP
 	minimizeConflictClause(outClause, abstr);
 	// clear seen-flag of all literals that are not from the current dl.
 	for (LitVec::size_type i = 0; i != cc_.size(); ++i) {
@@ -684,7 +684,7 @@ uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 	cc_.clear();
 	assert( decisionLevel() == level(p.var()));
 	return outClause.size() != 1 
-		? level(outClause[outClause.secondWatch()].var())	
+		? level(outClause[outClause.secondWatch()].var()) 
 		: 0;
 }
 
@@ -753,7 +753,7 @@ bool Solver::decideNextBranch() {
 void Solver::reduceLearnts(float maxRem) {
 	uint32 oldS = numLearntConstraints();
 	ConstraintDB::size_type i, j = 0;
-	if (maxRem < 1.0f) {		
+	if (maxRem < 1.0f) {    
 		LitVec::size_type remMax = static_cast<LitVec::size_type>(numLearntConstraints() * std::min(1.0f, std::max(0.0f, maxRem)));
 		uint64 actSum = 0;
 		for (i = 0; i != learnts_.size(); ++i) {
@@ -803,7 +803,7 @@ ValueRep Solver::search(uint64 maxConflicts, uint64 maxLearnts, double randProp,
 			}
 			if ((!localR && --maxConflicts == 0) || (localR && localRestart(maxConflicts))) {
 				undoUntil(0);
-				return value_free;	
+				return value_free;  
 			}
 		}
 		if (numLearntConstraints()>(uint32)maxLearnts) { reduceLearnts(.75f); }

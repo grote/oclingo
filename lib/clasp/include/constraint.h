@@ -25,7 +25,7 @@
 #endif
 
 #include <clasp/include/literal.h>
-#include <utility>	// std::pair
+#include <utility>  // std::pair
 #include <cassert>
 
 /*!
@@ -45,7 +45,7 @@ class Solver;
 //! Constraint types distinguished by a Solver.
 struct Constraint_t {
 	enum Type { native_constraint = 0, learnt_conflict = 1, learnt_loop = 2};
-};	
+};  
 typedef Constraint_t::Type ConstraintType;
 
 
@@ -97,8 +97,8 @@ public:
 	 * simplify this constraint.
 	 * \pre s.decisionLevel() == 0 and the current assignment is fully propagated.
 	 * \return
-	 *	true if this constraint can be ignored (e.g. is satisfied)
-	 *	false otherwise
+	 *  true if this constraint can be ignored (e.g. is satisfied)
+	 *  false otherwise
 	 * \post
 	 * if simplify returned true, this constraint has previously removed all its watches
 	 * from the solver.
@@ -201,9 +201,9 @@ protected:
  * hold on most 32- and 64-bit platforms.
  * 
  * From the 64-bits the first 2-bits encode the type stored:
- *	- 00: Pointer to constraint
- *	- 01: binary constraint (i.e. one literal stored in the highest 31 bits)
- *	- 11: ternary constraint (i.e. two literals stored in the remaining 62 bits). 
+ *  - 00: Pointer to constraint
+ *  - 01: binary constraint (i.e. one literal stored in the highest 31 bits)
+ *  - 11: ternary constraint (i.e. two literals stored in the remaining 62 bits). 
  * 
  */
 class Antecedent {
@@ -308,7 +308,7 @@ public:
 	/*! 
 	 * throws std::runtime_error on error
 	 */
-	static bool checkPlatformAssumptions();	
+	static bool checkPlatformAssumptions(); 
 private:
 	uint64 data_;
 };

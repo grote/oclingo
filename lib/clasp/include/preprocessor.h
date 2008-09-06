@@ -46,9 +46,9 @@ public:
 	Preprocessor() : prg_(0), dfs_(true) {}
 	//! Possible eq-preprocessing types
 	enum EqType {
-		no_eq,		/*!< no eq-preprocessing, associate a new var with each supported atom and body */
-		body_eq,	/*!< associate vars to atoms, then check which bodies are equivalent to atoms		*/
-		full_eq		/*!< check for all kinds of equivalences between atoms and bodies								*/
+		no_eq,    /*!< no eq-preprocessing, associate a new var with each supported atom and body */
+		body_eq,  /*!< associate vars to atoms, then check which bodies are equivalent to atoms   */
+		full_eq   /*!< check for all kinds of equivalences between atoms and bodies               */
 	};
 
 	//! starts preprocessing of the logic program
@@ -56,13 +56,13 @@ public:
 	 * Computes the maximum consequences of prg and associates a variable 
 	 * with each supported atom and body.
 	 * \param prg The logic program to preprocess
-	 * \param t		Type of eq-preprocessing
+	 * \param t   Type of eq-preprocessing
 	 * \param maxIters If t == full_eq, maximal number of iterations during eq preprocessing
-	 * \param dfs	If t == full_eq, classify in df-order (true) or bf-order (false)
+	 * \param dfs If t == full_eq, classify in df-order (true) or bf-order (false)
 	 */
 	bool preprocess(ProgramBuilder& prg, EqType t, uint32 maxIters, bool dfs = true) {
-		prg_	= &prg;
-		dfs_	= dfs;
+		prg_  = &prg;
+		dfs_  = dfs;
 		return t == full_eq
 			? preprocessEq(maxIters)
 			: preprocessSimple(t == body_eq);
@@ -77,8 +77,8 @@ public:
 		assert(bodyId < nodes_.size());
 		Var r = nodes_[bodyId].eq;
 		while ( r != varMax && r != bodyId ) {
-			bodyId	= r;
-			r				= nodes_[r].eq;
+			bodyId  = r;
+			r       = nodes_[r].eq;
 		}
 		return bodyId;
 	}
@@ -87,37 +87,37 @@ public:
 	/*!
 	 * \pre preprocess() was called with strong set to true
 	 */
-	void		setSimplifyBodies(uint32 atomId) {
+	void    setSimplifyBodies(uint32 atomId) {
 		if (atomId < nodes_.size()) nodes_[atomId].asBody = 1;
 	}
 	//! Marks the body with the id bodyId for head-simplification
 	/*!
 	 * \pre preprocess() was called with strong set to true
 	 */
-	void		setSimplifyHeads(uint32 bodyId)		{ 
+	void    setSimplifyHeads(uint32 bodyId)   { 
 		if (bodyId < nodes_.size()) nodes_[bodyId].sHead = 1; 
 	}
 private:
 	Preprocessor(const Preprocessor&);
 	Preprocessor& operator=(const Preprocessor&);
-	void		updatePreviouslyDefinedAtoms(Var startAtom, bool strong);
-	bool		preprocessSimple(bool bodyEq);
+	void    updatePreviouslyDefinedAtoms(Var startAtom, bool strong);
+	bool    preprocessSimple(bool bodyEq);
 	// ------------------------------------------------------------------------
 	// Eq-Preprocessing
 	struct NodeInfo {
 		NodeInfo() : eq(varMax), bSeen(0), known(0), sBody(0), sHead(0), aSeen(0), asBody(0)  {}
-		uint32 eq			:31;	// Id of equivalent node, only used for bodies.
-		uint32 bSeen	: 1;	// Was the body already classified?
-		uint32 known	:28;	// Number of predecessors already classified, only used for bodies
-		uint32 sBody	: 1;	// Did the body change? (e.g. equivalent atoms, atoms with known truth value)
-		uint32 sHead	: 1;	// Did the heads of a body change?
-		uint32 aSeen	: 1;	// First time we see this atom?
-		uint32 asBody	: 1;	// Do we need to update the atom's body-list?
+		uint32 eq     :31;  // Id of equivalent node, only used for bodies.
+		uint32 bSeen  : 1;  // Was the body already classified?
+		uint32 known  :28;  // Number of predecessors already classified, only used for bodies
+		uint32 sBody  : 1;  // Did the body change? (e.g. equivalent atoms, atoms with known truth value)
+		uint32 sHead  : 1;  // Did the heads of a body change?
+		uint32 aSeen  : 1;  // First time we see this atom?
+		uint32 asBody : 1;  // Do we need to update the atom's body-list?
 	};
-	bool		preprocessEq(uint32 maxIters);
-	bool		classifyProgram(uint32 startAt, uint32& stopAt);
-	bool		simplifyClassifiedProgram(uint32 startAt, uint32& stopAt);
-	uint32	nextBodyId(VarVec::size_type& idx) {
+	bool    preprocessEq(uint32 maxIters);
+	bool    classifyProgram(uint32 startAt, uint32& stopAt);
+	bool    simplifyClassifiedProgram(uint32 startAt, uint32& stopAt);
+	uint32  nextBodyId(VarVec::size_type& idx) {
 		if (follow_.empty() || idx == follow_.size()) { return VarVec::size_type(-1); }
 		if (dfs_) {
 			uint32 id = follow_.back();
@@ -126,40 +126,40 @@ private:
 		}
 		return follow_[idx++];;
 	}
-	uint32	addBodyVar(Var bodyId, PrgBodyNode*);
-	uint32	addAtomVar(Var atomId, PrgAtomNode*, PrgBodyNode* body);
-	void		setSimplifyBody(uint32 bodyId)		{ nodes_[bodyId].sBody = 1; }
-	Var			getRootAtom(Literal p) const {
+	uint32  addBodyVar(Var bodyId, PrgBodyNode*);
+	uint32  addAtomVar(Var atomId, PrgAtomNode*, PrgBodyNode* body);
+	void    setSimplifyBody(uint32 bodyId)    { nodes_[bodyId].sBody = 1; }
+	Var     getRootAtom(Literal p) const {
 		return p.index() < litToNode_.size()
 			? litToNode_[p.index()]>>1
 			: varMax;
 	}
-	void		setRootAtom(Literal p, uint32 atomId) {
+	void    setRootAtom(Literal p, uint32 atomId) {
 		if (p.index() >= litToNode_.size()) litToNode_.resize(p.index()+1, (varMax<<1));
 		litToNode_[p.index()] = atomId<<1;
 	}
-	bool		hasBody(Literal p) const {
+	bool    hasBody(Literal p) const {
 		return p.index() < litToNode_.size() 
 			&& (litToNode_[p.index()] & 1) != 0;
 	}
-	void		setHasBody(Literal p) {
+	void    setHasBody(Literal p) {
 		if (p.index() >= litToNode_.size()) litToNode_.resize(p.index()+1, (varMax<<1));
 		litToNode_[p.index()] |= 1;
 	}
-	bool		mergeBodies(PrgBodyNode* body, Var bodyId, Var bodyRoot);
-	bool		mergeAtoms(Var atomId, Var atomEqId);
-	bool		reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const;
-	bool		newFactBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
-	void		newFalseBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
+	bool    mergeBodies(PrgBodyNode* body, Var bodyId, Var bodyRoot);
+	bool    mergeAtoms(Var atomId, Var atomEqId);
+	bool    reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const;
+	bool    newFactBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
+	void    newFalseBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
 	// ------------------------------------------------------------------------
-	ProgramBuilder*						prg_;				// program to preprocess
-	VarVec										follow_;		// bodies yet to classify
-	PodVector<NodeInfo>::type nodes_;			// information about the program nodes
-	VarVec										litToNode_; // the roots of our equivalence classes
-	uint32										pass_;			// current iteration number
-	uint32										maxPass_;		// force stop after maxPass_ iterations
-	bool											conflict_;	// true if preprocessing found a conflict
-	bool											dfs_;				// classify bodies in DF or BF order
+	ProgramBuilder*           prg_;       // program to preprocess
+	VarVec                    follow_;    // bodies yet to classify
+	PodVector<NodeInfo>::type nodes_;     // information about the program nodes
+	VarVec                    litToNode_; // the roots of our equivalence classes
+	uint32                    pass_;      // current iteration number
+	uint32                    maxPass_;   // force stop after maxPass_ iterations
+	bool                      conflict_;  // true if preprocessing found a conflict
+	bool                      dfs_;       // classify bodies in DF or BF order
 };
 //@}
 }

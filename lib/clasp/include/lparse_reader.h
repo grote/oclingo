@@ -79,7 +79,7 @@ public:
 private:
 	StreamSource(const std::istream&);
 	StreamSource& operator=(const StreamSource&);
-	void underflow() {		
+	void underflow() {    
 		pos_ = 0;
 		buffer_[0] = 0;
 		if (!in_) return;
@@ -112,7 +112,7 @@ inline void skipLine(StreamSource& in) {
  * \param c character to match
  * \param sw skip leading white-space
  * \return
- *	- true if character c was consumed
+ *  - true if character c was consumed
  *  - false otherwise
  *  .
  */
@@ -131,7 +131,7 @@ inline bool match(StreamSource& in, char c, bool sw) {
  * \param str string to match
  * \param sw skip leading white-space
  * \return
- *	- true if string str was consumed
+ *  - true if string str was consumed
  *  - false otherwise
  *  .
  */
@@ -146,8 +146,8 @@ struct LparseStats {
 	LparseStats() {
 		std::memset(this, 0, sizeof(LparseStats));
 	}
-	uint32 atoms[2];	/**< Number of atoms, 0: original, 1: auxiliary (added by clasp) */
-	uint32 rules[7];	/**< Number of rules, 0: transformed, rules[RuleType rt]: rules of type rt */
+	uint32 atoms[2];  /**< Number of atoms, 0: original, 1: auxiliary (added by clasp) */
+	uint32 rules[7];  /**< Number of rules, 0: transformed, rules[RuleType rt]: rules of type rt */
 };
 
 //! Reads a logic program in lparse-format.
@@ -164,14 +164,14 @@ public:
 	LparseReader();
 	~LparseReader();
 	enum TransformMode {
-		transform_no			= 0,	/**< Do not transform extended rules. Handle them natively						*/
-		transform_choice	= 1,	/**< Transform choice rules, but keep weight/cardinality constraints	*/
-		transform_weight	= 2,	/**< Transform weight/cardinality constraints but keep choice rules		*/
-		transform_all			= 3		/**< Transform all extended rules */
+		transform_no      = 0,  /**< Do not transform extended rules. Handle them natively            */
+		transform_choice  = 1,  /**< Transform choice rules, but keep weight/cardinality constraints  */
+		transform_weight  = 2,  /**< Transform weight/cardinality constraints but keep choice rules   */
+		transform_all     = 3   /**< Transform all extended rules */
 	};
 	
 	//! What to do with extended rules?
-	void setTransformMode(TransformMode m) { tm_ = m; }	
+	void setTransformMode(TransformMode m) { tm_ = m; } 
 	
 	//! parses the logic program given in prg.
 	/*!
@@ -187,21 +187,21 @@ public:
 private:
 	LparseReader(const LparseReader&);
 	LparseReader& operator=(const LparseReader&);
-	void	clear();
-	Var		parseAtom();
-	bool	readRules();
-	bool	readSymbolTable();
-	bool	readComputeStatement();
-	bool	readModels();
-	bool	endParse();
-	bool	readRule(int);
-	bool	readBody(uint32 lits, uint32 neg, bool weights);
+	void  clear();
+	Var   parseAtom();
+	bool  readRules();
+	bool  readSymbolTable();
+	bool  readComputeStatement();
+	bool  readModels();
+	bool  endParse();
+	bool  readRule(int);
+	bool  readBody(uint32 lits, uint32 neg, bool weights);
 	typedef std::vector<PrgRule*> RuleList;
-	RuleList				extendedRules_;
-	PrgRule					rule_;
-	StreamSource*		source_;
+	RuleList        extendedRules_;
+	PrgRule         rule_;
+	StreamSource*   source_;
 	ProgramBuilder* api_;
-	TransformMode		tm_;
+	TransformMode   tm_;
 	
 };
 

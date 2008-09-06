@@ -113,7 +113,7 @@ namespace bk_lib { namespace detail {
     enum { value = ptr ? 1 : num ? 2 : 0 };
 	};
 
-}	// end namespace bk_lib::detail
+} // end namespace bk_lib::detail
 
 //! A std::vector-replacement for POD-Types. 
 /*!
@@ -130,7 +130,7 @@ public:
 	typedef typename Allocator::pointer               iterator;
 	typedef typename Allocator::const_pointer         const_iterator;
 	typedef typename Allocator::size_type             size_type;
-	typedef typename Allocator::difference_type				difference_type;
+	typedef typename Allocator::difference_type       difference_type;
 	typedef          T                                value_type;
 	typedef          Allocator                        allocator_type;
 	typedef typename Allocator::pointer               pointer;
@@ -206,13 +206,13 @@ public:
 	//@{
 	
 	//! returns the number of elements currently stored in this pod_vector.
-	size_type size() const		{ return last_ - ebo_.first_; }
+	size_type size() const    { return last_ - ebo_.first_; }
 	
 	//! size of the largest possible pod_vector
 	size_type max_size() const { return ebo_.max_size(); }
 	
 	//! returns the total number of elements this pod_vector can hold without requiring reallocation.
-	size_type capacity() const	{ return eos_ - ebo_.first_; }
+	size_type capacity() const  { return eos_ - ebo_.first_; }
 	
 	//! returns size() == 0
 	bool empty() const { return ebo_.first_ == last_;  }
@@ -476,7 +476,7 @@ public:
 	 * initializes new elements in case ns > size().
 	 * This reflects the behaviour of built-in arrays of pod-types.
 	 * \note 
-	 *	Any access to an unitialized element is illegal unless it is accessed
+	 *  Any access to an unitialized element is illegal unless it is accessed
 	 *  in order to assign a new value.
 	 */
 	void resize_no_init(size_type ns) {
@@ -567,7 +567,7 @@ private:
 			iterator remStart = ebo_.first_ + off;
 			size_type copyRem = (end() - remStart);
 			temp.last_ += copyRem;
-			std::memcpy(pos + n, remStart, copyRem * sizeof(T));	
+			std::memcpy(pos + n, remStart, copyRem * sizeof(T));  
 			swap(temp);
 		}
 		last_ += n;
@@ -604,7 +604,7 @@ inline bool operator>(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) 
 }
 
 template<class T, class A> 
-inline bool operator<=(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {	
+inline bool operator<=(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {  
 	return !(rhs < lhs);
 }
 

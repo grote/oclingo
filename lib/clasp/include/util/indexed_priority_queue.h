@@ -40,22 +40,22 @@ inline key_type heap_parent(std::size_t i) { return (i-1)>>1; }
 
 // Note: Uses a Max-Heap!
 template <
-	class Cmp	// sort-predicate - if Cmp(k1, k2) == true, n1 has higher priority than n2
+	class Cmp // sort-predicate - if Cmp(k1, k2) == true, n1 has higher priority than n2
 >
 class indexed_priority_queue {
 public:
 	typedef detail::key_type key_type;
 	typedef pod_vector<key_type> index_container_type;
-	typedef std::size_t			size_type;
-	typedef Cmp							compare_type;
+	typedef std::size_t     size_type;
+	typedef Cmp             compare_type;
 	
 	explicit indexed_priority_queue( const compare_type& c = compare_type() );
 	indexed_priority_queue(const indexed_priority_queue& other);
 	
 	indexed_priority_queue& operator=(const indexed_priority_queue& other) {
-		indices_	= other.indices_;
-		heap_			= other.heap_;
-		compare_	= other.compare_;
+		indices_  = other.indices_;
+		heap_     = other.heap_;
+		compare_  = other.compare_;
 	}
 
 	const compare_type& key_compare() const {
@@ -77,10 +77,10 @@ public:
 
 	void pop() {
 		assert(!empty());
-		key_type x	= heap_[0];
-		heap_[0]		= heap_.back();
+		key_type x  = heap_[0];
+		heap_[0]    = heap_.back();
 		indices_[heap_[0]] = 0;
-		indices_[x]		= detail::noKey;
+		indices_[x]   = detail::noKey;
 		heap_.pop_back();
 		if (heap_.size() > 1) {siftdown(0);}
 	}
@@ -126,9 +126,9 @@ public:
 	
 	void remove(key_type k) {
 		if (is_in_queue(k)) {
-			key_type kInHeap	= indices_[k];
-			heap_[kInHeap]		= heap_.back();
-			indices_[heap_.back()]	= kInHeap;
+			key_type kInHeap  = indices_[k];
+			heap_[kInHeap]    = heap_.back();
+			indices_[heap_.back()]  = kInHeap;
 			heap_.pop_back();
 			indices_[k] = detail::noKey;
 			if (heap_.size() > 1 && kInHeap != (key_type)heap_.size()) {
@@ -141,9 +141,9 @@ private:
 	bool valid_key(key_type k) const {
 		return k != detail::noKey;
 	}
-	index_container_type	indices_;
-	index_container_type	heap_;
-	compare_type					compare_;
+	index_container_type  indices_;
+	index_container_type  heap_;
+	compare_type          compare_;
 	void siftup(key_type n) {
 		using namespace detail;
 		key_type x = heap_[n];

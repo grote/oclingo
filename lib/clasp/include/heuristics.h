@@ -61,7 +61,7 @@ public:
 	enum Type { 
 		auto_lookahead, /**< Let the class decide which lookahead-operation to use */
 		atom_lookahead, /**< Test only atoms in both phases */
-		body_lookahead,	/**< Test only bodies in both phases */
+		body_lookahead, /**< Test only bodies in both phases */
 		hybrid_lookahead/**< Test atoms and bodies but only their preferred decision literal */
 	};
 	/*!
@@ -92,13 +92,13 @@ private:
 	Literal doSelect(Solver& s);
 	Literal heuristic(Solver& s);
 	void checkScore(uint32& min, uint32& max, Var v, const VarScore& vs, Literal& r);
-	VarScores						scores_;
-	VarVec							deps_;
-	DecisionHeuristic*	select_;
-	Type								type_;
-	VarType							varTypes_;
-	Var									var_;
-	Var									startVar_;
+	VarScores           scores_;
+	VarVec              deps_;
+	DecisionHeuristic*  select_;
+	Type                type_;
+	VarType             varTypes_;
+	Var                 var_;
+	Var                 startVar_;
 };
 
 
@@ -114,8 +114,8 @@ uint32 momsScore(const Solver& s, Var v);
  *
  * \note
  * This version of the BerkMin heuristic varies mostly in three points from the original BerkMin:
- *	-# it considers loop-nogoods if requested (this is the default)
- *	-# it uses a MOMS-like heuristic as long as there are no conflicts (and therefore no activities)
+ *  -# it considers loop-nogoods if requested (this is the default)
+ *  -# it uses a MOMS-like heuristic as long as there are no conflicts (and therefore no activities)
  *  -# it uses a MOMS-like score to break ties whenever multiple variables from an unsatisfied learnt
  * constraint have equal activities
  * 
@@ -129,17 +129,17 @@ uint32 momsScore(const Solver& s, Var v);
  * - let CL be the most recently derived conflict clause that is currently not satisfied.
  * - if no such CL exists and look-back loops is enabled let CL be last learnt loop nogood that is currently not satisfied.
  * - if a CL was found:
- *		- let v be a free variable of CL with the highest activity. Break ties using MOMS
- *		- let p be the literal of v that occured more often in learnt nogoods. 
- *			- If both lits of v occurred equally often, set p to the preferred literal of v
- *		- set DL to p
+ *    - let v be a free variable of CL with the highest activity. Break ties using MOMS
+ *    - let p be the literal of v that occured more often in learnt nogoods. 
+ *      - If both lits of v occurred equally often, set p to the preferred literal of v
+ *    - set DL to p
  * - if no CL was found and #conflicts != 0
- *		- let v be the free variable with the highest activity. Break ties randomly.
- *		- let p and ~p be the two literals of v.
- *		- let s1 be the result of estimateBCP(p), let s2 be the result of estimateBCP(~p)
- *		- set DL to p iff s1 > s2, to ~p iff s2 > s1 and to the preferred decision literal of v otherwise.
+ *    - let v be the free variable with the highest activity. Break ties randomly.
+ *    - let p and ~p be the two literals of v.
+ *    - let s1 be the result of estimateBCP(p), let s2 be the result of estimateBCP(~p)
+ *    - set DL to p iff s1 > s2, to ~p iff s2 > s1 and to the preferred decision literal of v otherwise.
  * - if #conflicts == 0
- *		- Select DL according to a MOMS-like heuristic
+ *    - Select DL according to a MOMS-like heuristic
  * - return DL;
  * .
  */
@@ -171,16 +171,16 @@ private:
 	bool hasTopUnsat(Solver& s);
 	bool hasTopUnsat(Solver& s, uint32& maxIdx, uint32 minIdx, ConstraintType t);
 	// Gathers heuristic information for one variable v.
-	// *	activity_ stores number of times one of v's literals occurred in a constraint used during conflict analysis
-	// *	occ_ is > 0 if posLit(v) occurred more often in learnt constraints. < if negLit(v) occurred more often 
-	//		and = 0 if both lits occurred equally often.
-	// *	decay_ is used for lazy activity-decaying. If decay_ is less than the global decay counter, var activity
-	//		must be decayed. After decaying decay_ is set to the global decay counter. 
+	// *  activity_ stores number of times one of v's literals occurred in a constraint used during conflict analysis
+	// *  occ_ is > 0 if posLit(v) occurred more often in learnt constraints. < if negLit(v) occurred more often 
+	//    and = 0 if both lits occurred equally often.
+	// *  decay_ is used for lazy activity-decaying. If decay_ is less than the global decay counter, var activity
+	//    must be decayed. After decaying decay_ is set to the global decay counter. 
 	struct HScore {
 		HScore() : activity_(0), occ_(0), decay_(0) {}
-		uint32	activity_;
-		int32		occ_;
-		uint32	decay_;
+		uint32  activity_;
+		int32   occ_;
+		uint32  decay_;
 		uint32& activity(uint32 globalDecay) {
 			if (uint32 x = (globalDecay - decay_)) {
 				activity_ >>= (x<<1);
@@ -189,7 +189,7 @@ private:
 			return activity_;
 		}
 	};
-	typedef PodVector<HScore>::type		Scores;
+	typedef PodVector<HScore>::type   Scores;
 	typedef VarVec::iterator Pos;
 	
 	struct GreaterActivity {
@@ -201,22 +201,22 @@ private:
 	private:
 		GreaterActivity& operator=(const GreaterActivity&);
 		Scores& sc_;
-		uint32	decay_;
+		uint32  decay_;
 	};
-	Scores	score_;					// For each var v score_[v] stores heuristic score of v
-	VarVec	cache_;					// Caches the most active variables
-	LitVec	freeLits_;			// Stores free variables of the last learnt conflict clause that is not sat
-	LitVec	freeLoopLits_;	// Stores free variables of the last learnt loop nogood that is not sat
-	uint32	topConflict_;		// index into the array of learnt nogoods used when searching for conflict clauses that are not sat
-	uint32	topLoop_;				// index into the array of learnt nogoods used when searching for loop nogoods that are not sat
-	Var			front_;					// first variable whose truth-value is not already known - reset on backtracking
-	Pos			cacheFront_;		// first unprocessed cache position - reset on backtracking
-	uint32	cacheSize_;			// cache at most cacheSize_ variables
-	uint32	decay_;					// "global" decay counter. Increased every 512 decisions
-	uint32	numVsids_;			// number of consecutive vsids-based decisions
-	uint32	maxBerkmin_;		// when searching for an open learnt constraint, check at most maxBerkmin_ candidates.
-	bool		loops_;					// Consider loop nogoods when searching for learnt nogoods that are not sat
-	bool		reinit_;
+	Scores  score_;         // For each var v score_[v] stores heuristic score of v
+	VarVec  cache_;         // Caches the most active variables
+	LitVec  freeLits_;      // Stores free variables of the last learnt conflict clause that is not sat
+	LitVec  freeLoopLits_;  // Stores free variables of the last learnt loop nogood that is not sat
+	uint32  topConflict_;   // index into the array of learnt nogoods used when searching for conflict clauses that are not sat
+	uint32  topLoop_;       // index into the array of learnt nogoods used when searching for loop nogoods that are not sat
+	Var     front_;         // first variable whose truth-value is not already known - reset on backtracking
+	Pos     cacheFront_;    // first unprocessed cache position - reset on backtracking
+	uint32  cacheSize_;     // cache at most cacheSize_ variables
+	uint32  decay_;         // "global" decay counter. Increased every 512 decisions
+	uint32  numVsids_;      // number of consecutive vsids-based decisions
+	uint32  maxBerkmin_;    // when searching for an open learnt constraint, check at most maxBerkmin_ candidates.
+	bool    loops_;         // Consider loop nogoods when searching for learnt nogoods that are not sat
+	bool    reinit_;
 };
 
 //! Variable Move To Front decision strategies inspired by Siege.
@@ -225,9 +225,9 @@ private:
  * \see Lawrence Ryan: "Efficient Algorithms for Clause Learning SAT-Solvers"
  *
  * \note This implementation of VMTF differs from the original implementation in three points:
- *	- if considerLoops is true, it moves to the front a selection of variables from learnt loop nogoods
- *	- it measures variable activity by using a BerkMin-like score scheme
- *	- the initial order of the var list is determined using a MOMs-like score scheme
+ *  - if considerLoops is true, it moves to the front a selection of variables from learnt loop nogoods
+ *  - it measures variable activity by using a BerkMin-like score scheme
+ *  - the initial order of the var list is determined using a MOMs-like score scheme
  */
 class ClaspVmtf : public DecisionHeuristic {
 public:
@@ -262,10 +262,10 @@ private:
 	typedef VarList::iterator VarPos;
 	struct VarInfo {
 		VarInfo(VarPos it) : pos_(it), activity_(0), occ_(0), decay_(0) { }
-		VarPos	pos_;				// position of var in var list
-		uint32	activity_;	// activity of var - initially 0
-		int32		occ_;				// which literal of var occurred more often in learnt constraints?
-		uint32	decay_;			// counter for lazy decaying activity
+		VarPos  pos_;       // position of var in var list
+		uint32  activity_;  // activity of var - initially 0
+		int32   occ_;       // which literal of var occurred more often in learnt constraints?
+		uint32  decay_;     // counter for lazy decaying activity
 		uint32& activity(uint32 globalDecay) {
 			if (uint32 x = (globalDecay - decay_)) {
 				activity_ >>= (x<<1);
@@ -288,17 +288,17 @@ private:
 	private:
 		LessLevel& operator=(const LessLevel&);
 		const Solver& s_;
-		const Score&	sc_;
+		const Score&  sc_;
 		
 	};
-	Score				score_;			// For each var v score_[v] stores heuristic score of v
-	VarList			vars_;			// List of possible choices, initially ordered by MOMs-like score
-	VarVec			mtf_;				// Vars to be moved to the front of vars_
-	VarPos			front_;			// Current front-position in var list - reset on backtracking 
-	uint32			decay_;			// "global" decay counter. Increased every 512 decisions
+	Score       score_;     // For each var v score_[v] stores heuristic score of v
+	VarList     vars_;      // List of possible choices, initially ordered by MOMs-like score
+	VarVec      mtf_;       // Vars to be moved to the front of vars_
+	VarPos      front_;     // Current front-position in var list - reset on backtracking 
+	uint32      decay_;     // "global" decay counter. Increased every 512 decisions
 	const LitVec::size_type MOVE_TO_FRONT;
-	bool				loops_;			// Move MOVE_TO_FRONT/2 vars from loop nogoods to the front of vars 
-	bool				reinit_;
+	bool        loops_;     // Move MOVE_TO_FRONT/2 vars from loop nogoods to the front of vars 
+	bool        reinit_;
 };
 
 //! A variable state independent decision heuristic favoring variables that were active in recent conflicts.
@@ -338,7 +338,7 @@ public:
 	void undoUntil(const Solver&, LitVec::size_type);
 	void simplify(Solver&, LitVec::size_type);
 	void resurrect(Var v) {
-		vars_.update(v);	
+		vars_.update(v);  
 	}
 private:
 	Literal doSelect(Solver& s);
@@ -355,11 +355,11 @@ private:
 	}
 	// HScore.first: activity of a variable
 	// HScore.second: occurrence counter for a variable's literal
-	//	> 0: positive literal occurred more often
-	//	< 0: negative literal occurred more often
-	//	= 0: literals occurred equally often
-	typedef std::pair<double, int32>	HScore;
-	typedef PodVector<HScore>::type		Scores;
+	//  > 0: positive literal occurred more often
+	//  < 0: negative literal occurred more often
+	//  = 0: literals occurred equally often
+	typedef std::pair<double, int32>  HScore;
+	typedef PodVector<HScore>::type   Scores;
 	struct GreaterActivity {
 		explicit GreaterActivity(const Scores& s) : sc_(s) {}
 		bool operator()(Var v1, Var v2) const {
@@ -370,11 +370,11 @@ private:
 		const Scores& sc_;
 	};
 	typedef bk_lib::indexed_priority_queue<GreaterActivity> VarOrder;
-	Scores		score_;
-	VarOrder	vars_;
-	double		inc_;
-	bool			scoreLoops_;
-	bool			reinit_;
+	Scores    score_;
+	VarOrder  vars_;
+	double    inc_;
+	bool      scoreLoops_;
+	bool      reinit_;
 };
 
 }

@@ -52,18 +52,18 @@ ClauseCreator& ClauseCreator::start(ConstraintType t) {
 	assert(!solver_ || solver_->decisionLevel() == 0 || t != Constraint_t::native_constraint);
 	literals_.clear();
 	type_ = t;
-	w2_		= t != Constraint_t::native_constraint;
-	sat_	= 0;
-	unit_	= 0;
+	w2_   = t != Constraint_t::native_constraint;
+	sat_  = 0;
+	unit_ = 0;
 	return *this;
 }
 
 ClauseCreator& ClauseCreator::startAsserting(ConstraintType t, const Literal& p) {
 	literals_.assign(1, p);
-	type_	= t;
-	w2_		= 1;
+	type_ = t;
+	w2_   = 1;
 	unit_ = 1;
-	sat_	= 0;
+	sat_  = 0;
 	return *this;
 }
 
@@ -117,11 +117,11 @@ void ClauseCreator::simplify() {
 bool ClauseCreator::end(Constraint** out) {
 	assert(solver_);
 	if (out) *out = 0;
-	if (sat_) return true;		// SAT on level 0
+	if (sat_) return true;    // SAT on level 0
 	if (literals_.empty()) {
 		LitVec cfl(1, Literal());
 		solver_->setConflict(cfl);
-		return false;						// UNSAT on level 0
+		return false;           // UNSAT on level 0
 	}
 	else if (type_ == Constraint_t::native_constraint && solver_->strategies().satPrePro.get()) {
 		return solver_->strategies().satPrePro->addClause(literals_);
@@ -134,11 +134,11 @@ bool ClauseCreator::end(Constraint** out) {
 			return solver_->addUnary(literals_[0]);
 		}
 		else if (literals_.size() == 2) {
-			return solver_->addBinary(literals_[0], literals_[1], asserting);	
+			return solver_->addBinary(literals_[0], literals_[1], asserting); 
 		}
 		return solver_->addTernary(literals_[0], literals_[1], literals_[2], asserting);
 	}
-	else {													// general clause
+	else {                          // general clause
 		Constraint* newCon;
 		Literal first = literals_[0];
 		if (type_ == Constraint_t::native_constraint) {
@@ -167,32 +167,32 @@ LitVec::size_type ClauseCreator::size() const {
 /////////////////////////////////////////////////////////////////////////////////////////
 // Clause
 /////////////////////////////////////////////////////////////////////////////////////////
-Constraint*	Clause::newClause(Solver& s, const LitVec& lits) {
-	LitVec::size_type nl = 2 + lits.size();	// 2 sentinels
+Constraint* Clause::newClause(Solver& s, const LitVec& lits) {
+	LitVec::size_type nl = 2 + lits.size(); // 2 sentinels
 	void* mem = ::operator new( sizeof(Clause) + (nl*sizeof(Literal)) );
 	return new (mem) Clause(s, lits, 0, Constraint_t::native_constraint);
 }
 
 LearntConstraint* Clause::newLearntClause(Solver& s, const LitVec& lits, ConstraintType t, LitVec::size_type secondWatch) {
 	assert(t != Constraint_t::native_constraint);
-	LitVec::size_type nl = 3 + lits.size();	// 2 sentinels + 1 lit for activity
+	LitVec::size_type nl = 3 + lits.size(); // 2 sentinels + 1 lit for activity
 	void* mem = ::operator new( sizeof(Clause) + (nl * sizeof(Literal)) );
 	return new (mem) Clause(s, lits, secondWatch, t);
 }
 
 Clause::Clause(Solver& s, const LitVec& theLits, LitVec::size_type sw, ConstraintType t) {
 	assert(int32(t) < 4);
-	size_		= (uint32)theLits.size();
-	type_		= t;
-	lits()->asUint()	= 1;	// Starting sentinel	- var 0 + watch-flag on
-	end()->asUint()		= 1;	// Ending Sentinel		- var 0 + watch-flag on
-	other_	= theLits[0];
+	size_   = (uint32)theLits.size();
+	type_   = t;
+	lits()->asUint()  = 1;  // Starting sentinel  - var 0 + watch-flag on
+	end()->asUint()   = 1;  // Ending Sentinel    - var 0 + watch-flag on
+	other_  = theLits[0];
 	std::memcpy(begin(), &theLits[0], sizeof(Literal) * theLits.size());
 	if (t == Constraint_t::native_constraint) {
 		initWatches(s);
 	}
 	else {
-		act()		= (uint32)s.stats.restarts + 1;
+		act()   = (uint32)s.stats.restarts + 1;
 		if (s.isFalse(theLits[sw]) && size_ >= s.strategies().compress()) {
 			contract(s);
 			sw = 1;
@@ -235,14 +235,14 @@ void Clause::initWatches(Solver& s) {
 			uint32 cxw = s.numWatches(~(*this)[x]);
 			if (cxw < count[maxCount]) {
 				if (cxw < count[1-maxCount]) {
-					watch[maxCount]		= watch[1-maxCount];
-					count[maxCount]		= count[1-maxCount];
-					watch[1-maxCount]	= x;
-					count[1-maxCount]	= cxw;
+					watch[maxCount]   = watch[1-maxCount];
+					count[maxCount]   = count[1-maxCount];
+					watch[1-maxCount] = x;
+					count[1-maxCount] = cxw;
 				}
 				else {
-					watch[maxCount]		= x;
-					count[maxCount]		= cxw;
+					watch[maxCount]   = x;
+					count[maxCount]   = cxw;
 				}
 			}
 		}
@@ -252,12 +252,12 @@ void Clause::initWatches(Solver& s) {
 
 void Clause::undoLevel(Solver& s) {
 	Literal* r = end();
-	*r = ~*r;						// restore original literal, implicitly resets the watch-flag!
+	*r = ~*r;           // restore original literal, implicitly resets the watch-flag!
 	for (++r; !isSentinel(*r) && s.value(r->var()) == value_free; ++r);
 	if (!isSentinel(*r)) {
 		assert(s.level(r->var()) != 0 && "Contracted clause may not contain literals from level 0");
-		*r = ~*r;					// Note: ~r is true!
-		r->watch();				// create a new artificial ending sentinel
+		*r = ~*r;         // Note: ~r is true!
+		r->watch();       // create a new artificial ending sentinel
 		s.addUndoWatch(s.level(r->var()), this);
 	}
 	size_ = r - begin();
@@ -271,8 +271,8 @@ void Clause::undoLevel(Solver& s) {
 // resulting from the forced write to the beginning of the literal array even if the 
 // search only takes place in the middle or the end of the array.
 Constraint::PropResult Clause::propagate(const Literal&, uint32& data, Solver& s) {
-	if (s.isTrue(other_)) {										// ignore clause; it is 
-		return PropResult(true, true);					// already satisfied
+	if (s.isTrue(other_)) {                   // ignore clause; it is 
+		return PropResult(true, true);          // already satisfied
 	}
 	// At this point other_ is either free or false.
 	// Once we stumble upon the other watched literal
@@ -281,27 +281,27 @@ Constraint::PropResult Clause::propagate(const Literal&, uint32& data, Solver& s
 	// Nevertheless since other_ is always equal to one of the literals in the clause
 	// it will be a false literal and thus trying to assign it to true
 	// will force a conflict.
-	uint32 run	= data>>1;										// let run point to the false literal.						
-	int		dir		= ((data & 1) << 1) - 1;			// either +1 or -1
-	int		bounds= 0;													// number of array bounds seen - 2 means clause is active
+	uint32 run  = data>>1;                    // let run point to the false literal.            
+	int   dir   = ((data & 1) << 1) - 1;      // either +1 or -1
+	int   bounds= 0;                          // number of array bounds seen - 2 means clause is active
 	for (;;) {
-		for (run+=dir;s.isFalse(lits_[run]);run+=dir) ;	// search non-false literal - sentinels guarantee termination
-		if (!lits_[run].watched()) {										// found a new watchable literal
-			lits_[data>>1].clearWatch();									// remove old watch
-			lits_[run].watch();														// and add the new one
+		for (run+=dir;s.isFalse(lits_[run]);run+=dir) ; // search non-false literal - sentinels guarantee termination
+		if (!lits_[run].watched()) {                    // found a new watchable literal
+			lits_[data>>1].clearWatch();                  // remove old watch
+			lits_[run].watch();                           // and add the new one
 			s.addWatch(~lits_[run], this, static_cast<uint32>(run << 1) + (dir==1));
 			return Constraint::PropResult(true, false);
 		}
-		if (isBound(run, data)) {												// Hit a bound,
-			if (++bounds == 2) {													// both ends seen, clause is unit, false, or sat
-				return Constraint::PropResult(s.force(other_, this), true);	
+		if (isBound(run, data)) {                       // Hit a bound,
+			if (++bounds == 2) {                          // both ends seen, clause is unit, false, or sat
+				return Constraint::PropResult(s.force(other_, this), true); 
 			}
-			run		= data >> 1;														// halfway through, restart search, but
-			dir		*= -1;																	// this time walk in the opposite direction.
-			data	^= 1;																		// Save new direction of watch
+			run   = data >> 1;                            // halfway through, restart search, but
+			dir   *= -1;                                  // this time walk in the opposite direction.
+			data  ^= 1;                                   // Save new direction of watch
 		}
-		else {																					// Hit the other watched literal
-			other_	= lits_[run];													// Store it in other_
+		else {                                          // Hit the other watched literal
+			other_  = lits_[run];                         // Store it in other_
 			// At this point we could check, if other_ is true 
 			// and if so terminate the search.
 			// But although this approach means less work *right now*, continuing to
@@ -318,8 +318,8 @@ void Clause::reason(const Literal& p, LitVec& rLits) {
 			rLits.push_back(~*r);
 		}
 	}
-	if (!isSentinel(*e)) {		// clause is contracted - add remaining literals to reason
-		rLits.push_back( *e );	// this one was already inverted in contract
+	if (!isSentinel(*e)) {    // clause is contracted - add remaining literals to reason
+		rLits.push_back( *e );  // this one was already inverted in contract
 		for (++e; !isSentinel(*e); ++e) {
 			rLits.push_back(~*e);
 		}
@@ -333,7 +333,7 @@ bool Clause::simplify(Solver& s, bool reinit) {
 		// clause is unit and therefore SAT
 		Clause::removeWatches(s);
 		return true;
-	}	
+	} 
 	Literal* watches[2] = {0, 0};
 	uint32 wc = 0;
 	bool sat = false;
@@ -351,18 +351,18 @@ bool Clause::simplify(Solver& s, bool reinit) {
 			*i = *(--j);
 		}
 	}
-	j->asUint() = 1;	// Ending sentinel
+	j->asUint() = 1;  // Ending sentinel
 	if (sat || size_ != uint32(j-begin()) || reinit) {
-		size_		= j-begin();
-		other_	= *begin();
+		size_   = j-begin();
+		other_  = *begin();
 		for (uint32 i = 0; i < wc; ++i) {
 			watches[i]->clearWatch();
 			s.removeWatch(~*watches[i], this);
 		}
-		if (sat)			{ return true; }
-		if (size_==2)	{ return s.addBinary(*begin(), *(begin()+1), false); }
-		if (size_==3)	{ return s.addTernary(*begin(), *(begin()+1), *(begin()+2),false); }
-		if (reinit)		{ std::random_shuffle(begin(), end(), irand); }
+		if (sat)      { return true; }
+		if (size_==2) { return s.addBinary(*begin(), *(begin()+1), false); }
+		if (size_==3) { return s.addTernary(*begin(), *(begin()+1), *(begin()+2),false); }
+		if (reinit)   { std::random_shuffle(begin(), end(), irand); }
 		initWatches(s);
 	}
 	return false;
@@ -397,7 +397,7 @@ bool Clause::isSatisfied(const Solver& s, LitVec& freeLits) const {
 		++r;
 	}
 	if (r != end()) {
-		other_ = *r;	// cache true literal
+		other_ = *r;  // cache true literal
 		return true;
 	}
 	return false;
@@ -412,7 +412,7 @@ void Clause::contract(Solver& s) {
 	// step 2: ignore level 0 literals - shouldn't be there in the first place
 	Literal* newEnd = end();
 	for (; s.level( (newEnd-1)->var() ) == 0; --newEnd);
-	newEnd->asUint() = 1;	// terminating sentinel
+	newEnd->asUint() = 1; // terminating sentinel
 	size_ = newEnd - begin();
 
 	// step 3: Determine the "active" part of the array.
@@ -421,13 +421,13 @@ void Clause::contract(Solver& s) {
 	Literal xDL = s.decisionLevel() > 1 
 		? s.decision(s.decisionLevel()-1)
 		: Literal();
-	newEnd			= std::lower_bound(begin()+2, end(), xDL, Detail::GreaterLevel(s));
+	newEnd      = std::lower_bound(begin()+2, end(), xDL, Detail::GreaterLevel(s));
 	if (newEnd != end()) {
 		// contract the clause by creating an artificial ending sentinel, i.e.
 		// an out-of-bounds literal that is true and watched.
 		*newEnd = ~*newEnd;
 		newEnd->watch();
-		s.addUndoWatch(s.level(newEnd->var()), this);	
+		s.addUndoWatch(s.level(newEnd->var()), this); 
 		size_ = newEnd - begin();
 	}
 }
@@ -435,13 +435,13 @@ void Clause::contract(Solver& s) {
 // LoopFormula
 /////////////////////////////////////////////////////////////////////////////////////////
 LoopFormula::LoopFormula(Solver& s, uint32 size, Literal* bodyLits, uint32 numBodies, uint32 bodyToWatch) {
-	activity_				= (uint32)s.stats.restarts + (size-numBodies);	
-	end_						= numBodies + 2;
-	size_						= end_+1;
-	other_					= end_-1;
-	lits_[0]				= Literal();	// Starting sentinel
-	lits_[end_-1]		= Literal();	// Position of active atom
-	lits_[end_]			= Literal();	// Ending sentinel - active part
+	activity_       = (uint32)s.stats.restarts + (size-numBodies);  
+	end_            = numBodies + 2;
+	size_           = end_+1;
+	other_          = end_-1;
+	lits_[0]        = Literal();  // Starting sentinel
+	lits_[end_-1]   = Literal();  // Position of active atom
+	lits_[end_]     = Literal();  // Ending sentinel - active part
 	for (uint32 i = size_; i != size+3; ++i) {
 		lits_[i] = Literal();
 	}
@@ -476,7 +476,7 @@ void LoopFormula::updateHeuristic(Solver& s) {
 		lits_[end_-1] = lits_[x];
 		s.strategies().heuristic->newConstraint(s, lits_+1, end_-1, Constraint_t::learnt_loop);
 	}
-	lits_[end_-1]	= saved;
+	lits_[end_-1] = saved;
 }
 
 bool LoopFormula::watchable(const Solver& s, uint32 idx) {
@@ -504,37 +504,37 @@ bool LoopFormula::isTrue(const Solver& s, uint32 idx) {
 }
 
 Constraint::PropResult LoopFormula::propagate(const Literal&, uint32& data, Solver& s) {
-	if (isTrue(s, other_)) {					// ignore clause, as it is 
-		return PropResult(true, true);	// already satisfied
+	if (isTrue(s, other_)) {          // ignore clause, as it is 
+		return PropResult(true, true);  // already satisfied
 	}
-	uint32	pos		= data >> 1;
-	uint32	idx		= pos;
+	uint32  pos   = data >> 1;
+	uint32  idx   = pos;
 	if (pos > end_) {
 		// p is one of the atoms - move to active part
-		lits_[end_-1]	= lits_[pos];
-		idx						= end_-1;
+		lits_[end_-1] = lits_[pos];
+		idx           = end_-1;
 	}
-	int			dir		= ((data & 1) << 1) - 1;
-	int			bounds= 0;
+	int     dir   = ((data & 1) << 1) - 1;
+	int     bounds= 0;
 	for (;;) {
-		for (idx+=dir;s.isFalse(lits_[idx]);idx+=dir);	// search non-false literal - sentinels guarantee termination
-		if (isSentinel(lits_[idx])) {							// Hit a bound,
-			if (++bounds == 2) {										// both ends seen, clause is unit, false, or sat
+		for (idx+=dir;s.isFalse(lits_[idx]);idx+=dir);  // search non-false literal - sentinels guarantee termination
+		if (isSentinel(lits_[idx])) {             // Hit a bound,
+			if (++bounds == 2) {                    // both ends seen, clause is unit, false, or sat
 				if (other_ == end_-1) {
 					uint32 x = end_+1;
 					for (; x != size_ && s.force(lits_[x], this);  ++x);
-					return Constraint::PropResult(x == size_, true);	
+					return Constraint::PropResult(x == size_, true);  
 				}
 				else {
-					return Constraint::PropResult(s.force(lits_[other_], this), true);	
+					return Constraint::PropResult(s.force(lits_[other_], this), true);  
 				}
 			}
-			idx		= std::min(pos, end_-1);					// halfway through, restart search, but
-			dir		*= -1;														// this time walk in the opposite direction.
-			data	^= 1;															// Save new direction of watch
+			idx   = std::min(pos, end_-1);          // halfway through, restart search, but
+			dir   *= -1;                            // this time walk in the opposite direction.
+			data  ^= 1;                             // Save new direction of watch
 		}
 		else if (!lits_[idx].watched() && watchable(s, idx)) { // found a new watchable literal
-			if (pos > end_) {			// stop watching atoms
+			if (pos > end_) {     // stop watching atoms
 				lits_[end_-1].clearWatch();
 				for (uint32 x = end_+1; x != size_; ++x) {
 					if (x != pos) {
@@ -545,7 +545,7 @@ Constraint::PropResult LoopFormula::propagate(const Literal&, uint32& data, Solv
 			}
 			lits_[pos].clearWatch();
 			lits_[idx].watch();
-			if (idx == end_-1) {	// start watching atoms
+			if (idx == end_-1) {  // start watching atoms
 				for (uint32 x = end_+1; x != size_; ++x) {
 					s.addWatch(~lits_[x], this, static_cast<uint32>(x << 1) + 0);
 					lits_[x].watch();
@@ -555,9 +555,9 @@ Constraint::PropResult LoopFormula::propagate(const Literal&, uint32& data, Solv
 				s.addWatch(~lits_[idx], this, static_cast<uint32>(idx << 1) + (dir==1));
 			}
 			return Constraint::PropResult(true, false);
-		}	
-		else if (lits_[idx].watched()) {					// Hit the other watched literal
-			other_	= idx;													// Store it in other_
+		} 
+		else if (lits_[idx].watched()) {          // Hit the other watched literal
+			other_  = idx;                          // Store it in other_
 		}
 	}
 }
@@ -633,16 +633,16 @@ bool LoopFormula::isSatisfied(const Solver& s, LitVec& freeLits) const {
 bool LoopFormula::simplify(Solver& s, bool) {
 	assert(s.decisionLevel() == 0);
 	typedef std::pair<uint32, uint32> WatchPos;
-	bool			sat = false;					// is the constraint SAT?
-	WatchPos	bodyWatches[2];				// old/new position of watched bodies
-	uint32		bw	= 0;							// how many bodies are watched?
-	uint32		j		= 1, i;
+	bool      sat = false;          // is the constraint SAT?
+	WatchPos  bodyWatches[2];       // old/new position of watched bodies
+	uint32    bw  = 0;              // how many bodies are watched?
+	uint32    j   = 1, i;
 	// 1. simplify the set of bodies:
 	// - search for a body that is true -> constraint is SAT
 	// - remove all false bodies
 	// - find the watched bodies
 	for (i = 1; i != end_-1; ++i) {
-		assert( !s.isFalse(lits_[i]) || !lits_[i].watched() ); // otherwise should be asserting	
+		assert( !s.isFalse(lits_[i]) || !lits_[i].watched() ); // otherwise should be asserting 
 		if (!s.isFalse(lits_[i])) {
 			sat |= s.isTrue(lits_[i]);
 			if (i != j) { lits_[j] = lits_[i]; }
@@ -650,8 +650,8 @@ bool LoopFormula::simplify(Solver& s, bool) {
 			++j;
 		}
 	}
-	uint32	newEnd		= j + 1;
-	uint32	numBodies	= j - 1;
+	uint32  newEnd    = j + 1;
+	uint32  numBodies = j - 1;
 	j += 2;
 	// 2. simplify the set of atoms:
 	// - remove all determined atoms
@@ -665,9 +665,9 @@ bool LoopFormula::simplify(Solver& s, bool) {
 					lits_[j].clearWatch();
 				}
 				else if (i != j) {
-					Watch* w	= s.getWatch(~lits_[j], this);
+					Watch* w  = s.getWatch(~lits_[j], this);
 					assert(w);
-					w->data	= (j << 1) + 0;
+					w->data = (j << 1) + 0;
 				}
 			}
 			++j;
@@ -677,10 +677,10 @@ bool LoopFormula::simplify(Solver& s, bool) {
 			lits_[i].clearWatch();
 		}
 	}
-	size_					= j;
-	end_					= newEnd;
-	lits_[end_]		= Literal();
-	lits_[end_-1]	= lits_[end_+1];
+	size_         = j;
+	end_          = newEnd;
+	lits_[end_]   = Literal();
+	lits_[end_-1] = lits_[end_+1];
 	if (sat || numBodies < 3 || size_ == end_ + 1) {
 		for (i = 0; i != bw; ++i) {
 			s.removeWatch(~lits_[bodyWatches[i].second], this);
@@ -700,9 +700,9 @@ bool LoopFormula::simplify(Solver& s, bool) {
 	other_ = 1;
 	for (i = 0; i != bw; ++i) {
 		if (bodyWatches[i].first != bodyWatches[i].second) {
-			Watch* w	= s.getWatch(~lits_[bodyWatches[i].second], this);
+			Watch* w  = s.getWatch(~lits_[bodyWatches[i].second], this);
 			assert(w);
-			w->data	= (bodyWatches[i].second << 1) + (w->data&1);
+			w->data = (bodyWatches[i].second << 1) + (w->data&1);
 		}
 	}
 	return false;

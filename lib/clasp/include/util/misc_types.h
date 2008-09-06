@@ -22,8 +22,8 @@
 #define CLASP_UTIL_MISC_TYPES_H_INCLUDED
 
 #include <clasp/include/util/platform.h>
-#include <utility>		// std::pair
-#include <functional>	// std::unary_function, std::binary_function
+#include <utility>    // std::pair
+#include <functional> // std::unary_function, std::binary_function
 #include <algorithm>
 /*!
  * \file 
@@ -35,7 +35,7 @@ namespace Clasp {
  */
 //@{
 
-inline unsigned hashId(unsigned key) {	
+inline unsigned hashId(unsigned key) {  
 	key = ~key + (key << 15);
 	key ^= (key >> 11);
 	key += (key << 3);
@@ -147,8 +147,8 @@ void remove_first_if(C& cont, const P& p) {
 //! An unary operator function that simply returns its argument
 template <class T>
 struct identity : std::unary_function<T, T>{
-	T&				operator()(T& x)			const { return x; }
-	const T&	operator()(const T& x)	const	{ return x; }
+	T&        operator()(T& x)      const { return x; }
+	const T&  operator()(const T& x)  const { return x; }
 };
 
 
@@ -188,7 +188,7 @@ struct compose_1 : public std::unary_function<
 	}
 protected:
 	OP1 op1_;
-	OP2	op2_;
+	OP2 op2_;
 };
 
 /*!
@@ -215,7 +215,7 @@ struct compose_2_1 : public std::unary_function<
 	}
 protected:
 	OP1 op1_;
-	OP2	op2_;
+	OP2 op2_;
 	OP3 op3_;
 };
 
@@ -245,7 +245,7 @@ struct compose_2_2 : public std::binary_function<
 	}
 protected:
 	OP1 op1_;
-	OP2	op2_;
+	OP2 op2_;
 	OP3 op3_;
 };
 
@@ -272,12 +272,12 @@ public:
 		t.swap(*this);
 		return *this;
 	}
-	T& operator*()	const { return *this->operator->(); }
+	T& operator*()  const { return *this->operator->(); }
 	T* operator->() const {
 		return (T*)(ptr_&~1u);
 	}
-	T*		release()		{ ptr_ &= ~1u; return get();	}
-	T*		get() const { return this->operator->();	}
+	T*    release()   { ptr_ &= ~1u; return get();  }
+	T*    get() const { return this->operator->();  }
 
 	void swap(SingleOwnerPtr& o) {
 		std::swap(ptr_, o.ptr_);
@@ -285,7 +285,7 @@ public:
 private:
 	SingleOwnerPtr(const SingleOwnerPtr&);
 	SingleOwnerPtr& operator=(const SingleOwnerPtr&);
-	uintp	ptr_;
+	uintp ptr_;
 };
 
 

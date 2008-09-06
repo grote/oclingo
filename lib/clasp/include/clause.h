@@ -110,12 +110,12 @@ public:
 	//! removes duplicate lits. Marks the clause as sat if it contains p and ~p
 	void simplify();
 private:
-	Solver*					solver_;		// solver in which new clauses are stored
-	LitVec					literals_;	// literals of the new clause
-	ConstraintType	type_;			// Type of the new clause
-	uint32					w2_	:30;		// position of the second watch - only needed for learnt clauses
-	uint32					sat_: 1;		// True if clause is SAT on top-level
-	uint32					unit_:1;		// True if clause is an asserting clause
+	Solver*         solver_;    // solver in which new clauses are stored
+	LitVec          literals_;  // literals of the new clause
+	ConstraintType  type_;      // Type of the new clause
+	uint32          w2_ :30;    // position of the second watch - only needed for learnt clauses
+	uint32          sat_: 1;    // True if clause is SAT on top-level
+	uint32          unit_:1;    // True if clause is an asserting clause
 };
 
 //! Class implementing a clause.
@@ -137,13 +137,13 @@ public:
 	 * \param lits The vector containing the literals for the clause.
 	 *
 	 * \pre lits contains at least two literals and:
-	 *	- all literals are currently free.
-	 *	- lits does not contain any duplicate literals.
-	 *	- if lits contains literal p it must not contain ~p.
+	 *  - all literals are currently free.
+	 *  - lits does not contain any duplicate literals.
+	 *  - if lits contains literal p it must not contain ~p.
 	 *  . 
 	 * \note The clause must be destroyed using Clause::destroy
-	 */	
-	static Constraint*	newClause(Solver& s, const LitVec& lits);
+	 */ 
+	static Constraint*  newClause(Solver& s, const LitVec& lits);
 	
 	/*!
 	 * Creates a new learnt clause from the literals contained in lits.
@@ -154,17 +154,17 @@ public:
 	 * \param secondWatch The index of the second literal to watch.
 	 *
 	 * \pre lits contains at least two literals and:
-	 *	- lits does not contain any duplicate literals.
-	 *	- if lits contains literal p it must not contain ~p.
-	 *	- lits[0] and lits[secondWatch] are valid watches, i.e. 
-	 *		- they are either both not false or
-	 *		- lits[secondWatch] is false AND
-	 *			- for each l != lits[0] in lits, isFalse(l) && level(l) <= level(lits[secondWatch])
-	 *			- !isFalse(lits[0]) OR level(lits[0]) >= level(lits[secondWatch])
+	 *  - lits does not contain any duplicate literals.
+	 *  - if lits contains literal p it must not contain ~p.
+	 *  - lits[0] and lits[secondWatch] are valid watches, i.e. 
+	 *    - they are either both not false or
+	 *    - lits[secondWatch] is false AND
+	 *      - for each l != lits[0] in lits, isFalse(l) && level(l) <= level(lits[secondWatch])
+	 *      - !isFalse(lits[0]) OR level(lits[0]) >= level(lits[secondWatch])
 	 *  . 
 	 * \note The clause must be destroyed using Clause::destroy
-	 */	
-	static LearntConstraint*	newLearntClause(Solver& s, const LitVec& lits, ConstraintType t, LitVec::size_type secondWatch);
+	 */ 
+	static LearntConstraint*  newLearntClause(Solver& s, const LitVec& lits, ConstraintType t, LitVec::size_type secondWatch);
 	
 	// Constraint-Interface
 	/*!
@@ -245,21 +245,21 @@ public:
 	LitVec::size_type size() const { return size_; }
 	
 	//! returns a pointer to the clause's first literal
-	const Literal* begin()	const	{ return const_cast<Clause*>(this)->begin(); }
+	const Literal* begin()  const { return const_cast<Clause*>(this)->begin(); }
 	//! returns a pointer that points just beyond the end of the clause.
-	const Literal* end()		const	{ return const_cast<Clause*>(this)->end(); }
+	const Literal* end()    const { return const_cast<Clause*>(this)->end(); }
 	
-	Literal* begin()	{ return lits() + 1; }
-	Literal* end()		{ return begin() + size_; }
+	Literal* begin()  { return lits() + 1; }
+	Literal* end()    { return begin() + size_; }
 protected:
 	~Clause() {}
 private:
 	Clause(Solver& s, const LitVec& lits, LitVec::size_type sw, ConstraintType t);
 	// returns the starting position of the literal array, i.e.
-	//	* lits_[0] if clause is a native constraint
-	//	* lits_[1] if clause is a learnt constraint. In that case, lits_[0] stores the activity
-	Literal* lits()		{ return lits_ + (type_ != 0); }	
-	const Literal* lits() const { return const_cast<Clause*>(this)->lits();}	
+	//  * lits_[0] if clause is a native constraint
+	//  * lits_[1] if clause is a learnt constraint. In that case, lits_[0] stores the activity
+	Literal* lits()   { return lits_ + (type_ != 0); }  
+	const Literal* lits() const { return const_cast<Clause*>(this)->lits();}  
 
 	bool isBound(uint32 idx, uint32 d) const {
 		return idx == (type_!=0)+(d&1)*(size_+1);
@@ -270,15 +270,15 @@ private:
 	// The idea behind contraction is to temporarily remove assigned literals from the clause in order
 	// to speed up TWL (fewer literals - faster searches).
 	// It is implemented here as follows:
-	//	* the literals of the clause are sorted by decreasing decision level.
-	//	* The literal array is divided into an "active" and a "passive" part. 
-	//	* The "active" part contains the starting sentinel SL and the literals from the highest decision levels
-	//	* The "passive" part contains the other literals and the ending sentinel SH
-	//	* Let X be first literal of the "passive" part. contract now 
-	//		* replaces X with ~X (note that ~X is true) and sets the watch-flag of ~X
-	//		* sets the size of the clause to the number of literals between SL and ~X
-	//		* adds an "undo"-watch to the decisions level on which X was assigned
-	//			-> ~X acts as ending sentinel during TWL as long as it is assigned
+	//  * the literals of the clause are sorted by decreasing decision level.
+	//  * The literal array is divided into an "active" and a "passive" part. 
+	//  * The "active" part contains the starting sentinel SL and the literals from the highest decision levels
+	//  * The "passive" part contains the other literals and the ending sentinel SH
+	//  * Let X be first literal of the "passive" part. contract now 
+	//    * replaces X with ~X (note that ~X is true) and sets the watch-flag of ~X
+	//    * sets the size of the clause to the number of literals between SL and ~X
+	//    * adds an "undo"-watch to the decisions level on which X was assigned
+	//      -> ~X acts as ending sentinel during TWL as long as it is assigned
 	void contract(Solver& s);
 
 	// Extends the "active" part of a currently contracted clause.
@@ -292,18 +292,18 @@ private:
 			++act();
 		}
 	}
-	uint32	size_ : 30;			// "active" size
-	uint32	type_	: 2;			//	if != 0 lits_[0] stores activity
-	mutable Literal	other_;	// stores a literal that was recently true
+	uint32  size_ : 30;     // "active" size
+	uint32  type_ : 2;      //  if != 0 lits_[0] stores activity
+	mutable Literal other_; // stores a literal that was recently true
 	// The literals of this clause.
 	// Layout: ActOpt SL lit1 ... litn SH
 	// SL and SH are sentinel literals, s.th:
-	//	* isTrue(SL)		&& isTrue(SH)
-	//	* SL.watched()	&& SH.watched()
+	//  * isTrue(SL)    && isTrue(SH)
+	//  * SL.watched()  && SH.watched()
 	// ActOpt stores the activity of the clause and is only present if clause is learnt
 	// At all times two literals in the range [begin(), end()) are watched and have
 	// their watched flag set.
-	Literal						lits_[0];		
+	Literal           lits_[0];   
 };
 
 
@@ -348,7 +348,7 @@ public:
 	 * \param numAtoms Number of atoms in the loop-formula.
 	 *
 	 * \pre all body-literals are currently false.
-	 */	
+	 */ 
 	static LoopFormula* newLoopFormula(Solver& s, Literal* bodyLits, uint32 numBodies, uint32 bodyToWatch, uint32 numAtoms) {
 		void* mem = ::operator new( sizeof(LoopFormula) + (numBodies+numAtoms+3) * sizeof(Literal) );
 		return new (mem) LoopFormula(s, numBodies+numAtoms, bodyLits, numBodies, bodyToWatch);
@@ -406,11 +406,11 @@ private:
 	LoopFormula(Solver& s, uint32 size, Literal* bodyLits, uint32 numBodies, uint32 bodyToWatch);
 	bool watchable(const Solver& s, uint32 idx);
 	bool isTrue(const Solver& s, uint32 idx);
-	uint32	activity_;		// activity of this loop formula
-	uint32	end_;					// position of second sentinel
-	uint32	size_;				// size of lits_
+	uint32  activity_;    // activity of this loop formula
+	uint32  end_;         // position of second sentinel
+	uint32  size_;        // size of lits_
 	mutable uint32 other_;// stores the position of a literal that was recently true
-	Literal lits_[0];			// S B1...Bm ai S a1...an
+	Literal lits_[0];     // S B1...Bm ai S a1...an
 };
 }
 #endif

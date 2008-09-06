@@ -29,7 +29,7 @@
 
 namespace Clasp { namespace SatElite {
 
-class Clause;	// Special clause class optimized for use with the preprocessor
+class Clause; // Special clause class optimized for use with the preprocessor
 
 //! SatElite preprocessor for clauses
 /*!
@@ -54,49 +54,49 @@ public:
 		enum Action { pre_start, iter_start, iter_done, pre_done, pre_stopped };
 		typedef void (*StatFun)(uint32, Action);
 		Options() : verbose(0), maxTime(uint32(-1)), maxIters(uint32(-1)), maxOcc(uint32(-1)), elimPure(true) {}
-		StatFun verbose;	/**< print progress information?											*/
-		uint32	maxTime;	/**< maximal runtime, checked after each iteration		*/
-		uint32	maxIters;	/**< maximal number of iterations											*/
-		uint32	maxOcc;		/**< skip v, if #occ(v) > maxOcc && #occ(~v) > maxOcc */
-		bool		elimPure;	/**< eliminate pure literals?													*/
+		StatFun verbose;  /**< print progress information?                      */
+		uint32  maxTime;  /**< maximal runtime, checked after each iteration    */
+		uint32  maxIters; /**< maximal number of iterations                     */
+		uint32  maxOcc;   /**< skip v, if #occ(v) > maxOcc && #occ(~v) > maxOcc */
+		bool    elimPure; /**< eliminate pure literals?                         */
 	} options;
 
 	bool preprocess();
 	void extendModel( State& m );
 	bool hasSymModel() const { return !unconstr_.empty(); }
-	typedef PodVector<Clause*>::type	ClauseList;
+	typedef PodVector<Clause*>::type  ClauseList;
 private:
-	typedef PodVector<uint8>::type		TouchedList;
+	typedef PodVector<uint8>::type    TouchedList;
 	SatElite(const SatElite&);
 	const SatElite& operator=(const SatElite&);
 	struct ElimData {
-		typedef Clause** ClauseArray;	
+		typedef Clause** ClauseArray; 
 		ElimData(Var v) : eliminated(0), var(v) {}
-		ClauseArray	eliminated;	// null-terminated array of clauses containing var
-		Var					var;				// eliminated var
+		ClauseArray eliminated; // null-terminated array of clauses containing var
+		Var         var;        // eliminated var
 	};
 	typedef PodVector<ElimData>::type ElimList;
 	// For each var v
 	struct OccurList {
 		OccurList() : pos(0), dirty(0), neg(0), litMark(0) {}
-		LitVec	clauses;		// ids of clauses containing v or ~v	(var() == id, sign() == v or ~v)
-		VarVec	watches;		// ids of clauses watching v or ~v (literal 0 is the watched literal)
-		uint32	pos:31;			// number of *relevant* clauses containing v
-		uint32	dirty:1;		// does clauses contain removed clauses?
-		uint32	neg:30;			// number of *relevant* clauses containing v
-		uint32	litMark:2;	// 00: no literal of v marked, 01: v marked, 10: ~v marked
-		uint32	numOcc()					const { return pos + neg; }
-		uint32	cost()						const { return pos * neg; }
-		void		clear() {
+		LitVec  clauses;    // ids of clauses containing v or ~v  (var() == id, sign() == v or ~v)
+		VarVec  watches;    // ids of clauses watching v or ~v (literal 0 is the watched literal)
+		uint32  pos:31;     // number of *relevant* clauses containing v
+		uint32  dirty:1;    // does clauses contain removed clauses?
+		uint32  neg:30;     // number of *relevant* clauses containing v
+		uint32  litMark:2;  // 00: no literal of v marked, 01: v marked, 10: ~v marked
+		uint32  numOcc()          const { return pos + neg; }
+		uint32  cost()            const { return pos * neg; }
+		void    clear() {
 			this->~OccurList();
 			new (this) OccurList();
 		}
-		void		add(uint32 id, bool sign){
+		void    add(uint32 id, bool sign){
 			pos += uint32(!sign);
 			neg += uint32(sign);
 			clauses.push_back(Literal(id, sign));
 		}
-		void		remove(uint32 id, bool sign, bool updateClauseList) {
+		void    remove(uint32 id, bool sign, bool updateClauseList) {
 			pos -= uint32(!sign);
 			neg -= uint32(sign);
 			if (updateClauseList) { 
@@ -106,9 +106,9 @@ private:
 			else { dirty = 1; }
 		}
 		// note: only one literal of v shall be marked at a time
-		bool		marked(bool sign) const		{ return (litMark & (1+sign)) != 0; }
-		void		mark(bool sign)						{ litMark = (1+sign); }
-		void		unmark()									{ litMark = 0; }
+		bool    marked(bool sign) const   { return (litMark & (1+sign)) != 0; }
+		void    mark(bool sign)           { litMark = (1+sign); }
+		void    unmark()                  { litMark = 0; }
 	};
 	struct LessOccCost {
 		explicit LessOccCost(OccurList*& occ) : occ_(occ) {}
@@ -118,47 +118,47 @@ private:
 		OccurList*& occ_;
 	};
 	typedef bk_lib::indexed_priority_queue<LessOccCost> ElimHeap;
-	Clause*					peekSubQueue() const {
+	Clause*         peekSubQueue() const {
 		assert(qFront_ < queue_.size());
 		return clauses_[ queue_[qFront_] ];
 	}
-	inline Clause*	popSubQueue();
-	inline void			addToSubQueue(uint32 clauseId);
-	void						updateHeap(Var v) {
+	inline Clause*  popSubQueue();
+	inline void     addToSubQueue(uint32 clauseId);
+	void            updateHeap(Var v) {
 		assert(solver_);
 		if (!solver_->frozen(v) && !solver_->eliminated(v)) {
 			elimHeap_.update(v);
 		}
 	}
-	inline uint32		findUnmarkedLit(const Clause& c, uint32 x) const;
-	void		attach(uint32 cId, bool initialClause);
-	void		detach(uint32 cId, bool destroy);
-	bool		propagateFacts();
-	bool		backwardSubsume();
-	Literal	subsumes(const Clause& c, const Clause& other, Literal res) const;
-	bool		strengthenClause(uint32 clauseId, Literal p);
-	bool		subsumed(LitVec& cl);
-	bool		eliminateVar(Var v);
-	bool		trivialResolvent(const Clause& c1, const Clause& c2, Var v) const;
-	bool		addResolvent(const Clause& c1, const Clause& c2, Var v);
+	inline uint32   findUnmarkedLit(const Clause& c, uint32 x) const;
+	void    attach(uint32 cId, bool initialClause);
+	void    detach(uint32 cId, bool destroy);
+	bool    propagateFacts();
+	bool    backwardSubsume();
+	Literal subsumes(const Clause& c, const Clause& other, Literal res) const;
+	bool    strengthenClause(uint32 clauseId, Literal p);
+	bool    subsumed(LitVec& cl);
+	bool    eliminateVar(Var v);
+	bool    trivialResolvent(const Clause& c1, const Clause& c2, Var v) const;
+	bool    addResolvent(const Clause& c1, const Clause& c2, Var v);
 
-	uint32	freeClauseId();
-	void		cleanUp();
+	uint32  freeClauseId();
+	void    cleanUp();
 
 	typedef std::pair<uint32, uint32> ElimPos;
-	OccurList*		occurs_;		// occur list for each variable
-	ElimList*			elimList_;	// stores eliminated vars and the clauses in which they occur
-	LitVec				unconstr_;	// eliminated vars that are unconstraint w.r.t the current model
-	ElimHeap			elimHeap_;	// candidates for variable elimination; ordered by increasing occurrence-cost
-	ClauseList		clauses_;		// all clauses
-	ClauseList	posT_, negT_;	// temporary clause lists used in eliminateVar
-	ClauseList		resCands_;	// pairs of clauses to be resolved
-	LitVec				resolvent_;	// temporary, used in addResolvent
-	VarVec				queue_;			// indices of clauses waiting for subsumption-check
-	ElimPos				elimPos_;		// position of eliminated clause whose id is to be reused next
-	uint32				qFront_;		// front of queue_, i.e. [queue_.begin()+qFront_, queue.end()) is the subsumption queue
-	uint32				facts_;			// [facts_, solver.trail.size()): new top-level facts
-	uint32				clRemoved_;	// number of clauses removed since last compaction
+	OccurList*    occurs_;    // occur list for each variable
+	ElimList*     elimList_;  // stores eliminated vars and the clauses in which they occur
+	LitVec        unconstr_;  // eliminated vars that are unconstraint w.r.t the current model
+	ElimHeap      elimHeap_;  // candidates for variable elimination; ordered by increasing occurrence-cost
+	ClauseList    clauses_;   // all clauses
+	ClauseList  posT_, negT_; // temporary clause lists used in eliminateVar
+	ClauseList    resCands_;  // pairs of clauses to be resolved
+	LitVec        resolvent_; // temporary, used in addResolvent
+	VarVec        queue_;     // indices of clauses waiting for subsumption-check
+	ElimPos       elimPos_;   // position of eliminated clause whose id is to be reused next
+	uint32        qFront_;    // front of queue_, i.e. [queue_.begin()+qFront_, queue.end()) is the subsumption queue
+	uint32        facts_;     // [facts_, solver.trail.size()): new top-level facts
+	uint32        clRemoved_; // number of clauses removed since last compaction
 };
 }}
 #endif

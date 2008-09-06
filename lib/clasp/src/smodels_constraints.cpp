@@ -29,15 +29,15 @@ namespace Clasp {
 /////////////////////////////////////////////////////////////////////////////////////////
 bool BasicAggregate::newWeightConstraint(Solver& s, Literal con, WeightLitVec& lits, weight_t bound) {
 	assert(s.decisionLevel() == 0);
-	if (bound <= 0) {	// trivially SAT
+	if (bound <= 0) { // trivially SAT
 		return s.force(con, 0);
 	}
 	weight_t sumWeight = 0;
-	bool card			= true;	// cardinality constraint?
+	bool card     = true; // cardinality constraint?
 	for (uint32 i = 0; i < lits.size();) {
 		if (s.isTrue(lits[i].first)) {
 			bound -= lits[i].second;
-			if (bound <= 0) {	// trivially SAT
+			if (bound <= 0) { // trivially SAT
 				return s.force( con, 0 );
 			}
 			lits[i] = lits.back();
@@ -54,7 +54,7 @@ bool BasicAggregate::newWeightConstraint(Solver& s, Literal con, WeightLitVec& l
 			++i;
 		}
 	}
-	if (bound > sumWeight) {	// trivially UNSAT
+	if (bound > sumWeight) {  // trivially UNSAT
 		return s.force( ~con, 0 );
 	}
 	if (!card) {
@@ -76,29 +76,29 @@ bool BasicAggregate::newWeightConstraint(Solver& s, Literal con, WeightLitVec& l
 // BasicAggregate - common code
 /////////////////////////////////////////////////////////////////////////////////////////
 BasicAggregate::BasicAggregate(Solver& s, Literal con, const WeightLitVec& lits, uint32 bound, uint32 sumWeights, bool card) {
-	wr_					= !card;
-	size_				= (uint32)lits.size()+1;		// counting con
-	active_			= ffb_btb | ftb_bfb;				// initially, both constraints are active
-	bound_[0]		= (sumWeights-bound)+1;			// ffb-btb
-	bound_[1]		= bound;										// ftb-bfb
-	undo_				= undoStart()-1;
-	uint32* w		= wr_ ? &lits_[size_].asUint() : 0;
-	lits_[0]		= ~con;
-	if (w) *w++	= 1;
-	s.addWatch( ~lits_[0], this, 0);		// ffb-btb: watch con
-	s.addWatch(  lits_[0], this, 1);		// ftb-bfb: watch ~con
+	wr_         = !card;
+	size_       = (uint32)lits.size()+1;    // counting con
+	active_     = ffb_btb | ftb_bfb;        // initially, both constraints are active
+	bound_[0]   = (sumWeights-bound)+1;     // ffb-btb
+	bound_[1]   = bound;                    // ftb-bfb
+	undo_       = undoStart()-1;
+	uint32* w   = wr_ ? &lits_[size_].asUint() : 0;
+	lits_[0]    = ~con;
+	if (w) *w++ = 1;
+	s.addWatch( ~lits_[0], this, 0);    // ffb-btb: watch con
+	s.addWatch(  lits_[0], this, 1);    // ftb-bfb: watch ~con
 	s.setFrozen(con.var(), true);
 	for (uint32 i = 0, end = (uint32)lits.size(); i != end; ++i) {
-		uint32 idx	= i+1;
-		lits_[idx]	= lits[i].first;
-		if (w) *w++	= lits[i].second;
-		s.addWatch( ~lits_[idx], this,	(idx<<1)+0);	// ffb-btb: watch ~li
-		s.addWatch(  lits_[idx], this,  (idx<<1)+1);	// ftb-bfb: watch li
+		uint32 idx  = i+1;
+		lits_[idx]  = lits[i].first;
+		if (w) *w++ = lits[i].second;
+		s.addWatch( ~lits_[idx], this,  (idx<<1)+0);  // ffb-btb: watch ~li
+		s.addWatch(  lits_[idx], this,  (idx<<1)+1);  // ftb-bfb: watch li
 		s.setFrozen(lits_[idx].var(), true);
 	}
 	if (w) {
-		next()	= 1;
-		bp()		= 0;
+		next()  = 1;
+		bp()    = 0;
 	}
 	s.strategies().heuristic->newConstraint(s, &lits_[0], size_, Constraint_t::native_constraint);
 }
@@ -121,8 +121,8 @@ uint32 BasicAggregate::lastUndoLevel(Solver& s) {
 // undo-position and, if mark is true, marks it as processed by 
 // setting the literal's watched-flag.
 // The literal is stored as follows:
-//	- var is set to idx, i.e. the index of the literal in lits_
-//	- sign is set to a, i.e. 0 if a == ffb_btb. Otherwise 1
+//  - var is set to idx, i.e. the index of the literal in lits_
+//  - sign is set to a, i.e. 0 if a == ffb_btb. Otherwise 1
 void BasicAggregate::addUndo(Solver& s, uint32 idx, ActiveAggregate a, bool mark) {
 	if (s.decisionLevel() != lastUndoLevel(s)) {
 		s.addUndoWatch(s.decisionLevel(), this);
@@ -132,18 +132,18 @@ void BasicAggregate::addUndo(Solver& s, uint32 idx, ActiveAggregate a, bool mark
 }
 
 Constraint::PropResult BasicAggregate::propagate(const Literal&, uint32& d, Solver& s) {
-	uint32	con		= 1 + (d&1);			// determine the affected constraint
-	int32&	bound = bound_[con-1];	// and its bound
-	if ( (con & active_) != 0 && bound > 0) {		// process only relevant literals
+	uint32  con   = 1 + (d&1);      // determine the affected constraint
+	int32&  bound = bound_[con-1];  // and its bound
+	if ( (con & active_) != 0 && bound > 0) {   // process only relevant literals
 		uint32 idx = d>>1;
 		addUndo(s, idx, (ActiveAggregate)con,true);// add literal to undo set and mark as processed
 		Literal body = lit(0, (ActiveAggregate)con);
-		if ( (bound -= weight(idx)) <= 0 ) {			
-			active_ = con;									// con is asserting, ignore other constraint until next backtrack
-			if (!lits_[0].watched()) {			// forward propagate body
+		if ( (bound -= weight(idx)) <= 0 ) {      
+			active_ = con;                  // con is asserting, ignore other constraint until next backtrack
+			if (!lits_[0].watched()) {      // forward propagate body
 				return PropResult(s.force(body, this), true);
 			}
-			else if (s.isFalse(body)) {			// backward propagate body
+			else if (s.isFalse(body)) {     // backward propagate body
 				for (uint32 i = 1; i != size_; ++i) {
 					if (!lits_[i].watched() && !s.force(lit(i, (ActiveAggregate)con), this)) {
 						return PropResult(false, true);
@@ -151,7 +151,7 @@ Constraint::PropResult BasicAggregate::propagate(const Literal&, uint32& d, Solv
 				}
 			}
 		}
-		else if (wr_ != 0 && lits_[0].watched() && s.isFalse(body)) {	
+		else if (wr_ != 0 && lits_[0].watched() && s.isFalse(body)) { 
 			// backward propagate body in weight constraint
 			for (uint32& x = next(); x != size_; ++x) {
 				if (!lits_[x].watched()) {
@@ -217,7 +217,7 @@ void BasicAggregate::undoLevel(Solver& s) {
 		else { --bp(); }
 		idx = lits_[--undo_].var();
 	}
-	if (wr_)					{ next()	= 1; }
+	if (wr_)          { next()  = 1; }
 	if (!wr_ || !bp()){ active_ = ffb_btb+ftb_bfb; }
 }
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ MinimizeConstraint::MinimizeConstraint()
 	, activeIdx_(0)
 	, mode_(compare_less) 
 	, restart_(false) {
-	undoList_.push_back( UndoLit(posLit(0), 0, true) );	// sentinel
+	undoList_.push_back( UndoLit(posLit(0), 0, true) ); // sentinel
 }
 
 MinimizeConstraint::~MinimizeConstraint() {
@@ -263,8 +263,8 @@ void MinimizeConstraint::minimize(Solver& s, const WeightLitVec& literals) {
 				s.setFrozen(i->first.var(), true);
 			}
 			LitRef newOcc;
-			newOcc.ruleIdx_	= (uint32)minRules_.size()-1;
-			newOcc.litIdx_	= (uint32)(j - nr->lits_.begin());
+			newOcc.ruleIdx_ = (uint32)minRules_.size()-1;
+			newOcc.litIdx_  = (uint32)(j - nr->lits_.begin());
 			occurList_[ index_[idx] ].push_back( newOcc );
 			++j;
 		}
@@ -318,10 +318,10 @@ Constraint::PropResult MinimizeConstraint::propagate(const Literal& p, uint32& d
 			undoList_.pop_back();
 		}
 		// we need ~p to compute the reason but also p so that the sum is correctly backtracked.
-		undoList_.pop_back();	// replace p with ~p, p.
+		undoList_.pop_back(); // replace p with ~p, p.
 		undoList_.push_back( UndoLit(~p, activePL_, false) );
 		undoList_.push_back( UndoLit(p, data, true) );
-		return PropResult(s.force(~p, this), true);	// force conflict
+		return PropResult(s.force(~p, this), true); // force conflict
 	}
 	return PropResult(true, true);
 }
@@ -336,7 +336,7 @@ bool MinimizeConstraint::backpropagate(Solver& s, MinRule* r) {
 				if (newSum < r->opt_ || (newSum == r->opt_ && propPL == activePL_ && !conflict(++propPL))) {
 					return true;
 				}
-				else {	// setting x to true would lead to a conflict -> force ~x
+				else {  // setting x to true would lead to a conflict -> force ~x
 					addUndo(s, ~x.first, propPL, true);
 					s.force(~x.first, this);
 				}
@@ -346,7 +346,7 @@ bool MinimizeConstraint::backpropagate(Solver& s, MinRule* r) {
 		if (r->sum_ < r->opt_ || (activePL_ + 1) == minRules_.size()) {
 			break;
 		}
-		++activePL_, activeIdx_ = 0;	// continue with next rule
+		++activePL_, activeIdx_ = 0;  // continue with next rule
 		r = rule(activePL_);
 	} while (r->sum_ <= r->opt_);
 	return r->sum_ <= r->opt_;
@@ -373,9 +373,9 @@ uint64 MinimizeConstraint::models() const {
 // Stores the current model as the optimum and determines the decision level 
 // on which the search should continue.
 // Returns maxDL(R)-1, where
-//	R: the set of minimize rules
+//  R: the set of minimize rules
 //  maxDL(R): the highest decision level on which one of the literals
-//	from R was assigned true.	
+//  from R was assigned true. 
 uint32 MinimizeConstraint::setModel(Solver& s) {
 	assert(!minRules_.empty());
 	for (LitVec::size_type i = 0; i < minRules_.size()-1; ++i) {
@@ -411,14 +411,14 @@ bool MinimizeConstraint::backtrackFromModel(Solver& s) {
 	if (!restart_) {
 		while (s.backtrack() && dl < s.decisionLevel());
 		assert(dl == s.decisionLevel());
-		activePL_		= 0;
-		activeIdx_	= 0;
+		activePL_   = 0;
+		activeIdx_  = 0;
 		return backpropagate(s, rule(activePL_));
 	}
 	else {
 		s.undoUntil( 0 );
-		activePL_		= 0;
-		activeIdx_	= 0;
+		activePL_   = 0;
+		activeIdx_  = 0;
 		return select(s) && backpropagate(s, rule(activePL_));
 	}
 }
@@ -437,8 +437,8 @@ void MinimizeConstraint::undoLevel(Solver& s) {
 			for (LitOccurrence::size_type i = 0; i < occ.size(); ++i) {
 				rule(occ[i])->sum_ -= weight(occ[i]);
 				if (pLevel(occ[i]) <= activePL_) {
-					activePL_		= pLevel(occ[i]);
-					activeIdx_	= 0;
+					activePL_   = pLevel(occ[i]);
+					activeIdx_  = 0;
 				}
 			}
 		}
