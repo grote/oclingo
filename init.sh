@@ -68,8 +68,8 @@ function prepare()
 	if [[ $mingw == 1 ]]; then
 		mkdir -p win32
 		cd win32
-		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
 		cmake -D CMAKE_TOOLCHAIN_FILE=../../../mingw.cmake $2 ../../..
+		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
 		cd ..
 	fi
 
