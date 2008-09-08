@@ -11,16 +11,29 @@
 \usepackage{multirow}
 \usepackage{color}
 \usepackage[nofancy]{svninfo}
+\usepackage{comments}
 
 
 
 \author{Max Ostrowski}
-\title{Using gringo, clingo and iclingo\\--Draft--\\Rev.\svnInfoRevision}
+\title{Using gringo, clingo and iclingo
+\\\small{Rev.\svnInfoRevision}
+}
 \date{\today}
 
 \begin{document}
 \svnInfo $Id$
 \maketitle
+\begin{center}\stamp\end{center}
+%\includecomment{comment}
+%\excludecomment{notthisone}
+
+\abstract{}
+This paper introduces the new tools gringo, clingo and iclingo of the potassco project\cite{download}.
+Since the variety of programs for grounding logic programs with first order logic variables is low, a new grounding front-end for ASP was developed. This front-end called gringo, has a well defined input language described in this paper and outdoes former approaches in speed, memory consumption and usability.
+Clingo is a compound of gringo and clasp, a full blown answerset solver.
+Iclingo is a program capable of incremental solving.
+All three tools are introduced and their use is recorded.
 
 \tableofcontents
 \section{Introduction}
@@ -38,18 +51,18 @@ First, a grounder translates a non-ground problem description into a proposition
 \end{figure}
 Gringo is a state of the art grounder and has many features that makes writing logic programs easy.
 It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.0\cite{gringopaper}.
-Therefore it supports binder splitting, backjumping and all other features already implemented in gringo1.0.
+Therefore it supports binder splitting, backjumping and all other features already implemented in gringo1.0.0.
 A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured language.
-The goal of this work is to give an overview of the features supported by gringo2.0 and its derivates.
+The goal of this work is to give an overview of the features supported by gringo and its derivates.
 Three different packages of gringo exist.
-The first version is gringo2.0, it acts as a grounder and supports several output formats and even a human readable format for debugging purposes. This version can ground logic programs and output them to files or pipe them to a solver.
+The first version is gringo, it acts as a grounder and supports several output formats and even a human readable format for debugging purposes. This version can ground logic programs and output them to files or pipe them to a solver.
 The second version is called clingo and is a grounder with a built-in solver clasp \cite{gekanesc07b}.
 Output can directly be given to the solver and answer sets can be computed.
-The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found in \cite{gekaosscth08a}.
-In this paper, at first, the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program and how to write an incremental logic program is given. In the next chapter a brief description of how to use the three programs gringo2.0, clingo and iclingo and their options for the command line is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
-The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
+The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo can be used with clasp incrementally. Detailed information about incremental solving can be found in \cite{gekaosscth08a}.
+In this paper, at first, the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program and how to write an incremental logic program is given. In the next chapter a brief description of how to use the three programs gringo, clingo and iclingo and their options for the command line is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
+The syntax of the gringo input language can be found in the appendix \ref{appendix}.
 \paragraph{Versions}
-This paper references the programs with their following version numbers:
+This paper references the programs with the following version numbers:
 \begin{itemize}
  \item \texttt{gringo\ \ 2.0.0}
  \item \texttt{clingo\ \ 1.0.0}
@@ -105,15 +118,15 @@ A logic program $\Pi$ over $\mathcal{L(P,F,C)}$ is a finite set of rules over $\
 
 \subsection{$\lambda$-Restriction}
 \label{domainrestricted}
-There exist two major grounders for ASP besides gringo1.0, lParse \cite{lparseManual} and  the DLV grounding module\cite{DLV}.
+There exist two major grounders for ASP besides gringo, lParse \cite{lparseManual} and  the DLV grounding module\cite{DLV}.
 To ensure the existence of an equivalent ground instantiation of a program both grounders except a subclass of logic programs. For lParse the logic programs must be $\omega$-restricted\cite{omega} while DLV can handle safe programs\cite{safe}.
-gringo2.0 verifies that the input program is $\lambda$-
+Gringo verifies that the input program is $\lambda$-
 restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. 
 $\lambda$-restrictedness extends the capabilities of $\omega$-restricted programs. The definition of $\lambda$-restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
 $\lambda$-restrictedness can not be compared with the safe programs of DLV since there exist programs that are safe and not $\lambda$-restricted and vice versa.
 \newline
 To give a gross impression of what $\lambda$-restriction means for writing a logic program an informal description is given.
-In gringo2.0 every variable used in a rule must have a complete domain. This means that this variable has to occur in at least one predicate whose domain is completed. Therefore the predicate must be in the head of rules that are already domain restricted. So the grounder has to find a valid order of the rules so that every predicate in the head is completed before it is used as a domain predicate for the next rules.
+In gringo every variable used in a rule must have a complete domain. This means that this variable has to occur in at least one predicate whose domain is completed. Therefore the predicate must be in the head of rules that are already domain restricted. So the grounder has to find a valid order of the rules so that every predicate in the head is completed before it is used as a domain predicate for the next rules.
 To make things more clear, an example is given
 \begin{verbatim}
  zig(0) :- not zag(0).   zag(0) :- not zig(0).
@@ -159,14 +172,14 @@ To express an integrity constraint, a rule with an empty body is used.
 
 \subsection{Advanced Language Features}
 To ease the process of writing logic programs some advanced features in the input syntax are introduced and are now explained in detail.
-For the most problems it is possible to write a much shorter version of the program with the extended syntax.
+For the most problems it is possible to write a much shorter and sometimes even faster version of the program with the extended syntax.
 %Even a speedup in solving the instances of the problem can happen TODO ?
 For a full syntax description in EBNF see appendix (\ref{appendix}).
 \paragraph{Function Symbols}
-Function symbols are fully supported with gringo2.0.
+Function symbols are fully supported with gringo.
 They can be finitely nested and also be used as domain predicates.
-While in lParse function symbols are allowed in a very restricted way, no restrictions apply in gringo2.0.
-The following program can not be grounded with lParse since $X$ is an unrestricted variable. With gringo2.0 the program is now groundable.
+While in lParse function symbols are allowed in a very restricted way, no restrictions apply in gringo.
+The following program can not be grounded with lParse since $X$ is an unrestricted variable. With gringo the program is now groundable.
 \begin{verbatim}
 a(X) :- f(1,g(X)).
 f(1,X) :- f(X).
@@ -242,7 +255,7 @@ If used in the body instead, the atoms will be logically combined using a conjun
  a(X;1..2) :- b(X;a;b).
  b(foo). b(bar).
 \end{verbatim}
-will results in the rules\footnote{gringo2.0 would simplify the grounded rules since some literals in the body are facts}
+will results in the rules\footnote{gringo would simplify the grounded rules since some literals in the body are facts}
 \begin{verbatim}
  a(foo,1) :- b(foo), b(a), b(b).
  a(foo,2) :- b(foo), b(a), b(b).
@@ -283,7 +296,7 @@ would result in the grounded program
 \end{verbatim}
 
 \subparagraph{Relational Operators}
-The relational operators are ``less than'' ($<$),\\ ``greater than'' ($>$), ``less equal'' ($<=$), ``greater equal'' ($>=$) , ``equal'' ($==$) and ``not equal'' ($!=$).
+The relational operators are ``less than'' ($<$), ``greater than'' ($>$), ``less equal'' ($<=$), ``greater equal'' ($>=$) , ``equal'' ($==$) and ``not equal'' ($!=$).
 They can be used to constrain certain variables.
 For example, the following rule is only generated for all unifications where $X$ is greater or equal $Y-1$.
 \begin{verbatim}
@@ -339,7 +352,7 @@ A disjunction can only occur in the head of a rule.
  red | green | blue :- colored.
 \end{verbatim}
 Using disjunctions in logic programs can increase expressiveness and complexity of the logic program.
-A solver for disjunctive logic programs such as claspD \cite{claspD} or cmodels \cite{cmodels} is needed to solve such programs.
+A solver for disjunctive logic programs such as claspD \cite{claspD} or cmodels \cite{cmodels} is needed to solve such programs. Clingo is currently not able to solve disjunctive programs.
 
 \paragraph{Aggregates}
 An aggregate is a set or a multiset of atoms and has a lower and an upper bound.
@@ -348,7 +361,14 @@ The general syntax is
  lower aggregate_name [atom1=w1, ..., atomN=wN] upper
 \end{verbatim}
 If squared brackets are used, the atom list is interpreted as a multiset, otherwise, for curly brackets, as a set of atoms.
-The lower and upper bound is optional, and can be omitted.
+The lower and upper bound is optional, and can be omitted. The supported aggregates are
+\begin{verbatim}
+ 0 count {a, b, not c} 2.
+ 1 sum {a=1, b=3, not c=-2} 2.
+ 0 max {a=1, b=2, not c=3} 5.
+ 1 min {a=2, b=4, not c=1} 3.
+\end{verbatim}
+and are now explained in detail.
 
 \subparagraph{Count}
 A ``count'' aggregate is a set of atoms and has an optional lower and upper bound.
@@ -399,7 +419,7 @@ This program hides all predicates from the output of the ASP solver instead of d
 
 \paragraph{hide and show}
 The hide construct is used to hide atoms from the output of the ASP solver.
-Two different syntaxes are supported by gringo2.0.
+Two different syntaxes are supported by gringo.
 The first 
 \begin{verbatim}
  #hide name/arity.
@@ -449,7 +469,7 @@ $number$ is the number of models that shall be computed by the answer set solver
 All positive atoms in the compute statement must be in the computed models, and all negated atoms do not have to be in the models of the program.
 The compute statement is solver dependent and not supported by every solver.
 \paragraph{comments}
-Two kinds of comments were supported by gringo2.0.
+Two kinds of comments were supported by gringo.
 Line based comments start with a ``\texttt{\%}''.
 Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated as a comment and is therefore omitted.
 Block based comments can span over several lines.
@@ -646,9 +666,9 @@ If the following lines were added to the program, the answer set only consists o
 \subsection{Command Line Interface}
 All gringo tools can be downloaded as binary from \cite{download}. To build them from source, an installation guide ``INSTALL'' is included in the tar file.
 The gringo tools can be started from the command line and have some parameters that can be useful.
-All programs are fully backward compatible meaning, all options of gringo2.0 are valid in clingo and iclingo, and all options of clingo are valid in iclingo.
-\subsection{Gringo2.0 Options}
-Gringo2.0 can be called from the command line via
+All programs are fully backward compatible meaning, all options of gringo are valid in clingo and iclingo, and all options of clingo are valid in iclingo.
+\subsection{Gringo Options}
+Gringo can be called from the command line via
 \begin{verbatim}
  gringo (gringo option|file)*
 \end{verbatim}
@@ -664,10 +684,10 @@ Prints additional information during processing.
 Prints extended statistic information.
 
 \paragraph{\texttt{--text,-t}}
-Parameter ``\texttt{--text}'' invokes the text output method, so the output is printed in human readable format, which is also the input format for gringo2.0. The output is variable free and some simplifications on the program were made. To convert a variable free program in plain format into a format readable by a solver use the \texttt{--ground} option.
+Parameter ``\texttt{--text}'' invokes the text output method, so the output is printed in human readable format, which is also the input format for gringo. The output is variable free and some simplifications on the program were made. To convert a variable free program in plain format into a format readable by a solver use the \texttt{--ground} option.
 \paragraph{\texttt{--lparse,-l}}
 This mode prints lParse conform output. For a definition of the output format see \cite{lparseManual}.
-Since some features of gringo2.0 are not natively supported for this output language, new atoms may be introduced to create an equivalent program.\newline
+Since some features of gringo are not natively supported for this output language, new atoms may be introduced to create an equivalent program.\newline
 Sum aggregates with negative weights are handled like weight constraint in lParse for this output format. So a transformation as explained in \cite{lparseManual} is used to get rid of the negative weights.
 \paragraph{\texttt{--aspils,-a 1-7}}
 This parameter invokes the new output format for the intermediate language ASPils \cite{gejaosscth08b}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7).
@@ -676,23 +696,23 @@ This parameter invokes the new output format for the intermediate language ASPil
 \paragraph{\texttt{--ground,-g}}
 If this parameter is used, gringo expects an already grounded program as input.
 For converting an already grounded logic program into an output format 
-supported by gringo2.0 this is the right option.
+supported by gringo this is the right option.
  This mode saves a lot of memory but does not ground the program.
 \paragraph{\texttt{--const,-c C=v}}
-You can set the value of constants defined in your logic program via the command line of gringo2.0.
+You can set the value of constants defined in your logic program via the command line of gringo.
 After the parameter ``--const'' you have to give the name of the constant $C$ you want to set followed by a ``$=$'' and the value of that constant. The integer value $v$ can even be an arithmetic expression. For example:
 \begin{verbatim}
  gringo --const n=5*2
 \end{verbatim}
 the constant $n$ is replaced by $10$ in the logic program.
 \paragraph{\texttt{--bindersplitting=<arg>}}
-With this option you can enable or disable the binder splitting used by gringo2.0
+With this option you can enable or disable the binder splitting used by gringo.
 \begin{itemize}
  \item yes : Enable binder splitting
  \item no  : Disable binder splitting
 \end{itemize}
 \paragraph{\texttt{--ifixed=<num>}}
-An incremental program is required as input. Gringo2.0 grounds the fixed number of steps of the incremental program.
+An incremental program is required as input. Gringo grounds the fixed number of steps of the incremental program.
 
 \paragraph{Default Parameters}
 The default command line is
@@ -708,7 +728,7 @@ Clingo can be called from the command line via
  clingo (clingo option|file)*
 \end{verbatim}
 If no filename is given, the standard input is used.
-Since clingo uses gringo2.0 as a grounder in combination with the solver clasp, all options from gringo2.0 and clasp are valid. For a detailed list of the clasp options see the clasp help (also available with \texttt{clingo --help}).
+Since clingo uses gringo as a grounder in combination with the solver clasp, all options from gringo and clasp are valid. For a detailed list of the clasp options see the clasp help (also available with \texttt{clingo --help}).
 \paragraph{\texttt{--clasp,-C}}
 In this mode, the output is directly parsed to clasp. For solving logic programs, no intermediate files are produced and the answer sets are printed directly.
 With this option enabled, all parameters for clasp are valid and can be declared in the command line.
@@ -744,7 +764,7 @@ Iclingo can be called from the command line via
  iclingo (iclingo option|file)*
 \end{verbatim}
 Iclingo is used for incremental solving. For a detailed description see \cite{gekaosscth08a}.
-It uses the grounder gringo2.0 and the solver clasp, and therefore all options of gringo2.0, clingo and clasp are valid.
+It uses the grounder gringo and the solver clasp, and therefore all options of gringo, clingo and clasp are valid.
 Additionally some options for controlling the incremental behavior are implemented.
 \paragraph{\texttt{--incremental,-i}}
 Activates the incremental solving. This is the default for iclingo.
@@ -793,7 +813,7 @@ The default is to read from standard input and search for one model incrementall
 
 
 \subsection{Warnings}
-Several warnings are produced by gringo2.0 to give hints on common mistakes.
+Several warnings are produced by gringo to give hints on common mistakes.
 They are all printed to standard error output.
 TODO: Some new warnings and Errors were added lately by Roland
 
@@ -845,7 +865,7 @@ To use classical negation in an incremental program the described rules have to 
 Furthermore all warnings from clasp are included.
 
 \subsection{Errors}
-gringo2.0 stops the execution and prints an error message to standard error output.
+Gringo stops the execution and prints an error message to standard error output.
 \begin{itemize}
  \item 
 \begin{verbatim}
@@ -953,8 +973,8 @@ Another normal form as to be chosen to support this feature.
 
 
 \section{Future Work}
-Further research has to be done on features in the input language. Additionally the support of incremental grounding will be improved. To speed up the grounding process research on a bottom up grounding procedure is done. To support an even less restricted input language the support for $\Pi$-restricted programs is planned in a future release of gringo. All these features will lead to more acceptance of ASP-systems as the programs become easier to write and the bottleneck of ASP, the grounding part, will be faster.
-Furthermore the acceptance of a standardized intermediate format for ASP is necessary. gringo2.0 supports the ASPils output format, but many more tools for converting, shuffling and merging must be developed.
+Further research has to be done on features in the input language. Additionally the support of incremental grounding will be improved. To speed up the grounding process research on a bottom up grounding procedure is done. To support an even less restricted input language the support for $\Pi$-restricted programs is planned in a future release of gringo. For clingo, the results of research from claspD will lead to a new version of clingo, capable of handling disjunctive logic programs. All these features will lead to more acceptance of ASP-systems as the programs become easier to write and the bottleneck of ASP, the grounding part, will be faster.
+Furthermore the acceptance of a standardized intermediate format for ASP is necessary. Gringo supports the ASPils output format, but many more tools for converting, shuffling and merging must be developed.
 \newpage
 \textbf{\appendixname}
 \begin{appendix}
