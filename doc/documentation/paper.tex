@@ -10,13 +10,18 @@
 \usepackage{longtable}
 \usepackage{multirow}
 \usepackage{color}
+\usepackage[nofancy]{svninfo}
+
+
 
 \author{Max Ostrowski}
-\title{Gringo 2.0\\--Draft--}
+\title{Using gringo, clingo and iclingo\\--Draft--\\Rev.\svnInfoRevision}
 \date{\today}
 
 \begin{document}
+\svnInfo $Id$
 \maketitle
+
 \tableofcontents
 \section{Introduction}
 Answer Set Programming (ASP) \cite{baral02a} is a declarative approach for modeling and solving search problems, represented as logic programs.
@@ -31,8 +36,8 @@ First, a grounder translates a non-ground problem description into a proposition
 \caption{Architecture of an ASP System}
 \label{fig:ASP}
 \end{figure}
-gringo2.0 is a state of the art grounder and has many features that makes writing logic programs easy.
-It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0\cite{gringopaper}.
+Gringo is a state of the art grounder and has many features that makes writing logic programs easy.
+It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.0\cite{gringopaper}.
 Therefore it supports binder splitting, backjumping and all other features already implemented in gringo1.0.
 A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured language.
 The goal of this work is to give an overview of the features supported by gringo2.0 and its derivates.
@@ -43,6 +48,14 @@ Output can directly be given to the solver and answer sets can be computed.
 The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found in \cite{gekaosscth08a}.
 In this paper, at first, the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program and how to write an incremental logic program is given. In the next chapter a brief description of how to use the three programs gringo2.0, clingo and iclingo and their options for the command line is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
+\paragraph{Versions}
+This paper references the programs with their following version numbers:
+\begin{itemize}
+ \item \texttt{gringo\ \ 2.0.0}
+ \item \texttt{clingo\ \ 1.0.0}
+ \item \texttt{iclingo\ 1.0.0}
+\end{itemize}
+
 
 
 \section{Syntax}
