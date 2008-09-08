@@ -23,6 +23,7 @@ using namespace NS_OUTPUT;
 		
 LparseOutput::LparseOutput(std::ostream *out) : Output(out)
 {
+	stats_.language = Stats::TEXT;
 }
 
 void LparseOutput::initialize(GlobalStorage *g, SignatureVector *pred)

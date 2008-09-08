@@ -24,6 +24,7 @@ using namespace NS_OUTPUT;
 
 SmodelsOutput::SmodelsOutput(std::ostream *out) : SmodelsConverter(out)
 {
+	stats_.language = Stats::SMODELS;
 }
 
 void SmodelsOutput::initialize(GlobalStorage *g, SignatureVector *pred)
@@ -149,7 +150,7 @@ void SmodelsOutput::finalize(bool last)
 		// number of models
 		*out_ << models_ << NL;
 		out_->flush();
-		stats_.atoms = uids_-1;
+		stats_.auxAtoms = uids_-stats_.atoms;
 	}
 }
 

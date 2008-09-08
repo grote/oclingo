@@ -31,8 +31,10 @@ Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(fals
 //												stats_.compute(0), stats_.optimize(0)
 //TODO: Why does this not work
 {
+	stats_.language = Stats::UNKNOWN;
 	stats_.rules    = 0;
 	stats_.atoms    = 0;
+	stats_.auxAtoms = 0;
 	stats_.count    = 0;
 	stats_.sum      = 0;
 	stats_.count    = 0;

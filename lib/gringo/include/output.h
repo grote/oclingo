@@ -53,8 +53,18 @@ namespace NS_GRINGO
 			void addSignature();
 			struct Stats
 			{
+				enum Language
+				{
+					UNKNOWN,
+					SMODELS,
+					TEXT,
+					ASPILS
+				};
+
+				Language language;
 				unsigned int rules;
 				unsigned int atoms;
+				unsigned int auxAtoms;
 				unsigned int count;
 				unsigned int sum;
 				unsigned int max;

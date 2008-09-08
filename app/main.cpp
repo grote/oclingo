@@ -36,6 +36,7 @@
 #include <lparseoutput.h>
 #include <pilsoutput.h>
 #include <gringoexception.h>
+#include <domain.h>
 #ifdef WITH_CLASP
 #	include <claspoutput.h>
 
@@ -335,7 +336,15 @@ void MainApp::ground(Output &output)
 		setState(end_read);
 		// just an approximation
 		if (options.outf == Options::TEXT_OUT)
-			output.stats_.atoms = parser.getDomains()->size();
+		{
+			output.stats_.atoms = 0;
+			//output.stats_.atoms = grounder.getDomains()->size();
+			const DomainVector* d = parser.getDomains();
+			for (DomainVector::const_iterator i = d->begin(); i != d->end(); ++i)
+			{
+				output.stats_.atoms += (*i)->getDomain().size();
+			}
+		}
 	}
 	else
 	{
@@ -353,7 +362,15 @@ void MainApp::ground(Output &output)
 		setState(end_ground);
 		// just an approximation
 		if (options.outf == Options::TEXT_OUT)
-			output.stats_.atoms = grounder.getDomains()->size();
+		{
+			output.stats_.atoms = 0;
+			//output.stats_.atoms = grounder.getDomains()->size();
+			const DomainVector* d = grounder.getDomains();
+			for (DomainVector::const_iterator i = d->begin(); i != d->end(); ++i)
+			{
+				output.stats_.atoms += (*i)->getDomain().size();
+			}
+		}
 	}
 }
 
@@ -361,14 +378,23 @@ void MainApp::ground(Output &output)
 void MainApp::printGrounderStats(Output& output) const
 {
 	cerr << "=== Grounder Statistics ===" << std::endl;
-	cerr << "#rules   : " << output.stats_.rules << std::endl;
-	cerr << "#atoms   : " << output.stats_.atoms << std::endl;
-	cerr << "#count   : " << output.stats_.count << std::endl;
-	cerr << "#sum     : " << output.stats_.sum << std::endl;
-	cerr << "#min     : " << output.stats_.min << std::endl;
-	cerr << "#max     : " << output.stats_.max << std::endl;
-	cerr << "#compute : " << output.stats_.compute << std::endl;
-	cerr << "#optimize: " << output.stats_.optimize << std::endl;
+	cerr << "#rules      : " << output.stats_.rules << std::endl;
+	if (output.stats_.language == Output::Stats::TEXT)
+	{
+	cerr << "#headatoms  : " << output.stats_.atoms << std::endl;
+	}
+	else
+	{
+	cerr << "#atoms      : " << output.stats_.atoms << std::endl;
+	if (output.stats_.language == Output::Stats::SMODELS)
+	cerr << "#aux. atoms : " << output.stats_.auxAtoms << std::endl;
+	}
+	cerr << "#count      : " << output.stats_.count << std::endl;
+	cerr << "#sum        : " << output.stats_.sum << std::endl;
+	cerr << "#min        : " << output.stats_.min << std::endl;
+	cerr << "#max        : " << output.stats_.max << std::endl;
+	cerr << "#compute    : " << output.stats_.compute << std::endl;
+	cerr << "#optimize   : " << output.stats_.optimize << std::endl;
 }
 
 

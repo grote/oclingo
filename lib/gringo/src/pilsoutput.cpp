@@ -22,6 +22,7 @@ using namespace NS_OUTPUT;
 		
 PilsOutput::PilsOutput(std::ostream *out, unsigned int normalForm) : Output(out), normalForm_(normalForm)
 {
+	stats_.language = Stats::ASPILS;
 }
 
 const char* HEADER = "1";
