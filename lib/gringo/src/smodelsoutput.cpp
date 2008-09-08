@@ -150,7 +150,7 @@ void SmodelsOutput::finalize(bool last)
 		// number of models
 		*out_ << models_ << NL;
 		out_->flush();
-		stats_.auxAtoms = uids_-stats_.atoms;
+		stats_.auxAtoms = uids_-stats_.atoms-1;
 	}
 }
 
