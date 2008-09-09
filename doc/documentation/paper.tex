@@ -364,9 +364,9 @@ If squared brackets are used, the atom list is interpreted as a multiset, otherw
 The lower and upper bound is optional, and can be omitted. The supported aggregates are
 \begin{verbatim}
  0 count {a, b, not c} 2.
- 1 sum {a=1, b=3, not c=-2} 2.
- 0 max {a=1, b=2, not c=3} 5.
- 1 min {a=2, b=4, not c=1} 3.
+ 1 sum [a=1, b=3, not c=-2] 2.
+ 0 max [a=1, b=2, not c=3] 5.
+ 1 min [a=2, b=4, not c=1] 3.
 \end{verbatim}
 and are now explained in detail.
 
@@ -680,6 +680,8 @@ Gives a short overview of all parameters.
 Prints the version information and exists.
 \paragraph{\texttt{--verbose,-V}}
 Prints additional information during processing.
+\paragraph{\texttt{--syntax}}
+Prints a short description of the syntax of the input language.
 \paragraph{\texttt{--stats}}
 Prints extended statistic information.
 

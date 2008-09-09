@@ -207,7 +207,7 @@ int MainApp::run(int argc, char **argv)
 	{
 		cerr << options.getWarning() << endl;
 	}
-	if(options.help || options.version)
+	if(options.help || options.version || options.syntax)
 	{
 		return EXIT_SUCCESS;
 	}

@@ -72,6 +72,7 @@ public:
 	bool             version;          // Defailt: false
 	bool             stats;            // Default: false
 	bool             verbose;          // Default: false
+	bool             syntax;           // Default: false
 	std::vector<std::string> files;    // Default: "" -> read from stdin
 
 	// gringo stuff
@@ -126,6 +127,7 @@ public:
 private:
 	void initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden);
 	void checkCommonOptions(const ProgramOptions::OptionValues&);
+	void printSyntax(std::ostream& os) const;
 	void printHelp(const ProgramOptions::OptionGroup& opts, std::ostream& os) const;
 	void printVersion(std::ostream& os) const;
 #ifdef WITH_CLASP

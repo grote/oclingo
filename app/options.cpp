@@ -190,6 +190,7 @@ void Options::setDefaults() {
 	help    = false;	
 	version = false;
 	verbose = false;
+	syntax  = false;
 
 	grounderOptions = Grounder::Options();
 	convert         = false;
@@ -244,6 +245,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	common.addOptions()
 		("help,h"   , bool_switch(&help),   "Print help and exit")
 		("version,v", bool_switch(&version),"Print version and exit")
+		("syntax",    bool_switch(&syntax),"Print syntax and exit")
 		("verbose,V", bool_switch(&verbose), "Print additional information")
 		("stats"    , bool_switch(&stats),  "Print extended statistics")
 #ifdef WITH_CLASP
@@ -440,6 +442,10 @@ bool Options::parse(int argc, char** argv, std::ostream& os, OptionValues& value
 			printVersion(os);
 			return true;
 		}
+		if (syntax) {
+			printSyntax(os);
+			return true;
+		}
 		checkCommonOptions(values);
 	}
 	catch(const std::exception& e) {
@@ -622,6 +628,36 @@ DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) c
 	return heu;
 }
 #endif
+
+void Options::printSyntax(std::ostream& os) const
+{
+	string indent(strlen(EXECUTABLE) + 5, ' ');
+#ifdef WITH_CLASP
+	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
+		<< "usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
+#else
+	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n"
+		<< "usage: " << EXECUTABLE << " [options] [files]" << endl;
+#endif
+	os << "The  input  language   supports  standard  logic  programming" << std::endl
+		<< "syntax, including  function  symbols (' f(X,g(a,X)) '),  classical negation  ('-a')," << std::endl
+		<< "disjunction ('a | b :- c.'), and  various types of aggregates e.g." << std::endl
+		<< std::endl
+		<< indent << "'count'" << std::endl
+		<< indent << indent << "0 count {a, b, not c} 2." << std::endl
+		<< indent << indent << "0       {a, b, not c} 2." << std::endl
+		<< indent << "'sum'" << std::endl
+		<< indent << indent << "1 sum   [a=1, b=3, not c=-2] 2." << std::endl
+		<< indent << indent << "1       [a=1, b=3, not c=-2] 2." << std::endl
+		<< indent << "'min'" << std::endl
+		<< indent << indent << "0 max   [a=1, b=2, not c=3] 5." << std::endl
+		<< indent << "'max'" << std::endl
+		<< indent << indent << "1 min   [a=2, b=4, not c=1] 3." << std::endl
+		<< "Further  details and  notes on compatibility  to lparse" << std::endl
+		<< "can be found at <http://potassco.sourceforge.net>." << std::endl;
+
+}
+
 
 void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 	string indent(strlen(EXECUTABLE) + 5, ' ');
