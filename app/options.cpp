@@ -654,7 +654,7 @@ void Options::printSyntax(std::ostream& os) const
 		<< indent << "'max'" << std::endl
 		<< indent << indent << "1 min   [a=2, b=4, not c=1] 3." << std::endl
 		<< "Further  details and  notes on compatibility  to lparse" << std::endl
-		<< "can be found at <http://potassco.sourceforge.net>." << std::endl;
+		<< "can be found at <http://www.cs.uni-potsdam.de/potassco>." << std::endl;
 
 }
 
