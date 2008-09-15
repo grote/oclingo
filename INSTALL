@@ -1,14 +1,15 @@
 The recommended way to build gringo is using the build system cmake. There are
 also some handwritten Makefiles inside the project, but these may be deleted 
 in future releases. WARNING: Using these Makefiles will interfere with the 
-cmake builds. If used the handwritten Makefiles, make shure that u type 
+cmake builds. If used the handwritten Makefiles, make shure that you type 
 "make clean" before using cmake.
+To build the lexers used by gringo the lexer-generator re2c is needed.
 
 The usual way to compile and install gringo should be:
 ./init.sh
 cd build/gringo/release/
 make
-cp bin/gringo <somwhere-in-your-path>
+cp bin/gringo <somewhere-in-your-path>
 
 1 Configuration
 
@@ -42,7 +43,7 @@ short descriptions.
 2 Compilation
 
 Change into the folder build/{gringo,clingo,iclingo}/{release,debug} and type
-"make". Alternativly u can call the script build.sh which compiles everything 
+"make". Alternativly you can call the script build.sh which compiles everything
 inside build.
 
 3 Installation
