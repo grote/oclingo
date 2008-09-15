@@ -198,7 +198,6 @@ namespace
 
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
-	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
 	// ground the query in the last step
 	if(last_ && g->getIncStep() == g->options().ifixed)
 	{
@@ -225,6 +224,7 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 	}
 	if(!ground_)
 		return true;
+	//std::cerr << "grounding: " << pp(g, this) << "(" << step << ")"<< std::endl;
 	switch(step)
 	{
 		case PREPARE:

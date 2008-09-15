@@ -1,8 +1,27 @@
-There are two possibilities to build the project:
- 1. Simply type "make all".
- 2. Use cmake. There is a script called init.sh, which initializes two out-of-source builds. A new folder build with the subfolders debug and release is created. To build the debug/release versions change into the corresponding folders and type make. In theory cmake can also create kdevelop and visual studio project files, but i haven't testet that.
- 3. If u want to crosscompile for windows u need to:
-    - install a mingw toolchain
-    - install > cmake-2.6
-    - put a lemon excecutable for your platform somewhere in your PATH
+Gringo 2.0.0
 
+Gringo is a state of the art grounder and has many features that make writing
+logic programs easy. Gringo 2.0.0 is an enhanced Version of its predesessor
+gringo 1.0.0. It supports binder splitting, backjumping and all other features
+already implemented in gringo 1.0.0. A broad set of potentialities for writing 
+encodings for logic programs exists. Currently, no other grounder supports such
+a rich featured language.
+
+There are three different packages of gringo 2.0.0. 
+
+1. Gringo
+The ﬁrst version is gringo, it acts as a grounder and supports several output 
+formats including a human readable format for debugging purposes. This version
+can ground logic programs and output them to ﬁles or pipe them to a solver like
+clasp or smodels.
+
+2. Clingo
+The second version is called clingo and is a grounder with the built-in solver
+clasp. Output can directly be passed to the solver to compute answer sets
+without the overhead of a pipe and an additional re-reading of the program.
+
+3. Iclingo
+The third package is called iclingo, which stands for "incremental clingo". In 
+this version the grounder gringo can be used with clasp incrementally.
+
+Detailed information can be found the in gringo documentation in the doc folder.
