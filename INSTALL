@@ -1,8 +1,8 @@
 The recommended way to build gringo is using the build system cmake. There are
-also some handwritten Makefiles inside the project, but these may be deleted 
-in future releases. WARNING: Using these Makefiles will interfere with the 
-cmake builds. If used the handwritten Makefiles, make shure that you type 
-"make clean" before using cmake.
+also some handwritten Makefiles, but these may be deleted in future releases. 
+WARNING: Using these Makefiles will interfere with the cmake builds. If the 
+handwritten Makefiles were used, make shure that to type "make clean" before 
+using cmake.
 To build the lexers used by gringo the lexer-generator re2c is needed.
 
 The usual way to compile and install gringo should be:

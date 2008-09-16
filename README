@@ -24,4 +24,5 @@ without the overhead of a pipe and an additional re-reading of the program.
 The third package is called iclingo, which stands for "incremental clingo". In 
 this version the grounder gringo can be used with clasp incrementally.
 
-Detailed information can be found the in gringo documentation in the doc folder.
+Detailed information can be found the in the gringo documentation in the doc 
+folder.
