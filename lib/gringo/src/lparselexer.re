@@ -42,6 +42,7 @@ LparseLexer::LparseLexer() : GrinGoLexer(0)
 
 int LparseLexer::lex(std::string *&lval)
 {
+	int nested = 0;
 	lval = 0;
 begin:
 	start = cursor;
@@ -70,7 +71,7 @@ begin:
 		BASE            = "#base";
 		DELTA           = "#volatile";
 		
-		BEGIN_COMMENT   { goto block_comment; }
+		BEGIN_COMMENT   { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
 		CONST           { return LPARSEPARSER_CONST; }
 		SHOW            { return LPARSEPARSER_SHOW; }
@@ -135,7 +136,8 @@ comment:
 	*/
 block_comment:
 	/*!re2c
-		END_COMMENT     { goto begin; }
+		BEGIN_COMMENT   { nested++; goto block_comment; }
+		END_COMMENT     { if(--nested == 0) goto begin; else goto block_comment; }
 		NL              { if(eof == cursor) throw GrinGoException("error: unclosed block comment"); step(); goto block_comment; }
         	ANY             { goto block_comment; }
 	*/

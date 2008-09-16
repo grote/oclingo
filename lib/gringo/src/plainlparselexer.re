@@ -42,6 +42,7 @@ PlainLparseLexer::PlainLparseLexer() : GrinGoLexer(0)
 	
 int PlainLparseLexer::lex(std::string *&lval)
 {
+	int nested = 0;
 	lval = 0;
 begin:
 	start = cursor;
@@ -65,7 +66,7 @@ begin:
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
 
-		BEGIN_COMMENT   { goto block_comment; }
+		BEGIN_COMMENT   { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
 		SHOW            { return LPARSECONVERTER_SHOW; }
 		HIDE            { return LPARSECONVERTER_HIDE; }
@@ -107,7 +108,8 @@ comment:
 	*/
 block_comment:
 	/*!re2c
-		END_COMMENT     { goto begin; }
+		BEGIN_COMMENT   { nested++; goto block_comment; }
+		END_COMMENT     { if(--nested == 0) goto begin; else goto block_comment; }
 		NL              { if(eof == cursor) throw GrinGoException("error: unclosed block comment"); step(); goto block_comment; }
         	ANY             { goto block_comment; }
 	*/
