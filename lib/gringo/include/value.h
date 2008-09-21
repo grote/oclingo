@@ -88,8 +88,9 @@ namespace NS_GRINGO
 		 * \return if the current value is a string or undef an exception is thrown otherwise the value of the int is returned
 		 */
 		void print(const GlobalStorage *g, std::ostream &out) const;
-
-		operator int();
+		
+		int toInt() const;
+		operator int() const;
 	public:
 		/// The type of the value
 		Type type_;

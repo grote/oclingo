@@ -59,20 +59,67 @@ int Value::compare(const GlobalStorage *g, const Value &b) const
 	assert(false);
 }
 
-Value::operator int()
+int Value::toInt() const
 {
+	if(type_ == INT)
+	{
+		std::cerr << "return: " << uid_ << std::endl;
+		return uid_;
+	}
+	else if(type_ == STRING)
+	{
+		throw GrinGoException("error trying to convert string to int");
+	}
+	else if(type_ == FUNCSYMBOL)
+	{
+		throw GrinGoException("error trying to convert functionsymbol to int");
+	}
+	assert(false);
+	return 42;
+	/*
 	switch(type_)
 	{
-		case UNDEF:
-			assert(false);
 		case INT:
 			return uid_;
 		case STRING:
 			throw GrinGoException("error trying to convert string to int");
 		case FUNCSYMBOL:
 			throw GrinGoException("error trying to convert functionsymbol to int");
+		default:
+			assert(false);
+	}
+	*/
+}
+
+Value::operator int() const
+{
+	if(type_ == INT)
+	{
+		return uid_;
+	}
+	else if(type_ == STRING)
+	{
+		throw GrinGoException("error trying to convert string to int");
+	}
+	else if(type_ == FUNCSYMBOL)
+	{
+		throw GrinGoException("error trying to convert functionsymbol to int");
 	}
 	assert(false);
+	return 0;
+	/*
+	switch(type_)
+	{
+		case INT:
+			return uid_;
+		case STRING:
+			throw GrinGoException("error trying to convert string to int");
+		case FUNCSYMBOL:
+			throw GrinGoException("error trying to convert functionsymbol to int");
+		default:
+			assert(false);
+	}
+	*/
 }
 
 void Value::print(const GlobalStorage *g, std::ostream &out) const
