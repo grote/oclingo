@@ -27,10 +27,8 @@ MultipleArgsTerm::MultipleArgsTerm(Term *a, Term *b) : a_(a), b_(b)
 {
 }
 
-MultipleArgsTerm::MultipleArgsTerm(const MultipleArgsTerm &r)
+MultipleArgsTerm::MultipleArgsTerm(const MultipleArgsTerm &r) : a_(r.a_->clone()), b_(r.b_->clone())
 {
-	a_ = a_->clone();
-	b_ = b_->clone();
 }
 
 Term* MultipleArgsTerm::clone() const
