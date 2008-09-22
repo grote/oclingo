@@ -22,15 +22,18 @@ ENDMACRO(RE2C SRC DEST)
 
 MACRO(LEMON NAME SRC DST)
 	ADD_CUSTOM_COMMAND(
-		OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
+		OUTPUT ${DST}/lempar.c
 		COMMAND cp ${SRC}/lempar.c ${DST}/lempar.c
+		MAIN_DEPENDENCY ${SRC}/lempar.c
+	)
+	ADD_CUSTOM_COMMAND(
+		OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
 		COMMAND ${EXECUTABLE_OUTPUT_PATH}/lemon -q ${SRC}/${NAME}.y
-		COMMAND rm ${DST}/lempar.c
 		COMMAND mv ${SRC}/${NAME}.c ${DST}/${NAME}.cpp
 		COMMAND mv ${SRC}/${NAME}.h ${DST}/${NAME}.h
 		COMMAND touch ${DST}/${NAME}.h ${DST}/${NAME}.cpp
 		MAIN_DEPENDENCY ${SRC}/${NAME}.y
-		DEPENDS lemon ${SRC}/lempar.c
+		DEPENDS lemon ${DST}/lempar.c
 	)
 ENDMACRO(LEMON NAME SRC DST)
 

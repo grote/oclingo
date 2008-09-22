@@ -57,8 +57,8 @@ begin:
 		IDENTIFIER      = [a-z_] [a-zA-Z0-9_]*;
 		STRING          = "\"" [^"\n]* "\"";
 		VARIABLE        = [A-Z] [a-zA-Z0-9_]*;
-		BEGIN_COMMENT   = "%*";
-		END_COMMENT     = "*%";
+		BEGINCOMMENT    = "%*";
+		ENDCOMMENT      = "*%";
 		COMMENT         = "%";
 		SHOW            = "#"? 'show';
 		HIDE            = "#"? 'hide';
@@ -66,7 +66,7 @@ begin:
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
 
-		BEGIN_COMMENT   { nested++; goto block_comment; }
+		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
 		SHOW            { return LPARSECONVERTER_SHOW; }
 		HIDE            { return LPARSECONVERTER_HIDE; }
@@ -108,8 +108,8 @@ comment:
 	*/
 block_comment:
 	/*!re2c
-		BEGIN_COMMENT   { nested++; goto block_comment; }
-		END_COMMENT     { if(--nested == 0) goto begin; else goto block_comment; }
+		BEGINCOMMENT    { nested++; goto block_comment; }
+		ENDCOMMENT      { if(--nested == 0) goto begin; else goto block_comment; }
 		NL              { if(eof == cursor) throw GrinGoException("error: unclosed block comment"); step(); goto block_comment; }
         	ANY             { goto block_comment; }
 	*/
