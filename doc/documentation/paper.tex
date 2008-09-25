@@ -11,11 +11,11 @@
 \usepackage{multirow}
 \usepackage{color}
 \usepackage[nofancy]{svninfo}
-\usepackage{comments}
+%\usepackage{comments}
 
 
 
-\author{Max Ostrowski}
+\author{Martin Gebser, Roland Kaminski, Benjamin Kaufmann,\\ Max Ostrowski, Torsten Schaub, Sven Thiele}
 \title{Using gringo, clingo and iclingo
 \\\small{Rev.\svnInfoRevision}
 }
@@ -24,7 +24,7 @@
 \begin{document}
 \svnInfo $Id$
 \maketitle
-\begin{center}\stamp\end{center}
+%\begin{center}\stamp\end{center}
 %\includecomment{comment}
 %\excludecomment{notthisone}
 
@@ -257,10 +257,10 @@ If used in the body instead, the atoms will be logically combined using a conjun
 \end{verbatim}
 will results in the rules\footnote{gringo would simplify the grounded rules since some literals in the body are facts}
 \begin{verbatim}
- a(foo,1) :- b(foo), b(a), b(b).
- a(foo,2) :- b(foo), b(a), b(b).
- a(bar,1) :- b(bar), b(a), b(b).
- a(bar,2) :- b(bar), b(a), b(b).
+ a(foo) :- b(foo), b(a), b(b).
+ a(bar) :- b(foo), b(a), b(b).
+ a(1)   :- b(bar), b(a), b(b).
+ a(2)   :- b(bar), b(a), b(b).
 \end{verbatim}
 The conjunctor can not be used directly in aggregates, but for example in combination with the expander.
 \begin{verbatim}
