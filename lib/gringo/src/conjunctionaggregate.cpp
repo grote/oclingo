@@ -22,6 +22,7 @@
 #include "value.h"
 #include "output.h"
 #include "grounder.h"
+#include "statementdependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -72,6 +73,22 @@ void ConjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) cons
 			comma = true;
 		out << pp(g, *it);
 	}
+}
+
+SDGNode *ConjunctionAggregate::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
+{
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		// aggregate literals always depend negativly on its literals 
+		SDGNode *p = (*it)->createNode(dg, prev, ADD_NOTHING);
+		assert(p);
+		prev->addDependency(p, (*it)->getNeg());
+		// if used in the head it also depends cyclically on its literals
+		// but not if the literal is negative
+		if(todo == ADD_HEAD_DEP && !(*it)->getNeg())
+			p->addDependency(prev);
+	}
+	return 0;
 }
 
 ConjunctionAggregate::ConjunctionAggregate(const ConjunctionAggregate &a) : AggregateLiteral(a)
