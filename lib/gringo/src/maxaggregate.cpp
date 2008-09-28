@@ -192,13 +192,13 @@ NS_OUTPUT::Object *MaxAggregate::convert()
 	bool hasUpper = upper_ && (upperBound_ < maxUpperBound_);
 	bool hasLower = lower_ && (lowerBound_ > minLowerBound_);
 	if(hasLower && hasUpper)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lowerBound_, lits, weights, upperBound_);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MAX, lowerBound_, lits, weights, upperBound_);
 	else if(hasLower)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lowerBound_, lits, weights);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MAX, lowerBound_, lits, weights);
 	else if(hasUpper)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lits, weights, upperBound_);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MAX, lits, weights, upperBound_);
 	else
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lits, weights);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MAX, lits, weights);
 
 	return a;
 }
