@@ -845,13 +845,13 @@ Use the command line option ``--ground'' to convert a ground program into anothe
 For converting already ground programs to an output language a special module has been implemented that uses far less memory. Because trying to ground an already variable free program could need a huge amount of memory.
 \item
 \begin{verbatim}
- "Warning: There are no #base, #lambda or #delta sections."
+ "Warning: There are no #base, #cumulative or #volatile sections."
 \end{verbatim}
 If writing an incremental program, the incremental sections\ref{metasyntaxinc} have to be used.
 \item
 \begin{verbatim}
- "Warning: There are statements not within a #base, #lambda"
- "         or #delta section."
+ "Warning: There are statements not within a #base, #cumulative"
+ "         or #volatile section."
  "         These Statements are put into the #base section."
 \end{verbatim}
 If writing an incremental program, all statements that are not written in an incremental section are automatically considered to belong to the \texttt{base} part of the program.
