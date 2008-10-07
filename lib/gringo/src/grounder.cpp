@@ -180,6 +180,10 @@ void Grounder::ground()
 {
 	if(incremental_)
 	{
+		if(incStep_ == 0)
+			output_->initialize(this, getPred());
+		else
+			output_->reinitialize();
 		for(; incStep_ + 1 <= options().iquery; incStep_++)
 		{
 			reset();
@@ -188,9 +192,11 @@ void Grounder::ground()
 		reset();
 		ground_();
 		incStep_++;
+		output_->finalize(false);
 	}
 	else
 	{
+		output_->initialize(this, getPred());
 		if(incParts_.size() > 0 && opts_.ifixed < 0)
 			throw GrinGoException("Error: A fixed number of incremental steps is needed to ground the program.");
 		if(incParts_.size() > 0)
@@ -202,14 +208,13 @@ void Grounder::ground()
 				incStep_++;
 			}
 			while(incStep_ <= opts_.ifixed);
-			output_->finalize(true);
 		}
 		else
 		{
 			reset();
 			ground_();
-			output_->finalize(true);
 		}
+		output_->finalize(true);
 	}
 }
 
@@ -232,10 +237,6 @@ void Grounder::addProgram(Program *scc)
 
 void Grounder::ground_()
 {
-	if(incStep_ == 0)
-		output_->initialize(this, getPred());
-	else
-		output_->reinitialize();
 	
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
@@ -265,7 +266,6 @@ void Grounder::ground_()
 		eval_->evaluate();
 		eval_ = 0;
 	}
-	output_->finalize(false);
 }
 
 int Grounder::createUniqueVar()
