@@ -754,7 +754,7 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 		<< indent << "--istop=SAT --iquery=1 --ilearnt=keep --iheuristic=forget\n"
 #	endif
 #else
-		<< "--bindersplit=yes\n"
+		<< " --bindersplit=yes\n"
 #endif
 		;
 }
