@@ -260,7 +260,7 @@ public:
 	 * \note if atomId is not yet known, an atom with the given id is implicitly created.
 	 */
 	ProgramBuilder& addHead(Var atomId) {
-		assert(atomId > 0);
+		assert(incData_ ? atomId >= incData_->startAtom_ : atomId > 0);
 		rule_.addHead(atomId);
 		return *this;
 	}
