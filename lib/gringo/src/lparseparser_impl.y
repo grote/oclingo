@@ -248,6 +248,7 @@ body_literal(res) ::= NOT body_atom(atom).                 { res = atom; res->se
 body_literal(res) ::= relation_literal(rel).               { res = rel; }
 body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->setEqual(new Variable(GROUNDER, STRING(id))); }
 body_literal(res) ::= aggregate_atom(atom).                { res = atom; }
+body_literal(res) ::= NOT aggregate_atom(atom).            { res = atom; res->setNeg(true); }
 
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
 constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg(true); }

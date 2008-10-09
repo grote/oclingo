@@ -358,10 +358,25 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleMin(a, l, u);
 			break;
 	}
-	if(l > 0)
-		pos_.push_back(l);
-	if(u > 0)
-		neg_.push_back(u);
+	if(a->neg_)
+	{
+		int h = newUid();
+		IntVector pos;
+		IntVector neg;
+		if(l > 0)
+			pos.push_back(l);
+		if(u > 0)
+			neg.push_back(u);
+		printBasicRule(h, pos, neg);
+		neg_.push_back(h);
+	}
+	else
+	{
+		if(l > 0)
+			pos_.push_back(l);
+		if(u > 0)
+			neg_.push_back(u);
+	}
 }
 
 void SmodelsConverter::print(Fact *r)

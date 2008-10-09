@@ -175,9 +175,10 @@ rule ::= compute(r).                    { OUTPUT->print(r); DELETE_PTR(r); }
 body(res) ::= body(body) COMMA body_literal(lit). { res = body; res->lits_.push_back(lit); }
 body(res) ::= body_literal(lit).                  { res = new Conjunction(); res->lits_.push_back(lit); }
 
-body_literal(res) ::= body_atom(atom).      { res = atom; }
-body_literal(res) ::= NOT body_atom(atom).  { res = atom; res->neg_ = true; }
-body_literal(res) ::= aggregate_atom(aggr). { res = aggr; }
+body_literal(res) ::= body_atom(atom).          { res = atom; }
+body_literal(res) ::= NOT body_atom(atom).      { res = atom; res->neg_ = true; }
+body_literal(res) ::= aggregate_atom(aggr).     { res = aggr; }
+body_literal(res) ::= NOT aggregate_atom(aggr). { res = aggr; res->neg_ = true; }
 
 constraint_literal(res) ::= predicate(pred).     { res = pred; }
 constraint_literal(res) ::= NOT predicate(pred). { res = pred; res->neg_ = true; }
