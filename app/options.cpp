@@ -426,7 +426,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        no : Disable binder splitting\n")
 
 		("ifixed", value<int>(&grounderOptions.ifixed)  , "Fix number of incremental steps to <num>", "<num>")
-		("ibase",  bool_switch(&grounderOptions.ibase)  , "Solve base program only\n")
+		("ibase",  bool_switch(&grounderOptions.ibase)  , "Process base program only\n")
 	;
 	allOpts.addOptions(gringo);
 #ifdef WITH_ICLASP
@@ -706,10 +706,10 @@ void Options::printSyntax(std::ostream& os) const
 	string indent(strlen(EXECUTABLE) + 5, ' ');
 #ifdef WITH_CLASP
 	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
-		<< "usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
+		<< "Usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
 #else
 	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n"
-		<< "usage: " << EXECUTABLE << " [options] [files]" << endl;
+		<< "Usage: " << EXECUTABLE << " [options] [files]" << endl;
 #endif
 	os << "The  input  language   supports  standard  logic  programming" << std::endl
 		<< "syntax, including  function  symbols (' f(X,g(a,X)) '),  classical negation  ('-a')," << std::endl
@@ -733,13 +733,13 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 #ifdef WITH_CLASP
 	string indent(strlen(EXECUTABLE) + 5, ' ');
 	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
-		<< "usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
+		<< "Usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
 #else
 	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n"
-		<< "usage: " << EXECUTABLE << " [options] [files]" << endl;
+		<< "Usage: " << EXECUTABLE << " [options] [files]" << endl;
 #endif
 	os << opts << endl;
-	os << "usage: " << EXECUTABLE << " [options] [files]" << endl << endl;
+	os << "Usage: " << EXECUTABLE << " [options] [files]" << endl << endl;
 	os << "Default commandline:\n"
 		<< "  " << EXECUTABLE
 #ifdef WITH_CLASP
