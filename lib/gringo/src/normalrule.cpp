@@ -505,7 +505,12 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, const Value &v)
 			base_ = 1;
 			break;
 		case DELTA:
-			if(g->options().ifixed >= 0)
+			if(g->options().ibase)
+			{
+				ground_ = 0;
+				break;
+			}
+			else if(g->options().ifixed >= 0)
 			{
 				ground_ = 0;
 				last_   = 1;
@@ -518,7 +523,12 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, const Value &v)
 			appendLiteral(new DeltaLiteral(), Expandable::COMPLEXTERM);
 			// no break! //
 		case LAMBDA:
-			if(part == LAMBDA)
+			if(g->options().ibase)
+			{
+				ground_ = 0;
+				break;
+			}
+			else if(part == LAMBDA)
 			{
 				ground_ = 0;
 				lambda_ = 1;

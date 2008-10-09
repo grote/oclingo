@@ -35,10 +35,11 @@ namespace NS_GRINGO
 	public:
 		struct Options
 		{
-			Options() : binderSplit(true), iquery(1), ifixed(-1) {}
+			Options() : binderSplit(true), iquery(1), ifixed(-1), ibase(false) {}
 			bool binderSplit;
 			int iquery;
 			int ifixed;
+			bool ibase;
 		};
 	public:
 		Grounder(const Options &opts = Options());

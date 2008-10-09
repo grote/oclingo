@@ -197,9 +197,9 @@ void Grounder::ground()
 	else
 	{
 		output_->initialize(this, getPred());
-		if(incParts_.size() > 0 && opts_.ifixed < 0)
+		if(incParts_.size() > 0 && opts_.ifixed < 0 && !opts_.ibase)
 			throw GrinGoException("Error: A fixed number of incremental steps is needed to ground the program.");
-		if(incParts_.size() > 0)
+		if(incParts_.size() > 0 && !opts_.ibase)
 		{
 			do
 			{

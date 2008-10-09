@@ -226,7 +226,7 @@ int MainApp::run(int argc, char **argv)
 				cerr << ", " << *i;
 			cerr << "..." << endl;
 		}
-		if(!options.grounder && options.files.size() > 1)
+		if(options.claspMode && options.files.size() > 1)
 			cerr << "Warning: only the first file will be used" << endl;
 	}
 	else if(options.verbose)
@@ -249,7 +249,7 @@ int MainApp::run(int argc, char **argv)
 #endif
 
 #ifdef WITH_CLASP
-	if(!options.grounder)
+	if(options.claspMode)
 		return runClasp();
 #endif
 
@@ -512,7 +512,7 @@ void MainApp::printAspStats(bool more) const
 	cerr.setf(ios_base::fixed, ios_base::floatfield);
 	const SolverStatistics &st = solver.stats;
 #ifdef WITH_ICLASP
-	if(options.grounder && options.outf == Options::ICLASP_OUT && (options.verbose || options.istats))
+	if(!options.claspMode && options.outf == Options::ICLASP_OUT && (options.verbose || options.istats))
 		cerr << "=============== Summary ===============" << endl;
 #endif
 	cerr << "\n";
@@ -537,14 +537,14 @@ void MainApp::printAspStats(bool more) const
 	}
 	cerr << "\n";
 #ifdef WITH_ICLASP
-	if(options.grounder && options.outf == Options::ICLASP_OUT)
+	if(!options.claspMode && options.outf == Options::ICLASP_OUT)
 		cerr << "Total Steps : " << steps << std::endl;
 #endif
 	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all.Print() << "\n";
 	if(!options.stats)
 		return;
 	cerr << "  Reading   : " << t_read.Print() << "\n";
-	if(options.grounder && !options.convert)
+	if(!options.claspMode && !options.convert)
 		cerr << "  Grounding : " << t_ground.Print() << "\n";
 	cerr << "  Prepro.   : " << t_pre.Print() << "\n";
 	cerr << "  Solving   : " << t_solve.Print() << "\n";
@@ -615,7 +615,7 @@ bool MainApp::runClasp()
 
 	bool more;
 #	ifdef WITH_ICLASP
-	if(options.outf == Options::ICLASP_OUT && options.grounder)
+	if(options.outf == Options::ICLASP_OUT && !options.claspMode)
 		more = solveIncremental();
 	else
 		more = solve();
@@ -820,7 +820,7 @@ bool MainApp::parseLparse()
 		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
 		(uint32) options.eqIters );
 	
-	if(options.grounder)
+	if(!options.claspMode)
 	{
 		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
 		ground(output);

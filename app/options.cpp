@@ -221,7 +221,7 @@ void Options::setDefaults() {
 #endif
 
 #ifdef WITH_CLASP
-	grounder         = true;
+	claspMode       = false;
 	satPreParams.assign(3, 0);
 	heuristic        = "berkmin";
 	cons             = "";
@@ -241,180 +241,244 @@ void Options::setDefaults() {
 }
 
 void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden) {
-	OptionGroup common("Common-Options:\n");
-	common.addOptions()
-		("help,h"   , bool_switch(&help),   "Print help and exit")
-		("version,v", bool_switch(&version),"Print version and exit")
-		("syntax",    bool_switch(&syntax),"Print syntax and exit")
-		("verbose,V", bool_switch(&verbose), "Print additional information")
-		("stats"    , bool_switch(&stats),  "Print extended statistics")
 #ifdef WITH_CLASP
-		("solveonly"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
-			"\tDefault: No\n"
-			"\t  No  : Standard mode\n"
-			"\t  Yes : Pass input directly to clasp (lparse format required)")
-#endif
-	;
-	allOpts.addOptions(common);
-	OptionGroup gringo("\n\nGrinGo-Options:\n");
-	gringo.addOptions()
-		("ifixed"      , value<int>(&grounderOptions.ifixed)  , "Fixed number of incremental steps", "<num>")
-		("ground,g", bool_switch(&convert), "Parse plain text")
-		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
-		("lparse,l"        , bool_switch(&smodelsOut), "Print lparse output format")
-		("text,t"          , bool_switch(&textOut), "Print plain text format")
-#ifdef WITH_CLASP
-		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
-#endif
-		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
-		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
-			"\tDefault: yes\n"
-			"\t  yes : Enable bindersplitting\n"
-			"\t  no  : Disable bindersplitting")
-	;
-	allOpts.addOptions(gringo);
-#ifdef WITH_ICLASP
-	OptionGroup incremental("\n\nOptions for incremental solving:\n");
-	incremental.addOptions()
-		("istats"      , bool_switch(&istats) , "Print stats for each incremental step")
-		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
-		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
-		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
-		("iquery"      , value<int>(&grounderOptions.iquery)  , "Start solving beginning with step num", "<num>")
-		("istop"      , value<bool>(&iunsat)->parser(mapStop), "Stop condition during incremental solving\n"
-			"\tDefault: SAT\n"
-			"\t  UNSAT : Stop if no solution found\n"
-			"\t  SAT   : Stop if solution found")
-		("ilearnt" , value<bool>(&keepLearnts)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
-			"\tDefault: forget\n"
-			"\t  keep   : Keep learnt nogoods\n"
-			"\t  forget : Forget learnt nogoods")
-		("iheuristic", value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle heuristic information during incremental solving\n"
-			"\tDefault: keep\n"
-			"\t  keep   : Keep heuristic information\n"
-			"\t  forget : Forget heuristic information")
-	;
-	allOpts.addOptions(incremental);
-#endif
-#ifdef WITH_CLASP
-	OptionGroup clasp("\n\nClasp-Options - Not related to the search:\n");
+	OptionGroup clasp("\n\nClasp - General Options:\n");
 	clasp.addOptions()
-		("quiet,q"  , bool_switch(&quiet),  "Do not print answer sets")
-		("dimacs"   , bool_switch(&dimacs), "Read DIMACS- instead of Lparse-Format")
-		("seed"     , value<int>(&seed),    "Use <num> as seed for the RNG.", "<num>")
+		("number,n", value<int>(&numModels), 
+			"Compute at most <num> models (0 for all)\n"
+			"      Default: 1", "<num>")
+		("quiet,q" , bool_switch(&quiet),  "Do not print models")
+		("seed"    , value<int>(&seed),    "Set random number generator's seed to <num>\n", "<num>")
+
+		("brave"    , bool_switch(), "Compute brave consequences")
+		("cautious" , bool_switch(), "Compute cautious consequences\n")
+
+		("opt-all"    , bool_switch(), "Compute all optimal models")
+		("opt-restart", bool_switch(), "Restart (instead of enumerate) to progress to optimum")
+		("opt-value"  , value<std::vector<int> >(&optVals), 
+			"Initialize objective function(s)\n"
+			"      Valid:   <n1[,n2,n3,...]>\n")
+
+		("supp-models",bool_switch(&suppModels), "Compute supported (instead of stable) models")
+		("dimacs"   , bool_switch(&dimacs), "Read DIMACS (instead of Lparse) format\n")
+
 		("trans-ext", value<int>(&transExt)->parser(mapTransExt),
-			"How to handle extended rules?\n"
-			"\tDefault: no\n"
-			"\t  all   : Transform all extended rules to basic rules\n"
-			"\t  choice: Transform choice rules but keep weight- and constraint rules\n"
-			"\t  weight: Transform weight- and constraint rules but keep choice rules\n"
-			"\t  no    : Don't transform extended rules; handle them natively")
+			"Configure handling of Lparse-like extended rules\n"
+			"      Default: no\n"
+			"      Valid:   all, choice, weight, no\n"
+			"        all   : Transform all extended rules to basic rules\n"
+			"        choice: Transform choice rules, but keep cardinality and weight rules\n"
+			"        weight: Transform cardinality and weight rules, but keep choice rules\n"
+			"        no    : Do not transform extended rules\n")
+
 		("eq", value<int>(&eqIters), 
-			"Run Eq-Preprocessor for at most <n> passes.\n"
-			"\tDefault: -1 (run to fixpoint); 0 = disable Eq-Preprocessor\n", "<n>")
+			"Configure equivalence preprocessing\n"
+			"      Default: 5\n"
+			"      Valid:\n"
+			"        -1 : Run to fixpoint\n"
+			"        0  : Do not run equivalence preprocessing\n"
+			"        > 0: Run for at most <n> iterations\n", "<n>")
+
 		("sat-prepro", value<vector<int> >(&satPreParams)->parser(mapSatElite),
-			"Enable SatElite-like preprocessor\n"
-			"\tDefault: no (yes if --dimacs), Valid: yes/no or <n1,[n2,n3]>\n"
-			"\t  n1 : Max iterations      (-1 means run to fixpoint)\n"
-			"\t  n2 : Heuristic cutoff    (-1 means no cutoff) \n"
-			"\t  n3 : Max time in seconds (-1 means no time limit)\n")
-		("opt-all"  , bool_switch(), "When optimizing compute all optimal solutions")
-		("opt-rand" ,bool_switch(), "When computing one optimal solution randomize search")
-		("opt-value", value<std::vector<int> >(&optVals),"Initialize the optimization function")
-		("brave"    , bool_switch(), "compute the set of brave consequences\n")
-		("cautious" , bool_switch(), "compute the set of cautious consequences\n")
+			"Configure SatElite-like preprocessing\n"
+			"      Default: no (yes, if --dimacs)\n"
+			"      Valid:   yes, no, <n1[,n2,n3]>\n"
+			"        <n1>: Run for at most <n1> iterations           (-1=run to fixpoint)\n"
+			"        <n2>: Run variable elimination with cutoff <n2> (-1=no cutoff)\n"
+			"        <n3>: Run for at most <n3> seconds              (-1=no time limit)\n"
+			"        yes : Run to fixpoint, no cutoff and no time limit\n")
+
+		("rand-watches", value<bool>()->defaultValue(true), 
+			"Configure watched literal initialization\n"
+			"      Default: yes\n"
+			"      Valid:   yes, no\n"
+			"        yes: Randomly determine watched literals\n"
+			"        no : Watch first and last literal in a nogood\n")
 	;
 	allOpts.addOptions(clasp);
-	OptionGroup basic("\nBasic-Options - Configure the search strategy:\n");
+	OptionGroup basic("\nClasp - Search Options:\n");
 	basic.addOptions()
-		("number,n",	value<int>(&numModels), "Compute at most <num> models (0 for all)", "<num>")
-		("supp-models",bool_switch(&suppModels), "Compute supported models instead of stable models")
 		("lookback"		,value<bool>()->defaultValue(true), 
-			"Use lookback strategies\n"
-			"\tDefault: yes\n"
-			"\t  yes: Enable lookback strategies (learning, backjumping and restarts)\n"
-			"\t  no : Disable lookback strategies")
+			"Configure lookback strategies\n"
+			"      Default: yes\n"
+			"      Valid:   yes, no\n"
+			"        yes: Enable lookback strategies (backjumping, learning, restarts)\n"
+			"        no : Disable lookback strategies\n")
+
 		("lookahead"	, value<int>(&lookahead)->parser(mapLookahead),
-			"Extend unit propagation with one-step lookahead\n"
-			"\tDefault: disabled if lookback=yes, otherwise auto\n"
-			"\t  atom  : Restrict lookahead to atoms\n"
-			"\t  body  : Restrict lookahead to bodies\n"
-			"\t  hybrid: Lookahead atoms and bodies but only in one (opposed) phase\n"
-			"\t  auto  : Let clasp decide which literals to test\n"
-			"\t  no    : Do not use lookahead")
-		("initial-lookahead", bool_switch(&initialLookahead), "Use lookahead when simplifying initial problem")
+			"Configure failed-literal detection\n"
+			"      Default: no (auto, if --lookback=no)\n"
+			"      Valid:   atom, body, hybrid, auto, no\n"
+			"        atom  : Apply failed-literal detection to atoms\n"
+			"        body  : Apply failed-literal detection to bodies\n"
+			"        hybrid: Apply Nomore++-like failed-literal detection\n"
+			"        auto  : Let Clasp pick a failed-literal detection strategy\n"
+			"        no    : Do not apply failed-literal detection")
+		("initial-lookahead", bool_switch(&initialLookahead), "Apply failed-literal detection for preprocessing\n")
+
 		("heuristic", value<string>(&heuristic)->parser(mapHeuristic), 
-			"Use <heu> as decision heuristic.\n"
-			"\tDefault: Berkmin if lookback=yes, otherwise Unit\n"
-			"\t  Berkmin: An adaption of the heuristic used in the BerkMin SAT-solver\n"
-			"\t  Vmtf   : An adaption of the heuristic used in the Siege SAT-solver\n"
-			"\t  Vsids  : An adaption of the heuristic used in the Chaff SAT-solver\n"
-			"\t  Unit   : Counts assignments made during Lookahead\n"
-			"\t  None   : Select the first free variable","<heu>")
-		("rand-prop", value<double>()->defaultValue(0.0), 
-			"Choose randomly with a probability equal to <n>\n"
-			"\tDefault: 0.0, i.e. always use the selected decision heuristic\n"
-			"\t  Valid: [0.0, 1.0]", "<n>")
-		("randomize", value<std::pair<int, int> >()->defaultValue(std::pair<int, int>(0,0))->parser(mapRandomize),
-			"Run some random passes before starting real search\n"
-			"\tDefault: no, Valid: yes/no or 0 <= n1; 1 <= n2\n"
-			"\t  yes   : Run 50 passes of 20 conflicts each using a random heuristic\n"
-			"\t  no    : Disable randomization\n"
-			"\t  n1,n2 : Run n1 passes of n2 conflicts each using a random heuristic\n", "n1,n2")
-		("rand-watches", value<bool>()->defaultValue(true), 
-			"Place watches randomly when creating nogoods\n"
-			"\tDefault: yes\n"
-			"\t  no : Initially watch first and last literal in a nogood\n")
+			"Configure decision heuristic\n"
+			"      Default: Berkmin (Unit, if --lookback=no)\n"
+			"      Valid:   Berkmin, Vmtf, Vsids, Unit, None\n"
+			"        Berkmin: Apply BerkMin-like heuristic\n"
+			"        Vmtf   : Apply Siege-like heuristic\n"
+			"        Vsids  : Apply Chaff-like heuristic\n"
+			"        Unit   : Apply Smodels-like heuristic\n"
+			"        None   : Select the first free variable")
+		("rand-freq", value<double>()->defaultValue(0.0), 
+			"Make random decisions with probability <p>\n"
+			"      Default: 0.0\n"
+			"      Valid:   [0.0...1.0]\n", "<p>")
+
+		("rand-prob", value<std::pair<int, int> >()->defaultValue(std::pair<int, int>(0,0))->parser(mapRandomize),
+			"Configure random probing\n"
+			"      Default: no\n"
+			"      Valid:   yes, no, <n1,n2> (<n1> >= 0, <n2> > 0)\n"
+			"        yes    : Run 50 random passes up to at most 20 conflicts each\n"
+			"        no     : Do not run random probing\n"
+			"        <n1,n2>: Run <n1> random passes up to at most <n2> conflicts each\n")
 	;
 	allOpts.addOptions(basic);
-	OptionGroup lookback("\nLookback-Options - Require lookback=yes:\n");
+	OptionGroup lookback("\nClasp - Lookback Options (Require: lookback=yes):\n");
 	lookback.addOptions()
 		("restarts,r", value<vector<double> >()->defaultValue(restartDefault())->parser(mapVec), 
-			"Restart policy to use during search\n"
-			"\tDefault: 100,1.5\n"
-			"\tValid: no or <n1[,n2,n3]>\n"
-			"\t  no,n1==0  : Disable restarts\n"
-			"\t  n1>0      : Luby et al. run-length sequence with n1 = unit run\n"
-			"\t  n1>0,n2>=1: Restart after n1*(n2^k) conflicts (k >= 0)\n"
-			"\t  n1,n2,n3>0: Repeat sequence once n3 is reached, then n3 *= n2\n")
-		("save-progress",	bool_switch(), "Enable RSat-like progress saving")
-		("bounded-restarts", bool_switch(), "Allow (bounded) restarts after solution was found")
-		("local-restarts", bool_switch(), "Enable local restarts")
+			"Configure restart policy\n"
+			"      Default: 100,1.5\n"
+			"      Valid:   <n1[,n2,n3]> (<n1> >= 0, <n2>,<n3> > 0), no\n"
+			"        <n1>          : Run Luby et al.'s sequence with unit length <n1>\n"
+			"        <n1>,<n2>     : Run geometric sequence of <n1>*(<n2>^i) conflicts\n"
+			"        <n1>,<n2>,<n3>: Run Biere's inner-outer geometric sequence (<n3>=outer)\n"
+			"        <n1> = 0, no  : Disable restarts")
+		("local-restarts"  , bool_switch(), "Enable Ryvchin et al.'s local restarts")
+		("bounded-restarts", bool_switch(), "Enable (bounded) restarts during model enumeration")
+		("save-progress"   , bool_switch(), "Enable RSat-like progress saving\n")
+
 		("shuffle,s", value<std::pair<int,int> >()->defaultValue(std::pair<int,int>(0,0)),
-			"Shuffle program after a number of restarts\n"
-			"\tDefault: 0,0, Valid: 0 <= n1; 1 <= n2\n"
-			"\t  n1,n2 : Shuffle after n1 restarts. Re-Shuffle every n2 restarts\n"
-			"\t  n1=0  : Do not shuffle program", "n1,n2")
+			"Configure shuffling after restarts\n"
+			"      Default: 0,0\n"
+			"      Valid:   <n1,n2> (<n1> >= 0, <n2> >= 0)\n"
+			"        <n1> > 0: Shuffle problem after <n1> and re-shuffle every <n2> restarts\n"
+			"        <n1> = 0: Do not shuffle problem after restarts\n"
+			"        <n2> = 0: Do not re-shuffle problem\n", "<n1,n2>")
+
 		("deletion,d", value<vector<double> >()->defaultValue(delDefault())->parser(mapVec), 
-			"Set size and grow factor of learnt database\n"
-			"\tDefault: 3,1.1,3.0\n"
-			"\tValid: no or <n1[,n2,n3]> with 0 <= n1 <= n3; 1.0 <= n2\n"
-			"\t  n1,n2,n3 : Size = problem size/n1. MaxSize = Size*n3\n"
-			"\t             Size = min(Size*n2,MaxSize) after restart\n"
-			"\t  no       : Never delete learnt nogoods")
-		("reduce-on-restart", bool_switch(), "Delete some learnt nogoods after each restart")
-		("minimize,m", value<int>()->defaultValue(SolverStrategies::all_antes)->parser(mapCflMinimize),
-			"Minimize learnt conflict-nogoods\n"
-			"\tDefault: all\n"
-			"\t  bin  : Check only binary antecedents\n"
-			"\t  tern : Check binary and ternary antecedents\n"
-			"\t  all  : Check all antecedents\n"
-			"\t  no   : Do not minimize conflict-nogoods")
-		("expensiveccm", bool_switch(&ccmExp), "enhanced conflict clause minimization\n")
-		("contraction", value<int>()->defaultValue(250),
-			"Temporarily omit literals from long learnt nogoods\n"
-			"\tDefault: 250 | Valid: [0...maxInt), 0 means disabled")
+			"Configure size of learnt nogood database\n"
+			"      Default: 3.0,1.1,3.0\n"
+			"      Valid:   <n1[,n2,n3]> (<n3> >= <n1> >= 0, <n2> >= 1.0), no\n"
+			"        <n1,n2,n3>: Store at most min(P/<n1>*(<n2>^i),P*<n3>) learnt nogoods,\n"
+			"                    P and i being initial problem size and number of restarts\n"
+			"        no        : Do not delete learnt nogoods")
+		("reduce-on-restart", bool_switch(), "Delete some learnt nogoods after every restart\n")
+
+		("strengthen", value<int>()->defaultValue(SolverStrategies::all_antes)->parser(mapCflMinimize),
+			"Configure conflict nogood strengthening\n"
+			"      Default: all\n"
+			"      Valid:   bin, tern, all, no\n"
+			"        bin : Check only binary antecedents for self-subsumption\n"
+			"        tern: Check binary and ternary antecedents for self-subsumption\n"
+			"        all : Check all antecedents for self-subsumption\n"
+			"        no  : Do not check antecedents for self-subsumption")
+		("recursive-str", bool_switch(&ccmExp), "Enable MiniSAT-like conflict nogood strengthening\n")
+
 		("loops", value<int>(&loopRep)->parser(mapLoops),
-			"Use <arg> as strategy when creating loop formuals\n"
-			"\tDefault: common | Valid: common, shared, distinct, no\n"
-			"\t For an unfounded set U compute:\n"
-			"\t  common  : common reason for U, one nogood for each atom in U\n"
-			"\t  shared  : common reason for U, one shared Loop-Formula for atoms in U\n"
-			"\t  distinct: compute reason and nogood individually for each atom in U\n"
-			"\t  no      : do not learn loop formulas\n")
+			"Configure learning of loop formulas\n"
+			"      Default: common\n"
+			"      Valid:   common, distinct, shared, no\n"
+			"        common  : Learn loop nogoods for atoms in an unfounded set\n"
+			"        distinct: Learn loop nogood for one atom per unfounded set\n"
+			"        shared  : Learn loop formula for a whole unfounded set\n"
+			"        no      : Do not learn loop formulas\n")
+
+		("contraction", value<int>()->defaultValue(250),
+			"Configure (temporary) contraction of learnt nogoods\n"
+			"      Default: 250\n"
+			"      Valid:\n"
+			"        0  : Do not contract learnt nogoods\n"
+			"        > 0: Contract learnt nogoods containing more than <num> literals\n", "<num>")
 	;
 	allOpts.addOptions(lookback);
 #endif
+	OptionGroup gringo("\nGrinGo Options:\n");
+	gringo.addOptions()
+		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Replace constant <c> by value <v>\n", "<c>=<v>")
+
+		("text,t"          , bool_switch(&textOut), "Print plain text format")
+		("lparse,l"        , bool_switch(&smodelsOut), "Print Lparse format")
+		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), 
+			"Print ASPils format in normal form <num>\n"
+			"      Default: 7\n"
+			"      Valid:   [1...7]\n"
+			"        1: Print in normal form Simple\n"
+			"        2: Print in normal form SimpleDLP\n"
+			"        3: Print in normal form SModels\n"
+			"        4: Print in normal form CModels\n"
+			"        5: Print in normal form CModelsExtended\n"
+			"        6: Print in normal form DLV\n"
+			"        7: Print in normal form Conglomeration\n" , "<num>")
+
+		("ground,g", bool_switch(&convert), "Enable lightweight mode for ground input\n")
+
+		("bindersplit" , value<bool>(&grounderOptions.binderSplit), 
+		        "Configure binder splitting\n"
+			"      Default: yes\n"
+			"      Valid:   yes, no\n"
+			"        yes: Enable binder splitting\n"
+			"        no : Disable binder splitting\n")
+
+		("ifixed", value<int>(&grounderOptions.ifixed)  , "Fix number of incremental steps to <num>", "<num>")
+		("ibase",  bool_switch(&grounderOptions.ibase)  , "Solve base program only\n")
+	;
+	allOpts.addOptions(gringo);
+#ifdef WITH_ICLASP
+	OptionGroup incremental("\nIncremental Computation Options:\n");
+	incremental.addOptions()
+		("istats"      , bool_switch(&istats) , "Print statistics for each incremental step\n")
+
+		("imin"        , value<int>(&imin)    , "Perform at least <num> incremental steps", "<num>")
+		("imax"        , value<int>(&imax)    , "Perform at most <num> incremental steps\n", "<num>")
+
+		("istop"      , value<bool>(&iunsat)->parser(mapStop), 
+			"Configure termination condition\n"
+			"      Default: SAT\n"
+			"      Valid:   SAT, UNSAT\n"
+			"        SAT  : Terminate after first satisfiable subproblem\n"
+			"        UNSAT: Terminate after first unsatisfiable subproblem\n")
+
+		("iquery"      , value<int>(&grounderOptions.iquery), 
+			"Start solving at step <num>\n"
+			"      Default: 1\n", "<num>")
+
+		("ilearnt" , value<bool>(&keepLearnts)->parser(mapKeepForget), 
+			"Configure persistence of learnt nogoods\n"
+			"      Default: keep\n"
+			"      Valid:   keep, forget\n"
+			"        keep  : Maintain learnt nogoods between incremental steps\n"
+			"        forget: Drop learnt nogoods after every incremental step")
+		("iheuristic", value<bool>(&keepHeuristic)->parser(mapKeepForget), 
+			"Configure persistence of heuristic information\n"
+			"      Default: forget\n"
+			"      Valid:   keep, forget\n"
+			"        keep  : Maintain heuristic values between incremental steps\n"
+			"        forget: Drop heuristic values after every incremental step\n")
+	;
+	allOpts.addOptions(incremental);
+#endif
+	OptionGroup common("\nBasic Options:\n");
+	common.addOptions()
+		("help,h"   , bool_switch(&help),    "Print help information and exit")
+		("version,v", bool_switch(&version), "Print version information and exit")
+		("syntax",    bool_switch(&syntax),  "Print syntax information and exit\n")
+
+		("stats"    , bool_switch(&stats),   "Print extended statistics")
+		("verbose,V", bool_switch(&verbose), "Print additional information\n")
+#ifdef WITH_ICLASP
+		("clasp",  bool_switch(&claspMode), "Run in clasp mode")
+		("clingo", bool_switch(&claspOut), "Run in clingo mode\n")
+#elif defined WITH_CLASP
+		("clasp",  bool_switch(&claspMode), "Run in clasp mode\n")
+#endif
+	;
+	allOpts.addOptions(common);
 	hidden.addOptions()
 #ifdef WITH_CLASP
 		("hParams", value<vector<int> >()->defaultValue(vector<int>()), "Additional parameters for heuristic\n")
@@ -488,6 +552,14 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 	if(textOut)
 		outf = TEXT_OUT;
 
+	if(grounderOptions.ibase)
+	{
+		if(outf == ICLASP_OUT)
+			outf = CLASP_OUT;
+		grounderOptions.iquery = 1;
+		grounderOptions.ifixed = -1;
+	}
+
 	grounderOptions.iquery = max(grounderOptions.iquery, 0);
 
 	if(grounderOptions.ifixed >= 0 && outf == ICLASP_OUT)
@@ -515,9 +587,9 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 		eqIters = 0;
 	}
 	if (vm.count("opt-all"))	optimize += 1;
-	if (vm.count("opt-rand")) optimize += 2;
+	if (vm.count("opt-restart")) optimize += 2;
 	if (optimize == 3) {
-		warning_ += "Warning: 'opt-all' and 'opt-rand' are mutually exclusive!\n";
+		warning_ += "Warning: 'opt-all' and 'opt-restart' are mutually exclusive!\n";
 		optimize = 1;
 	}
 	bool bc = vm.count("brave") != 0;
@@ -552,7 +624,7 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 			error_ = "Error: selected heuristic requires lookback strategy!\n";
 			return false;
 		}
-		if (!vm["contraction"].isDefaulted()||!vm["minimize"].isDefaulted()) {
+		if (!vm["contraction"].isDefaulted()||!vm["strengthen"].isDefaulted()) {
 			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";
 		}
 		s.strategies().cflMinAntes = SolverStrategies::no_antes;
@@ -561,7 +633,7 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 		loopRep = DefaultUnfoundedCheck::no_reason;
 	}
 	else {
-		s.strategies().cflMinAntes	= (SolverStrategies::CflMinAntes)value_cast<int>(vm["minimize"]);
+		s.strategies().cflMinAntes	= (SolverStrategies::CflMinAntes)value_cast<int>(vm["strengthen"]);
 		s.strategies().cflMin				= ccmExp ? SolverStrategies::een_minimization : SolverStrategies::beame_minimization;
 		s.strategies().setCompressionStrategy(value_cast<int>(vm["contraction"]));
 		s.strategies().saveProgress = vm.count("save-progress") != 0 && value_cast<bool>(vm["save-progress"]);
@@ -575,7 +647,7 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 }
 
 bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
-	solveParams.setRandomPropability( value_cast<double>(vm["rand-prop"]) );
+	solveParams.setRandomPropability( value_cast<double>(vm["rand-freq"]) );
 	if (s.strategies().search == SolverStrategies::use_learning) {
 		std::vector<double> rp = value_cast<vector<double> >(vm["restarts"]);
 		rp.resize(3, 0.0);
@@ -586,7 +658,7 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 		vector<double> del = value_cast<vector<double> >(vm["deletion"]);
 		del.resize(3, 1.0);
 		solveParams.setReduceParams(del[0], del[1], del[2], redOnRestart);
-		const std::pair<int, int>& rando = value_cast<std::pair<int, int> >(vm["randomize"]);
+		const std::pair<int, int>& rando = value_cast<std::pair<int, int> >(vm["rand-prob"]);
 		solveParams.setRandomizeParams(rando.first, rando.second);
 		const std::pair<int, int>& sh = value_cast<std::pair<int, int> >(vm["shuffle"]);
 		solveParams.setShuffleParams(sh.first, sh.second);
@@ -596,7 +668,7 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 		solveParams.setReduceParams(0.0, 0.0, 0.0, false);
 		solveParams.setRandomizeParams(0,0);
 		solveParams.setShuffleParams(0,0);
-		if (!vm["restarts"].isDefaulted()||!vm["deletion"].isDefaulted()||!vm["randomize"].isDefaulted()||!vm["shuffle"].isDefaulted()) {
+		if (!vm["restarts"].isDefaulted()||!vm["deletion"].isDefaulted()||!vm["rand-prob"].isDefaulted()||!vm["shuffle"].isDefaulted()) {
 			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";			
 		}
 	}
@@ -655,13 +727,11 @@ void Options::printSyntax(std::ostream& os) const
 		<< indent << indent << "1 min   [a=2, b=4, not c=1] 3." << std::endl
 		<< "Further  details and  notes on compatibility  to lparse" << std::endl
 		<< "can be found at <http://www.cs.uni-potsdam.de/potassco>." << std::endl;
-
 }
 
-
 void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
-	string indent(strlen(EXECUTABLE) + 5, ' ');
 #ifdef WITH_CLASP
+	string indent(strlen(EXECUTABLE) + 5, ' ');
 	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
 		<< "usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
 #else
@@ -669,24 +739,24 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 		<< "usage: " << EXECUTABLE << " [options] [files]" << endl;
 #endif
 	os << opts << endl;
+	os << "usage: " << EXECUTABLE << " [options] [files]" << endl << endl;
 	os << "Default commandline:\n"
 		<< "  " << EXECUTABLE
-#ifdef WITH_ICLASP
-		<< " 1 --incremental --istop=SAT --ilearnt=forget --iheuristic=keep"
-#elif defined WITH_CLASP
-		<< " 1 --clasp --solveonly=No"
-#else
-		<< " --lparse --bindersplitting=Yes"
-#endif
 #ifdef WITH_CLASP
-		<< "\n"
-		<< indent << "--trans-ext=no --eq=5 \n"
-		<< indent << "--lookahead=no --lookback=yes --heuristic=Berkmin\n"
-		<< indent << "--rand-prop=0.0 --randomize=no --rand-watches=yes\n"
-		<< indent << "--restarts=100,1.5 --deletion=3,1.1,3.0\n"
-		<< indent << "--minimize=all --contraction=250 --loops=common"
+		<< " 1\n"
+		<< indent << "--trans-ext=no --eq=5 --sat-prepro=no --rand-watches=yes\n"
+		<< indent << "--lookback=yes --lookahead=no --heuristic=Berkmin\n"
+		<< indent << "--randomize=0.0 --rand-prob=no\n"
+		<< indent << "--restarts=100,1.5 --shuffle=0,1 --deletion=3,1.1,3.0\n"
+		<< indent << "--minimize=all --loops=common --contraction=250\n"
+		<< indent << "--bindersplit=yes\n"
+#	ifdef WITH_ICLASP
+		<< indent << "--istop=SAT --iquery=1 --ilearnt=keep --iheuristic=forget\n"
+#	endif
+#else
+		<< "--bindersplit=yes\n"
 #endif
-		<< endl;
+		;
 }
 
 void Options::printVersion(std::ostream& os) const {

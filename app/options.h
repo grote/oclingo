@@ -81,7 +81,7 @@ public:
 	// verbose     => Default: false
 	// binderSplit => Default: true
 	NS_GRINGO::Grounder::Options grounderOptions;
-	bool             grounder;         // Default: true
+	bool             claspMode;         // Default: false
 	bool             convert;          // Default: false
 	std::vector<std::string> consts;
 
