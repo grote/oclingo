@@ -8,7 +8,7 @@ ifeq ($(WITH_CLASP), 1)
 SOURCES     = $(wildcard *.cpp program_opts/*.cpp)
 STATICLIBS += ../bin/libclasp.a
 else
-SOURCES = main.cpp
+SOURCES = main.cpp options.cpp timer.cpp $(wildcard program_opts/*.cpp)
 endif
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))

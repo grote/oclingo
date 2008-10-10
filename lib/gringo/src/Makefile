@@ -1,4 +1,5 @@
 CC      = g++
+#AR      = gar
 CFLAGS  = -O3 -Wno-deprecated -I../include -I../.. -DNDEBUG
 #CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 

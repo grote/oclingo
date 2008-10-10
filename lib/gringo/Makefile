@@ -1,2 +1,2 @@
 %:
-	make -C src $@
+	${MAKE} -C src $@

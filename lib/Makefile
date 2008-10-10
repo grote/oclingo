@@ -1,5 +1,5 @@
 %:
 ifeq ($(WITH_CLASP), 1)
-	make -C clasp $@
+	${MAKE} -C clasp $@
 endif
-	make -C gringo $@
+	${MAKE} -C gringo $@

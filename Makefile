@@ -9,17 +9,17 @@ endif
 note:
 	echo "U should use cmake." && echo "This Makefile file is deprecated."
 all: note
-	make -C lib all
-	make -C app all
+	${MAKE} -C lib all
+	${MAKE} -C app all
 
 doc: note
-	make -C doc
+	${MAKE} -C doc
 
 clean: note
-	make -C lib clean
-	make -C app clean
+	${MAKE} -C lib clean
+	${MAKE} -C app clean
 
 depend: note
-	make -C lib depend
-	make -C app depend
+	${MAKE} -C lib depend
+	${MAKE} -C app depend
 
