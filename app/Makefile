@@ -16,7 +16,7 @@ OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 all: ../bin/gringo
 
 ../bin/gringo: $(OBJECTS) $(STATICLIBS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ../bin/libgringo.a ../bin/libclasp.a
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ${STATICLIBS}
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -30,6 +30,9 @@ depend: $(SOURCES)
 
 # DO NOT DELETE
 
+enumerator.o: enumerator.h
+main.o: options.h program_opts/program_options.h program_opts/value_base.h
+main.o: program_opts/detail/smartpointer.h timer.h
 options.o: options.h program_opts/program_options.h program_opts/value_base.h
 options.o: program_opts/detail/smartpointer.h program_opts/value.h
 options.o: program_opts/program_options.h program_opts/errors.h

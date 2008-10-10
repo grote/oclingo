@@ -767,7 +767,7 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 }
 
 void Options::printVersion(std::ostream& os) const {
-	os << "GrinGo " << GRINGO_VERSION << "\n";
+	os << EXECUTABLE << " " << GRINGO_VERSION << "\n";
 	os << "Copyright (C) Roland Kaminski" << "\n";
 	os << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
 	os << "GrinGo is free software: you are free to change and redistribute it.\n";
