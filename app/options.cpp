@@ -472,10 +472,10 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("stats"    , bool_switch(&stats),   "Print extended statistics")
 		("verbose,V", bool_switch(&verbose), "Print additional information\n")
 #ifdef WITH_ICLASP
-		("clasp",  bool_switch(&claspMode), "Run in clasp mode")
-		("clingo", bool_switch(&claspOut), "Run in clingo mode\n")
+		("clasp",  bool_switch(&claspMode), "Run in Clasp mode")
+		("clingo", bool_switch(&claspOut), "Run in Clingo mode\n")
 #elif defined WITH_CLASP
-		("clasp",  bool_switch(&claspMode), "Run in clasp mode\n")
+		("clasp",  bool_switch(&claspMode), "Run in Clasp mode\n")
 #endif
 	;
 	allOpts.addOptions(common);
@@ -730,25 +730,32 @@ void Options::printSyntax(std::ostream& os) const
 }
 
 void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
+	// version + usage
 #ifdef WITH_CLASP
 	string indent(strlen(EXECUTABLE) + 5, ' ');
-	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
+	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n\n"
 		<< "Usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
 #else
-	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n"
+	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n\n"
 		<< "Usage: " << EXECUTABLE << " [options] [files]" << endl;
 #endif
+	// options
 	os << opts << endl;
+	// usage again :)
+#ifdef WITH_CLASP
+	os << "Usage: " << EXECUTABLE << " [number] [options] [files]" << endl << endl;
+#else
 	os << "Usage: " << EXECUTABLE << " [options] [files]" << endl << endl;
+#endif
+	// default commandline
 	os << "Default commandline:\n"
 		<< "  " << EXECUTABLE
 #ifdef WITH_CLASP
-		<< " 1\n"
-		<< indent << "--trans-ext=no --eq=5 --sat-prepro=no --rand-watches=yes\n"
+		<< " 1 --trans-ext=no --eq=5 --sat-prepro=no --rand-watches=yes\n"
 		<< indent << "--lookback=yes --lookahead=no --heuristic=Berkmin\n"
-		<< indent << "--randomize=0.0 --rand-prob=no\n"
-		<< indent << "--restarts=100,1.5 --shuffle=0,1 --deletion=3,1.1,3.0\n"
-		<< indent << "--minimize=all --loops=common --contraction=250\n"
+		<< indent << "--rand-freq=0.0 --rand-prob=no\n"
+		<< indent << "--restarts=100,1.5 --shuffle=0,0 --deletion=3.0,1.1,3.0\n"
+		<< indent << "--strengthen=all --loops=common --contraction=250\n"
 		<< indent << "--bindersplit=yes\n"
 #	ifdef WITH_ICLASP
 		<< indent << "--istop=SAT --iquery=1 --ilearnt=keep --iheuristic=forget\n"
