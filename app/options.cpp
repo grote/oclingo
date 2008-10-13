@@ -647,7 +647,7 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 }
 
 bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
-	solveParams.setRandomPropability( value_cast<double>(vm["rand-freq"]) );
+	solveParams.setRandomProbability( value_cast<double>(vm["rand-freq"]) );
 	if (s.strategies().search == SolverStrategies::use_learning) {
 		std::vector<double> rp = value_cast<vector<double> >(vm["restarts"]);
 		rp.resize(3, 0.0);

@@ -33,7 +33,7 @@
  */
 namespace Clasp { 
 
-class   Solver;
+class		Solver;
 
 //! Interface for printing models
 /*!
@@ -50,17 +50,17 @@ class Enumerator {
 public:
 	Enumerator();
 	virtual ~Enumerator();
-	void  setPrinter(ModelPrinter* p) { printer_ = p; }
+	void	setPrinter(ModelPrinter* p) { printer_ = p; }
 	//! Defaults to a noop
-	virtual void    updateModel(Solver& s);
+	virtual void		updateModel(Solver& s);
 	//! Defaults to return s.backtrack()
-	virtual bool    backtrackFromModel(Solver& s);
+	virtual bool		backtrackFromModel(Solver& s);
 	//! Defaults to return false
-	virtual bool    allowRestarts()             const;
+	virtual bool		allowRestarts()							const;
 	//! Defaults to return s.stats.models
-	virtual uint64  numModels(const Solver& s)  const;
+	virtual uint64	numModels(const Solver& s)	const;
 	//! Defaults to a noop
-	virtual void    report(const Solver& s)     const;
+	virtual void		report(const Solver& s)			const;
 protected:
 	ModelPrinter* printer_;
 private:
@@ -82,52 +82,52 @@ struct SolveParams {
 	//! creates a default-initialized object.
 	/*!
 	 * The following parameters are used:
-	 * restart      : quadratic: 100*1.5^k / no restarts after first solution
-	 * shuffle      : disabled
-	 * deletion     : initial size: vars()/3, grow factor: 1.1, max factor: 3.0, do not reduce on restart
+	 * restart			: quadratic: 100*1.5^k / no restarts after first solution
+	 * shuffle			: disabled
+	 * deletion			: initial size: vars()/3, grow factor: 1.1, max factor: 3.0, do not reduce on restart
 	 * randomization: disabled
-	 * randomProp   : 0.0 (disabled)
-	 * enumerator   : default
+	 * randomProp		: 0.0 (disabled)
+	 * enumerator		: default
 	 */
 	SolveParams();
 	
-	void setEnumerator(Enumerator& e)     { enumerator_ = &e; }
+	void setEnumerator(Enumerator& e)			{ enumerator_ = &e; }
 	
 	//! sets the restart-parameters to use during search.
 	/*!
 	 * clasp currently supports four different restart-strategies:
 	 *  - fixed-interval restarts: restart every n conflicts
 	 *  - geometric-restarts: restart every n1 * n2^k conflict (k >= 0)
-	 *  - inner-outer-geometric: similar to geometric but sequence is repeated once bound outer is reached. Then, outer = outer*n2
+	 *	- inner-outer-geometric: similar to geometric but sequence is repeated once bound outer is reached. Then, outer = outer*n2
 	 *  - luby's restarts: see: Luby et al. "Optimal speedup of las vegas algorithms."
 	 *  .
-	 * \param base    initial interval or run-length
-	 * \param inc     grow factor
-	 * \param outer   max restart interval, repeat sequence if reached
-	 * \param localR  Use local restarts, i.e. restart if number of conflicts in *one* branch exceed threshold
-	 * \param bounded allow bounded restarts after first solution was found
+	 * \param base		initial interval or run-length
+	 * \param inc			grow factor
+	 * \param outer		max restart interval, repeat sequence if reached
+	 * \param localR	Use local restarts, i.e. restart if number of conflicts in *one* branch exceed threshold
+	 * \param bounded	allow bounded restarts after first solution was found
 	 * \note
 	 *  if base is equal to 0, restarts are disabled.
 	 *  if inc is equal to 0, luby-restarts are used and base is interpreted as run-length
 	 */
 	void setRestartParams(uint32 base, double inc, uint32 outer = 0, bool localR = false, bool bounded = false) {
-		restartBounded_ = bounded;
-		restartLocal_   = localR;
-		restartBase_    = base;
-		restartOuter_   = outer;
-		if (inc >= 1.0 || inc == 0.0) restartInc_   = inc;
+		restartBounded_	= bounded;
+		restartLocal_		= localR;
+		restartBase_		= base;
+		restartOuter_		= outer;
+		if (inc >= 1.0 || inc == 0.0)	restartInc_		= inc;
 	}
 
 	//! sets the shuffle-parameters to use during search.
 	/*!
-	 * \param first   Shuffle program after first restarts
-	 * \param next    Re-Shuffle program every next restarts
+	 * \param first		Shuffle program after first restarts
+	 * \param next		Re-Shuffle program every next restarts
 	 * \note
 	 *  if first is equal to 0, shuffling is disabled.
 	 */
 	void setShuffleParams(uint32 first, uint32 next) {
 		shuffleFirst_ = first;
-		shuffleNext_  = next;
+		shuffleNext_	= next;
 	}
 
 	//! sets the deletion-parameters to use during search.
@@ -140,9 +140,9 @@ struct SolveParams {
 	 * \note if maxF is equal to 0, growth is not limited.
 	 */
 	void setReduceParams(double base, double inc, double maxF, bool redOnRestart) {
-		if (base >= 0)    { reduceBase_ = base; }
-		if (inc >= 1.0)   { reduceInc_  = inc; }
-		if (maxF >= 0.0)  { reduceMaxF_ = maxF; }
+		if (base >= 0)		{	reduceBase_	= base; }
+		if (inc >= 1.0)		{ reduceInc_	= inc; }
+		if (maxF >= 0.0)	{ reduceMaxF_ = maxF; }
 		reduceOnRestart_ = redOnRestart;
 	}
 
@@ -159,44 +159,44 @@ struct SolveParams {
 	}
 
 	//! sets the probability with which choices are made randomly instead of with the installed heuristic.
-	void setRandomPropability(double p) {
+	void setRandomProbability(double p) {
 		if (p >= 0.0 && p <= 1.0) {
-			randProp_ = p;
+			randFreq_ = p;
 		}
 	}
 	// accessors
-	double  reduceBase()    const { return reduceBase_; }
-	double  reduceInc()     const { return reduceInc_; }
-	double  reduceMax()     const { return reduceMaxF_; }
-	bool    reduceRestart() const { return reduceOnRestart_; }
-	uint32  restartBase()   const { return restartBase_; }
-	uint32  restartOuter()  const { return restartOuter_; }
-	double  restartInc()    const { return restartInc_; }
-	bool    restartBounded()const { return restartBounded_; }
-	bool    restartLocal()  const { return restartLocal_; }
-	uint32  randRuns()      const { return randRuns_; }
-	uint32  randConflicts() const { return randConflicts_; }
-	double  randomPropability() const { return randProp_; }
+	double	reduceBase()		const { return reduceBase_; }
+	double	reduceInc()			const { return reduceInc_; }
+	double	reduceMax()			const { return reduceMaxF_; }
+	bool		reduceRestart() const { return reduceOnRestart_; }
+	uint32	restartBase()		const { return restartBase_; }
+	uint32	restartOuter()	const { return restartOuter_; }
+	double	restartInc()		const { return restartInc_; }
+	bool		restartBounded()const { return restartBounded_; }
+	bool		restartLocal()	const { return restartLocal_; }
+	uint32	randRuns()			const { return randRuns_; }
+	uint32	randConflicts()	const { return randConflicts_; }
+	double	randomProbability() const { return randFreq_; }
 	
-	uint32  shuffleBase() const { return shuffleFirst_; }
-	uint32  shuffleNext() const { return shuffleNext_; }
-	Enumerator*   enumerator()  const { return enumerator_; }
+	uint32	shuffleBase() const { return shuffleFirst_; }
+	uint32	shuffleNext() const { return shuffleNext_; }
+	Enumerator*		enumerator()	const { return enumerator_; }
 private:
-	double        reduceBase_;
-	double        reduceInc_;
-	double        reduceMaxF_;
-	double        restartInc_; 
-	double        randProp_;
-	Enumerator*   enumerator_;
-	uint32        restartBase_;
-	uint32        restartOuter_;
-	uint32        randRuns_;
-	uint32        randConflicts_;
-	uint32        shuffleFirst_;
-	uint32        shuffleNext_;
-	bool          restartBounded_;  
-	bool          restartLocal_;
-	bool          reduceOnRestart_;
+	double				reduceBase_;
+	double				reduceInc_;
+	double				reduceMaxF_;
+	double				restartInc_; 
+	double				randFreq_;
+	Enumerator*		enumerator_;
+	uint32				restartBase_;
+	uint32				restartOuter_;
+	uint32				randRuns_;
+	uint32				randConflicts_;
+	uint32				shuffleFirst_;
+	uint32				shuffleNext_;
+	bool					restartBounded_;	
+	bool					restartLocal_;
+	bool					reduceOnRestart_;
 };
 
 //! Search without assumptions
@@ -210,8 +210,8 @@ private:
  * \param minCon If the problem contains minize statements a pointer to the corresponding constraint.
  *
  * \return
- *  - true: if the search stopped before the search-space was exceeded.
- *  - false: if the search-space was completely examined.
+ *	- true: if the search stopped before the search-space was exceeded.
+ *	- false: if the search-space was completely examined.
  * 
  */
 bool solve(Solver& s, uint32 maxModels, const SolveParams& p);
@@ -231,8 +231,8 @@ bool solve(Solver& s, uint32 maxModels, const SolveParams& p);
  * \param minCon If the problem contains minize statements a pointer to the corresponding constraint.
  *
  * \return
- *  - true: if the search stopped before the search-space was exceeded.
- *  - false: if the search-space was completely examined.
+ *	- true: if the search stopped before the search-space was exceeded.
+ *	- false: if the search-space was completely examined.
  * 
  */
 bool solve(Solver& s, const LitVec& assumptions, uint32 maxModels, const SolveParams& p);
