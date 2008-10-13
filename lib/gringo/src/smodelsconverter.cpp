@@ -349,13 +349,13 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleSum(true, a, l, u);
 			break;
 		case Aggregate::MAX:
-			assert(false);
+			handleMax(a, l, u);
 			break;
 		case Aggregate::MIN:
 			handleMin(a, l, u);
 			break;
 		default:
-			handleMin(a, l, u);
+			assert(false);
 			break;
 	}
 	if(a->neg_)
