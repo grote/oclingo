@@ -19,8 +19,14 @@ include (CPack)
 
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)
 set(LIBRARY_OUTPUT_PATH ${GrinGo_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries." FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wno-deprecated" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wno-deprecated" CACHE STRING "Flags used by the compiler during release builds" FORCE)
+if(LINK_STATIC)
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wno-deprecated -static" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wno-deprecated -static" CACHE STRING "Flags used by the compiler during release builds" FORCE)
+else(LINK_STATIC)
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wno-deprecated" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wno-deprecated" CACHE STRING "Flags used by the compiler during release builds" FORCE)
+endif(LINK_STATIC)
+
 
 if(NOT CMAKE_VERBOSE_MAKEFILE)
 	set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "If this value is on, makefiles will be generated without the .SILENT directive, and all commands will be echoed to the console during the make.  This is useful for debugging only. With Visual Studio IDE projects all commands are done without /nologo" FORCE)

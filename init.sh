@@ -1,5 +1,6 @@
 #!/bin/bash
 
+x86=0
 mingw=0
 clingo=0
 iclingo=0
@@ -23,6 +24,9 @@ while [[ $# > 0 ]]; do
 		"--kdev") 
 			kdev=1
 			;;
+		"--x86")
+			x86=1
+			;;
 		"--mingw") 
 			mingw=1 
 			;;
@@ -30,11 +34,13 @@ while [[ $# > 0 ]]; do
 			echo "$0 [options]"
 			echo
 			echo "--help    : show this help"
-			echo "--mingw   : crosscompile for windows"
-			echo "            Note: u may have to change the file \"mingw.cmake\""
 			echo "--clingo  : enable build-in clasp version"
 			echo "--iclingo : enable incremental clasp interface "
 			echo "--debug   : also create debug builds"
+			echo "--mingw   : crosscompile for windows"
+			echo "            Note: u may have to change the file \"mingw.cmake\""
+			echo "--x86     : crosscompile for x86 archs"
+			echo "            Note: u may have to change the file \"x86.cmake\""
 			exit 0
 			;;
 		*)
@@ -69,6 +75,13 @@ function prepare()
 		mkdir -p win32
 		cd win32
 		cmake -D CMAKE_TOOLCHAIN_FILE=../../../mingw.cmake $2 ../../..
+		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
+		cd ..
+	fi
+	if [[ $x86 == 1 ]]; then
+		mkdir -p x86
+		cd x86
+		cmake -D CMAKE_TOOLCHAIN_FILE=../../../x86.cmake $2 ../../..
 		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
 		cd ..
 	fi
