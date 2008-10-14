@@ -1,0 +1,10 @@
+gringo 2.0.1
+	* added "--base" option
+	* aggregates may be preceded by nots now
+	* improved the "--help" output
+	* fixed a bug in the handling of ;'s
+	* fixed non working max-aggregates
+	* fixed the cmake files because of build errors on some platforms
+gringo 2.0.0
+	* complete rewrite of gringo 1.0.0
+
