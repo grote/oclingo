@@ -13,7 +13,7 @@ SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "1")
 # that sucks this is nowhere documented!!!
 SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/")
-SET(CPACK_SOURCE_GENERATOR "TBZ2")
+SET(CPACK_SOURCE_GENERATOR "TGZ")
 include (CPack)
 
 

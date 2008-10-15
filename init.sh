@@ -1,7 +1,7 @@
 #!/bin/bash
 
-x86=0
-mingw=0
+x86_pc_linux_gnu=0
+mingw32=0
 clingo=0
 iclingo=0
 kdev=0
@@ -24,11 +24,11 @@ while [[ $# > 0 ]]; do
 		"--kdev") 
 			kdev=1
 			;;
-		"--x86")
-			x86=1
+		"--x86-pc-linux-gnu")
+			x86_pc_linux_gnu=1
 			;;
-		"--mingw") 
-			mingw=1 
+		"--mingw32") 
+			mingw32=1 
 			;;
 		"--help")
 			echo "$0 [options]"
@@ -37,10 +37,11 @@ while [[ $# > 0 ]]; do
 			echo "--clingo  : enable build-in clasp version"
 			echo "--iclingo : enable incremental clasp interface "
 			echo "--debug   : also create debug builds"
-			echo "--mingw   : crosscompile for windows"
-			echo "            Note: u may have to change the file \"mingw.cmake\""
-			echo "--x86     : crosscompile for x86 archs"
-			echo "            Note: u may have to change the file \"x86.cmake\""
+			echo "--mingw32 : crosscompile for windows"
+			echo "            Note: u may have to change the file \"mingw32.cmake\""
+			echo "--x86-pc-linux-gnu : "
+			echo "            crosscompile for x86-pc-linux-gnu"
+			echo "            Note: u may have to change the file \"x86-pc-linux-gnu.cmake\""
 			exit 0
 			;;
 		*)
@@ -71,17 +72,17 @@ function prepare()
 		cmake -G KDevelop3 $2 ../../..
 		cd ..
 	fi
-	if [[ $mingw == 1 ]]; then
-		mkdir -p win32
-		cd win32
-		cmake -D CMAKE_TOOLCHAIN_FILE=../../../mingw.cmake $2 ../../..
+	if [[ $mingw32 == 1 ]]; then
+		mkdir -p mingw32
+		cd mingw32
+		cmake -D CMAKE_TOOLCHAIN_FILE=../../../mingw32.cmake $2 ../../..
 		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
 		cd ..
 	fi
-	if [[ $x86 == 1 ]]; then
-		mkdir -p x86
-		cd x86
-		cmake -D CMAKE_TOOLCHAIN_FILE=../../../x86.cmake $2 ../../..
+	if [[ $x86_pc_linux_gnu == 1 ]]; then
+		mkdir -p x86-pc-linux-gnu
+		cd x86-pc-linux-gnu
+		cmake -D CMAKE_TOOLCHAIN_FILE=../../../x86-pc-linux-gnu.cmake $2 ../../..
 		gcc -o bin/lemon ../../../lib/gringo/src/lemon.c
 		cd ..
 	fi
