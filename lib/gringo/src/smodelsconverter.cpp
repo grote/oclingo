@@ -97,10 +97,6 @@ void SmodelsConverter::handleBody(ObjectVector &body)
 		}
 		else if(dynamic_cast<Aggregate*>(*it))
 		{
-			// forbid negative aggregates (for simplicity)
-			// this could be handled but i rembered this case too late
-			// and i dont see a great modeling advantage
-			assert(!(*it)->neg_);
 			printBody(static_cast<Aggregate*>(*it));
 		}
 		else if(dynamic_cast<DeltaObject*>(*it))
