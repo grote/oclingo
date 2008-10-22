@@ -34,11 +34,11 @@ MaxAggregate::MaxAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	fact_ = true;
-	lower = INT_MIN;
-	upper = INT_MAX;
+	lower = INT_MAX;
+	upper = INT_MIN;
 	fixed = INT_MIN;
-	maxUpperBound_ = INT_MAX;
-	minLowerBound_ = INT_MIN;
+	maxUpperBound_ = INT_MIN;
+	minLowerBound_ = INT_MAX;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
