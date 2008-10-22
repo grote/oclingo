@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0.1"
+VERSION="2.0.2"
 
 # completely rebuild everything
 make clean
@@ -11,20 +11,20 @@ rm -rf build/gringo/debug
 rm -rf build/clingo/debug
 
 mkdir -p build/release
-mkdir -p build/release/all-${VERSION}-mingw32
+mkdir -p build/release/all-${VERSION}-win32
 mkdir -p build/release/all-${VERSION}-x86-linux
 
 ./build.sh
 
 # create the windows binary release
-cp build/gringo/mingw32/bin/gringo.exe build/release/all-${VERSION}-mingw32/gringo-${VERSION}-mingw32.exe
-cp build/clingo/mingw32/bin/clingo.exe build/release/all-${VERSION}-mingw32/clingo-${VERSION}-mingw32.exe
-cp build/iclingo/mingw32/bin/iclingo.exe build/release/all-${VERSION}-mingw32/iclingo-${VERSION}-mingw32.exe
-zip -r build/release/all-${VERSION}-mingw32.zip build/release/all-${VERSION}-mingw32/
-zip -j build/release/gringo-${VERSION}-mingw32.exe.zip build/release/all-${VERSION}-mingw32/gringo-${VERSION}-mingw32.exe
-zip -j build/release/clingo-${VERSION}-mingw32.exe.zip build/release/all-${VERSION}-mingw32/clingo-${VERSION}-mingw32.exe
-zip -j build/release/iclingo-${VERSION}-mingw32.exe.zip build/release/all-${VERSION}-mingw32/iclingo-${VERSION}-mingw32.exe
-rm -rf build/release/all-${VERSION}-mingw32/
+cp build/gringo/mingw32/bin/gringo.exe build/release/all-${VERSION}-win32/gringo-${VERSION}-win32.exe
+cp build/clingo/mingw32/bin/clingo.exe build/release/all-${VERSION}-win32/clingo-${VERSION}-win32.exe
+cp build/iclingo/mingw32/bin/iclingo.exe build/release/all-${VERSION}-win32/iclingo-${VERSION}-win32.exe
+zip -r build/release/all-${VERSION}-win32.zip build/release/all-${VERSION}-win32/
+zip -j build/release/gringo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/gringo-${VERSION}-win32.exe
+zip -j build/release/clingo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/clingo-${VERSION}-win32.exe
+zip -j build/release/iclingo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/iclingo-${VERSION}-win32.exe
+rm -rf build/release/all-${VERSION}-win32/
 
 # create the linux binary release
 cp build/gringo/x86-pc-linux-gnu/bin/gringo build/release/all-${VERSION}-x86-linux/gringo-${VERSION}-x86-linux

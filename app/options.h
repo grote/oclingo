@@ -48,7 +48,7 @@ const char* const CLASP_VERSION = "1.1.1";
 #else
 const char* const EXECUTABLE = "gringo";
 #endif
-const char* const GRINGO_VERSION = "2.0.1";
+const char* const GRINGO_VERSION = "2.0.2";
 
 class Options {
 public:
