@@ -93,7 +93,7 @@ void AssignmentLiteral::finish()
 
 bool AssignmentLiteral::match(Grounder *g)
 {
-	return c_->getValue(g) == t_->getValue(g);
+	return c_->getValue(g).equal(t_->getValue(g));
 }
 
 void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
