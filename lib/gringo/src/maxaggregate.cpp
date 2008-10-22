@@ -34,11 +34,8 @@ MaxAggregate::MaxAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	fact_ = true;
-	lower = INT_MAX;
 	upper = INT_MIN;
 	fixed = INT_MIN;
-	maxUpperBound_ = INT_MIN;
-	minLowerBound_ = INT_MAX;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -54,19 +51,12 @@ void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			if(p->isFact())
 				fixed = std::max(fixed, weight);
 			else
-			{
 				fact_ = false;
-				lower = std::min(lower, weight);
-				upper = std::max(upper, weight);
-			}
-			maxUpperBound_ = std::max(maxUpperBound_, weight);
-			minLowerBound_ = std::min(minLowerBound_, weight);
+			upper = std::max(upper, weight);
 		}
 	}
-
-	if(lower == INT_MAX || fixed > lower)
-		lower = fixed;
-	upper = std::max(upper, fixed);
+	maxUpperBound_ = upper;
+	minLowerBound_ = lower = fixed;
 }
 
 void MaxAggregate::print(const GlobalStorage *g, std::ostream &out) const

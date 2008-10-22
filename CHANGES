@@ -1,6 +1,6 @@
 gringo 2.0.2
 	* removed some wrong assertions
-	* fixed handling of max-aggregates
+	* fixed handling of min- and max-aggregates
 	* fixed a bug in assignmentliterals
 gringo 2.0.1
 	* added "--base" option

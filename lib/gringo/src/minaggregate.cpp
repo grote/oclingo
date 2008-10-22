@@ -35,10 +35,7 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	fact_ = true;
 	lower = INT_MAX;
-	upper = INT_MIN;
 	fixed = INT_MAX;
-	maxUpperBound_ = INT_MAX;
-	minLowerBound_ = INT_MIN;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -54,19 +51,13 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			if(p->isFact())
 				fixed = std::min(fixed, weight);
 			else
-			{
 				fact_ = false;
-				lower = std::min(lower, weight);
-				upper = std::max(upper, weight);
-			}
-			maxUpperBound_ = std::max(maxUpperBound_, weight);
-			minLowerBound_ = std::min(minLowerBound_, weight);
+			lower = std::min(lower, weight);
 		}
 	}
-
-	lower = std::min(lower, fixed);
-	if(upper == INT_MIN || fixed > upper)
-		upper = fixed;
+	
+	maxUpperBound_ = upper = fixed;
+	minLowerBound_ = lower;
 }
 
 namespace
