@@ -69,7 +69,7 @@ function prepare()
 	if [[ $kdev == 1 ]]; then
 		mkdir -p kdevelop
 		cd kdevelop
-		cmake -G KDevelop3 $2 ../../..
+		cmake -G KDevelop3 CMAKE_BUILD_TYPE:STRING=Debug $2 ../../..
 		cd ..
 	fi
 	if [[ $mingw32 == 1 ]]; then
