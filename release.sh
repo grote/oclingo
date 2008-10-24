@@ -48,3 +48,5 @@ rm build/release/GrinGo-${VERSION}-Source.tar.gz
 mv build/release/GrinGo-${VERSION}-Source build/release/gringo-${VERSION}-source
 tar -czf build/release/gringo-${VERSION}-source.tar.gz build/release/gringo-${VERSION}-source
 rm -rf build/release/gringo-${VERSION}-source
+
+#svn copy https://potassco.svn.sourceforge.net/svnroot/potassco/trunk/gringo https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-${VERSION}
