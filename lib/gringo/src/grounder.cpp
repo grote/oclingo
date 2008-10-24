@@ -242,6 +242,21 @@ void Grounder::ground_()
 	{
 		Program *scc = *it;
 		//std::cerr << pp(this, scc) << std::endl;
+		if(opts_.debug)
+		{
+			switch(scc->getType())
+			{
+				case Program::FACT:
+					std::cerr << "grounding fact program..." << std::endl;
+					break;
+				case Program::BASIC:
+					std::cerr << "grounding basic program..." << std::endl;
+					break;
+				case Program::NORMAL:
+					std::cerr << "grounding normal program..." << std::endl;
+					break;
+			}
+		}
 		eval_ = scc->getEvaluator();
 		eval_->initialize(this);
 		StatementVector *rules = scc->getStatements();
@@ -252,6 +267,9 @@ void Grounder::ground_()
 				rule->ground(this, PREPARE);
 			else
 				rule->ground(this, REINIT);
+
+			if(opts_.debug)
+				std::cerr << "  " << pp(this, rule) << std::endl;
 
 			rule->ground(this, GROUND);
 			rule->ground(this, RELEASE);
