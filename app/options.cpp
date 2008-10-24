@@ -471,7 +471,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 
 		("stats"    , bool_switch(&stats),                 "Print extended statistics")
 		("verbose,V", bool_switch(&verbose),               "Print additional information")
-		("debug"    , bool_switch(&grounderOptions.debug), "Print an internal representation of the rule that is currently grounded\n")
+		("debug"    , bool_switch(&grounderOptions.debug), "Print internal representations of rules during grounding\n")
 #ifdef WITH_ICLASP
 		("clasp",  bool_switch(&claspMode), "Run in Clasp mode")
 		("clingo", bool_switch(&claspOut), "Run in Clingo mode\n")

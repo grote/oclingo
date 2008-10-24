@@ -2,6 +2,7 @@ gringo 2.0.2
 	* removed some wrong assertions
 	* fixed handling of min- and max-aggregates
 	* fixed a bug in assignmentliterals
+	* added a "--debug" option to print the internal representation of rules during grounding
 gringo 2.0.1
 	* added "--base" option
 	* aggregates may be preceded by nots now
