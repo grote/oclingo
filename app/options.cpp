@@ -727,7 +727,7 @@ void Options::printSyntax(std::ostream& os) const
 		<< indent << "'max'" << std::endl
 		<< indent << indent << "1 min   [a=2, b=4, not c=1] 3." << std::endl
 		<< "Further  details and  notes on compatibility  to lparse" << std::endl
-		<< "can be found at <http://www.cs.uni-potsdam.de/potassco>." << std::endl;
+		<< "can be found at <http://potassco.sourceforge.net/>." << std::endl;
 }
 
 void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
@@ -762,7 +762,7 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 		<< indent << "--istop=SAT --iquery=1 --ilearnt=keep --iheuristic=forget\n"
 #	endif
 #else
-		<< " --bindersplit=yes\n"
+		<< " --lparse --bindersplit=yes\n"
 #endif
 		;
 }

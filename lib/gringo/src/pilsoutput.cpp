@@ -32,7 +32,7 @@ void PilsOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
 	Output::initialize(g, pred);
 
-	*out_ << HEADER << " " << "3" << VERSION << " " << normalForm_ << " " << "0 0" << NL;
+	*out_ << HEADER << " " << "3" << " " << VERSION << " " << normalForm_ << " " << "0 0" << NL;
 }
 
 void PilsOutput::print(NS_OUTPUT::Object *r)
