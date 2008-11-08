@@ -8,12 +8,12 @@ finite equivalent ground programs are guaranteed to exist.
 Level-restricted logic programs constitute such a fragment,
 where finiteness is manifested in the requirement that any variable in a rule
 must be bound to a finite set of ground terms via a predicate not
-subject to positive recursion through the rule.
+subject to positive recursion through that rule.
 The notion of level-restrictedness is complemented by stratification,
 which by disallowing negative recursion among predicates describes a
 class of logic programs having unique answer sets.
-The formal definition of level-restricted programs
-that can be grounded by \gringo, \clingo, and \iclingo\
+The formal definition of level-restricted programs,
+which can be grounded by \gringo\ (stand-alone or embedded in \clingo\ and \iclingo),
 is provided in Section~\ref{subsec:lambda}.
 Section~\ref{subsec:strat} introduces stratified programs and the related
 concept of domain predicates, which can serve particular purposes during grounding.
@@ -28,7 +28,7 @@ by terms such that the result is a finite equivalent ground program~$\alt{\Pi}$.
 \footnote{$\Pi$ and~$\alt{\Pi}$ are equivalent if they have the same answer sets.}
 Of course, a necessary condition for this is that~$\Pi$ possesses
 only finitely many finite answer sets.
-Unfortunately, such properties are undecidable in general~\cite{daeigovo01a}.
+Unfortunately, such a property is undecidable in general~\cite{daeigovo01a}.
 Instead of semantic properties, grounders do thus impose rather simple syntactic
 conditions to guarantee the existence of finite equivalent ground programs
 (which are then also computed).
@@ -49,7 +49,7 @@ must be such that, for each rule $r\in\Pi$,
 the set of potentially applicable ground instances of~$r$ is known in advance.
 This is the case if, for each variable~$V\in\vars{r}$,
 we find an atom~$A$ in the body of~$r$ with
-$V\in\vars{A}$, where $\vars{A}$ is that set of variables occurring in~$A$,
+$V\in\vars{A}$ (where $\vars{A}$ is that set of variables occurring in~$A$)
 such that the potentially derivable ground instances of~$A$ are limited (see below).
 In fact, with such an atom~$A$ at hand,
 the set of ground terms to which~$V$ needs to be instantiated is known a priori,
@@ -58,7 +58,7 @@ The sketched approach is justified by the $\subseteq$-minimality of answer sets
 in the sense of Section~\ref{subsec:semantics},
 as it allows us to restrict the attention to rules whose bodies are derivable w.r.t.\
 some answer set.
-Beyond outputting only ``relevant'' rules,
+Beyond outputting only ``relevant rules,''
 grounders can apply answer-set preserving simplifications,
 some of which are discussed in Section~\ref{subsec:strat}.
 
@@ -278,7 +278,7 @@ Note that every logic program has a maximal stratified subprogram,
 which is also easy to determine.
 In fact, \gringo\ identifies the maximal stratified subprogram~$\pi$
 of a logic program~$\Pi$,
-and it fully evaluates the predicates~$p/i$ that occur in~$\pi$,
+and it fully evaluates the predicates~$p/i$ not belonging to the head of any rule in~$\Pi\setminus\pi$,
 which we call \emph{domain predicates}.
 In Section~\ref{subsec:gringo:condition},
 we will see that domain predicates can serve particular purposes during grounding.
@@ -319,9 +319,10 @@ is stratified (take $\xi=\{\pred{nat}/1 \mapsto 0\}$),
 but not level-restricted
 ($\lambda(\pred{nat}/1)>\lambda(\pred{nat}/1)$
  needed because of the second rule is impossible).
-In fact, the program has a unique but infinite answer set, thus,
-the program cannot be translated to a finite equivalent ground program.
-For this reason, \gringo\ does not accept the given program.
+In fact, the program has a unique but infinite answer set.
+Thus,
+the program cannot be translated to a finite equivalent ground program,
+which is why \gringo\ does not accept it.
 Rather, in the first place, a program must be level-restricted in order
 to ground it with \gringo.
 If level-restrictedness is granted,
