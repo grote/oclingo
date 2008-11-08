@@ -2,7 +2,7 @@
 
 In Section~\ref{subsec:asp},
 we give a brief introduction to Answer Set Programming,
-which constitutes the basic framework of the tools we describe here.
+which constitutes the basic framework for the tools we describe here.
 This framework deals with logic programs,
 whose syntax and semantics are formally introduced in
 Section~\ref{subsec:syntax} and~\ref{subsec:semantics}, respectively.
@@ -10,7 +10,7 @@ We invite the reader to merely skim or even skip these two sections
 upon the first reading, and to rather look them up later on if
 formal details are requested.
 However, we want to stress that the syntax we use for logic programs
-admits (uninterpreted) function symbols of non-zero arity,
+admits (uninterpreted) function symbols with non-zero arity,
 whose full support by our tools is rather exceptional and thus innovative.
 
 
@@ -18,7 +18,7 @@ whose full support by our tools is rather exceptional and thus innovative.
 \subsection{Answer Set Programming}\label{subsec:asp}
 
 Answer Set Programming (ASP)
-\cite{baral03a,gelleo02a,lifschitz02a,martru99a,niemela99a}
+\cite{ankolisc05a,baral03a,gelleo02a,lifschitz02a,martru99a,niemela99a}
 emerged in the late 1990s as a declarative paradigm
 for modeling and solving search problems.
 As illustrated in Figure~\ref{fig:asp},
@@ -52,8 +52,8 @@ the language of the above facts contains predicates
 We next augment the above facts with the following rules:%
 \marginlabel{%
   Instead of \code{neg\mus flies(X)}, one could write
-  \code{-flies(X)} in order to make explicit that
-  instances amount to the classical (or strong) negation of
+  \code{-flies(X)} to make explicit that
+  instances (obtained for~\var{X}) amount to the classical (or strong) negation of
   \code{flies(X)}.}
 %
 \lstinputlisting[firstnumber=3]{examples/fly.lp}
@@ -65,7 +65,7 @@ is derived if all premises on the right hand side
 Connective ``\code{not}'' stands for \emph{default negation},
 and uppercase letter~\var{X} is the name of a first-order variable.
 Variables are local to rules, that is,
-a variable name refers to a different variable in a distinct rule.
+a variable name refers to different variables in distinct rules.
 Finally, every variable is universally quantified and thus
 applies to all terms in the language of a logic program.
 
@@ -127,7 +127,7 @@ Finally, \iclingo\footnotemark[\value{footnote}]~\cite{gekakaosscth08a} integrat
 grounding and solving within incremental computations.
 %
 %\addtocounter{footnote}{-1}%
-\footnotetext{Described in this document.}
+\footnotetext{Described in this guide.}
 
 The next example illustrates the computation of answer sets for
 the logic program given in Example~\ref{ex:flies}.
@@ -139,7 +139,7 @@ They can be substituted for variables~\var{X} in the rules in Line~3--5.
 In fact, Line~1--5 of Example~\ref{ex:flies} are a shorthand for the ground instantiation:
 %
 \lstinputlisting[nolol]{examples/bird.lp}
-\lstinputlisting[firstnumber=3]{examples/bfall.lp}
+\lstinputlisting[firstnumber=3,xrightmargin=-8pt]{examples/bfall.lp}
 %
 Note that the facts in Line~1 and~2 are unaltered from Example~\ref{ex:flies},
 while the ground rules in Line~3--8 are obtained by instantiating variables~\var{X}.
@@ -157,7 +157,7 @@ Thus, \gringo\ computes the following ground program:%
         \mbox{~}examples/fly.lp}}
 %
 \lstinputlisting[nolol]{examples/bird.lp}
-\lstinputlisting[firstnumber=3]{examples/bfeff.lp}
+\lstinputlisting[numbers=none]{examples/bfeff.lp}
 %
 Observe that \code{\pred{neg\mus flies}(\const{tux})} has become a fact because
 \code{\pred{penguin}(\const{tux})} is known.
@@ -165,7 +165,7 @@ Similarly, \code{\pred{bird}(\const{tux})} and \code{\pred{bird}(\const{tweety})
 have been removed from bodies of rules, making use of the fact that ``\textit{true} \& something'' is
 equivalent to ``something.''
 Applying the complementary principle that ``\textit{false} \& something'' evaluates to ``\textit{false},''
-the rule with \code{not \pred{neg\mus flies}(\const{tux})} in the body has been dropped completely.
+the rule with \code{not \pred{neg\mus flies}(\const{tux})} in the body (Line~3) has been dropped completely.
 After performing these simplifications, the ground program computed by \gringo\ is still
 equivalent to the input program in Example~\ref{ex:flies}, viz.,
 there is one answer set such that \const{tweety} flies and one where \const{tweety} does not fly.
@@ -218,7 +218,7 @@ this makes ASP an attractive and powerful paradigm
 for declarative problem solving.
 By explaining and illustrating the functionalities of
 grounder \gringo, solver \clasp, and their bondings in \clingo\ and \iclingo,
-this document aims at enabling the reader to make (better) use of ASP.
+this guide aims at enabling the reader to make (better) use of ASP.
 
 
 \subsection{Syntax of Logic Programs}\label{subsec:syntax}
@@ -226,7 +226,7 @@ this document aims at enabling the reader to make (better) use of ASP.
 This section gives a brief account of the formal syntax of logic programs,
 needed for defining their semantics.
 Consult, e.g., \cite{lloyd87a} for a detailed introduction.
-The language of logic programs is composed from sets
+The language of a logic program is composed from sets
 %
 \begin{itemize}
 \item $\mathcal{P}=\{p_1/i_1,\dots,p_m/i_m\}$ of \emph{predicates}
@@ -256,7 +256,7 @@ from~$\mathcal{P}$ and $t_1,\dots,t_k$ are terms in~$\mathcal{T}$.
 As with terms, $\ground{\mathcal{A}}$ denotes the set of all variable-free
 atoms in~$\mathcal{A}$.
 
-A \emph{rule}~$r$ is an expression of the form $\mathit{Head}~\code{:-}~\mathit{Body}\code{.}$
+A \emph{rule}~$r$ is an expression of the form $\mathit{Head}~\code{:-}~\mathit{Body}\code{.}$,
 where $\mathit{Head}$ and $\mathit{Body}$ are composed from atoms in $\mathcal{A}$
 (other than $\bot$ and $\top$), punctuation symbols, and connectives other than ``\code{:-}.''
 The intuitive reading of a rule is that $\mathit{Head}$ follows from $\mathit{Body}$,
@@ -290,7 +290,7 @@ rules are of the form:
 \end{equation}
 %
 For $0\leq k\leq n$, every~$A_k$ is an atom, that is, the head is an atom and
-the body a (possibly empty) conjunction of atoms that may be preceded by ``\code{not}.''
+the body is a (possibly empty) conjunction of atoms that may be preceded by ``\code{not}.''
 As mentioned in Section~\ref{subsec:asp},
 the order of elements in the body is not essential,
 so that they can be regrouped to match the form in~(\ref{eq:normal:rule}).
@@ -299,7 +299,7 @@ $\head{r}=A_0$, $\pbody{r}=\{A_1,\dots,A_m\}$, and $\nbody{r}=\{A_{m+1},\dots,A_
 If $r=A_0\code{.}$ is a fact, then
 $\pbody{r}=\nbody{r}=\nolinebreak\emptyset$.
 The particular structure of normal programs admits a rather intuitive 
-reformulation of their semantics in the next section.
+characterization of their semantics in the next section.
 
 \begin{example}\label{ex:syntax}
 The language of the normal program in Example~\ref{ex:flies} includes
@@ -323,7 +323,7 @@ By substituting them for variables,
 we obtain the ground instantiation given in Example~\ref{ex:flies:ground}.
 For instance, the ground rules
 %
-\begin{lstlisting}[numbers=none]
+\begin{lstlisting}[firstnumber=3]
 flies(tux)    :- bird(tux),    not neg_flies(tux).
 flies(tweety) :- bird(tweety), not neg_flies(tweety).
 \end{lstlisting}
@@ -340,7 +340,7 @@ $\{\var{X}\mapsto\const{tux}\}$ and $\{\var{X}\mapsto\const{tweety}\}$
 induce the above ground rules.
 Notably, sets~$\mathcal{P}$ and~$\mathcal{F}$ of predicates and functions
 need not be disjoint because atoms and terms are also distinguished
-by the context in which they occur,
+by the context they occur in,
 and a predicate or function symbol may be used with different arities.
 For instance, we could add a rule
 %
@@ -378,7 +378,7 @@ Furthermore, $\top$ and~$\neg F$ are used as shorthands for
 $(\bot\rightarrow\bot)$ and $(F\rightarrow\bot)$, respectively.
 The \emph{reduct}~$\reduct{F}{X}$ of a propositional formula~$F$
 relative to a set~$X$ of atoms is defined recursively as follows:
-\begin{itemize}
+\begin{itemize}\addtolength{\itemsep}{-3pt}
 \item $\reduct{F}{X}=\bot$ ~if $X\not\models F$,
 \item $\reduct{F}{X}=F$ ~if $F\in X$, and
 \item $\reduct{F}{X}=(\reduct{G}{X}\circ\reduct{H}{X})$ ~if 
@@ -389,7 +389,7 @@ relative to a set~$X$ of atoms is defined recursively as follows:
 Essentially, the reduct relative to~$X$ is obtained by replacing
 all maximal unsatisfied subformulas of~$F$ with~$\bot$.
 As a matter fact, this implies that any maximal negative subformula 
-of form $(G\rightarrow \bot)$ is replaced by either $\bot$ (if $X\models G$)
+of the form $(G\rightarrow \bot)$ is replaced by either $\bot$ (if $X\models G$)
 or $(\bot\rightarrow\bot)=\top$ (if $X\not\models G$).
 Furthermore, any atom occurring in $\reduct{F}{X}$ belongs to~$X$.
 
@@ -467,7 +467,7 @@ we define:
 It is not hard to check that operator $T_{\Pi,X}$ is monotonic,
 as it adds head atoms of ground rules to its previous result if the positive
 body atoms have been derived,
-while negative bodies are evaluated w.r.t.~$X$.
+while negative bodies are merely evaluated w.r.t.~$X$.
 Using this operator, we can equivalently define $X\subseteq\ground{\mathcal{A}}$
 as an answer set of a normal program~$\Pi$ if $X=\bigcup_{0\leq i}T^i_{\Pi,X}$.
 This equilibrium requirement exhibits two fundamental aspects of answer set semantics:
@@ -568,7 +568,7 @@ while
 flies(tweety) :- bird(tweety), not neg_flies(tweety).
 \end{lstlisting}
 is the unique rule with head \code{\pred{flies}(\const{tweety})} that ``fires.''
-No further rule applies in step~$i=3$,
+No further rules apply in step~$i=3$,
 so that the set of atoms derived for~$i=2$ equals $\bigcup_{0\leq i}T^i_{\Pi,X}$.
 We have thus reproduced~$X$ by bottom-up derivation,
 which again shows that~$X$ is an answer set.
@@ -576,8 +576,8 @@ which again shows that~$X$ is an answer set.
 \end{example}
 
 We have above seen two definitions of answer sets that start
-from an answer set candidate $X\subseteq\ground{\mathcal{A}}$
-that is then verified in some way.
+from an answer set candidate $X\subseteq\ground{\mathcal{A}}$,
+which is then verified in some way.
 Such definitions must not be confused with the computation of answer sets,
 as (explicitly) enumerating all subsets of $\ground{\mathcal{A}}$
 is infeasible in practice.
