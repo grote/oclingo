@@ -47,7 +47,7 @@ The graph shown in Figure~\ref{fig:graph} is represented by the following set of
 %
 Recall from Section~\ref{subsec:lang:gringo} that~``\code{..}'' and~``\code{;}''
 in the head expand to multiple rules, which are facts here.
-Thus, the instance contains six nodes and 17 directed edges among them.
+Thus, the instance contains six nodes and 17 directed edges.
 
 \subsubsection{Problem Encoding}\label{subsec:color:encoding}
 
@@ -171,7 +171,7 @@ we encode this subproblem via the following non-ground rules:
 %
 The Generate rules in Line~2 and~3 assert that every node must have
 exactly one outgoing and exactly one incoming edge, respectively,
-that belong to the cycle.
+belonging to the cycle.
 By inserting the available edges, for node~\const{1},
 Line~2 and~3 are grounded as follows:%
 \marginlabel{%
@@ -202,7 +202,15 @@ among the ground instances of \pred{reached}/$1$,
 in which case a ground program is called \emph{non-tight}~\cite{erdlif03a,fages94a}.
 The ``correct'' treatment of (positive) recursion due to the justification
 requirement w.r.t.\ the reduct (cf.\ Section~\ref{subsec:semantics})
-is a particular feature of answer set semantics,%
+is a particular feature of answer set semantics,
+which is hard to mimic in either
+Boolean Satisfiability~\cite{bihemawa08a} or
+Constraint Programming~\cite{robewa06a}.
+In our present problem, this feature makes sure that all nodes are reached
+by a global cycle from node~\code{1}, thus, excluding isolated subcycles.
+In fact, the Test in Line~8 stipulates that every node in the given graph
+is reached, that is, the instances of \pred{cycle}/$2$ in an answer set
+must be the edges of a Hamiltonian cycle.%
 \marginlabel{%
   To compute the six Hamiltonian cycles
   for the graph in Figure~\ref{fig:graph}, invoke:\\
@@ -214,20 +222,13 @@ is a particular feature of answer set semantics,%
   \code{\mbox{~}clingo -n 0 \textbackslash\\
         \mbox{~}examples/ham.lp \textbackslash\\
         \mbox{~}examples/graph.lp}}
-which is hard to mimic in either
-Boolean Satisfiability~\cite{bihemawa08a} or
-Constraint Programming~\cite{robewa06a}.
-In our present problem, this feature makes sure that all nodes are reached
-by a global cycle from node~\code{1}, thus, excluding isolated subcycles.
-In fact, the Test in Line~8 stipulates that every node in the given graph
-is reached, that is, the instances of \pred{cycle}/$2$ in an answer set
-must be the edges of a Hamiltonian cycle.
 Finally, the additional Display part in Line~10 and~11 states that answer
 sets should be projected to instances of \pred{cycle}/$2$, as only they
 describe a solution.
 We have so far not considered edge costs,
 and answer sets for the above 
-part of the encoding correspond to Hamiltonian cycles.
+part of the encoding correspond to Hamiltonian cycles,
+that is, candidates for a minimum-cost round trip.
 
 In order to minimize costs,
 we add the following optimization statement:
@@ -359,8 +360,8 @@ However, we use Blocks-World Planning to illustrate the exploitation of
 
 As with the other two problems above,
 an instance is given by a set of facts, here,
-over predicates \pred{block}/$0$ (declaring blocks),
-\pred{init}/$1$ (defining the initial state),
+over predicates \pred{block}/$1$ (declaring blocks),
+\pred{init}/$1$ (defining the initial state), and
 \pred{goal}/$1$ (specifying the goal state).
 A well-known Blocks-World instance is described by:%
 \footnote{%
@@ -379,7 +380,7 @@ the possibility of instantiating variables to compound terms.
 
 \subsubsection{Problem Encoding}\label{subsec:block:encoding}
 
-Our Blocks-World Planning encoding for \iclingo\ makes use of statements
+Our Blocks-World Planning encoding for \iclingo\ makes use of declaratives
 \const{\#base}, \const{\#cumulative}, and \const{\#volatile},
 separating the encoding into a static, a cumulative, and a volatile (query) part.
 Each of them can be further refined into Generate, Define, Test, and Display constituents, 
@@ -400,13 +401,13 @@ The \const{\#cumulative} statement in Line~7 declares constant~\code{t}
 as a placeholder for step numbers in the cumulative encoding part below.
 Here, the Generate rule in Line~9 states that exactly one block~\var{X}
 must be moved to a location~\var{Y} (different from~\var{X}) at each step~\code{t}.
-The integrity constraint in Line~11-13 is used to test whether
+The integrity constraint in Line~11--13 is used to test whether
 moving block~\var{X} to location~\var{Y} is possible at step~\code{t}
 by denying~\code{\pred{move}(X,Y,t)} to hold if there
 is either some block~\var{A} on~\var{X} or some block~\var{B} distinct from~\var{X} on~\var{Y}
 (this condition is only checked if~\var{Y} is a block, viz., different from constant \const{table})
 at step~\code{t-1}.
-Finally, the Define part in Line~15 propagates
+Finally, the Define rule in Line~15 propagates
 a move to the state at step~\code{t},
 while the rule in Line~16--17 states that a block~\var{X} stays on a location~\var{Z}
 if it is not moved to any other location~\var{Y}.
@@ -435,32 +436,32 @@ This is also the default of \iclingo\
 but applying this default behavior triggers a warning (cf.\ Section~\ref{subsec:warn}).%
 \marginlabel{%
   To observe the ground program dealt with internally \iclingo\
-  at a step $t$, invoke:\\
+  at a step $n$, invoke:\\
   \code{\mbox{~}gringo -t \textbackslash\\
-        \mbox{~}--ifixed=$t$ \textbackslash\\
+        \mbox{~}--ifixed=$n$ \textbackslash\\
         \mbox{~}examples/blocks.lp \textbackslash\\
         \mbox{~}examples/world$i$.lp}
   where $i\in\{\code{0},\code{1},\code{2},\code{3},\code{4}\}$.}
 
-Finally, let us stress an important prerequisite for obtaining
+Finally, let us stress important prerequisites for obtaining
 a well-defined incremental computation result from \iclingo.
 First, the ground instances of head atoms of rules in the
 static, cumulative, and volatile program part must be pairwisely disjoint.
 Furthermore, ground instances of head atoms in the volatile part
-must not occur in the cumulative part,
-and those of the cumulative part must in turn not be used in the static part.
+must not occur in the static and cumulative parts,
+and those of the cumulative part must not be used in the static part.
 Finally, ground instances of head atoms in either the cumulative or the volatile part
 must be different for each pair of distinct steps.
-This is granted for our encoding because both atoms over \pred{move}/$3$
+This is the case for our encoding because both atoms over \pred{move}/$3$
 and those over \pred{holds}/$2$ include~\const{t} as an argument in the
 heads of the rules in Line~9, 15, and~16--17.
-Notably, the smallest step number to replace~\const{t} with is~\const{1},
-so that there is no clash with the ground atoms over \pred{holds}/$2$
+As the smallest step number to replace~\const{t} with is~\const{1},
+there also is no clash with the ground atoms over \pred{holds}/$2$
 obtained from the head of the static rule in Line~5.
-Further details on these requirements and their formal background can
+Further details on the sketched requirements and their formal background can
 be found in~\cite{gekakaosscth08a}.
-Arguably, many problems including some mutable bound are naturally encoded
-such that the above conditions apply.
+Arguably, many problems including some mutable bound can be encoded
+such that the prerequisites apply.
 Some attention should of course be spent on
 putting rules into the right program parts.
 
@@ -490,7 +491,7 @@ is successively replaced with step numbers~\const{1}, \const{2}, and~\const{3}
 in the~\const{\#cumulative} and in the~\const{\#volatile} part.
 While the query postulated in the~\const{\#volatile} part cannot be
 fulfilled in steps~\const{1} and~\const{2}, \iclingo\ 
-stops its incremental computation after finding some answer set in step~\const{3}.
+stops its incremental computation after finding an answer set in step~\const{3}.
 The scheme of iterating steps until finding at least one answer set
 is the default behavior of~\iclingo,
 which can be customized via command line options
