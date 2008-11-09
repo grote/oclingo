@@ -252,7 +252,7 @@ Print version information and exit.
 \item[\code{--stats}]~\\
 Print (extended) statistic information before termination.
 \item[\code{--file,-f \textit{filename}}]~\\
-Read from file \code{\textit{filename}} (rather than from standard input).
+Read from file \code{\textit{filename}} (rather than from the standard input).
 \item[\code{--number,-n \textit{n}}]~\\
 Compute at most~\code{\textit{n}} answer sets,
 $\code{\textit{n}}=\code{0}$ standing for compute all answer sets.
@@ -260,9 +260,7 @@ $\code{\textit{n}}=\code{0}$ standing for compute all answer sets.
 Do not print computed answer sets.
 (This is useful for benchmarking.)
 \item[\code{--seed \textit{n}}]~\\
-Use seed~\code{\textit{n}} for random number generator.
-(This may be used to obtain a reproducible behavior
- when running \clasp\ with randomized features.)
+Use seed~\code{\textit{n}} (rather than~\code{1}) for random number generator.
 \item[\code{--brave}]~\\
 Compute the brave consequences (union of all answer sets) of a logic program.
 \item[\code{--cautious}]~\\
@@ -450,17 +448,17 @@ in case that performance needs to be improved.
 Finally, let us consider the default command line of \clasp:
 %
 \begin{lstlisting}[numbers=none]
-clasp 1 --trans-ext=no --eq=5 --sat-prepro=no --rand-watches=yes
-        --lookback=yes --lookahead=no --heuristic=Berkmin
-        --rand-freq=0.0 --rand-prob=no
+clasp 1 --seed=1 --trans-ext=no --eq=5 --sat-prepro=no
+        --rand-watches=yes --lookback=yes --lookahead=no
+        --heuristic=Berkmin --rand-freq=0.0 --rand-prob=no
         --restarts=100,1.5 --shuffle=0,0 --deletion=3.0,1.1,3.0
         --strengthen=all --loops=common --contraction=250
 \end{lstlisting}
 %
 Considering only the most significant defaults,
 numeric argument~\code{1} instructs \clasp\ to terminate immediately
-after finding an answer set.
-Together with \code{--lookback=yes}, \code{--restarts=100,1.5} lets \clasp\ apply a geometric
+after finding an answer set,
+and with \code{--lookback=yes}, \code{--restarts=100,1.5} lets \clasp\ apply a geometric
 restart policy.
 
 %%% Local Variables: 
