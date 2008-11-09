@@ -124,7 +124,7 @@ cyclic constant definition
 To resolve such an error, check the occurrences of \const{\#const}
 in the input as well as \code{--const} or \code{-c} options
 in the command line, and change them in a way such that a constant
-that is to be replaced does not (transitively) occur within a term
+that is to be replaced does not (transitively) occur in a term
 to be inserted.
 
 The next error may occur if a statement from the input language
@@ -256,7 +256,7 @@ Thus, we strongly recommend to avoid negative weights
 within a \const{sum} aggregate in the positive body of a rule.
 Finally, the third warning recognizes that multiple \const{\#const}
 statements over the same constant~\code{\textit{c}} are contained in the input,
-while only the first among them will be considered.
+but only the first of them will be considered.
 
 The next four warnings may be issued by \iclingo:
 \begin{lstlisting}[numbers=none,escapechar=@]
