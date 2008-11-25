@@ -876,6 +876,7 @@ void Optimize::print(Output *o, std::ostream &out)
 	ObjectVector::iterator lit = lits_.begin();
 	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
 	{
+		(*lit)->print(o, out);
 		unsigned int id = o->newUid();
 		out << "d" << " 3 " << id << " " << (*lit)->getUid() << " ";
 	   if(type_ == MAXIMIZE)
