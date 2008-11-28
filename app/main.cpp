@@ -744,6 +744,11 @@ bool MainApp::solveIncremental()
 			ret = solver.stats.models - models > 0;
 			setState(end_solve);
 		}
+		else
+		{
+			cerr << "Found top level conflict while preprocessing: program has no answer sets." << endl;
+			break;
+		}
 		steps++;
 		all.Stop();
 		if(options.istats)
