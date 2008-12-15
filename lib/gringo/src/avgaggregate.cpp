@@ -80,6 +80,8 @@ void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		upper = std::max((fixed + nFixed - 1) / nFixed, upper);
 		// TODO: if nFixed==n a more sophisticated test could be implemented
 		// but the current bounds of the aggregate have to be taken into account
+		if(nFixed == n && lower == upper)
+			fact_ = true;
 	}
 	maxUpperBound_ = upper;
 	minLowerBound_ = lower;

@@ -79,6 +79,7 @@ begin:
 		COMPUTE         { return LPARSECONVERTER_COMPUTE; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
+		"avg"           { return LPARSECONVERTER_AVG; }
 		"sum"           { return LPARSECONVERTER_SUM; }
 		"min"           { return LPARSECONVERTER_MIN; }
 		"max"           { return LPARSECONVERTER_MAX; }

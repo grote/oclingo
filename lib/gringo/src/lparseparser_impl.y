@@ -172,6 +172,7 @@ using namespace NS_GRINGO;
 %left AND.
 %left PLUS MINUS.
 %left TIMES DIVIDE MOD.
+%right POWER.
 %left UMINUS TILDE.
 
 // this will define the symbols in the header 
@@ -296,6 +297,7 @@ term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
 term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
+term(res) ::= term(a) POWER term(b).   { res = new FunctionTerm(FunctionTerm::POWER, a, b); }
 term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
 term(res) ::= term(a) XOR term(b).     { res = new FunctionTerm(FunctionTerm::BITXOR, a, b); }
@@ -318,6 +320,7 @@ const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 const_term(res) ::= const_term(a) PLUS const_term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
 const_term(res) ::= const_term(a) TIMES const_term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
+const_term(res) ::= const_term(a) POWER const_term(b).     { res = new FunctionTerm(FunctionTerm::POWER, a, b); }
 const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 const_term(res) ::= const_term(a) DIVIDE const_term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
 const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Value(Value::INT, 0)), b); }

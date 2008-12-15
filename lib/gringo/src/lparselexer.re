@@ -118,6 +118,7 @@ begin:
 		"&"             { return LPARSEPARSER_AND; }
 		"^"             { return LPARSEPARSER_XOR; }
 		"-"             { return LPARSEPARSER_MINUS; }
+		"**"            { return LPARSEPARSER_POWER; }
 		"*"             { return LPARSEPARSER_TIMES; }
 		"/"             { return LPARSEPARSER_DIVIDE; }
 		"="             { return LPARSEPARSER_ASSIGN; }

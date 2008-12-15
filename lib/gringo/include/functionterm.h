@@ -26,7 +26,7 @@ namespace NS_GRINGO
 	class FunctionTerm : public Term
 	{
 	public:
-		enum FunctionType { PLUS, MINUS, TIMES, DIVIDE, MOD, ABS, BITOR, BITXOR, BITAND, COMPLEMENT };
+		enum FunctionType { PLUS, MINUS, POWER, TIMES, DIVIDE, MOD, ABS, BITOR, BITXOR, BITAND, COMPLEMENT };
 	public:
 		FunctionTerm(FunctionType type, Term *a, Term *b = 0);
 		FunctionTerm(const FunctionTerm &f);

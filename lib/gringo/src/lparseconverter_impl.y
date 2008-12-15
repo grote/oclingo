@@ -211,12 +211,14 @@ constant(res) ::= number(n).      { res = new Value(Value::INT, n); }
 constant(res) ::= STRING(id).     { res = new Value(Value::STRING, STRING(id)); }
 constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(Value::FUNCSYMBOL, FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
 
-aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= MAX LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MAX, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC. { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= AVG LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::AVG, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::MAX, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= COUNT LSBRAC constr_list(list) RSBRAC. { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
+aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
 
 compute(res)  ::= COMPUTE LBRAC constr_list(list) RBRAC.           { res = new Compute(list->first, 1); DELETE_PTR(list); }
 compute(res)  ::= COMPUTE number(n) LBRAC constr_list(list) RBRAC. { res = new Compute(list->first, n); DELETE_PTR(list); }

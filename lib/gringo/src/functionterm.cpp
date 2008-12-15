@@ -37,6 +37,9 @@ void FunctionTerm::print(const GlobalStorage *g, std::ostream &out) const
 		case MINUS:
 			out << "(" << pp(g, a_) << " - " << pp(g, b_) << ")";
 			break;
+		case POWER:
+			out << "(" << pp(g, a_) << " ** " << pp(g, b_) << ")";
+			break;
 		case TIMES:
 			out << "(" << pp(g, a_) << " * " << pp(g, b_) << ")";
 			break;
@@ -97,6 +100,8 @@ Value FunctionTerm::getConstValue(Grounder *g)
 			return Value(Value::INT, a_->getConstValue(g) + b_->getConstValue(g));
 		case MINUS:
 			return Value(Value::INT, a_->getConstValue(g) - b_->getConstValue(g));
+		case POWER:
+			return Value(Value::INT, pow(a_->getConstValue(g), b_->getConstValue(g)));
 		case TIMES:
 			return Value(Value::INT, a_->getConstValue(g) * b_->getConstValue(g));
 		case DIVIDE:
@@ -125,6 +130,8 @@ Value FunctionTerm::getValue(Grounder *g)
 			return Value(Value::INT, a_->getValue(g) + b_->getValue(g));
 		case MINUS:
 			return Value(Value::INT, a_->getValue(g) - b_->getValue(g));
+		case POWER:
+			return Value(Value::INT, pow(a_->getConstValue(g), b_->getConstValue(g)));
 		case TIMES:
 			return Value(Value::INT, a_->getValue(g) * b_->getValue(g));
 		case DIVIDE:
