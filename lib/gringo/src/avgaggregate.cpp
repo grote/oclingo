@@ -29,10 +29,10 @@ AvgAggregate::AvgAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 
 void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
-	fact_ = true;
+	undefined_ = false;
+	fact_ = false;
 	lower = INT_MAX;
 	upper = INT_MIN;
-	fixed = 0;
 	int n = 0;
 	int nFixed = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -55,26 +55,31 @@ void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			}
 			else
 			{
-				fact_ = false;
 				lower = std::min(lower, weight);
 				upper = std::max(upper, weight);
 			}
 		}
 	}
+	// the aggregate is possibly empty and undefinded
+	if(nFixed == 0)
+	{
+		undefined_ = true;
+	}
 	if(n == 0)
 	{
-		// undefined: values don't matter at all!!
-		lower = upper = 0;
-	}
-	else if(fact_)
-	{
-		lower = fixed / n;
-		upper = (fixed + n - 1) / n;
+		// the aggregate is trivially satisfied
+		lower = INT_MIN;
+		upper = INT_MAX;
+		fact_ = true;
 	}
 	else if(nFixed > 0)
 	{
+		// raw estimate where the solution will be (not exact)
 		lower = std::min(fixed / nFixed, lower);
+		// could be more accurate but test has to be implemented carefully cause upper maybe INT_MIN
 		upper = std::max((fixed + nFixed - 1) / nFixed, upper);
+		// TODO: if nFixed==n a more sophisticated test could be implemented
+		// but the current bounds of the aggregate have to be taken into account
 	}
 	maxUpperBound_ = upper;
 	minLowerBound_ = lower;
@@ -82,17 +87,21 @@ void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 
 bool AvgAggregate::checkBounds(Grounder *g, int lower, int upper)
 {
-	// an undefined avg aggregate is always a fact nomatter how the bounds look
-	lowerBound_ = lower_ ? std::max((int)lower_->getValue(g), lower) : lower;
-	upperBound_ = upper_ ? std::min((int)upper_->getValue(g), upper) : upper;
-	return true;
+	// an undefined avg aggregate is always satisfied no matter how the bounds look
+	bool res = AggregateLiteral::checkBounds(g, lower, upper);
+	if(undefined_)
+		return true;
+	else
+	{
+		return res;
+	}
 }
 
 void AvgAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(lower_)
 		out << pp(g, lower_) << " ";
-	out << "sum [";
+	out << "avg [";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{

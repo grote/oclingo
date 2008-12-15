@@ -34,6 +34,8 @@ namespace NS_GRINGO
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~AvgAggregate();
+	private:
+		bool undefined_;
 	};
 }
 
