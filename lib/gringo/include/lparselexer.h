@@ -29,6 +29,8 @@ namespace NS_GRINGO
 		LparseLexer();
 		int lex(std::string *&val);
 		virtual ~LparseLexer();
+	private:
+		void backwardWarning();
 	};
 }
 

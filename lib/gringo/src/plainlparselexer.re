@@ -79,11 +79,11 @@ begin:
 		COMPUTE         { return LPARSECONVERTER_COMPUTE; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
-		"avg"           { return LPARSECONVERTER_AVG; }
-		"sum"           { return LPARSECONVERTER_SUM; }
-		"min"           { return LPARSECONVERTER_MIN; }
-		"max"           { return LPARSECONVERTER_MAX; }
-		"count"         { return LPARSECONVERTER_COUNT; }
+		"#"? "avg"      { return LPARSECONVERTER_AVG; }
+		"#"? "sum"      { return LPARSECONVERTER_SUM; }
+		"#"? "min"      { return LPARSECONVERTER_MIN; }
+		"#"? "max"      { return LPARSECONVERTER_MAX; }
+		"#"? "count"    { return LPARSECONVERTER_COUNT; }
 		STRING          { lval = new std::string(start, cursor); return LPARSECONVERTER_STRING; }
 		IDENTIFIER      { lval = new std::string(start, cursor); return LPARSECONVERTER_IDENTIFIER; }
 		VARIABLE        { lval = new std::string(start, cursor); return LPARSECONVERTER_VARIABLE; }

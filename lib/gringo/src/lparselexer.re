@@ -36,6 +36,15 @@
 
 using namespace NS_GRINGO;
 
+void LparseLexer::backwardWarning()
+{
+	if(start[0] != '#')
+	{
+		std::cerr << "Warning: The usage of " << std::string(start, cursor) << " without the prefix '#' is deprecated" << std::endl;
+		std::cerr << "         and will be removed in future versions of gringo." << std::endl;
+	}
+}
+
 LparseLexer::LparseLexer() : GrinGoLexer(0)
 {
 }
@@ -73,30 +82,30 @@ begin:
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
-		CONST           { return LPARSEPARSER_CONST; }
-		SHOW            { return LPARSEPARSER_SHOW; }
-		HIDE            { return LPARSEPARSER_HIDE; }
+		CONST           { backwardWarning(); return LPARSEPARSER_CONST; }
+		SHOW            { backwardWarning(); return LPARSEPARSER_SHOW; }
+		HIDE            { backwardWarning(); return LPARSEPARSER_HIDE; }
 		WS              { goto begin; }
 		NL              { if(eof == cursor) return LPARSEPARSER_EOI; step(); goto begin; }
 		IF              { return LPARSEPARSER_IF; }
 		NOT             { return LPARSEPARSER_NOT; }
-		DOMAIN          { return LPARSEPARSER_DOMAIN; }
-		MINIMIZE        { return LPARSEPARSER_MINIMIZE; }
-		MAXIMIZE        { return LPARSEPARSER_MAXIMIZE; }
-		COMPUTE         { return LPARSEPARSER_COMPUTE; }
+		DOMAIN          { backwardWarning(); return LPARSEPARSER_DOMAIN; }
+		MINIMIZE        { backwardWarning(); return LPARSEPARSER_MINIMIZE; }
+		MAXIMIZE        { backwardWarning(); return LPARSEPARSER_MAXIMIZE; }
+		COMPUTE         { backwardWarning(); return LPARSEPARSER_COMPUTE; }
 		LAMBDA          { return LPARSEPARSER_LAMBDA; }
 		BASE            { return LPARSEPARSER_BASE; }
 		DELTA           { return LPARSEPARSER_DELTA; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
-		"sum"           { return LPARSEPARSER_SUM; }
-		"abs"           { return LPARSEPARSER_ABS; }
-		"min"           { return LPARSEPARSER_MIN; }
-		"max"           { return LPARSEPARSER_MAX; }
-		"count"         { return LPARSEPARSER_COUNT; }
-		"avg"           { return LPARSEPARSER_AVG; }
-		"div"           { return LPARSEPARSER_DIVIDE; }
-		"mod"           { return LPARSEPARSER_MOD; }
+		"#"? "sum"      { backwardWarning(); return LPARSEPARSER_SUM; }
+		"#"? "abs"      { backwardWarning(); return LPARSEPARSER_ABS; }
+		"#"? "min"      { backwardWarning(); return LPARSEPARSER_MIN; }
+		"#"? "max"      { backwardWarning(); return LPARSEPARSER_MAX; }
+		"#"? "count"    { backwardWarning(); return LPARSEPARSER_COUNT; }
+		"#"? "avg"      { backwardWarning(); return LPARSEPARSER_AVG; }
+		"#"? "div"      { backwardWarning(); return LPARSEPARSER_DIVIDE; }
+		"#"? "mod"      { backwardWarning(); return LPARSEPARSER_MOD; }
 		STRING          { lval = new std::string(start, cursor); return LPARSEPARSER_STRING; }
 		IDENTIFIER      { lval = new std::string(start, cursor); return LPARSEPARSER_IDENTIFIER; }
 		VARIABLE        { lval = new std::string(start, cursor); return LPARSEPARSER_VARIABLE; }
