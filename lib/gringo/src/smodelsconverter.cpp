@@ -131,6 +131,9 @@ void SmodelsConverter::printHead(Aggregate *a)
 		case Aggregate::MIN:
 			handleMin(a, l, u);
 			break;
+		case Aggregate::AVG:
+			handleAvg(false, a, l, u);
+			break;
 		default:
 			assert(false);
 			break;
@@ -210,6 +213,7 @@ void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 		u = 0;	
 }
 
+// TODO: to much copy and paste in the two functions below
 void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 {
 	if(!(a->bounds_ & Aggregate::LU))
@@ -241,7 +245,7 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 			if((a->bounds_ & Aggregate::U))
 				a->upper_-= *wIt;
 		}
-		else
+		else if(uid > 0)
 		{
 			if(uid > 0)
 				posA_.push_back(uid), wPosA_.push_back(*wIt);
@@ -260,6 +264,98 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 	{
 		u = newUid();
 		printWeightRule(u, a->upper_ + 1, posA_, negA_, wPosA_, wNegA_);
+	}
+	else
+		u = 0;
+}
+
+void SmodelsConverter::handleAvg(bool body, Aggregate *a, int &l, int &u)
+{
+	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
+		return;
+	}
+	IntVector::iterator wIt = a->weights_.begin();
+	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
+	{
+		assert(dynamic_cast<Atom*>(*it));
+		Atom *atm = static_cast<Atom*>(*it);
+		addAtom(atm);
+	}
+	// handle the lower bound
+	if((a->bounds_ & Aggregate::L))
+	{
+		int bound = 0;
+		IntVector::iterator wIt = a->weights_.begin();
+		for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
+		{
+			int uid    = static_cast<Atom*>(*it)->getUid();
+			int weight = *wIt - a->lower_;
+			// transform away negative bounds
+			if(weight < 0)
+			{
+				if(body && !negBoundsWarning_)
+				{
+					negBoundsWarning_ = false;
+					std::cerr << "Warning: average aggregates may not be used recursively" << std::endl;
+				}
+				if(uid < 0)
+					posA_.push_back(-uid), wPosA_.push_back(-weight);
+				else
+					negA_.push_back(uid), wNegA_.push_back(-weight);
+				bound-= weight;
+			}
+			else if(weight > 0)
+			{
+				if(uid > 0)
+					posA_.push_back(uid), wPosA_.push_back(weight);
+				else
+					negA_.push_back(-uid), wNegA_.push_back(weight);
+			}
+		}	
+		l = newUid();
+		printWeightRule(l, bound, posA_, negA_, wPosA_, wNegA_);
+	}
+	else
+		l = 0;
+	// handle the upper bound
+	if((a->bounds_ & Aggregate::U))
+	{
+		negA_.clear();
+		posA_.clear();
+		wNegA_.clear();
+		wPosA_.clear();
+		int bound = 0;
+		IntVector::iterator wIt = a->weights_.begin();
+		for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
+		{
+			int uid    = static_cast<Atom*>(*it)->getUid();
+			int weight = *wIt - a->upper_;
+			// transform away negative bounds
+			if(weight < 0)
+			{
+				if(body && !negBoundsWarning_)
+				{
+					negBoundsWarning_ = false;
+					std::cerr << "Warning: average aggregates may not be used recursively" << std::endl;
+				}
+				if(uid < 0)
+					posA_.push_back(-uid), wPosA_.push_back(-weight);
+				else
+					negA_.push_back(uid), wNegA_.push_back(-weight);
+				bound-= weight;
+			}
+			else if(weight > 0)
+			{
+				if(uid > 0)
+					posA_.push_back(uid), wPosA_.push_back(weight);
+				else
+					negA_.push_back(-uid), wNegA_.push_back(weight);
+			}
+		}
+		u = newUid();
+		printWeightRule(u, bound + 1, posA_, negA_, wPosA_, wNegA_);
 	}
 	else
 		u = 0;
@@ -349,6 +445,9 @@ void SmodelsConverter::printBody(Aggregate *a)
 			break;
 		case Aggregate::MIN:
 			handleMin(a, l, u);
+			break;
+		case Aggregate::AVG:
+			handleAvg(true, a, l, u);
 			break;
 		default:
 			assert(false);

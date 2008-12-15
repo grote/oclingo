@@ -9,7 +9,7 @@ for x in *; do
 		[[ -d "$y" ]] || continue
 		echo "========== building build/$x/$y... =========="
 		cd "$y"
-		make || exit
+		make -j3 || exit
 		cd ..
 	done
 	cd ..

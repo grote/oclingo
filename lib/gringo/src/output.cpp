@@ -450,6 +450,9 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			out << " min [";
 			++(o->stats_).min;
 			break;
+		case AVG:
+			out << " avg [";
+			break;
 		case TIMES:
 			out << " times [";
 			break;

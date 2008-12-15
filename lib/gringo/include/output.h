@@ -174,7 +174,7 @@ namespace NS_GRINGO
 
 		struct Aggregate : public Object
 		{
-			enum Type   { SUM = 0xf, COUNT = 0xe, MAX = 0x10, MIN=0x11, TIMES=0x12 };
+			enum Type   { SUM = 0xf, COUNT = 0xe, MAX = 0x10, MIN=0x11, TIMES=0x12, AVG=0x13 };
 			enum Bounds { LU = 3, U = 2, L = 1, N = 0 };
 			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights, int upper);
 			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights);

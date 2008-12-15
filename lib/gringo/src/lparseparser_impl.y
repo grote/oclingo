@@ -38,6 +38,7 @@
 #include "minaggregate.h"  
 #include "maxaggregate.h"  
 #include "countaggregate.h"  
+#include "avgaggregate.h"  
 #include "disjunctionaggregate.h"
 #include "conjunctionaggregate.h"
 
@@ -329,6 +330,7 @@ aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggre
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); }
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
 aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
+aggregate(res) ::= AVG LSBRAC weight_list(list) RSBRAC.   { res = new AvgAggregate(list); }
 
 compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new LiteralStatement(new ComputeLiteral(list, 1), false); }
 compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new LiteralStatement(new ComputeLiteral(list, atol(x->c_str())), false); DELETE_PTR(x); }

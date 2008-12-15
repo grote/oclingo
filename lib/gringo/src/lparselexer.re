@@ -94,6 +94,7 @@ begin:
 		"min"           { return LPARSEPARSER_MIN; }
 		"max"           { return LPARSEPARSER_MAX; }
 		"count"         { return LPARSEPARSER_COUNT; }
+		"avg"           { return LPARSEPARSER_AVG; }
 		"div"           { return LPARSEPARSER_DIVIDE; }
 		"mod"           { return LPARSEPARSER_MOD; }
 		STRING          { lval = new std::string(start, cursor); return LPARSEPARSER_STRING; }

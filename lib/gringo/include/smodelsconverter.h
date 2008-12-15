@@ -55,6 +55,7 @@ namespace NS_GRINGO
 			void handleAggregate(ObjectVector &lits, IntVector &weights);
 			void handleCount(Aggregate *a, int &l, int &u);
 			void handleSum(bool body, Aggregate *a, int &l, int &u);
+			void handleAvg(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
 			void handleMax(Aggregate *a, int &l, int &u);
 		protected:
