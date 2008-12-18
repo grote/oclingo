@@ -73,8 +73,8 @@ begin:
 		HIDE            = "#"? 'hide';
 		CONST           = "#"? 'const';
 		DOMAIN          = "#"? 'domain';
-		MINIMIZE        = "#"? 'minimize';
-		MAXIMIZE        = "#"? 'maximize';
+		MINIMIZE        = "#"? 'minimi' [SsZz] 'e';
+		MAXIMIZE        = "#"? 'maximi' [SsZz] 'e';
 		COMPUTE         = "#"? 'compute';
 		LAMBDA          = "#cumulative";
 		BASE            = "#base";

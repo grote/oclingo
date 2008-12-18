@@ -128,7 +128,12 @@ NS_OUTPUT::Object *CountAggregate::convert()
 	if(hasLower && hasUpper)
 		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::COUNT, lowerBound_, lits, weights, upperBound_);
 	else if(hasLower)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::COUNT, lowerBound_, lits, weights);
+	{
+		if(lowerBound_ == 1 && lits.size() == 1 && !lits.front()->neg_)
+			return lits.front();
+		else
+			a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::COUNT, lowerBound_, lits, weights);
+	}
 	else if(hasUpper)
 		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::COUNT, lits, weights, upperBound_);
 	else

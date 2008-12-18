@@ -1,46 +1,58 @@
 file(GLOB LIBGRINGO_SRC src/*.cpp)
-SET(LIBGRINGO_SRC 
-	${LIBGRINGO_SRC} 
-	${CMAKE_CURRENT_BINARY_DIR}/lparselexer.cpp 
-	${CMAKE_CURRENT_BINARY_DIR}/lparseparser_impl.cpp
-	${CMAKE_CURRENT_BINARY_DIR}/plainlparselexer.cpp 
-	${CMAKE_CURRENT_BINARY_DIR}/lparseconverter_impl.cpp)
-#SET_SOURCE_FILES_PROPERTIES(lparselexer.cpp GENERATED)
-#SET_SOURCE_FILES_PROPERTIES(lparseparser_impl.cpp GENERATED)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include ..)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include generated ..)
 
-ADD_EXECUTABLE(lemon src/lemon.c)
-
-MACRO(RE2C SRC DST)
-	ADD_CUSTOM_COMMAND(
-		OUTPUT ${DST}
-		COMMAND ${RE2C_EXECUTABLE} -o ${DST} ${SRC}
-		MAIN_DEPENDENCY ${SRC}
-	)
+MACRO(RE2C NAME SRC DST)
+	IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp")
+		# this macro requires re2c
+		IF(NOT RE2C_FOUND)
+			FIND_PACKAGE(RE2C REQUIRED)
+		ENDIF(NOT RE2C_FOUND)
+		ADD_CUSTOM_COMMAND(
+			OUTPUT ${DST}/${NAME}.cpp
+			COMMAND ${RE2C_EXECUTABLE} -o ${DST}/${NAME}.cpp ${SRC}/${NAME}.re
+			MAIN_DEPENDENCY ${SRC}/${NAME}.re
+		)
+		#SET_SOURCE_FILES_PROPERTIES("${DST}/${NAME}.cpp" GENERATED)
+		SET(LIBGRINGO_SRC ${LIBGRINGO_SRC} "${DST}/${NAME}.cpp")
+	ELSE(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp")
+		SET(LIBGRINGO_SRC ${LIBGRINGO_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp")
+	ENDIF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp")
 ENDMACRO(RE2C SRC DEST)
 
 MACRO(LEMON NAME SRC DST)
-	ADD_CUSTOM_COMMAND(
-		OUTPUT ${DST}/lempar.c
-		COMMAND cp ${SRC}/lempar.c ${DST}/lempar.c
-		MAIN_DEPENDENCY ${SRC}/lempar.c
-	)
-	ADD_CUSTOM_COMMAND(
-		OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
-		COMMAND ${EXECUTABLE_OUTPUT_PATH}/lemon -q ${SRC}/${NAME}.y
-		COMMAND mv ${SRC}/${NAME}.c ${DST}/${NAME}.cpp
-		COMMAND mv ${SRC}/${NAME}.h ${DST}/${NAME}.h
-		COMMAND touch ${DST}/${NAME}.h ${DST}/${NAME}.cpp
-		MAIN_DEPENDENCY ${SRC}/${NAME}.y
-		DEPENDS lemon ${DST}/lempar.c
-	)
+	IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.h")
+		# add lemon if needed
+		IF(NOT TARGET_LEMON)
+			ADD_EXECUTABLE(lemon src/lemon.c)
+			SET(TARGET_LEMON TRUE)
+		ENDIF(NOT TARGET_LEMON)
+		ADD_CUSTOM_COMMAND(
+			OUTPUT ${DST}/lempar.c
+			COMMAND cp ${SRC}/lempar.c ${DST}/lempar.c
+			MAIN_DEPENDENCY ${SRC}/lempar.c
+		)
+		ADD_CUSTOM_COMMAND(
+			OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
+			COMMAND ${EXECUTABLE_OUTPUT_PATH}/lemon -q ${SRC}/${NAME}.y
+			COMMAND mv ${SRC}/${NAME}.c ${DST}/${NAME}.cpp
+			COMMAND mv ${SRC}/${NAME}.h ${DST}/${NAME}.h
+			COMMAND touch ${DST}/${NAME}.h ${DST}/${NAME}.cpp
+			MAIN_DEPENDENCY ${SRC}/${NAME}.y
+			DEPENDS lemon ${DST}/lempar.c
+		)
+		# add the .cpp file to the sources
+		#SET_SOURCE_FILES_PROPERTIES("${DST}/${NAME}.cpp" GENERATED)
+		SET(LIBGRINGO_SRC ${LIBGRINGO_SRC} "${DST}/${NAME}.cpp")
+	ELSE(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.h")
+		SET(LIBGRINGO_SRC ${LIBGRINGO_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp")
+	ENDIF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.h")
 ENDMACRO(LEMON NAME SRC DST)
 
-RE2C(${CMAKE_CURRENT_SOURCE_DIR}/src/lparselexer.re ${CMAKE_CURRENT_BINARY_DIR}/lparselexer.cpp)
+RE2C(lparselexer ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 LEMON(lparseparser_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 
-RE2C(${CMAKE_CURRENT_SOURCE_DIR}/src/plainlparselexer.re ${CMAKE_CURRENT_BINARY_DIR}/plainlparselexer.cpp)
+RE2C(plainlparselexer ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 LEMON(lparseconverter_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
