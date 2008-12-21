@@ -98,6 +98,8 @@ begin:
 		DELTA           { return LPARSEPARSER_DELTA; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
+		"#"? "even"     { backwardWarning(); return LPARSEPARSER_EVEN; }
+		"#"? "odd"      { backwardWarning(); return LPARSEPARSER_ODD; }
 		"#"? "sum"      { backwardWarning(); return LPARSEPARSER_SUM; }
 		"#"? "abs"      { backwardWarning(); return LPARSEPARSER_ABS; }
 		"#"? "min"      { backwardWarning(); return LPARSEPARSER_MIN; }

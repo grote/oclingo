@@ -58,6 +58,7 @@ namespace NS_GRINGO
 			void handleAvg(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
 			void handleMax(Aggregate *a, int &l, int &u);
+			void handleParity(bool body, Aggregate *a, int &l);
 		protected:
 			int false_;
 		private:

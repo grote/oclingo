@@ -29,7 +29,7 @@ Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(fals
 //												stats_.rules(0)//, stats_.atoms(0), stats_.count(0),
 //												stats_.sum(0), stats_.max(0), stats_.min(0),
 //												stats_.compute(0), stats_.optimize(0)
-//TODO: Why does this not work
+//TODO: Why does this not work - put this into the constructor of Stats
 {
 	stats_.language = Stats::UNKNOWN;
 	stats_.rules    = 0;
@@ -429,7 +429,7 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 {
 	if(neg_)
 		out << "not ";
-	if(bounds_ == L || bounds_ == LU)
+	if((bounds_ == L || bounds_ == LU) && type_ != PARITY)
 		out << lower_;
 	bool comma = false;
 	switch(type_)
@@ -443,18 +443,22 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			++(o->stats_).count;
 			break;
 		case MAX:
-			out << " max [";
+			out << " #max [";
 			++(o->stats_).max;
 			break;
 		case MIN:
-			out << " min [";
+			out << " #min [";
 			++(o->stats_).min;
 			break;
 		case AVG:
-			out << " avg [";
+			out << " #avg [";
 			break;
 		case TIMES:
-			out << " times [";
+			out << " #times [";
+			break;
+		case PARITY:
+			assert(bounds_ == LU);
+			out << (lower_ == 0 ? " #even {" : " #odd {");
 			break;
 	}
 	IntVector::iterator itWeight = weights_.begin();
@@ -465,17 +469,17 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 		else
 			comma = true;
 		(*it)->print_plain(o, out);
-		if(type_ != COUNT)
+		if(type_ != COUNT && type_ != PARITY)
 		{
 			out << " = ";
 			out << *itWeight;
 		}
 	}
-	if(type_ == COUNT)
+	if(type_ == COUNT || type_ == PARITY)
 		out << "} ";
 	else
 		out << "] ";
-	if(bounds_ == U || bounds_ == LU)
+	if((bounds_ == U || bounds_ == LU) && type_ != PARITY)
 		out << upper_;
 }
 

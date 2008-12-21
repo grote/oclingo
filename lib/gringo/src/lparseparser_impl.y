@@ -41,6 +41,7 @@
 #include "avgaggregate.h"  
 #include "disjunctionaggregate.h"
 #include "conjunctionaggregate.h"
+#include "parityaggregate.h"
 
 // terms
 #include "term.h"
@@ -285,6 +286,9 @@ aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->set
 aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u);}
 aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0);}
 aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0);}
+aggregate_atom(res) ::= EVEN LBRAC constr_list(list) RBRAC.  { res = new ParityAggregate(true, list); }
+aggregate_atom(res) ::= ODD  LBRAC constr_list(list) RBRAC.  { res = new ParityAggregate(false, list); }
+
 
 termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }

@@ -21,7 +21,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out), negBoundsWarning_(false)
+SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out), negBoundsWarning_(true)
 {
 }
 
@@ -134,6 +134,10 @@ void SmodelsConverter::printHead(Aggregate *a)
 		case Aggregate::AVG:
 			handleAvg(false, a, l, u);
 			break;
+		case Aggregate::PARITY:
+			u = 0;
+			handleParity(true, a, l);
+			break;
 		default:
 			assert(false);
 			break;
@@ -189,6 +193,42 @@ void SmodelsConverter::handleAggregate(ObjectVector &lits, IntVector &weights)
 	}
 }
 
+void SmodelsConverter::handleParity(bool body, Aggregate *a, int &l)
+{
+	assert(a->bounds_ == Aggregate::LU);
+	if(body && negBoundsWarning_)
+	{
+		negBoundsWarning_ = false;
+		std::cerr << "Warning: parity aggregate in a rule body do not use recursively!" << std::endl;
+	}
+	handleAggregate(a->lits_);
+	int head;
+	head = newUid();
+	IntVector pos, neg(1);
+	if(a->lower_ == 0)
+		printBasicRule(head, pos, pos);
+	pos.resize(1);
+	for(IntVector::iterator it = posA_.begin(); it != posA_.end(); it++)
+	{
+		pos[0] = *it;
+		neg[0] = head;
+		head = newUid();
+		printBasicRule(head, pos, neg);
+		printBasicRule(head, neg, pos);
+	}
+	neg.resize(0);
+	pos.resize(2);
+	for(IntVector::iterator it = negA_.begin(); it != negA_.end(); it++)
+	{
+		pos[0] = *it;
+		pos[1] = head;
+		head = newUid();
+		printBasicRule(head, pos, neg);
+		printBasicRule(head, neg, pos);
+	}
+	l = head;
+}
+
 void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 {
 	if(!(a->bounds_ & Aggregate::LU))
@@ -231,7 +271,7 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 		// transform away negative bounds
 		if(*wIt < 0)
 		{
-			if(body && !negBoundsWarning_)
+			if(body && negBoundsWarning_)
 			{
 				negBoundsWarning_ = false;
 				std::cerr << "Warning: sum with negative bounds in the body of a rule" << std::endl;
@@ -295,7 +335,7 @@ void SmodelsConverter::handleAvg(bool body, Aggregate *a, int &l, int &u)
 			// transform away negative bounds
 			if(weight < 0)
 			{
-				if(body && !negBoundsWarning_)
+				if(body && negBoundsWarning_)
 				{
 					negBoundsWarning_ = false;
 					std::cerr << "Warning: average aggregates may not be used recursively" << std::endl;
@@ -335,7 +375,7 @@ void SmodelsConverter::handleAvg(bool body, Aggregate *a, int &l, int &u)
 			// transform away negative bounds
 			if(weight < 0)
 			{
-				if(body && !negBoundsWarning_)
+				if(body && negBoundsWarning_)
 				{
 					negBoundsWarning_ = false;
 					std::cerr << "Warning: average aggregates may not be used recursively" << std::endl;
@@ -448,6 +488,10 @@ void SmodelsConverter::printBody(Aggregate *a)
 			break;
 		case Aggregate::AVG:
 			handleAvg(true, a, l, u);
+			break;
+		case Aggregate::PARITY:
+			u = 0;
+			handleParity(true, a, l);
 			break;
 		default:
 			assert(false);
