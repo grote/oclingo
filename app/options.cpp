@@ -191,6 +191,7 @@ void Options::setDefaults() {
 	version = false;
 	verbose = false;
 	syntax  = false;
+	shift   = false;
 
 	grounderOptions = Grounder::Options();
 	convert         = false;
@@ -417,6 +418,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        7: Print in normal form Conglomeration\n" , "<num>")
 
 		("ground,g", bool_switch(&convert), "Enable lightweight mode for ground input\n")
+		("shift"           , bool_switch(&shift), "Shift disjunctions into the body\n")
 
 		("bindersplit" , value<bool>(&grounderOptions.binderSplit), 
 		        "Configure binder splitting\n"

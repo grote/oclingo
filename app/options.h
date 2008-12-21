@@ -81,12 +81,13 @@ public:
 	// verbose     => Default: false
 	// binderSplit => Default: true
 	NS_GRINGO::Grounder::Options grounderOptions;
-	bool             claspMode;         // Default: false
+	bool             claspMode;        // Default: false
 	bool             convert;          // Default: false
 	std::vector<std::string> consts;
 
 	bool             smodelsOut;
 	int              aspilsOut;
+	bool             shift;            // Default: false
 #ifdef WITH_CLASP
 	bool             claspOut;
 #endif

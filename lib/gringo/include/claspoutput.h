@@ -36,7 +36,7 @@ namespace NS_GRINGO
 		class ClaspOutput : public SmodelsConverter
 		{
 		public:
-			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
+			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift);
 			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void finalize(bool last);
 			bool addAtom(NS_OUTPUT::Atom *r);
@@ -68,7 +68,7 @@ namespace NS_GRINGO
 		class IClaspOutput : public ClaspOutput
 		{
 		public:
-			IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
+			IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift);
 			void print(NS_OUTPUT::Object *o);
 			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);

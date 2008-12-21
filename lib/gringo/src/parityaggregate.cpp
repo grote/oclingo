@@ -81,7 +81,13 @@ void ParityAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		}
 	}
 	if(!fact_ || fixed)
-		lower = upper = 1;
+	{
+		// make shure that the aggregate still matches
+		if(getNeg())
+			lower = 1, upper = 0;
+		else
+			lower = upper = 1;
+	}
 	else
 	{
 		lower = 1;
@@ -91,7 +97,7 @@ void ParityAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 
 void ParityAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << even_ ? "even [" : "odd {";
+	out << (even_ ? "even [" : "odd {");
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{

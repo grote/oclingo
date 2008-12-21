@@ -34,7 +34,7 @@ std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf) : SmodelsConverter(&std::cout), b_(b), tf_(tf)
+ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift) : SmodelsConverter(&std::cout, shift), b_(b), tf_(tf)
 {
 }
 
@@ -161,7 +161,7 @@ void ClaspOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, 
 
 void ClaspOutput::printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
 {
-	throw GrinGoException("Error: sorry clasp cannot handle disjunctive rules!");
+	throw GrinGoException("Error: sorry clasp cannot handle disjunctive rules use option --shift!");
 }
 
 void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVector &neg)
@@ -217,7 +217,7 @@ ClaspOutput::~ClaspOutput()
 
 #ifdef WITH_ICLASP
 
-IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf) : ClaspOutput(b, tf), incUid_(0)
+IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift) : ClaspOutput(b, tf, shift), incUid_(0)
 {
 }
 

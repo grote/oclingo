@@ -22,7 +22,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-SmodelsOutput::SmodelsOutput(std::ostream *out) : SmodelsConverter(out)
+SmodelsOutput::SmodelsOutput(std::ostream *out, bool shift) : SmodelsConverter(out, shift)
 {
 	stats_.language = Stats::SMODELS;
 }

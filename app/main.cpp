@@ -257,7 +257,7 @@ int MainApp::run(int argc, char **argv)
 	{
 		case Options::SMODELS_OUT:
 		{
-			SmodelsOutput output(&std::cout);
+			SmodelsOutput output(&std::cout, options.shift);
 			ground(output);
 			if (options.stats)
 				printGrounderStats(output);
@@ -647,7 +647,7 @@ bool MainApp::solveIncremental()
 	getStreams(options, s);
 
 	ProgramBuilder api;
-	IClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
+	IClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
 	Grounder     grounder(options.grounderOptions);
 	LparseParser parser(&grounder, s.streams);
 
@@ -827,7 +827,7 @@ bool MainApp::parseLparse()
 	
 	if(!options.claspMode)
 	{
-		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
+		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
 		ground(output);
 		*lpStats_ = output.getStats();
 	}

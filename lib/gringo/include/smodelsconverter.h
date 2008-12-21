@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		class SmodelsConverter : public Output
 		{
 		public:
-			SmodelsConverter(std::ostream *out);
+			SmodelsConverter(std::ostream *out, bool shift);
 			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void print(Object *o);
 			int getFalse() const;
@@ -63,6 +63,7 @@ namespace NS_GRINGO
 			int false_;
 		private:
 			bool negBoundsWarning_;
+			bool shift_;
 			IntVector compute_;
 			IntVector head_;
 			IntVector pos_, neg_, wPos_, wNeg_;

@@ -203,6 +203,9 @@ aggregate_atom(res) ::= aggregate(aggr) number(u).           { res = aggr; aggr-
 aggregate_atom(res) ::= number(l) aggregate(aggr).           { res = aggr; aggr->bounds_ = Aggregate::L; aggr->lower_ = l; }
 aggregate_atom(res) ::= aggregate(aggr).                     { res = aggr; }
 
+aggregate_atom(res) ::= EVEN LBRAC constr_list(list) RBRAC.  { res = new Aggregate(false, Aggregate::PARITY, 0, list->first, list->second, 0); DELETE_PTR(list); }
+aggregate_atom(res) ::= ODD LBRAC constr_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::PARITY, 1, list->first, list->second, 1); DELETE_PTR(list); }
+
 constant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
 constant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
 
@@ -215,7 +218,6 @@ aggregate(res) ::= AVG LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(
 aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::MAX, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= COUNT LSBRAC constr_list(list) RSBRAC. { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }

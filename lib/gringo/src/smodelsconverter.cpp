@@ -21,7 +21,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out), negBoundsWarning_(true)
+SmodelsConverter::SmodelsConverter(std::ostream *out, bool shift) : Output(out), negBoundsWarning_(true), shift_(shift)
 {
 }
 
@@ -73,7 +73,21 @@ void SmodelsConverter::handleHead(Object *o)
 			head_.push_back((*it)->getUid());
 		}
 		assert(head_.size() > 0);
-		printDisjunctiveRule(head_, pos_, neg_);
+		if(shift_)
+		{
+			for(IntVector::iterator it = head_.begin(); it != head_.end(); it++)
+				neg_.push_back(*it);
+			for(IntVector::iterator it = neg_.end() - head_.size(); it != neg_.end(); it++)
+			{
+				int head = neg_.back();
+				neg_.pop_back();
+				printBasicRule(head, pos_, neg_);
+				std::swap(head, *it);
+				neg_.push_back(head);
+			}
+		}
+		else
+			printDisjunctiveRule(head_, pos_, neg_);
 	}
 	else
 	{

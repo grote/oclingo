@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		class SmodelsOutput : public SmodelsConverter
 		{
 		public:
-			SmodelsOutput(std::ostream *out);
+			SmodelsOutput(std::ostream *out, bool shift);
 			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);
 			~SmodelsOutput();
