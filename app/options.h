@@ -41,14 +41,14 @@
 
 #ifdef WITH_ICLASP
 const char* const EXECUTABLE = "iclingo";
-const char* const CLASP_VERSION = "1.1.1";
+const char* const CLASP_VERSION = "1.1.2";
 #elif defined WITH_CLASP
 const char* const EXECUTABLE = "clingo";
-const char* const CLASP_VERSION = "1.1.1";
+const char* const CLASP_VERSION = "1.1.2";
 #else
 const char* const EXECUTABLE = "gringo";
 #endif
-const char* const GRINGO_VERSION = "2.0.2";
+const char* const GRINGO_VERSION = "2.0.3";
 
 class Options {
 public:

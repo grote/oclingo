@@ -1,9 +1,11 @@
 gringo 2.0.3
 	* added option --shift to remove disjunctions in the head of rules
-	* added support for average aggregates
-	* added support for the two parity aggregates even and odd
+	* added support for #average aggregates
+	* added support for the two parity aggregates #even and #odd
+	* added the synonyms #minimize/minimise and #maximize/#maximise
 	* every keyword (sum, count, min, ...) should be preceeded by # now
 	* fixed a bug in the lparseconverter
+	* fixed a bug concerning top-level conflicts while incremental solving
 gringo 2.0.2
 	* removed some wrong assertions
 	* fixed handling of min- and max-aggregates
