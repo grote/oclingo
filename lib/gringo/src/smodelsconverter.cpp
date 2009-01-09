@@ -150,7 +150,7 @@ void SmodelsConverter::printHead(Aggregate *a)
 			break;
 		case Aggregate::PARITY:
 			u = 0;
-			handleParity(true, a, l);
+			handleParity(false, a, l);
 			break;
 		default:
 			assert(false);

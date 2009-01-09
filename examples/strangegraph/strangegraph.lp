@@ -1,5 +1,5 @@
 #hide.
-#show path/2.
+#show path(X,Y).
 
 reached(X) :- start(X).
 
