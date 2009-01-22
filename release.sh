@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0.2"
+VERSION="2.0.3"
 
 # completely rebuild everything
 make clean
@@ -46,7 +46,16 @@ cp build/gringo/release/GrinGo-${VERSION}-Source.tar.gz build/release/
 tar -xf build/release/GrinGo-${VERSION}-Source.tar.gz -C build/release
 rm build/release/GrinGo-${VERSION}-Source.tar.gz
 mv build/release/GrinGo-${VERSION}-Source build/release/gringo-${VERSION}-source
-tar -czf build/release/gringo-${VERSION}-source.tar.gz build/release/gringo-${VERSION}-source
-rm -rf build/release/gringo-${VERSION}-source
+# copy the generated files into the source release
+mkdir build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/lparselexer.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/plainlparselexer.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/lparseconverter_impl.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/lparseconverter_impl.h build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/lparseparser_impl.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
+cp build/gringo/release/lib/gringo/lparseparser_impl.h build/release/gringo-${VERSION}-source/lib/gringo/generated
+cd build/release
+tar -czf gringo-${VERSION}-source.tar.gz gringo-${VERSION}-source
+rm -rf gringo-${VERSION}-source
 
 #svn copy https://potassco.svn.sourceforge.net/svnroot/potassco/trunk/gringo https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-${VERSION}
