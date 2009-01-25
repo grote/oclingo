@@ -313,7 +313,7 @@ namespace
 		{
 			for(vector<string>::iterator i = options.files.begin(); i != options.files.end(); i++)
 			{
-				s.streams.push_back(new std::fstream(i->c_str()));
+				s.streams.push_back(new std::ifstream(i->c_str()));
 				if(s.streams.back()->fail())
 					throw GrinGoException(std::string("Error: could not open file: ") + *i);
 			}
