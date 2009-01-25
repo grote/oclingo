@@ -48,15 +48,13 @@ CountAggregate::CountAggregate(ConditionalLiteralVector *literals) : AggregateLi
 {
 }
 
-void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool CountAggregate::match(Grounder *g)
 {
 	UidValueSet set;
 	fact_ = true;
-	lower = 0;
-	upper = 0;
-	fixed = 0;
-	maxUpperBound_ = 0;
+	fixedValue_    = 0;
 	minLowerBound_ = 0;
+	maxUpperBound_ = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -64,28 +62,23 @@ void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		for(p->start(); p->hasNext(); p->next())
 		{
 			// caution there is no -0
-			if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second)
-			{
-				p->remove();
-				continue;
-			}
-			if(!p->match())
+			if(!p->match() || !set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second)
 			{
 				p->remove();
 				continue;
 			}
 			if(p->isFact())
-				fixed++;
+				fixedValue_++;
 			else
 			{
 				fact_ = false;
-				upper++;
+				maxUpperBound_++;
 			}
-			maxUpperBound_++;
 		}
 	}
-	lower+= fixed;
-	upper+= fixed;
+	maxUpperBound_+= fixedValue_;
+	minLowerBound_+= fixedValue_;
+	return checkBounds(g);
 }
 
 void CountAggregate::print(const GlobalStorage *g, std::ostream &out) const

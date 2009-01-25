@@ -35,8 +35,6 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		void ground(Grounder *g, GroundStep step);
-		virtual bool match(Grounder *g);
-		virtual void match(Grounder *g, int &lower, int &upper, int &fixed) = 0;
 		virtual void reset();
 		virtual void finish();
 		virtual void preprocess(Grounder *g, Expandable *e);
@@ -46,7 +44,7 @@ namespace NS_GRINGO
 		virtual void setBounds(Term *lower, Term *upper);
 		virtual void setEqual(Variable *equal);
 		virtual void setEqual(int bound);
-		virtual bool checkBounds(Grounder *g, int lower, int upper);
+		virtual bool checkBounds(Grounder *g);
 		/**
 		 * \brief This function returns if the aggregate is a fact
 		 * This function will/may only return true if all the literals of
@@ -71,6 +69,7 @@ namespace NS_GRINGO
 		int upperBound_;
 		int minLowerBound_;
 		int maxUpperBound_;
+		int fixedValue_;
 	};
 }
 

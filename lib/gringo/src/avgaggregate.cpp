@@ -1,3 +1,6 @@
+
+#include "aggregateliteral.h"
+
 // Copyright (c) 2008, Roland Kaminski
 //
 // This file is part of GrinGo.
@@ -27,14 +30,18 @@ AvgAggregate::AvgAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool AvgAggregate::match(Grounder *g)
 {
-	undefined_ = false;
-	fact_ = false;
-	lower = INT_MAX;
-	upper = INT_MIN;
-	int n = 0;
-	int nFixed = 0;
+	// avg aggregates may only be used lower and upper bounds
+	assert(equal_ == 0);
+	// fixedValue_ is not set and may not be used !!!
+
+	avgLower_ = lower_ ? lower_->getValue(g) : 0;
+	avgUpper_ = upper_ ? upper_->getValue(g) : 0;
+
+	fact_ = true;
+	minLowerBound_ = 0;
+	maxUpperBound_ = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -46,57 +53,49 @@ void AvgAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 				p->remove();
 				continue;
 			}
-			int weight = p->getWeight();
-			n++;
+			int weightUpper = p->getWeight() - avgUpper_;
+			int weightLower = p->getWeight() - avgLower_;
 			if(p->isFact())
 			{
-				nFixed++;
-				fixed+= weight;
+				maxUpperBound_+= weightUpper;
+				minLowerBound_+= weightLower;
 			}
 			else
 			{
-				lower = std::min(lower, weight);
-				upper = std::max(upper, weight);
+				fact_ = false;
+				if(weightUpper > 0)
+					maxUpperBound_+= weightUpper;
+				if(weightLower < 0)
+					minLowerBound_+= weightLower;
 			}
 		}
 	}
-	// the aggregate is possibly empty and undefinded
-	if(nFixed == 0)
-	{
-		undefined_ = true;
-	}
-	if(n == 0)
-	{
-		// the aggregate is trivially satisfied
-		lower = INT_MIN;
-		upper = INT_MAX;
-		fact_ = true;
-	}
-	else if(nFixed > 0)
-	{
-		// raw estimate where the solution will be (not exact)
-		lower = std::min(fixed / nFixed, lower);
-		// could be more accurate but test has to be implemented carefully cause upper maybe INT_MIN
-		upper = std::max((fixed + nFixed - 1) / nFixed, upper);
-		// TODO: if nFixed==n a more sophisticated test could be implemented
-		// but the current bounds of the aggregate have to be taken into account
-		if(nFixed == n && lower == upper)
-			fact_ = true;
-	}
-	maxUpperBound_ = upper;
-	minLowerBound_ = lower;
+	if(!lower_)
+		minLowerBound_ = INT_MIN;
+	if(!upper_)
+		maxUpperBound_ = INT_MAX;
+	return checkBounds(g);
 }
 
-bool AvgAggregate::checkBounds(Grounder *g, int lower, int upper)
+bool AvgAggregate::checkBounds(Grounder *g)
 {
-	// an undefined avg aggregate is always satisfied no matter how the bounds look
-	bool res = AggregateLiteral::checkBounds(g, lower, upper);
-	if(undefined_)
-		return true;
-	else
-	{
-		return res;
-	}
+	lowerBound_ = lower_ ? 0 : minLowerBound_;
+	upperBound_ = upper_ ? 0 : maxUpperBound_;
+	// stupid bounds
+	if(lowerBound_ > upperBound_)
+		return getNeg();
+	// the aggregate lies completely in the intervall
+	// ---|         |--- <- Bounds
+	// ------|   |------ <- Aggregate
+	if(minLowerBound_ >= lowerBound_ && maxUpperBound_ <= upperBound_)
+		return !getNeg();
+	// the intervals dont intersect
+	// ----------|   |--- <- Bounds
+	// ---|   |---------- <- Aggregate
+	if(maxUpperBound_ < lowerBound_ || minLowerBound_ > upperBound_)
+		return getNeg();
+	// the intervalls intersect
+	return true;
 }
 
 void AvgAggregate::print(const GlobalStorage *g, std::ostream &out) const
@@ -140,11 +139,11 @@ NS_OUTPUT::Object *AvgAggregate::convert()
 	bool hasLower = lower_ && (lowerBound_ > minLowerBound_);
 
 	if(hasLower && hasUpper)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, lowerBound_, lits, weights, upperBound_);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, avgLower_, lits, weights, avgUpper_);
 	else if(hasLower)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, lowerBound_, lits, weights);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, avgLower_, lits, weights);
 	else if(hasUpper)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, lits, weights, upperBound_);
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, lits, weights, avgUpper_);
 	else
 		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::AVG, lits, weights);
 

@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		MaxAggregate(ConditionalLiteralVector *literals);
 		MaxAggregate(const MaxAggregate &a);
 		virtual Literal *clone() const;
-		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
+		virtual bool match(Grounder *g);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
@@ -38,4 +38,3 @@ namespace NS_GRINGO
 }
 
 #endif
-

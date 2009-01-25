@@ -31,11 +31,11 @@ MinAggregate::MinAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool MinAggregate::match(Grounder *g)
 {
-	fact_ = true;
-	lower = INT_MAX;
-	fixed = INT_MAX;
+	fact_          = true;
+	minLowerBound_ = INT_MAX;
+	fixedValue_    = INT_MAX;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -49,15 +49,14 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			}
 			int weight = p->getWeight();
 			if(p->isFact())
-				fixed = std::min(fixed, weight);
+				fixedValue_ = std::min(fixedValue_, weight);
 			else
 				fact_ = false;
-			lower = std::min(lower, weight);
+			minLowerBound_ = std::min(minLowerBound_, weight);
 		}
 	}
-	
-	maxUpperBound_ = upper = fixed;
-	minLowerBound_ = lower;
+	maxUpperBound_ = fixedValue_;
+	return checkBounds(g);
 }
 
 namespace
@@ -85,8 +84,7 @@ namespace
 
 	void IndexedDomainMinAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		int lower, upper, fixed;
-		l_->match(g->g_, lower, upper, fixed);
+		l_->match(g->g_);
 		set_.clear();
 		ConditionalLiteralVector *l = l_->getLiterals();
 		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)
@@ -96,11 +94,11 @@ namespace
 			{
 				// insert all possible bindings for the bound
 				int weight = p->getWeight();
-				if(weight < fixed)
+				if(weight < l_->fixedValue_)
 					set_.insert(weight);
 			}
 		}
-		set_.insert(fixed);
+		set_.insert(l_->fixedValue_);
 
 		current_ = set_.begin();
 		g->g_->setValue(var_, Value(Value::INT, *current_), binder);

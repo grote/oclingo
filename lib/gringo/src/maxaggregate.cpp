@@ -31,11 +31,11 @@ MaxAggregate::MaxAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool MaxAggregate::match(Grounder *g)
 {
 	fact_ = true;
-	upper = INT_MIN;
-	fixed = INT_MIN;
+	maxUpperBound_ = INT_MIN;
+	fixedValue_    = INT_MIN;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -49,14 +49,14 @@ void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			}
 			int weight = p->getWeight();
 			if(p->isFact())
-				fixed = std::max(fixed, weight);
+				fixedValue_ = std::max(fixedValue_, weight);
 			else
 				fact_ = false;
-			upper = std::max(upper, weight);
+			maxUpperBound_ = std::max(maxUpperBound_, weight);
 		}
 	}
-	maxUpperBound_ = upper;
-	minLowerBound_ = lower = fixed;
+	minLowerBound_ = fixedValue_;
+	return checkBounds(g);
 }
 
 void MaxAggregate::print(const GlobalStorage *g, std::ostream &out) const
@@ -103,8 +103,7 @@ namespace
 
 	void IndexedDomainMaxAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		int lower, upper, fixed;
-		l_->match(g->g_, lower, upper, fixed);
+		l_->match(g->g_);
 		set_.clear();
 		ConditionalLiteralVector *l = l_->getLiterals();
 		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)
@@ -114,11 +113,11 @@ namespace
 			{
 				// insert all possible bindings for the bound
 				int weight = p->getWeight();
-				if(weight > fixed)
+				if(weight > l_->fixedValue_)
 					set_.insert(weight);
 			}
 		}
-		set_.insert(fixed);
+		set_.insert(l_->fixedValue_);
 
 		current_ = set_.begin();
 		g->g_->setValue(var_, Value(Value::INT, *current_), binder);

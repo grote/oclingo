@@ -1,6 +1,7 @@
 #hide.
 #show altdepot/2.
 #show costs/1.
+#show depots/1.
 
 % calculate the number of depots
 depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
@@ -9,15 +10,15 @@ depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
 costs(C) :- C = [ serves(RN, Dist) : restaurant(RN, RK) : dist(Dist) = Dist ].
 
 % choose the closest depot for a restaurant (the grounder can calculate this on its own)
-serves(Rname,Dist) :- restaurant(Rname,RK), Dist = min [ depot(DN1, DK1) : depot(DN1, DK1) = abs(DK1-RK) ].
+serves(Rname,Dist) :- restaurant(Rname,RK), Dist = #min [ depot(DN1, DK1) : depot(DN1, DK1) = #abs(DK1-RK) ].
 
-dist(abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
+dist(#abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
 
 % Each restaurant may be an alternative depot or not.
 X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
 
 % choose the closest depot for a restaurant
-altserves(Rname,Dist) :- restaurant(Rname,RK), Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
+altserves(Rname,Dist) :- restaurant(Rname,RK), Dist = #min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = #abs(DK1-RK) ].
 
 % fail if we havnt found a better solution
  :- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].

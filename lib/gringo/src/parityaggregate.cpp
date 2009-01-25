@@ -20,6 +20,7 @@
 #include "term.h"
 #include "value.h"
 #include "output.h"
+#include "constant.h"
 
 using namespace NS_GRINGO;
 
@@ -44,15 +45,19 @@ namespace
 	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
 }
 
-ParityAggregate::ParityAggregate(bool even, ConditionalLiteralVector *literals) : AggregateLiteral(literals), even_(even)
+ParityAggregate::ParityAggregate(bool even, ConditionalLiteralVector *literals) : 
+	AggregateLiteral(literals),
+	even_(even)
 {
+	int bound = even ? 0 : 1;
+	setBounds(new Constant(Value(Value::INT, bound)), new Constant(Value(Value::INT, bound)));
 }
 
-void ParityAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool ParityAggregate::match(Grounder *g)
 {
 	UidValueSet set;
-	fact_ = true;
-	fixed = even_;
+	fact_      = true;
+	int fixed = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -60,12 +65,7 @@ void ParityAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		for(p->start(); p->hasNext(); p->next())
 		{
 			// caution there is no -0
-			if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second)
-			{
-				p->remove();
-				continue;
-			}
-			if(!p->match())
+			if(!p->match() || !set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second)
 			{
 				p->remove();
 				continue;
@@ -73,26 +73,19 @@ void ParityAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			if(p->isFact())
 				fixed^= 1;
 			else
-			{
 				fact_ = false;
-				upper++;
-			}
-			maxUpperBound_++;
 		}
 	}
-	if(!fact_ || fixed)
+	if(fact_)
 	{
-		// make shure that the aggregate still matches
-		if(getNeg())
-			lower = 1, upper = 0;
-		else
-			lower = upper = 1;
+		minLowerBound_ = maxUpperBound_ = fixed;
 	}
 	else
 	{
-		lower = 1;
-		upper = 0;
+		minLowerBound_ = 0;
+		maxUpperBound_ = 1;
 	}
+	return checkBounds(g);
 }
 
 void ParityAggregate::print(const GlobalStorage *g, std::ostream &out) const
@@ -124,8 +117,7 @@ NS_OUTPUT::Object *ParityAggregate::convert()
 		for(p->start(); p->hasNext(); p->next())
 			lits.push_back(p->convert());
 	}
-	int bound = even_ ? 0 : 1;
-	return new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::PARITY, bound, lits, weights, bound);
+	return new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::PARITY, lowerBound_, lits, weights, upperBound_);
 }
 
 Literal *ParityAggregate::clone() const

@@ -28,8 +28,9 @@ namespace NS_GRINGO
 	public:
 		SumAggregate(ConditionalLiteralVector *literals);
 		SumAggregate(const SumAggregate &a);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual Literal *clone() const;
-		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
+		virtual bool match(Grounder *g);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~SumAggregate();

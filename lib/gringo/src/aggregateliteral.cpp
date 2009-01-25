@@ -76,34 +76,25 @@ void AggregateLiteral::setEqual(int bound)
 	upperBound_ = bound;
 }
 
-bool AggregateLiteral::checkBounds(Grounder *g, int lower, int upper)
+bool AggregateLiteral::checkBounds(Grounder *g)
 {
-	lowerBound_ = lower_ ? std::max((int)lower_->getValue(g), lower) : lower;
-	upperBound_ = upper_ ? std::min((int)upper_->getValue(g), upper) : upper;
+	lowerBound_ = lower_ ? std::max((int)lower_->getValue(g), minLowerBound_) : minLowerBound_;
+	upperBound_ = upper_ ? std::min((int)upper_->getValue(g), maxUpperBound_) : maxUpperBound_;
 	// stupid bounds
 	if(lowerBound_ > upperBound_)
 		return getNeg();
 	// the aggregate lies completely in the intervall
 	// ---|         |--- <- Bounds
 	// ------|   |------ <- Aggregate
-	if(lower >= lowerBound_ && upper <= upperBound_)
-	{
+	if(minLowerBound_ >= lowerBound_ && maxUpperBound_ <= upperBound_)
 		return !getNeg();
-	}
 	// the intervals dont intersect
 	// ----------|   |--- <- Bounds
 	// ---|   |---------- <- Aggregate
-	if(upper < lowerBound_ || lower > upperBound_)
+	if(maxUpperBound_ < lowerBound_ || minLowerBound_ > upperBound_)
 		return getNeg();
 	// the intervalls intersect
 	return true;
-}
-
-bool AggregateLiteral::match(Grounder *g)
-{
-	int upper, lower, fixed;
-	match(g, lower, upper, fixed);
-	return checkBounds(g, lower, upper);
 }
 
 void AggregateLiteral::getVars(VarSet &vars) const
@@ -218,7 +209,6 @@ namespace
 		AggregateLiteral *l_;
 		int var_;
 		int current_;
-		int lower_;
 		int upper_;
 	};
 
@@ -228,9 +218,9 @@ namespace
 
 	void IndexedDomainAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		int fixed;
-		l_->match(g->g_, lower_, upper_, fixed);
-		current_ = lower_;
+		l_->match(g->g_);
+		current_ = l_->minLowerBound_;
+		upper_   = l_->maxUpperBound_;
 		if(current_ <= upper_)
 		{
 			g->g_->setValue(var_, Value(Value::INT, current_), binder);

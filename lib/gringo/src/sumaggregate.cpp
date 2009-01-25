@@ -20,6 +20,10 @@
 #include "term.h"
 #include "value.h"
 #include "output.h"
+#include "indexeddomain.h"
+#include "dlvgrounder.h"
+#include "grounder.h"
+#include "variable.h"
 
 using namespace NS_GRINGO;
 
@@ -27,14 +31,12 @@ SumAggregate::SumAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
+bool SumAggregate::match(Grounder *g)
 {
 	fact_ = true;
-	lower = 0;
-	upper = 0;
-	fixed = 0;
-	maxUpperBound_ = 0;
+	fixedValue_    = 0;
 	minLowerBound_ = 0;
+	maxUpperBound_ = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -48,23 +50,103 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 				continue;
 			}
 			if(p->isFact())
-				fixed+= weight;
+				fixedValue_+= weight;
 			else
 			{
 				fact_ = false;
 				if(weight > 0)
-					upper+= weight;
+					maxUpperBound_+= weight;
 				else
-					lower+= weight;
+					minLowerBound_+= weight;
 			}
-			if(weight > 0)
-				maxUpperBound_+= weight;
-			else
-				minLowerBound_+= weight;
 		}
 	}
-	lower+= fixed;
-	upper+= fixed;
+	maxUpperBound_+= fixedValue_;
+	minLowerBound_+= fixedValue_;
+	return checkBounds(g);
+}
+
+namespace
+{
+	class IndexedDomainSumAggregate : public IndexedDomain
+	{
+	protected:
+		typedef std::set<int> IntSet;
+	public:
+		IndexedDomainSumAggregate(SumAggregate *l, int var);
+		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual ~IndexedDomainSumAggregate();
+	protected:
+		SumAggregate *l_;
+		int var_;
+		IntSet set_;
+		IntSet::iterator current_;
+	};
+
+	IndexedDomainSumAggregate::IndexedDomainSumAggregate(SumAggregate *l, int var) : l_(l), var_(var)
+	{
+
+	}
+
+	void IndexedDomainSumAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+		l_->match(g->g_);
+		set_.clear();
+
+		set_.insert(l_->fixedValue_);
+		ConditionalLiteralVector *l = l_->getLiterals();
+		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)
+		{
+			ConditionalLiteral *p = *it;
+			for(p->start(); p->hasNext(); p->next())
+			{
+				if(p->isFact())
+					continue;
+				IntSet next;
+				int weight = p->getWeight();
+				for(IntSet::const_iterator it = set_.begin(); it != set_.end(); it++)
+					next.insert(*it + weight);
+				set_.insert(next.begin(), next.end());
+			}
+		}
+
+		current_ = set_.begin();
+		g->g_->setValue(var_, Value(Value::INT, *current_), binder);
+		l_->setEqual(*current_);
+		status = SuccessfulMatch;
+	}
+
+	void IndexedDomainSumAggregate::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+
+		current_++;
+		if(current_ != set_.end())
+		{
+			g->g_->setValue(var_, Value(Value::INT, *current_), binder);
+			l_->setEqual(*current_);
+			status = SuccessfulMatch;
+		}
+		else
+			status = FailureOnNextMatch;
+	}
+
+	IndexedDomainSumAggregate::~IndexedDomainSumAggregate()
+	{
+	}
+}
+
+IndexedDomain *SumAggregate::createIndexedDomain(Grounder *g, VarSet &index)
+{
+	if(equal_)
+	{
+		if(index.find(equal_->getUID()) != index.end())
+			return new IndexedDomainMatchOnly(this);
+		else
+			return new IndexedDomainSumAggregate(this, equal_->getUID());
+	}
+	else
+		return new IndexedDomainMatchOnly(this);
 }
 
 void SumAggregate::print(const GlobalStorage *g, std::ostream &out) const

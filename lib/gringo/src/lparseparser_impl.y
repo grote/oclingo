@@ -129,8 +129,10 @@ using namespace NS_GRINGO;
 
 
 %type aggregate      { AggregateLiteral* }
+%type aggregate_lu   { AggregateLiteral* }
 %type aggregate_atom { AggregateLiteral* }
 %destructor aggregate      { DELETE_PTR($$) }
+%destructor aggregate_lu   { DELETE_PTR($$) }
 %destructor aggregate_atom { DELETE_PTR($$) }
 
 %type termlist       { TermVector* }
@@ -281,14 +283,13 @@ predicate(res) ::= IDENTIFIER(id).                            { res = new Predic
 predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), list); }
 predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
 
-aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u);}
-
-aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u);}
-aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0);}
-aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0);}
-aggregate_atom(res) ::= EVEN LBRAC constr_list(list) RBRAC.  { res = new ParityAggregate(true, list); }
-aggregate_atom(res) ::= ODD  LBRAC constr_list(list) RBRAC.  { res = new ParityAggregate(false, list); }
-
+aggregate_lu(res)   ::= aggregate(aggr).                    { res = aggr; }
+aggregate_atom(res) ::= term(l) aggregate_lu(aggr) term(u). { res = aggr; aggr->setBounds(l, u);}
+aggregate_atom(res) ::= aggregate_lu(aggr) term(u).         { res = aggr; aggr->setBounds(0, u);}
+aggregate_atom(res) ::= term(l) aggregate_lu(aggr).         { res = aggr; aggr->setBounds(l, 0);}
+aggregate_atom(res) ::= aggregate_lu(aggr).                 { res = aggr; aggr->setBounds(0, 0);}
+aggregate_atom(res) ::= EVEN LBRAC constr_list(list) RBRAC. { res = new ParityAggregate(true, list); }
+aggregate_atom(res) ::= ODD  LBRAC constr_list(list) RBRAC. { res = new ParityAggregate(false, list); }
 
 termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
@@ -337,7 +338,8 @@ aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggre
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); }
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
 aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
-aggregate(res) ::= AVG LSBRAC weight_list(list) RSBRAC.   { res = new AvgAggregate(list); }
+
+aggregate_lu(res) ::= AVG LSBRAC weight_list(list) RSBRAC. { res = new AvgAggregate(list); }
 
 compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new LiteralStatement(new ComputeLiteral(list, 1), false); }
 compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new LiteralStatement(new ComputeLiteral(list, atol(x->c_str())), false); DELETE_PTR(x); }

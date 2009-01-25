@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		ParityAggregate(bool even, ConditionalLiteralVector *literals);
 		ParityAggregate(const ParityAggregate &a);
 		virtual Literal *clone() const;
-		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
+		virtual bool match(Grounder *g);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~ParityAggregate();
