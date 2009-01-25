@@ -16,6 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "smodelsconverter.h"
+#include "gringoexception.h"
 #include "grounder.h"
 
 using namespace NS_GRINGO;
@@ -152,6 +153,8 @@ void SmodelsConverter::printHead(Aggregate *a)
 			u = 0;
 			handleParity(false, a, l);
 			break;
+		case Aggregate::TIMES:
+			throw GrinGoException("error the times aggregate will be implemented soon!");
 		default:
 			assert(false);
 			break;
@@ -507,6 +510,8 @@ void SmodelsConverter::printBody(Aggregate *a)
 			u = 0;
 			handleParity(true, a, l);
 			break;
+		case Aggregate::TIMES:
+			throw GrinGoException("error the times aggregate will be implemented soon!");
 		default:
 			assert(false);
 			break;

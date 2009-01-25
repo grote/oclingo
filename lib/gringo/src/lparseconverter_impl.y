@@ -214,6 +214,7 @@ constant(res) ::= number(n).      { res = new Value(Value::INT, n); }
 constant(res) ::= STRING(id).     { res = new Value(Value::STRING, STRING(id)); }
 constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(Value::FUNCSYMBOL, FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
 
+aggregate(res) ::= TIMES LSBRAC weight_list(list) RSBRAC. { res = new Aggregate(false, Aggregate::TIMES, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= AVG LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::AVG, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }

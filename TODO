@@ -27,4 +27,3 @@ todo:
 - distinguish head from body literals (additional field in literal)
   needed for better matching of aggregates in bodies/heads
 - reimplement the LDGBuilder
-

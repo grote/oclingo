@@ -82,6 +82,7 @@ begin:
 		"#"? "even"     { return LPARSECONVERTER_EVEN; }
 		"#"? "odd"      { return LPARSECONVERTER_ODD; }
 		"#"? "avg"      { return LPARSECONVERTER_AVG; }
+		"#"? "times"    { return LPARSECONVERTER_TIMES; }
 		"#"? "sum"      { return LPARSECONVERTER_SUM; }
 		"#"? "min"      { return LPARSECONVERTER_MIN; }
 		"#"? "max"      { return LPARSECONVERTER_MAX; }
