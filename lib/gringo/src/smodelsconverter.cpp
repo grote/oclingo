@@ -221,8 +221,8 @@ void SmodelsConverter::convertParity(const IntVector &lits, int bound, int &l)
 	for(IntVector::const_iterator it = lits.begin(); it != lits.end(); it++)
 	{
 		head = newUid();
-		printRule(head, *it, -head);
-		printRule(head, head, -*it);
+		printRule(head, *it, -head, 0);
+		printRule(head, head, -*it, 0);
 	}
 	l = head;	
 }
