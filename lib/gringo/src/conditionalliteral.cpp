@@ -239,7 +239,10 @@ bool ConditionalLiteral::hasWeight()
 
 int ConditionalLiteral::getWeight()
 {
-	return weights_[current_];
+	if(weight_)
+		return weights_[current_];
+	else
+		return 1;
 }
 
 int ConditionalLiteral::count()
@@ -386,7 +389,7 @@ namespace
 	class ConditionalLiteralExpander : public Expandable
 	{
 	public:
-		ConditionalLiteralExpander(ConditionalLiteral *l, Expandable *e, LiteralVector *c) : l_(l), e_(e), c_(c)
+		ConditionalLiteralExpander(ConditionalLiteral *l, Expandable *e, LiteralVector *c, Term *w) : l_(l), e_(e), c_(c), w_(w)
 		{
 		}
 		void appendLiteral(Literal *l, ExpansionType type)
@@ -402,7 +405,9 @@ namespace
 				}
 				else
 					c = 0;
-				e_->appendLiteral(new ConditionalLiteral((PredicateLiteral*)l, c), type);
+				ConditionalLiteral *n = new ConditionalLiteral((PredicateLiteral*)l, c);
+				n->setWeight(w_ ? static_cast<Term*>(w_->clone()) : 0);
+				e_->appendLiteral(n, type);
 			}
 			else
 			{
@@ -413,6 +418,7 @@ namespace
 		ConditionalLiteral *l_;
 		Expandable         *e_;
 		LiteralVector      *c_;
+		Term               *w_;
 	};
 
 	class DisjunctiveConditionalLiteralExpander : public Expandable
@@ -471,7 +477,7 @@ void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a,
 
 void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	ConditionalLiteralExpander cle(this, e, conditionals_);
+	ConditionalLiteralExpander cle(this, e, conditionals_, weight_);
 	pred_->preprocess(g, &cle);
 	if(conditionals_)
 	{
