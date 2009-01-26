@@ -18,6 +18,7 @@
 #include "smodelsconverter.h"
 #include "gringoexception.h"
 #include "grounder.h"
+#include <cstdarg>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
