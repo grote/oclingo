@@ -154,7 +154,8 @@ void SmodelsConverter::printHead(Aggregate *a)
 			handleParity(false, a, l);
 			break;
 		case Aggregate::TIMES:
-			throw GrinGoException("error the times aggregate will be implemented soon!");
+			handleTimes(false, a, l, u);
+			break;
 		default:
 			assert(false);
 			break;
@@ -268,6 +269,155 @@ void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 	}
 	else
 		u = 0;	
+}
+
+namespace
+{
+	class SafeInt
+	{
+	public:
+		SafeInt(int v) : value(v) { }
+		operator int() const { return value; }
+		SafeInt operator*(const int b) const
+		{
+			if(value == 0 || b == 0)
+				return 0;
+			if(value < 0 && b < 0)
+				return (value < INT_MAX / b) ? INT_MAX : (value * b);
+			if(value < 0)
+				return (value < (-INT_MAX) / b) ? -INT_MAX : (value * b);
+			else if(b < 0)
+				return (b < (-INT_MAX) / value) ? -INT_MAX : (value * b);
+			else
+				return (value > INT_MAX / b) ? INT_MAX : (value * b);
+		}
+		bool overflow() const
+		{
+			if(value >= 0)
+				return value >= INT_MAX;
+			else
+				return value <= -INT_MAX;
+		}
+		int value;
+	};
+	SafeInt operator *(const SafeInt &a, const SafeInt &b)
+	{
+		return a * b.value;
+	}
+	SafeInt operator *(const int a, const SafeInt &b)
+	{
+		return b * a;
+	}
+	typedef __gnu_cxx::hash_map<int, int> TimesMap;
+	bool litCmp(const std::pair<int, int> &a, const std::pair<int, int> &b)
+	{
+		return a.second > b.second;
+	}
+}
+
+void SmodelsConverter::printRule(int head, ...)
+{
+	va_list vl;
+	va_start(vl, head);
+	int n;
+	posA_.clear();
+	negA_.clear();
+	while((n = va_arg(vl,int)))
+	{
+		if(n > 0)
+			posA_.push_back(n);
+		else
+			negA_.push_back(-n);
+	}
+	printBasicRule(head, posA_, negA_);
+}
+
+
+void SmodelsConverter::convertTimes(LitVec &lits, int bound, int &var)
+{
+	std::sort(lits.begin(), lits.end(), litCmp);
+	// stores the bound that is still reachable
+	IntVector left(lits.size());
+	IntVector::reverse_iterator itLeftR = left.rbegin();
+	SafeInt w = 1;
+	for(LitVec::const_reverse_iterator it = lits.rbegin(); it != lits.rend(); it++)
+	{
+		w = w * it->second;
+		*itLeftR++= w;
+	}
+	left.push_back(0);
+	// the times aggregate is trivially satisfied
+	if(bound <= 1)
+		printRule(var, 0);
+	// it can still be satisfied
+	else if(bound <= left[0])
+	{
+		TimesMap current;
+		current[1] = var;
+		IntVector::iterator itLeft = left.begin() + 1;
+		for(LitVec::iterator it = lits.begin(); it != lits.end() && current.size() > 0; it++, itLeft++)
+		{
+			TimesMap next;
+			for(TimesMap::iterator itCur = current.begin(); itCur != current.end(); itCur++)
+			{
+				// 1. assume the current var is true
+				int b = SafeInt(itCur->first) * it->second;
+				if(b >= bound)
+					printRule(itCur->second, it->first, 0);
+				else
+				{
+					int &t = next[b];
+					if(!t) t = newUid();
+					printRule(itCur->second, it->first, t, 0);
+				}
+				// 2. assume the current var is false
+				b = itCur->first;
+				if(SafeInt(b) * (*itLeft) >= bound)
+				{
+					int &t = next[b];
+					if(!t) t = newUid();
+					printRule(itCur->second, t, 0);
+				}
+			}
+			std::swap(current, next);
+		}
+	}
+}
+
+void SmodelsConverter::handleTimes(bool body, Aggregate *a, int &l, int &u)
+{
+	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
+		return;
+	}
+	LitVec lits;
+	IntVector::iterator wIt = a->weights_.begin();
+	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
+	{
+		assert(dynamic_cast<Atom*>(*it));
+		Atom *a = static_cast<Atom*>(*it);
+		addAtom(a);
+		int uid = a->getUid();
+		if(*wIt == 1)
+			continue;
+		lits.push_back(Lit(uid, *wIt));
+	}
+	// TODO: handle zeros and negative weights!!!
+	if((a->bounds_ & Aggregate::L))
+	{
+		l = newUid();
+		convertTimes(lits, a->lower_, l);
+	}
+	else
+		l = 0;
+	if((a->bounds_ & Aggregate::U))
+	{
+		u = newUid();
+		convertTimes(lits, a->upper_ + 1, u);
+	}
+	else
+		u = 0;
 }
 
 // TODO: to much copy and paste in the two functions below
@@ -511,7 +661,8 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleParity(true, a, l);
 			break;
 		case Aggregate::TIMES:
-			throw GrinGoException("error the times aggregate will be implemented soon!");
+			handleTimes(true, a, l, u);
+			break;
 		default:
 			assert(false);
 			break;
@@ -525,6 +676,7 @@ void SmodelsConverter::printBody(Aggregate *a)
 			pos.push_back(l);
 		if(u > 0)
 			neg.push_back(u);
+			
 		printBasicRule(h, pos, neg);
 		neg_.push_back(h);
 	}

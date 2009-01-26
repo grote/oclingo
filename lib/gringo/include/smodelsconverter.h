@@ -27,6 +27,9 @@ namespace NS_GRINGO
 	{
 		class SmodelsConverter : public Output
 		{
+		private:
+			typedef std::pair<int, int> Lit;
+			typedef std::vector<Lit> LitVec;
 		public:
 			SmodelsConverter(std::ostream *out, bool shift);
 			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
@@ -49,6 +52,7 @@ namespace NS_GRINGO
 			void print(Compute *r);
 			void printHead(Aggregate *a);
 			void printBody(Aggregate *a);
+			void printRule(int head, ...);
 			void handleHead(Object *o);
 			void handleBody(ObjectVector &body);
 			void handleAggregate(ObjectVector &lits);
@@ -56,6 +60,8 @@ namespace NS_GRINGO
 			void handleCount(Aggregate *a, int &l, int &u);
 			void handleSum(bool body, Aggregate *a, int &l, int &u);
 			void handleAvg(bool body, Aggregate *a, int &l, int &u);
+			void convertTimes(LitVec &lits, int bound, int &var);
+			void handleTimes(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
 			void handleMax(Aggregate *a, int &l, int &u);
 			void handleParity(bool body, Aggregate *a, int &l);
