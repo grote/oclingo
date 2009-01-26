@@ -1,4 +1,5 @@
 #!/bin/bash
+procs=$(($(grep processor /proc/cpuinfo | wc -l)+1))
 cd build || exit
 for x in *; do
 	
@@ -10,7 +11,7 @@ for x in *; do
 		echo "========== building build/$x/$y... =========="
 		cd "$y"
 		cmake .
-		make -j5 || exit
+		make -j${procs} || exit
 		cd ..
 	done
 	cd ..
