@@ -64,6 +64,7 @@ namespace NS_GRINGO
 			void handleTimes(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
 			void handleMax(Aggregate *a, int &l, int &u);
+			void convertParity(const IntVector &lits, int bound, int &l);
 			void handleParity(bool body, Aggregate *a, int &l);
 		protected:
 			int false_;

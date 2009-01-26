@@ -211,40 +211,40 @@ void SmodelsConverter::handleAggregate(ObjectVector &lits, IntVector &weights)
 	}
 }
 
+void SmodelsConverter::convertParity(const IntVector &lits, int bound, int &l)
+{
+	int head;
+	head = newUid();
+	IntVector pos, neg(1);
+	if(bound == 0)
+		printBasicRule(head, pos, pos);
+	for(IntVector::const_iterator it = lits.begin(); it != lits.end(); it++)
+	{
+		head = newUid();
+		printRule(head, *it, -head);
+		printRule(head, head, -*it);
+	}
+	l = head;	
+}
+
 void SmodelsConverter::handleParity(bool body, Aggregate *a, int &l)
 {
-	assert(a->bounds_ == Aggregate::LU);
+	assert(a->bounds_ == Aggregate::LU && a->lower_ == a->upper_);
 	if(body && negBoundsWarning_)
 	{
 		negBoundsWarning_ = false;
 		std::cerr << "Warning: parity aggregate in a rule body do not use recursively!" << std::endl;
 	}
-	handleAggregate(a->lits_);
-	int head;
-	head = newUid();
-	IntVector pos, neg(1);
-	if(a->lower_ == 0)
-		printBasicRule(head, pos, pos);
-	pos.resize(1);
-	for(IntVector::iterator it = posA_.begin(); it != posA_.end(); it++)
+	IntVector lits;
+	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++)
 	{
-		pos[0] = *it;
-		neg[0] = head;
-		head = newUid();
-		printBasicRule(head, pos, neg);
-		printBasicRule(head, neg, pos);
+		assert(dynamic_cast<Atom*>(*it));
+		Atom *a = static_cast<Atom*>(*it);
+		addAtom(a);
+		int uid = a->getUid();
+		lits.push_back(uid);
 	}
-	neg.resize(0);
-	pos.resize(2);
-	for(IntVector::iterator it = negA_.begin(); it != negA_.end(); it++)
-	{
-		pos[0] = *it;
-		pos[1] = head;
-		head = newUid();
-		printBasicRule(head, pos, neg);
-		printBasicRule(head, neg, pos);
-	}
-	l = head;
+	convertParity(lits, a->lower_, l);
 }
 
 void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
@@ -391,6 +391,9 @@ void SmodelsConverter::handleTimes(bool body, Aggregate *a, int &l, int &u)
 		l = u = 0;
 		return;
 	}
+	IntVector neg;
+	IntVector zero;
+
 	LitVec lits;
 	IntVector::iterator wIt = a->weights_.begin();
 	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
@@ -401,7 +404,15 @@ void SmodelsConverter::handleTimes(bool body, Aggregate *a, int &l, int &u)
 		int uid = a->getUid();
 		if(*wIt == 1)
 			continue;
-		lits.push_back(Lit(uid, *wIt));
+		if(*wIt == 0)
+			zero.push_back(uid);
+		else if(*wIt < 0)
+		{
+			neg.push_back(uid);
+			lits.push_back(Lit(uid, -*wIt));
+		}
+		else
+			lits.push_back(Lit(uid, *wIt));
 	}
 	// TODO: handle zeros and negative weights!!!
 	if((a->bounds_ & Aggregate::L))
