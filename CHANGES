@@ -6,6 +6,7 @@ gringo 2.0.3
 	* every keyword (sum, count, min, ...) should be preceeded by # now
 	* fixed a bug in the lparseconverter
 	* fixed a bug concerning top-level conflicts while incremental solving
+	* fixed a bug with ; nested in aggregates
 gringo 2.0.2
 	* removed some wrong assertions
 	* fixed handling of min- and max-aggregates
