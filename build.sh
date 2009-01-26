@@ -1,5 +1,6 @@
 #!/bin/bash
-procs=$(($(grep processor /proc/cpuinfo | wc -l)+1))
+procs=1
+[[ -e /proc/cpuinfo ]] && procs=$(($(grep processor /proc/cpuinfo | wc -l)+1))
 cd build || exit
 for x in *; do
 	
