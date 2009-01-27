@@ -100,7 +100,8 @@ bool TimesAggregate::match(Grounder *g)
 					hasNeg = true;;
 				if(weight == 0)
 					hasZero = true;
-				upper = upper * abs(weight);
+				else
+					upper = upper * abs(weight);
 			}
 		}
 	}

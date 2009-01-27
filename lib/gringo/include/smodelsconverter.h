@@ -60,7 +60,7 @@ namespace NS_GRINGO
 			void handleCount(Aggregate *a, int &l, int &u);
 			void handleSum(bool body, Aggregate *a, int &l, int &u);
 			void handleAvg(bool body, Aggregate *a, int &l, int &u);
-			void convertTimes(LitVec &lits, int bound, int &var);
+			void convertTimes(LitVec &lits, IntVector zero, IntVector neg, int bound, int &var);
 			void handleTimes(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
 			void handleMax(Aggregate *a, int &l, int &u);

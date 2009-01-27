@@ -214,18 +214,17 @@ void SmodelsConverter::handleAggregate(ObjectVector &lits, IntVector &weights)
 
 void SmodelsConverter::convertParity(const IntVector &lits, int bound, int &l)
 {
-	int head;
-	head = newUid();
+	l = newUid();
 	IntVector pos, neg(1);
 	if(bound == 0)
-		printBasicRule(head, pos, pos);
+		printBasicRule(l, pos, pos);
 	for(IntVector::const_iterator it = lits.begin(); it != lits.end(); it++)
 	{
-		head = newUid();
-		printRule(head, *it, -head, 0);
-		printRule(head, head, -*it, 0);
+		int head = newUid();
+		printRule(head, *it, -l, 0);
+		printRule(head, l, -*it, 0);
+		l = head;
 	}
-	l = head;	
 }
 
 void SmodelsConverter::handleParity(bool body, Aggregate *a, int &l)
@@ -335,8 +334,64 @@ void SmodelsConverter::printRule(int head, ...)
 }
 
 
-void SmodelsConverter::convertTimes(LitVec &lits, int bound, int &var)
+void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg, int bound, int &var)
 {
+	int times = newUid();
+	int negVar;
+	if(neg.size() > 0)
+	{
+		int parity;
+		negVar = newUid();
+		if(bound >= 1)
+		{	
+			// parity :- #even { neg }
+			convertParity(neg, 0, parity);
+			// negVar :- times, parity
+			printRule(negVar, times, parity, 0);
+		}
+		else
+		{
+			// negVar :- #odd { neg }
+			convertParity(neg, 1, parity);
+			// negVar :- not times
+			printRule(negVar, -times, parity, 0);
+			bound = bound + 1;
+		}
+	}
+	else
+		negVar = times;
+	if(zero.size() > 0)
+	{
+		var = newUid();
+		if(neg.size() > 0 ? (bound - 1 > 0) : (bound > 0))
+		{
+			// var :- negVar, neg
+			posA_.clear();
+			negA_.clear();
+			posA_.push_back(negVar);
+			for(IntVector::iterator it = zero.begin(); it != zero.end(); it++)
+			{
+				if(*it > 0)
+					negA_.push_back(*it);
+				else
+					posA_.push_back(-*it);
+			}
+			printBasicRule(var, posA_, negA_);
+		}
+		else
+		{
+			// var :- negVar
+			printRule(var, negVar, 0);
+			// var :- x \in neg
+			for(IntVector::iterator it = zero.begin(); it != zero.end(); it++)
+				printRule(var, *it, 0);
+		}
+	}
+	else
+	{
+		var = negVar;
+	}
+
 	std::sort(lits.begin(), lits.end(), litCmp);
 	// stores the bound that is still reachable
 	IntVector left(lits.size());
@@ -350,12 +405,13 @@ void SmodelsConverter::convertTimes(LitVec &lits, int bound, int &var)
 	left.push_back(0);
 	// the times aggregate is trivially satisfied
 	if(bound <= 1)
-		printRule(var, 0);
+		printRule(times, 0);
 	// it can still be satisfied
 	else if(bound <= left[0])
 	{
+		std::cerr << "start times" << std::endl;
 		TimesMap current;
-		current[1] = var;
+		current[1] = times;
 		IntVector::iterator itLeft = left.begin() + 1;
 		for(LitVec::iterator it = lits.begin(); it != lits.end() && current.size() > 0; it++, itLeft++)
 		{
@@ -383,6 +439,7 @@ void SmodelsConverter::convertTimes(LitVec &lits, int bound, int &var)
 			}
 			std::swap(current, next);
 		}
+		std::cerr << "end times" << std::endl;
 	}
 }
 
@@ -418,17 +475,11 @@ void SmodelsConverter::handleTimes(bool body, Aggregate *a, int &l, int &u)
 	}
 	// TODO: handle zeros and negative weights!!!
 	if((a->bounds_ & Aggregate::L))
-	{
-		l = newUid();
-		convertTimes(lits, a->lower_, l);
-	}
+		convertTimes(lits, zero, neg, a->lower_, l);
 	else
 		l = 0;
 	if((a->bounds_ & Aggregate::U))
-	{
-		u = newUid();
-		convertTimes(lits, a->upper_ + 1, u);
-	}
+		convertTimes(lits, zero, neg, a->upper_ + 1, u);
 	else
 		u = 0;
 }
