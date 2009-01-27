@@ -331,6 +331,7 @@ void SmodelsConverter::printRule(int head, ...)
 			negA_.push_back(-n);
 	}
 	printBasicRule(head, posA_, negA_);
+	va_end(vl);
 }
 
 
