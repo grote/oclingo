@@ -780,14 +780,15 @@ bool MainApp::solveIncremental()
 		}
 	} istats;
 
+	// ?????????????????????????? HERE ????????????????????????????
 	if (!options.cons.empty()) {
-		enum_ = new CBConsequences(solver, &preStats_->index, 
+		enum_ = new CBConsequences(solver, &api.stats.index, 
 			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, 0,
 			new StdOutPrinter(options.quiet), options.modelRestart
 		);
 	}
 	else {
-		AtomIndex* index = &preStats_->index;
+		AtomIndex* index = &api.stats.index;
 		ModelEnumerator* e = !options.recordSol 
 			? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
 			: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
@@ -797,10 +798,13 @@ bool MainApp::solveIncremental()
 	enum_->setNumModels(options.numModels);
 	solver.add(enum_);
 	options.solveParams.setEnumerator( *enum_ );
+	// ?????????????????????????? HERE ????????????????????????????
+
 
 	Timer all;
 	do 
 	{
+
 		all.start();
 		setState(start_ground);
 		if(options.verbose || options.istats)
@@ -865,6 +869,8 @@ bool MainApp::solveIncremental()
 		sstats.choices  += solver.stats.choices;
 		sstats.conflicts+= solver.stats.conflicts;
 		solver.stats.restarts = solver.stats.choices = solver.stats.conflicts = 0;
+		if(options.numModels)
+			enum_->setNumModels(options.numModels + solver.stats.models);
 	}
 	while(options.imax-- > 1 && (options.imin-- > 1 || ret == options.iunsat));
 	// for the summary
@@ -1018,7 +1024,7 @@ int main(int argc, char **argv)
 #ifdef WITH_CLASP
 	catch(const ReadError &e)
 	{
-		cerr << "Failed!\nError(" << e.line_ << "): " << e.
+		cerr << "\nError(" << e.line_ << "): " << e.
 			what() << endl;
 		return S_ERROR;
 	}
