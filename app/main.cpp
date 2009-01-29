@@ -721,6 +721,7 @@ bool MainApp::solveIncremental()
 	getStreams(options, s);
 
 	ProgramBuilder api;
+	enum_ = 0;
 	IClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
 	Grounder     grounder(options.grounderOptions);
 	LparseParser parser(&grounder, s.streams);
@@ -779,28 +780,6 @@ bool MainApp::solveIncremental()
 			this->rules     = rules;
 		}
 	} istats;
-
-	// ?????????????????????????? HERE ????????????????????????????
-	if (!options.cons.empty()) {
-		enum_ = new CBConsequences(solver, &api.stats.index, 
-			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, 0,
-			new StdOutPrinter(options.quiet), options.modelRestart
-		);
-	}
-	else {
-		AtomIndex* index = &api.stats.index;
-		ModelEnumerator* e = !options.recordSol 
-			? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
-			: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
-		e->startSearch(solver, index, options.project, 0);
-		enum_ = e;
-	}
-	enum_->setNumModels(options.numModels);
-	solver.add(enum_);
-	options.solveParams.setEnumerator( *enum_ );
-	// ?????????????????????????? HERE ????????????????????????????
-
-
 	Timer all;
 	do 
 	{
@@ -819,7 +798,27 @@ bool MainApp::solveIncremental()
 		setState(start_pre);
 		if(options.verbose)
 			cerr << "Preprocessing..." << endl;
-		ret = api.endProgram(solver, options.initialLookahead, true);
+		// Last param must be false so that Solver::endAddConstraints() is not called.
+		// The enumerator may want to exclude some variables from preprocessing so we have to init it first
+		ret = api.endProgram(solver, options.initialLookahead, false);
+		AtomIndex* index = &api.stats.index;
+		if (enum_ == 0) {
+			if (!options.cons.empty()) {
+				cerr << "Warning: Computing cautious/brave consequences not supported in incremental setting!\n" << endl;
+			}
+			ModelEnumerator* e = !options.recordSol 
+				? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
+				: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
+			enum_ = e;
+			enum_->setNumModels(options.numModels);
+			solver.add(enum_);
+			options.solveParams.setEnumerator( *enum_ );
+		}
+		else {
+			static_cast<ModelEnumerator*>(enum_)->startSearch(solver, index, options.project, 0);
+		}
+		// Now that enumerator is configured, finalize solver
+		ret = ret && solver.endAddConstraints(options.initialLookahead);	
 		double r = solver.numVars() / double(solver.numConstraints());
 		if (r < 0.1 || r > 10.0) {
 			problemSize = std::max(solver.numVars(), solver.numConstraints());
