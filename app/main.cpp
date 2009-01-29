@@ -814,9 +814,7 @@ bool MainApp::solveIncremental()
 			solver.add(enum_);
 			options.solveParams.setEnumerator( *enum_ );
 		}
-		else {
-			static_cast<ModelEnumerator*>(enum_)->startSearch(solver, index, options.project, 0);
-		}
+		static_cast<ModelEnumerator*>(enum_)->startSearch(solver, index, options.project, 0);
 		// Now that enumerator is configured, finalize solver
 		ret = ret && solver.endAddConstraints(options.initialLookahead);	
 		double r = solver.numVars() / double(solver.numConstraints());
