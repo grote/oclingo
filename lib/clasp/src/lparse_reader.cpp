@@ -190,7 +190,7 @@ bool LparseReader::readBody(uint32 lits, uint32 neg, bool readWeights) {
 		api_->addRule(rule_);
 	}
 	rule_.clear();
-	return match(*source_, '\n', true) ? true : throw ReadError(source_->line(), "Too many atoms!");
+	return match(*source_, '\n', true) ? true : throw ReadError(source_->line(), "Illformed rule body!");
 }
 
 bool LparseReader::readSymbolTable() {
@@ -270,10 +270,17 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 	LitVec currentClause;
 	ClauseCreator nc(&s);
 	SatPreprocessor* p = 0;
-  int numVars = -1, numClauses = 0;
-  bool ret = true;
+	int numVars = -1, numClauses = 0;
+	bool ret = true;
 	StreamSource in(prg);
-  for (;ret;) {
+	
+	// For each var v: 0000p1p2c1c2
+	// p1: set if v occurs negatively in any clause
+	// p2: set if v occurs positively in any clause
+	// c1: set if v occurs negatively in the current clause
+	// c2: set if v occurs positively in the current clause
+	PodVector<uint8>::type flags;
+	for (;ret;) {
 		skipAllWhite(in);
 		if (*in == 0) {
 			break;
@@ -284,6 +291,7 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 					throw ReadError(in.line(), "Bad parameters in the problem line!");
 				}
 				s.reserveVars(numVars+1);
+				flags.resize(numVars+1);
 				for (int v = 1; v <= numVars; ++v) {
 					s.addVar(Var_t::atom_var);
 				}
@@ -315,20 +323,20 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 				rLit = lit >= 0 ? posLit(lit) : negLit(-lit);
 				if (lit == 0) {
 					for (LitVec::iterator it = currentClause.begin(); it != currentClause.end(); ++it) {
-						s.data(it->var()) &= ~3u; // clear "in clause"-flags
+						flags[it->var()] &= ~3u; // clear "in clause"-flags
 						if (!sat) { 
 							// update "in problem"-flags
-							s.data(it->var()) |= ((1 + it->sign()) << 2);
+							flags[it->var()] |= ((1 + it->sign()) << 2);
 						}
 					}
 					ret = sat || nc.end();
 					break;
 				}
-				else if ( (s.data(rLit.var()) & (1+rLit.sign())) == 0 ) {
-					s.data(rLit.var()) |= 1+rLit.sign();
+				else if ( (flags[rLit.var()] & (1+rLit.sign())) == 0 ) {
+					flags[rLit.var()] |= 1+rLit.sign();
 					nc.add(rLit);
 					currentClause.push_back(rLit);
-					if ((s.data(rLit.var()) & 3u) == 3u) sat = true;
+					if ((flags[rLit.var()] & 3u) == 3u) sat = true;
 				}
 			}
 		}
@@ -338,10 +346,9 @@ bool parseDimacs(std::istream& prg, Solver& s, bool assertPure) {
 	}
 	if (p) s.strategies().satPrePro.reset(p);
 	for (Var i = 1; ret && i <= s.numVars(); ++i) {
-		uint8 d = (s.data(i)>>2);
+		uint8 d = (flags[i]>>2);
 		if      (d == 0)                { ret = s.force(negLit(i), 0); }
 		else if (d != 3 && assertPure)  { ret = s.force(Literal(i, d != 1), 0); }
-		s.data(i) = 0;
 	}
 	return ret;
 }

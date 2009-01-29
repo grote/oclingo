@@ -27,17 +27,17 @@
 
 #if defined(_MSC_VER) && _MSC_VER >= 1200
 #include <basetsd.h>
-typedef UINT8     uint8;
-typedef INT32     int32;
-typedef UINT32    uint32;
-typedef UINT64    uint64;
-typedef UINT_PTR  uintp;
+typedef UINT8			uint8;
+typedef INT32			int32;
+typedef UINT32		uint32;
+typedef UINT64		uint64;
+typedef UINT_PTR	uintp;
 #elif defined(__GNUC__) && __GNUC__ >= 3
 #include <inttypes.h>
-typedef uint8_t   uint8;
-typedef int32_t   int32;
-typedef uint32_t  uint32;
-typedef uint64_t  uint64;
+typedef uint8_t		uint8;
+typedef int32_t		int32;
+typedef uint32_t	uint32;
+typedef uint64_t	uint64;
 typedef uintptr_t uintp;
 #else 
 #error unknown compiler or platform. Please add typedefs manually.

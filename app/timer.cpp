@@ -1,98 +1,54 @@
-// Copyright 1998 by Patrik Simons
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
+// 
+// Copyright (c) 2006-2007, Benjamin Kaufmann
+// 
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
+// 
+// Clasp is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+// 
+// Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-// MA 02111-1307, USA.
+// along with Clasp; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-// Patrik.Simons@hut.fi
-
-//#include <strstream>
-#include <sstream>
-#include <iomanip>
 #include "timer.h"
 
-CTimer::CTimer () {
-  _sec = 0;
-  _usec = 0;
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN // exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets.
+#define NOMINMAX            // do not let windows.h define macros min and max
+#include <windows.h>        // GetProcessTimes, GetCurrentProcess, FILETIME
+
+double Timer::clockStamp() {
+	FILETIME ignoreStart, ignoreExit;
+	union Convert {
+		FILETIME time;
+		__int64  asUint;
+	} user, system;
+	GetProcessTimes(GetCurrentProcess(), &ignoreStart, &ignoreExit, &user.time, &system.time);
+	return user.asUint + system.asUint;
 }
 
-void CTimer::Start () {
-#ifdef WIN32
-  _start = clock ();
+double Timer::ticksPerSec() {
+	return 10000000;
+}
 #else
-  struct rusage ru;
-  getrusage(RUSAGE_SELF, &ru);
-  _start = ru.ru_utime;
+#include <sys/times.h>  // times()
+#include <unistd.h>     // sysconf()			
+
+double Timer::clockStamp() {
+  struct tms nowTimes;
+	times(&nowTimes);
+	return nowTimes.tms_utime + nowTimes.tms_stime;
+}
+
+double Timer::ticksPerSec() {
+	return sysconf(_SC_CLK_TCK);
+}
+
 #endif
-}
-
-void CTimer::Stop () {
-#ifdef WIN32
-  clock_t ticks = clock () - _start;
-  long s = ticks / CLOCKS_PER_SEC;
-  _sec += s;
-  _usec += (ticks - s*CLOCKS_PER_SEC)*1000/CLOCKS_PER_SEC;
-  if (_usec >= 1000) {
-      _usec -= 1000;
-      _sec++;
-  }
-#else
-  struct rusage ru;
-  getrusage(RUSAGE_SELF, &ru);
-  struct timeval stop = ru.ru_utime;
-  _sec+= stop.tv_sec - _start.tv_sec;
-  if(stop.tv_usec >= _start.tv_usec)
-  {
-  	_usec+= stop.tv_usec - _start.tv_usec;
-  }
-  else
-  {
-  	_usec+= 1000000 - _start.tv_usec + stop.tv_usec;
-	_sec--;
-  }
-  if(_usec >= 1000000)
-  {
-    _usec-= 1000000;
-    _sec++;
-  }
-#endif
-}
-
-void CTimer::Reset () {
-  _sec = 0;
-  _usec = 0;
-}
-
-std::string CTimer::Print () const {
-
-  std::istringstream in(std::ios::in | std::ios::out);
-  std::ostream out(in.rdbuf ());
-
-#ifdef WIN32
-  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec; 
-#else
-  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000; 
-#endif
-  
-  return (in.str());
-}
-
-CTimer::operator double() const
-{
-#ifdef WIN32
-  return _sec + _usec / 1000.0;
-#else
-  return _sec + _usec / 1000000.0;
-#endif
-}
-

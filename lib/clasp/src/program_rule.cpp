@@ -54,7 +54,8 @@ PrgRule& PrgRule::addHead(Var atomId) {
 // otherwise to B-. The weight is ignored (set to 1) unless the rule is a weight/optimize rule
 PrgRule& PrgRule::addToBody(Var atomId, bool pos, weight_t weight) {
 	assert(type_ != ENDRULE && "Invalid operation - Start rule not called");
-	assert( weight > 0 );
+	assert( weight >= 0 && "Invalid weight - negative weights are not supported");
+	if (weight == 0) return *this;  // ignore weightless atoms
 	if (weight != 1 && !(type_ == WEIGHTRULE || type_ == OPTIMIZERULE)) {
 		weight = 1;
 	}

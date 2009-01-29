@@ -25,7 +25,6 @@
 #endif
 #include <clasp/include/util/platform.h>
 #include <clasp/include/pod_vector.h>
-#include <ostream>
 #include <algorithm>  // std::swap
 #include <limits>
 
@@ -96,6 +95,9 @@ public:
 		assert( idx < (1U<<31) );
 		return Literal(idx<<1);
 	}
+
+	//! creates a literal from an unsigned integer.
+	static Literal fromRep(uint32 rep) { return Literal(rep); }
 	
 	uint32& asUint()        { return rep_; }
 	uint32  asUint() const  { return rep_; }
@@ -157,20 +159,6 @@ inline Literal posLit(Var v) { return Literal(v, false);}
  * \note same as posLit(v).index()
  */
 inline uint32 index(Var v) { return v << 1; }
-
-//! writes the literal p to the ostream os.
-/*!
- * For a literal p with variable v os << p produces
- * - v iff p.sign() is false
- * - -v iff p.sign() is true
- * .
- */
-inline std::ostream& operator<<(std::ostream& os, Literal p) {
-	if (p.sign()) os << "-";
-	os << p.var();
-	return os;
-}
-
 
 //! defines a strict-weak-ordering for Literals.
 inline bool operator<(const Literal& lhs, const Literal& rhs) {

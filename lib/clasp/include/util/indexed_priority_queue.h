@@ -150,27 +150,27 @@ private:
 		key_type p = heap_parent(n);
 		while (n != 0 && compare_(x, heap_[p])){
 			heap_[n] = heap_[p];
-      indices_[heap_[n]] = n;
-      n = p;
+			indices_[heap_[n]] = n;
+			n = p;
 			p = heap_parent(n);
 		}
-    heap_[n] = x;
-    indices_[x] = n;
+		heap_[n] = x;
+		indices_[x] = n;
 	}
 
 	void siftdown(key_type n) {
 		using namespace detail;
 		key_type x = heap_[n];
-    while (heap_left(n) < (key_type)heap_.size()){
-      key_type child = smaller_child(n);
+		while (heap_left(n) < (key_type)heap_.size()){
+			key_type child = smaller_child(n);
 			if (!compare_(heap_[child], x)) {
 				break;
 			}
 			heap_[n] = heap_[child];
 			indices_[heap_[n]] = n;
 			n = child;
-    }
-    heap_[n] = x;
+		}
+		heap_[n] = x;
 		indices_[x] = n;
 	}
 

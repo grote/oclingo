@@ -147,36 +147,44 @@ inline ValueRep trueValue(const Literal& lit) { return 1 + lit.sign(); }
  */
 inline ValueRep falseValue(const Literal& lit) { return 1 + !lit.sign(); }
 
-//! Stores the state of one variable.
-struct VarState {
-	VarState() : reason(0), level(0), value(0), seen(0), pfVal(value_free), body(0), eq(0), frozen(0), elim(0), unused(0) {}
-	//! assigns the value val on level l because of r
-	void assign(ValueRep val, const Antecedent& r, uint32 l) {
-		value   = val;
-		reason  = r;
-		level   = l;
+//! Stores additional information about variables
+class VarInfo {
+public:
+	VarInfo() {}
+	void  reserve(uint32 maxSize) { info_.reserve(maxSize); }
+	void  add(bool body) {
+		info_.push_back( body ? BODY_FLAG : 0);
 	}
-	//! resets dynamic part of the sate
-	void undo(bool sp) {
-		if (sp) pfVal = value;
-		reason  = 0;
-		level   = 0;
-		value   = 0;
-		seen    = 0;
+	bool      frozen(Var v)     const { return (info_[v] & FROZEN_FLAG) != 0; }
+	bool      eliminated(Var v) const { return (info_[v] & ELIM_FLAG) != 0;   }
+	uint8     seen(Var v)       const { return info_[v] & SEEN_MASK; }
+	ValueRep  prefValue(Var v)  const { return ValueRep((info_[v]>>2)&3u); }
+	bool      body(Var v)       const { return (info_[v] & BODY_FLAG) != 0; }
+	bool      eq(Var v)         const { return (info_[v] & EQ_FLAG) != 0; }
+	void setFrozen(Var v, bool b)     { b ? info_[v] |= FROZEN_FLAG : info_[v] &= ~FROZEN_FLAG; }
+	void setEliminated(Var v, bool b) { b ? info_[v] |= ELIM_FLAG   : info_[v] &= ~ELIM_FLAG;   }
+	void setBody(Var v, bool b)       { b ? info_[v] |= BODY_FLAG   : info_[v] &= ~BODY_FLAG;   }
+	void setEq(Var v, bool b)         { b ? info_[v] |= EQ_FLAG     : info_[v] &= ~EQ_FLAG;     }
+	void setSeen(Var v, uint8 x)      { info_[v] |= x; }
+	void clearSeen(Var v)             { info_[v] &= ~SEEN_MASK; }
+	void setPrefValue(Var v, ValueRep val) {
+		info_[v] &= ~PFVAL_MASK;
+		info_[v] |= (val<<2);
 	}
-	Antecedent  reason;   /**< The reason for the variable to be in the assignment    */
-	uint32      level;    /**< The decision level on which the variable was assigned  */
-	ValueRep    value;    /**< The variable's truth-value                             */
-	uint8       seen;     /**< Flag used in conflict-analysis                         */
-	uint8       pfVal:2;  /**< Preferred value: either free, true or false            */
-	uint8       body:1;   /**< Does this var represent a body?                        */
-	uint8       eq:1;     /**< Is this var both a body and an atom                    */
-	uint8       frozen:1; /**< Is this var excluded from variable elimination?        */
-	uint8       elim:1;   /**< Is this var eliminated?                                */
-	uint8       unused;
+private:
+	// Bit:   7     6   5   4   3   2  1  0
+	//      frozen elim eq body pfVal  seen
+	typedef PodVector<uint8>::type InfoVec;
+	static const uint8 SEEN_MASK  = 3u;
+	static const uint8 PFVAL_MASK = 12u;
+	static const uint8 BODY_FLAG  = 1u<<4;
+	static const uint8 EQ_FLAG    = 1u<<5;
+	static const uint8 ELIM_FLAG  = 1u<<6;
+	static const uint8 FROZEN_FLAG= 1u<<7;
+	VarInfo(const VarInfo&);
+	VarInfo& operator=(const VarInfo&);
+	InfoVec info_;
 };
-
-typedef PodVector<VarState>::type State;
 
 //! Type used to store lookahead-information for one variable.
 struct VarScore {
@@ -244,9 +252,9 @@ private:
 	uint32 tested_: 2;
 };
 
-typedef PodVector<VarScore>::type VarScores;  /**< A vector of variable-scores */
+typedef PodVector<VarScore>::type VarScores; /**< A vector of variable-scores */
 
-//! Stores information about a literal that is implied on an earlier level as the current decision-level
+//! Stores information about a literal that is implied on an earlier level than the current decision level.
 struct ImpliedLiteral {
 	ImpliedLiteral(Literal a_lit, uint32 a_level, const Antecedent& a_ante) 
 		: lit(a_lit)

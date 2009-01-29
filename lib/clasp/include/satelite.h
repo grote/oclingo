@@ -62,7 +62,7 @@ public:
 	} options;
 
 	bool preprocess();
-	void extendModel( State& m );
+	void extendModel( Assignment& m );
 	bool hasSymModel() const { return !unconstr_.empty(); }
 	typedef PodVector<Clause*>::type  ClauseList;
 private:

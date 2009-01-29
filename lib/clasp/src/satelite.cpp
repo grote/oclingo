@@ -66,9 +66,9 @@ public:
 	uint64&         abstraction()               { return abstr_; }
 	void            strengthen(Literal p)       {
 		abstr_ = 0;
-		uint32 i;
-		for (i = 0; lits_[i] != p; ++i) { abstr_ |= abstractLit(lits_[i]); }
-		for (; i < size_-1; ++i)        { lits_[i] = lits_[i+1]; abstr_ |= abstractLit(lits_[i]); }
+		uint32 i, end;
+		for (i   = 0; lits_[i] != p; ++i) { abstr_ |= abstractLit(lits_[i]); }
+		for (end = size_-1; i < end; ++i) { lits_[i] = lits_[i+1]; abstr_ |= abstractLit(lits_[i]); }
 		--size_;
 	}
 private:
@@ -647,12 +647,12 @@ uint32 SatElite::freeClauseId() {
 }
 
 // extends the model given in v by the vars that were eliminated
-void SatElite::extendModel(State& m) {
+void SatElite::extendModel(Assignment& m) {
 	if (!elimList_) return;
 	// 1. solver set all eliminated vars to true, thus before we can compute the
 	// implied values we first need to set them back to free
 	for (ElimList::const_iterator it = elimList_->begin(); it != elimList_->end(); ++it) {
-		m[it->var].value = value_free;
+		m[it->var] = value_free;
 	}
 	// 2. some of the eliminazed vars are unconstraint w.r.t the current model, i.e.
 	// they can be either true or false. Since we may be interested in all models
@@ -660,7 +660,7 @@ void SatElite::extendModel(State& m) {
 	if (!unconstr_.empty()) {
 		unconstr_.back() = ~unconstr_.back();
 		for (VarVec::size_type i = 0; i != unconstr_.size(); ++i) {
-			m[unconstr_[i].var()].value = unconstr_[i].sign() ? value_false : value_true;
+			m[unconstr_[i].var()] = trueValue(unconstr_[i]);
 		}
 	}
 	// 3. for each eliminated var, compute its implied value by "unit propagating" its
@@ -668,23 +668,23 @@ void SatElite::extendModel(State& m) {
 	// Start with the vars, eliminated last
 	for (ElimList::reverse_iterator it = elimList_->rbegin(); it != elimList_->rend(); ++it) {
 		Var v = it->var;
-		if (m[v].value != value_free) continue;
+		if (solver_->value(v) != value_free) continue;
 		Literal x;
 		for (VarVec::size_type j = 0; it->eliminated[j] != 0; ++j) {
 			const Clause& c = *it->eliminated[j];
 			for (uint32 k = 0; k != c.size(); ++k) {
 				if      (c[k].var() == v) { x = c[k]; }
-				else if (m[c[k].var()].value != falseValue(c[k])) { goto nextClause; }
+				else if (!solver_->isFalse(c[k])) { goto nextClause; }
 			}
-			assert(x != Literal() && m[v].value != falseValue(x));
-			m[v].value = trueValue(x);
+			assert(x != Literal() && !solver_->isFalse(x));
+			m[v] = trueValue(x);
 			break;
 nextClause:;
 		}
-		if (m[v].value == value_free) {  
+		if (solver_->value(v) == value_free) {  
 			// v is unconstraint w.r.t the model. Assume v to true; remember it
 			// so that we can also enumerate the model containing ~v.
-			m[v].value = value_true;
+			m[v] = value_true;
 			unconstr_.push_back(posLit(v));
 		}
 	}

@@ -69,7 +69,7 @@ ClauseCreator& ClauseCreator::startAsserting(ConstraintType t, const Literal& p)
 
 ClauseCreator& ClauseCreator::add(const Literal& p) {
 	assert(solver_); const Solver& s = *solver_;
-	if (s.decisionLevel() != 0 || s.value(p.var()) == value_free) {
+	if (s.value(p.var()) == value_free || s.level(p.var()) > 0) {
 		literals_.push_back(p);
 		if (unit_ != 0 && s.level(p.var()) > s.level(literals_[w2_].var())) {
 			// make sure w2_ points to the false lit assigned last
@@ -95,8 +95,8 @@ void ClauseCreator::simplify() {
 	assert(w2_ == 0 || literals_.size() == 1 || literals_[0] != literals_[w2_]);
 	LitVec::iterator j = literals_.begin();
 	for (LitVec::iterator i = j, end = literals_.end(); i != end; ++i) {
-		if ( (solver_->data(i->var()) & (1+i->sign())) == 0 ) {
-			solver_->data(i->var()) |= 1+i->sign();
+		if ( !solver_->seen(*i) ) {
+			solver_->markSeen(*i);
 			if (i != j) {
 				if (*i == literals_[w2_]) {
 					w2_ = static_cast<uint32>(j - literals_.begin());
@@ -105,54 +105,51 @@ void ClauseCreator::simplify() {
 			}
 			++j;
 		}
-		if ((solver_->data(i->var()) & 3u) == 3u) sat_ = 1;
+		if (solver_->seen(~*i)) sat_ = 1;
 	}
 	literals_.erase(j, literals_.end());
 	for (LitVec::iterator i = literals_.begin(), end = literals_.end(); i != end; ++i) {
-		solver_->data(i->var()) &= ~3u;
+		solver_->clearSeen(i->var());
 	}
 }
 
-
-bool ClauseCreator::end(Constraint** out) {
-	assert(solver_);
+bool ClauseCreator::createClause(Solver& s, ConstraintType type, const LitVec& lits, uint32 sw, Constraint** out) {
 	if (out) *out = 0;
-	if (sat_) return true;    // SAT on level 0
-	if (literals_.empty()) {
+	if (lits.empty()) {
 		LitVec cfl(1, Literal());
-		solver_->setConflict(cfl);
+		s.setConflict(cfl);
 		return false;           // UNSAT on level 0
 	}
-	else if (type_ == Constraint_t::native_constraint && solver_->strategies().satPrePro.get()) {
-		return solver_->strategies().satPrePro->addClause(literals_);
+	else if (type == Constraint_t::native_constraint && s.strategies().satPrePro.get()) {
+		return s.strategies().satPrePro->addClause(lits);
 	}
-	solver_->strategies().heuristic->newConstraint(*solver_, &literals_[0], literals_.size(), type_);
-	bool asserting = unit_ != 0 || solver_->isFalse(literals_[w2_]);
-	if (literals_.size() < 4) {
-		if (asserting) updateLearnt(solver_->stats, literals_.size(), type_);
-		if (literals_.size() == 1) {
-			return solver_->addUnary(literals_[0]);
+	s.strategies().heuristic->newConstraint(s, &lits[0], lits.size(), type);
+	bool asserting = lits.size() == 1 || s.isFalse(lits[sw]);
+	if (lits.size() < 4) {
+		if (type != Constraint_t::native_constraint) updateLearnt(s.stats, lits.size(), type);
+		if (lits.size() == 1) {
+			return s.addUnary(lits[0]);
 		}
-		else if (literals_.size() == 2) {
-			return solver_->addBinary(literals_[0], literals_[1], asserting); 
+		else if (lits.size() == 2) {
+			return s.addBinary(lits[0], lits[1], asserting); 
 		}
-		return solver_->addTernary(literals_[0], literals_[1], literals_[2], asserting);
+		return s.addTernary(lits[0], lits[1], lits[2], asserting);
 	}
 	else {                          // general clause
 		Constraint* newCon;
-		Literal first = literals_[0];
-		if (type_ == Constraint_t::native_constraint) {
-			newCon = Clause::newClause(*solver_, literals_);
-			solver_->add(newCon);
+		Literal first = lits[0];
+		if (type == Constraint_t::native_constraint) {
+			newCon = Clause::newClause(s, lits);
+			s.add(newCon);
 		}
 		else {
-			assert(w2_ != 0);
-			LearntConstraint* c = Clause::newLearntClause(*solver_, literals_, type_, w2_);
-			solver_->addLearnt(c);
+			assert(sw != 0);
+			LearntConstraint* c = Clause::newLearntClause(s, lits, type, sw);
+			s.addLearnt(c);
 			newCon = c;
 		}
 		if (out) *out = newCon;
-		return !asserting || solver_->force(first, newCon);
+		return !asserting || s.force(first, newCon);
 	}
 }
 
@@ -170,17 +167,23 @@ LitVec::size_type ClauseCreator::size() const {
 Constraint* Clause::newClause(Solver& s, const LitVec& lits) {
 	LitVec::size_type nl = 2 + lits.size(); // 2 sentinels
 	void* mem = ::operator new( sizeof(Clause) + (nl*sizeof(Literal)) );
-	return new (mem) Clause(s, lits, 0, Constraint_t::native_constraint);
+	return new (mem) Clause(s, lits, 0, Constraint_t::native_constraint, 0);
 }
 
 LearntConstraint* Clause::newLearntClause(Solver& s, const LitVec& lits, ConstraintType t, LitVec::size_type secondWatch) {
 	assert(t != Constraint_t::native_constraint);
 	LitVec::size_type nl = 3 + lits.size(); // 2 sentinels + 1 lit for activity
 	void* mem = ::operator new( sizeof(Clause) + (nl * sizeof(Literal)) );
-	return new (mem) Clause(s, lits, secondWatch, t);
+	return new (mem) Clause(s, lits, secondWatch, t, 0);
 }
 
-Clause::Clause(Solver& s, const LitVec& theLits, LitVec::size_type sw, ConstraintType t) {
+LearntConstraint* Clause::newContractedClause(Solver& s, const LitVec& lits, LitVec::size_type sw, LitVec::size_type tailStart) {
+	LitVec::size_type nl = 3 + lits.size(); // 2 sentinels + 1 lit for activity
+	void* mem = ::operator new( sizeof(Clause) + (nl * sizeof(Literal)) );
+	return new (mem) Clause(s, lits, sw, Constraint_t::learnt_conflict, (uint32)tailStart);
+}
+
+Clause::Clause(Solver& s, const LitVec& theLits, LitVec::size_type sw, ConstraintType t, uint32 tail) {
 	assert(int32(t) < 4);
 	size_   = (uint32)theLits.size();
 	type_   = t;
@@ -193,7 +196,16 @@ Clause::Clause(Solver& s, const LitVec& theLits, LitVec::size_type sw, Constrain
 	}
 	else {
 		act()   = (uint32)s.stats.restarts + 1;
-		if (s.isFalse(theLits[sw]) && size_ >= s.strategies().compress()) {
+		if (tail > 0) {
+			assert(sw < tail);
+			Literal* newEnd = begin()+tail;
+			if (newEnd != end()) {
+				*newEnd = ~*newEnd;
+				newEnd->watch();
+				size_ = newEnd - begin();
+			}
+		}
+		else if (s.isFalse(theLits[sw]) && size_ >= s.strategies().compress()) {
 			contract(s);
 			sw = 1;
 		}
@@ -231,7 +243,7 @@ void Clause::initWatches(Solver& s) {
 		uint32 watch[2] = {0, size_-1};
 		uint32 count[2] = {s.numWatches(~(*this)[0]), s.numWatches(~(*this)[size_-1])};
 		uint32 maxCount = count[0] < count[1];
-		for (uint32 x = 1; count[maxCount] > 0 && x != size_-1; ++x) {
+		for (uint32 x = 1, end = size_-1; count[maxCount] > 0u && x != end; ++x) {
 			uint32 cxw = s.numWatches(~(*this)[x]);
 			if (cxw < count[maxCount]) {
 				if (cxw < count[1-maxCount]) {
@@ -369,7 +381,7 @@ bool Clause::simplify(Solver& s, bool reinit) {
 }
 
 bool Clause::locked(const Solver& s) const {
-	return s.reason(other_.var()) == this;
+	return s.isTrue(other_) && s.reason(other_) == this;
 }
 
 void Clause::removeWatches(Solver& s) {
@@ -584,10 +596,10 @@ LitVec::size_type LoopFormula::size() const {
 
 bool LoopFormula::locked(const Solver& s) const {
 	if (other_ != end_-1) {
-		return s.reason(lits_[other_].var()) == this;
+		return s.isTrue(lits_[other_]) && s.reason(lits_[other_]) == this;
 	}
 	for (uint32 x = end_+1; x != size_; ++x) {
-		if (s.reason(lits_[x].var()) == this) {
+		if (s.isTrue(lits_[x]) && s.reason(lits_[x]) == this) {
 			return true;
 		}
 	}
@@ -707,5 +719,4 @@ bool LoopFormula::simplify(Solver& s, bool) {
 	}
 	return false;
 }
-
 }

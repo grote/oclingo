@@ -162,7 +162,8 @@ public:
 	uint32 numRules() const { return (uint32)minRules_.size(); }
 
 	//! Sets the comparison mode used in this constraint
-	void setMode(Mode m, bool restartAfterModel = false) { mode_ = m; restart_ = (mode_ == compare_less && restartAfterModel); }
+	void setMode(Mode m)  { mode_ = m; }
+	Mode mode() const     { return mode_; }
 
 	//! Sets the optimum of a minimize-statement 
 	/*!
@@ -173,6 +174,14 @@ public:
 		assert(level < minRules_.size());
 		minRules_[level]->opt_ = opt;
 	}
+	weight_t getOptimum(uint32 level) const {
+		assert(level < minRules_.size());
+		if (minRules_[level]->opt_ != std::numeric_limits<weight_t>::max() && level == minRules_.size()-1 && mode_ == compare_less) {
+			return minRules_[level]->opt_ + 1;
+		}
+		return minRules_[level]->opt_;
+	}
+
 	
 	//! Adds a minimize statement.
 	/*!
@@ -200,11 +209,13 @@ public:
 	 *  - false otherwise
 	 */
 	bool backtrackFromModel(Solver& s);
-	
+
+	bool backpropagate(Solver& s) {
+		return backpropagate(s, rule(activePL_));
+	}
+
 	//! returns the number of optimal models found so far
 	uint64 models() const;
-	void printOptimum(std::ostream& os) const;
-	bool allowRestart() const { return restart_; }
 	
 	// constraint interface
 	PropResult propagate(const Literal& p, uint32& data, Solver& s);
@@ -264,7 +275,6 @@ private:
 	uint32    activePL_;    // priority level under consideration
 	uint32    activeIdx_;   // index into rule of current priority level
 	Mode      mode_;        // how to compare assignments?
-	bool      restart_;     // Restart after each optimal model?
 };
 
 }

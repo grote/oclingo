@@ -118,7 +118,7 @@ private:
 	bool    classifyProgram(uint32 startAt, uint32& stopAt);
 	bool    simplifyClassifiedProgram(uint32 startAt, uint32& stopAt);
 	uint32  nextBodyId(VarVec::size_type& idx) {
-		if (follow_.empty() || idx == follow_.size()) { return VarVec::size_type(-1); }
+		if (follow_.empty() || idx == follow_.size()) { return varMax; }
 		if (dfs_) {
 			uint32 id = follow_.back();
 			follow_.pop_back();

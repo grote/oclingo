@@ -80,7 +80,11 @@ public:
 	 * \note if clause is an asserting clause, the first literal
 	 * of the clause is asserted.
 	 */
-	bool end(Constraint** newCon = 0);
+	bool end(Constraint** newCon = 0) {
+		assert(solver_);
+		if (sat_) return true; // SAT on level 0
+		return ClauseCreator::createClause(*solver_, type_, literals_, w2_, newCon);
+	}
 	
 	//! returns the literal at position s.
 	/*!
@@ -109,6 +113,9 @@ public:
 
 	//! removes duplicate lits. Marks the clause as sat if it contains p and ~p
 	void simplify();
+
+	//! creates a clause of type t from the literals in lits
+	static bool createClause(Solver& s, ConstraintType t, const LitVec& lits, uint32 sw, Constraint** newCon = 0);
 private:
 	Solver*         solver_;    // solver in which new clauses are stored
 	LitVec          literals_;  // literals of the new clause
@@ -165,6 +172,20 @@ public:
 	 * \note The clause must be destroyed using Clause::destroy
 	 */ 
 	static LearntConstraint*  newLearntClause(Solver& s, const LitVec& lits, ConstraintType t, LitVec::size_type secondWatch);
+
+	/*!
+	 * Creates a new contracted learnt clause from the literals contained in lits. A contracted clause
+	 * consists of an active head and a (false) tail. Propagation is restricted to the head. 
+	 * The tail is only needed to compute reasons from assignments.
+	 * 
+	 * \param s solver in which the new clause is to be used.
+	 * \param lits The vector containing the literals for the clause.
+	 * \param secondWatch The index of the second literal to watch.
+	 * \param The index of the first literal that should be temporarily removed from the clause.
+	 * \pre see newLearntClause(Solver&, const LitVec&, ConstraintType, LitVec::size_type);
+	 * \note The clause must be destroyed using Clause::destroy
+	 */ 
+	static LearntConstraint*  newContractedClause(Solver& s, const LitVec& lits, LitVec::size_type secondWatch, LitVec::size_type tailStart);
 	
 	// Constraint-Interface
 	/*!
@@ -254,7 +275,7 @@ public:
 protected:
 	~Clause() {}
 private:
-	Clause(Solver& s, const LitVec& lits, LitVec::size_type sw, ConstraintType t);
+	Clause(Solver& s, const LitVec& lits, LitVec::size_type sw, ConstraintType t, uint32 delLevel);
 	// returns the starting position of the literal array, i.e.
 	//  * lits_[0] if clause is a native constraint
 	//  * lits_[1] if clause is a learnt constraint. In that case, lits_[0] stores the activity

@@ -31,6 +31,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <iosfwd>
 
 namespace Clasp {
 
@@ -46,6 +47,8 @@ class MinimizeConstraint;
 typedef PodVector<PrgAtomNode*>::type AtomList;
 typedef PodVector<PrgBodyNode*>::type BodyList;
 typedef PodVector<PrgNode*>::type NodeList;
+
+const ValueRep value_weak_true = 3; /**< true but no proof */
 
 /**
  * \defgroup problem Problem specification
@@ -260,6 +263,7 @@ public:
 	 * \note if atomId is not yet known, an atom with the given id is implicitly created.
 	 */
 	ProgramBuilder& addHead(Var atomId) {
+		assert(atomId > 0);
 		rule_.addHead(atomId);
 		return *this;
 	}
@@ -324,7 +328,7 @@ public:
 	
 	//! Creates a minimize constraints from the minimize statements contained in the program
 	/*!
-	 * \pre The program is frozen, ie. endProgram was already called.
+	 * \pre The program is frozen and not trivially UNSAT, ie. endProgram was already called and did not return false.
 	 * \return 0 if the program does not contain minimize statements
 	 */
 	MinimizeConstraint* createMinimize(Solver& s);
@@ -366,6 +370,8 @@ private:
 	bool          applyCompute();
 	void          setConflict();
 	void          updateFrozenAtoms(const Solver&);
+	void          setAtomLiteral(uint32 atomId);
+	void          setEqAtomLiterals();
 	// ------------------------------------------------------------------------
 	// Nogood creation
 	void cloneVars(Solver& s);
@@ -373,7 +379,7 @@ private:
 	bool addConstraints(Solver& s, CycleChecker& c, uint32 startAtom);
 	void freezeMinimize(Solver&);
 	// ------------------------------------------------------------------------
-	void writeRule(PrgBodyNode*, uint32 h, std::ostream&);
+	void writeRule(PrgBodyNode*, std::ostream&);
 
 	PrgRule       rule_;        // active rule
 	RuleState     ruleState_;   // which atoms appear in the active rule?
@@ -440,12 +446,12 @@ public:
 	 *
 	 * \return
 	 *  - if value() == value_free : posLit(sentVar)
-	 *  - if value() == value_true : literal()
+	 *  - if value() == value_true or value_weak_true : literal()
 	 *  - if value() == value_false: ~literal()
 	 */
 	Literal   trueLit()   const { 
 		if (value_ != value_free) {
-			return value_ == value_true ? lit_ : ~lit_;
+			return value_ == value_false ? ~lit_ : lit_;
 		}
 		return Literal();
 	}
@@ -460,9 +466,14 @@ public:
 	void    setVisited(bool v)  { seen_   = (uint32)v; }
 	void    setIgnore(bool b)   { ignore_ = (uint32)b; }
 	bool    setValue(ValueRep v){
-		if ((value_ ^ v) == 3) return false;
-		value_ = v;
-		return true;
+		if (v == value_weak_true && ignore()) {
+			v = value_true;
+		}
+		if (value_ == value_free || v == value_ || (value_ == value_weak_true && v == value_true)) {
+			value_ = v;
+			return true;
+		}
+		return false;
 	}
 	void    resetSccFlags() {
 		scc_    = noScc;
@@ -482,8 +493,8 @@ private:
 												//  - Afterwards: Index of this node in the unfounded set checker                       
 	uint32  seen_   : 1;  // SCC-check: true if node was already visited
 	uint32  ignore_ : 1;  // meaning depends on the node's type
-    										//  - body: set true if body is no longer relevant (e.g. one of its subgoals is known to be false)
-    										//  - atom: set true, if atom can be ignored during ufs init. Either because
+												//  - body: set true if body is no longer relevant (e.g. one of its subgoals is known to be false)
+												//  - atom: set true, if atom can be ignored during ufs init. Either because
 												// it has a satisfied support and thus can't become unfounded or because it was already added to the ufs-checker
 };
 

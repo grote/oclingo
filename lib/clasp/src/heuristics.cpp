@@ -297,39 +297,42 @@ Literal ClaspBerkmin::doSelect(Solver& s) {
 	}
 	if (hasTopUnsat(s)) {
 		assert(!freeLits_.empty());
-		Var candidates[BERK_NUM_CANDIDATES];
-		candidates[0] = freeLits_[0].var();
-		uint32 c = 1;
-		uint32  ms  = static_cast<uint32>(-1);
-		uint32  ls  = 0;
-		for (LitVec::size_type i = 1; i < freeLits_.size(); ++i) {
-			Var v = freeLits_[i].var();
-			assert(s.value(v) == value_free);
-			if ( score_[v].activity(decay_) > score_[candidates[0]].activity(decay_) ) {
-				candidates[0] = v;
-				c = 1;
-				ms  = static_cast<uint32>(-1);
-			}
-			else if ( score_[v].activity_ == score_[candidates[0]].activity_) {
-				if (ms == static_cast<uint32>(-1)) ms = momsScore(s, candidates[0]);
-				if ((ls = momsScore(s,v)) > ms ) {
-					candidates[0] = v;
-					c = 1;
-					ms  = ls;
-				}
-				else if (ls == ms && c != BERK_NUM_CANDIDATES) {
-					candidates[c++] = v;
-				}
-			}
-		}
-		return selectLiteral(s, (c == 1 ? candidates[0] : candidates[heuRand()%c]), false);
+		Literal x = selectRange(s, &freeLits_[0], &freeLits_[0]+freeLits_.size());
+		return selectLiteral(s, x.var(), false);
 	}
 	else {
 		return selectVsids(s);
 	}
 }
 
-
+Literal ClaspBerkmin::selectRange(Solver& s, const Literal* first, const Literal* last) {
+	Literal candidates[BERK_NUM_CANDIDATES];
+	candidates[0] = *first;
+	uint32 c = 1;
+	uint32  ms  = static_cast<uint32>(-1);
+	uint32  ls  = 0;
+	for (++first; first != last; ++first) {
+		Var v = first->var();
+		assert(s.value(v) == value_free);
+		if ( score_[v].activity(decay_) > score_[candidates[0].var()].activity(decay_) ) {
+			candidates[0] = *first;
+			c = 1;
+			ms  = static_cast<uint32>(-1);
+		}
+		else if ( score_[v].activity_ == score_[candidates[0].var()].activity_) {
+			if (ms == static_cast<uint32>(-1)) ms = momsScore(s, candidates[0].var());
+			if ((ls = momsScore(s,v)) > ms ) {
+				candidates[0] = *first;
+				c = 1;
+				ms  = ls;
+			}
+			else if (ls == ms && c != BERK_NUM_CANDIDATES) {
+				candidates[c++] = *first;
+			}
+		}
+	}
+	return c == 1 ? candidates[0] : candidates[heuRand()%c];
+}
 
 Literal ClaspBerkmin::selectVsids(Solver& s) {
 	++numVsids_;
@@ -384,14 +387,15 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 }
 
 Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
-	int32 w0 = vsids ? (int32)s.estimateBCP(posLit(var), 5) : score_[var].occ_;
-	int32 w1 = vsids ? (int32)s.estimateBCP(negLit(var), 5) : 0;
-	if ( s.strategies().saveProgress && std::abs(w0-w1) > 32 ) {
-		s.setPreferredValue(var, (w0-w1)<0?value_false:value_true);
+	Literal l;
+	if ( (l = preferredLiteral(s,var)) == posLit(0) ) {
+		int32 w0 = vsids ? (int32)s.estimateBCP(posLit(var), 5) : score_[var].occ_;
+		int32 w1 = vsids ? (int32)s.estimateBCP(negLit(var), 5) : 0;
+		return w0 != w1 
+			? Literal(var, (w0-w1)<0)
+			: s.preferredLiteralByType(var);
 	}
-	return w0 != w1 
-		? Literal(var, (w0-w1)<0)
-		: s.preferredLiteralByType(var);
+	return l;
 }
 
 
@@ -471,9 +475,13 @@ void ClaspVmtf::newConstraint(const Solver& s, const Literal* first, LitVec::siz
 }
 
 Literal ClaspVmtf::getLiteral(const Solver& s, Var v) const {
-	return score_[v].occ_== 0
-		? s.preferredLiteralByType(v)
-		: Literal(v, score_[v].occ_ < 0 );
+	Literal r;
+	if ( (r = preferredLiteral(s, v)) == posLit(0) ) {
+		r = score_[v].occ_== 0
+			? s.preferredLiteralByType(v)
+			: Literal(v, score_[v].occ_ < 0 );
+	}
+	return r;
 }
 
 void ClaspVmtf::undoUntil(const Solver&, LitVec::size_type) {
@@ -503,6 +511,16 @@ Literal ClaspVmtf::doSelect(Solver& s) {
 		c = getLiteral(s, *front_);
 	}
 	return c;
+}
+
+Literal ClaspVmtf::selectRange(Solver&, const Literal* first, const Literal* last) {
+	Literal best = *first;
+	for (++first; first != last; ++first) {
+		if (score_[first->var()].activity(decay_) > score_[best.var()].activity(decay_)) {
+			best = *first;
+		}
+	}
+	return best;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -583,8 +601,24 @@ Literal ClaspVsids::doSelect(Solver& s) {
 		vars_.pop();
 	}
 	var = vars_.top();
-	return score_[var].second == 0
-		? s.preferredLiteralByType(var)
-		: Literal( var, score_[var].second < 0 );
+	Literal r;
+	if ( (r = preferredLiteral(s, var)) == posLit(0) ) {
+		r = score_[var].second == 0
+			? s.preferredLiteralByType(var)
+			: Literal( var, score_[var].second < 0 );
+	}
+	return r;
 }
+
+Literal ClaspVsids::selectRange(Solver&, const Literal* first, const Literal* last) {
+	Literal best = *first;
+	for (++first; first != last; ++first) {
+		if (score_[first->var()].first > score_[best.var()].first) {
+			best = *first;
+		}
+	}
+	return best;
+}
+
+
 }

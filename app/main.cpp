@@ -39,16 +39,12 @@
 #include <domain.h>
 #ifdef WITH_CLASP
 #	include <claspoutput.h>
-
-#	include "enumerator.h"
 #	include <clasp/include/lparse_reader.h>
 #	include <clasp/include/satelite.h>
 #	include <clasp/include/unfounded_check.h>
-#endif
-
-#if defined(_MSC_VER) &&_MSC_VER >= 1200
-//#define CHECK_HEAP 1;
-#	include <crtdbg.h>
+#	include <clasp/include/cb_enumerator.h>
+#	include <clasp/include/model_enumerators.h>
+#	include <clasp/include/smodels_constraints.h>
 #endif
 
 using namespace std;
@@ -61,16 +57,17 @@ using namespace NS_OUTPUT;
 struct MainApp
 {
 	Options   options;
-	CTimer    t_pre;
-	CTimer    t_read;
-	CTimer    t_ground;
-	CTimer    t_solve;
-	CTimer    t_all;
+	Timer    t_pre;
+	Timer    t_read;
+	Timer    t_ground;
+	Timer    t_solve;
+	Timer    t_all;
 #ifdef WITH_ICLASP
 	int       steps;
 #endif
 #ifdef WITH_CLASP
 	Solver    solver;
+	uint32    problemSize;
 
 	enum Mode { ASP_MODE, SAT_MODE } mode;
 #endif
@@ -126,10 +123,111 @@ private:
 	bool readSat();
 	std::auto_ptr < LparseStats > lpStats_;
 	std::auto_ptr < PreproStats > preStats_;
-	std::auto_ptr < Enumerator > enum_;
+	Enumerator *enum_;
 	std::ifstream inFile_;
 #endif
 } clasp_g;
+
+#ifdef WITH_CLASP
+class StdOutPrinter : public ModelPrinter, public CBConsequences::CBPrinter {
+public:
+	explicit StdOutPrinter(bool quiet) : quiet_(quiet) {}
+	void printModel(const Solver& s, const ModelEnumerator& e) {
+		if (quiet_) return;
+		AtomIndex* index = e.getIndex();
+		if (index) {
+			std::cerr << "Answer: " << s.stats.models << "\n";
+			for (AtomIndex::size_type i = 0; i != index->size(); ++i) {
+				if (s.value((*index)[i].lit.var()) == trueValue((*index)[i].lit) && !(*index)[i].name.empty()) {
+					std::cerr << (*index)[i].name << " ";
+				}
+			}
+			std::cerr << std::endl;
+		}
+		else {
+			const uint32 numVarPerLine = 10;
+			std::cerr << "c Model: " << s.stats.models << "\n";
+			std::cerr << "v ";
+			for (Var v = 1, cnt=0; v <= s.numVars(); ++v) {
+				if (s.value(v) == value_false) std::cerr << "-";
+				std::cerr << v;
+				if (++cnt == numVarPerLine && v+1 <= s.numVars()) { cnt = 0; std::cerr << "\nv"; }
+				std::cerr << " ";
+			}
+			std::cerr << "0 \n" << std::flush;
+		}
+		printMini(e.getMini(), index?"Optimization":"c Optimization");
+	}
+	void printReport(const Solver& s, const ModelEnumerator& e) {
+		const char* modString = e.getIndex() ? "Models" : "c Models";
+		uint64 enumerated = s.stats.models;
+		uint64 models     = e.getMini() ? e.getMini()->models() : enumerated;
+		std::cerr << "\n";
+		std::cerr << std::left << std::setw(12) << modString << ": ";
+		if (s.decisionLevel() != s.rootLevel()) {
+			char buf[64];
+			int wr    = sprintf(buf, "%llu", models);
+			buf[wr]   = '+';
+			buf[wr+1] = 0;
+			std::cerr << std::setw(6) << buf;	
+		}
+		else {
+			std::cerr << std::setw(6) << models;
+		}
+		if (enumerated != models) {
+			std::cerr << " (Enumerated: " << enumerated << ")";
+		}
+		std::cerr   << "\n";
+		if (quiet_) {
+			printMini(e.getMini(), e.getIndex()?"Optimization":"c Optimization");
+		}
+	}
+	void printConsequences(const Solver&, const CBConsequences& cb) {
+		if (!quiet_) {
+			std::cerr << (cb.cbType() == CBConsequences::cautious_consequences ? "Cautious" : "Brave") << " consequences: \n";
+			const AtomIndex& index = cb.index();
+			for (AtomIndex::size_type i = 0; i != index.size(); ++i) {
+				if (index[i].lit.watched()) {
+					std::cerr << index[i].name << " ";
+				}
+			}
+			std::cerr << std::endl;
+			printMini(cb.mini(), "Optimization");
+		}
+	}
+	void printReport(const Solver& s, const CBConsequences& cb) {
+		if (quiet_ || s.stats.models == 0) {
+			quiet_ = false;
+			printConsequences(s, cb);
+		}
+		std::cerr << "\n";
+		std::cerr << std::left << std::setw(12) << "Models" << ": ";
+		std::cerr << std::setw(6) << 1;
+		if (s.stats.models > 1) {
+			std::cerr << " (Enumerated: " << s.stats.models << ")";
+		}
+		std::cerr << std::endl;
+		if (quiet_) printMini(cb.mini(), "Optimization");
+	}
+	void printMini(MinimizeConstraint* c, const char* prefix) {
+		if (!c || c->numRules() == 0) return;
+		std::cerr << std::left << std::setw(12) << prefix << ":";
+		for (uint32 i = 0; i < c->numRules(); ++i) {
+			std::cerr << " " << c->getOptimum(i);
+		}
+		std::cerr << std::endl;
+	}
+private:
+	bool quiet_;
+};
+#endif
+
+ostream& operator<<(ostream& os, const Timer& t) {
+	streamsize old = os.precision(3);
+	os << fixed << t.elapsed();
+	os.precision(old);
+	return os;
+}
 
 // return values
 const int S_UNKNOWN = 0;
@@ -146,8 +244,8 @@ static void sigHandler(int)
 #ifdef WITH_CLASP
 	bool satM = clasp_g.mode == MainApp::SAT_MODE;
 	printf("\n%s*** INTERRUPTED! ***\n",(satM ? "c " : ""));
-	clasp_g.t_all.Stop();
-	printf("%sTime      : %s\n",(satM ? "c " : ""), clasp_g.t_all.Print().c_str());
+	clasp_g.t_all.stop();
+	printf("%sTime      : %.3f\n",(satM ? "c " : ""), clasp_g.t_all.elapsed());
 	printf("%sModels    : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.models);
 	printf("%sChoices   : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.choices);
 	printf("%sConflicts : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.conflicts);
@@ -163,28 +261,28 @@ void MainApp::setState(State s)
 	switch(s)
 	{
 	case start_read:
-		t_read.Start();
+		t_read.start();
 		break;
 	case end_read:
-		t_read.Stop();
+		t_read.stop();
 		break;
 	case start_ground:
-		t_ground.Start();
+		t_ground.start();
 		break;
 	case end_ground:
-		t_ground.Stop();
+		t_ground.stop();
 		break;
 	case start_pre:
-		t_pre.Start();
+		t_pre.start();
 		break;
 	case end_pre:
-		t_pre.Stop();
+		t_pre.stop();
 		break;
 	case start_solve:
-		t_solve.Start();
+		t_solve.start();
 		break;
 	case end_solve:
-		t_solve.Stop();
+		t_solve.stop();
 		break;
 	default:;
 	}
@@ -403,7 +501,7 @@ void MainApp::printSatStats() const
 {
 	const SolverStatistics &st = solver.stats;
 	cerr << "c Models       : " << st.models << "\n";
-	cerr << "c Time         : " << t_all.Print() << "s(Solve: " << t_solve.Print() << "s)\n";
+	cerr << "c Time         : " << t_all << "s(Solve: " << t_solve << "s)\n";
 	if(!options.stats)
 		return;
 	cerr << "c Choices      : " << st.choices << "\n";
@@ -516,38 +614,18 @@ void MainApp::printAspStats(bool more) const
 		cerr << "=============== Summary ===============" << endl;
 #endif
 	cerr << "\n";
-	uint64 enumerated = st.models;
-	uint64 models = enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
-	cerr << left << setw(12) << "Models" << ": ";
-	if(more)
-	{
-		char buf[64];
-		int wr = sprintf(buf, "%llu", models);
-		buf[wr] = '+';
-		buf[wr + 1] = 0;
-		cerr << setw(6) << buf;
-	}
-	else
-	{
-		cerr << setw(6) << models;
-	}
-	if(enumerated != models &&options.stats)
-	{
-		cerr << "(Enumerated: " << enumerated << ")";
-	}
-	cerr << "\n";
 #ifdef WITH_ICLASP
 	if(!options.claspMode && options.outf == Options::ICLASP_OUT)
 		cerr << "Total Steps : " << steps << std::endl;
 #endif
-	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all.Print() << "\n";
+	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all << "\n";
 	if(!options.stats)
 		return;
-	cerr << "  Reading   : " << t_read.Print() << "\n";
+	cerr << "  Reading   : " << t_read << "\n";
 	if(!options.claspMode && !options.convert)
-		cerr << "  Grounding : " << t_ground.Print() << "\n";
-	cerr << "  Prepro.   : " << t_pre.Print() << "\n";
-	cerr << "  Solving   : " << t_solve.Print() << "\n";
+		cerr << "  Grounding : " << t_ground << "\n";
+	cerr << "  Prepro.   : " << t_pre << "\n";
+	cerr << "  Solving   : " << t_solve << "\n";
 	cerr << left << setw(12) << "Choices" << ": " << st.choices << "\n";
 	cerr << left << setw(12) << "Conflicts" << ": " << st.conflicts << "\n";
 	cerr << left << setw(12) << "Restarts" << ": " << st.restarts << "\n";
@@ -611,7 +689,7 @@ bool MainApp::runClasp()
 		pre->options.verbose = options.quiet ? 0 : printSatEliteProgress;
 		solver.strategies().satPrePro.reset(pre);
 	}
-	t_all.Start();
+	t_all.start();
 
 	bool more;
 #	ifdef WITH_ICLASP
@@ -622,11 +700,7 @@ bool MainApp::runClasp()
 #	else
 	more = solve();
 #	endif
-	t_all.Stop();
-	if(enum_.get())
-	{
-		enum_.get()->report(solver);
-	}
+	t_all.stop();
 	if(mode == ASP_MODE)
 	{
 		printAspStats(more);
@@ -706,17 +780,28 @@ bool MainApp::solveIncremental()
 		}
 	} istats;
 
-	StdOutPrinter printer;
-	if(!options.quiet)
-	{
-		printer.index = &api.stats.index;
-		options.solveParams.enumerator()->setPrinter(&printer);
+	if (!options.cons.empty()) {
+		enum_ = new CBConsequences(solver, &preStats_->index, 
+			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, 0,
+			new StdOutPrinter(options.quiet), options.modelRestart
+		);
 	}
+	else {
+		AtomIndex* index = &preStats_->index;
+		ModelEnumerator* e = !options.recordSol 
+			? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
+			: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
+		e->startSearch(solver, index, options.project, 0);
+		enum_ = e;
+	}
+	enum_->setNumModels(options.numModels);
+	solver.add(enum_);
+	options.solveParams.setEnumerator( *enum_ );
 
-	CTimer all;
+	Timer all;
 	do 
 	{
-		all.Start();
+		all.start();
 		setState(start_ground);
 		if(options.verbose || options.istats)
 			cerr << "=============== step " << (steps + 1) << " ===============" << endl;
@@ -731,16 +816,34 @@ bool MainApp::solveIncremental()
 		if(options.verbose)
 			cerr << "Preprocessing..." << endl;
 		ret = api.endProgram(solver, options.initialLookahead, true);
+		double r = solver.numVars() / double(solver.numConstraints());
+		if (r < 0.1 || r > 10.0) {
+			problemSize = std::max(solver.numVars(), solver.numConstraints());
+		}
+		else {
+			problemSize = std::min(solver.numVars(), solver.numConstraints());
+		}
+	
 		setState(end_pre);
 		if(ret) 
 		{
+			if (options.redFract == 0.0) {
+				options.solveParams.setReduceParams((uint32)-1, 1.0, (uint32)-1, options.redOnRestart);
+			}
+			else {
+				options.solveParams.setReduceParams(static_cast<uint32>(problemSize/options.redFract)
+					, options.redInc
+					, static_cast<uint32>(problemSize*options.redMax)
+					, options.redOnRestart
+				);
+			}
 			setState(start_solve);
 			if(options.verbose)
 				cerr << "Solving..." << endl;
 			uint64 models = solver.stats.models;
 			LitVec assumptions;
 			assumptions.push_back(api.stats.index[output.getIncUid()]. lit);
-			more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
+			more = Clasp::solve(solver, assumptions, options.solveParams);
 			ret = solver.stats.models - models > 0;
 			setState(end_solve);
 		}
@@ -750,7 +853,7 @@ bool MainApp::solveIncremental()
 			break;
 		}
 		steps++;
-		all.Stop();
+		all.stop();
 		if(options.istats)
 		{
 			uint32 r = output.getStats().rules[0] == 0
@@ -774,42 +877,52 @@ bool MainApp::solveIncremental()
 }
 #	endif
 
-bool MainApp::solve()
-{
+bool MainApp::solve() {
 	bool res = mode == ASP_MODE ? parseLparse() : readSat();
-	if(res)
-	{
-		StdOutPrinter printer;
-		if(!options.quiet)
-		{
-			if(mode == ASP_MODE)
-				printer.index = &preStats_->index;
-			options.solveParams.enumerator()->
-				setPrinter(&printer);
+	assert(enum_);
+	enum_->setNumModels(options.numModels);
+	solver.add(enum_);
+	options.solveParams.setEnumerator( *enum_ );
+	if (res) {
+		if (options.redFract == 0.0) {
+			options.solveParams.setReduceParams((uint32)-1, 1.0, (uint32)-1, options.redOnRestart);
+		}
+		else {
+			options.solveParams.setReduceParams(static_cast<uint32>(problemSize/options.redFract)
+				, options.redInc
+				, static_cast<uint32>(problemSize*options.redMax)
+				, options.redOnRestart
+			);
 		}
 		setState(start_solve);
 		if(options.verbose)
 			cerr << (mode == ASP_MODE ? "" : "c ") << "Solving..." << endl;
-		res = Clasp::solve(solver, options.numModels, options.solveParams);
+		res = Clasp::solve(solver, options.solveParams);
 		setState(end_solve);
+	}
+	else {
+		enum_->endSearch(solver);
 	}
 	return res;
 }
 
-bool MainApp::readSat()
-{
-	std::istream &in = getStream();
+
+bool MainApp::readSat() {
+	std::istream& in = getStream();
+	enum_ = options.recordSol 
+		? (Enumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart)
+		: (Enumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig);
 	setState(start_read);
 	bool res = parseDimacs(in, solver, options.numModels == 1);
 	setState(end_read);
-	if(res)
-	{
+	if (res) {
 		setState(start_pre);
 		if(options.verbose)
 			cerr << "c Preprocessing..." << endl;
 		res = solver.endAddConstraints(options.initialLookahead);
 		setState(end_pre);
 	}
+	problemSize = solver.numConstraints();
 	return res;
 }
 
@@ -824,7 +937,7 @@ bool MainApp::parseLparse()
 		? 0 
 		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
 		(uint32) options.eqIters );
-	
+	bool ret = true;
 	if(!options.claspMode)
 	{
 		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
@@ -836,55 +949,58 @@ bool MainApp::parseLparse()
 		setState(start_read);
 		LparseReader reader;
 		reader.setTransformMode(LparseReader::TransformMode(options.transExt));
-		if(!reader.parse(in, api))
-			return false;
+		ret = reader.parse(in, api);
 		*lpStats_ = reader.stats;
 		setState(end_read);
 	}
-
-	if(api.hasMinimize() || !options.cons.empty())
-	{
-		if(api.hasMinimize() &&!options.cons.empty())
-		{
-			cerr << "Warning: Optimize statements are ignored because of '" << options.cons << "'!" << endl;
-		}
-		if(options.numModels != 0)
-		{
-			!options.cons.empty() 
-				? cerr << "Warning: For computing consequences clasp must be called with '--number=0'!" << endl  
-				: cerr << "Warning: For computing optimal solutions clasp must be called with '--number=0'!" << endl;
-		}
+	if ( (api.hasMinimize() || !options.cons.empty()) && options.numModels != 0) {
+		options.cons.empty() 
+			? cerr << "Warning: Option '--number' is ignored when computing optimal solutions!" << endl
+			: cerr << "Warning: Option '--number' is ignored when computing consequences!" << endl;
 	}
-
-	setState(start_pre);
-	if(options.verbose)
-		cerr << "Preprocessing..." << endl;
-	bool ret = api.endProgram(solver, options.initialLookahead, false);
-	api.stats.moveTo(*preStats_);
-	if(!options.cons.empty())
-	{
-		enum_.reset(new CBConsequences(solver, &preStats_->index,
-			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, 
-			options.quiet));
-		options.solveParams.setEnumerator(*enum_);
+	if (api.hasMinimize() && !options.cons.empty()) {
+		cerr << "Warning: Minimize statements: Consequences may depend on enumeration order!" << endl;
 	}
-	
-	else if(api.hasMinimize())
-	{
-		MinimizeConstraint * c = api.createMinimize(solver);
-		c->setMode(MinimizeConstraint::Mode(options.optimize &1), options.optimize == 2);
-		if(!options.optVals.empty())
-		{
-			uint32 m = std::min((uint32) options.optVals.size(), c->numRules());
-			for(uint32 x = 0; x != m; ++x)
-			{
-				c->setOptimum(x, options.optVals[x]);
+	MinimizeConstraint* c = 0;
+	if (ret) {
+		setState(start_pre);
+		if(options.verbose)
+			cerr << "Preprocessing..." << endl;
+		ret = api.endProgram(solver, options.initialLookahead, false);
+		api.stats.moveTo(*preStats_);
+		if (ret && api.hasMinimize()) {
+			c = api.createMinimize(solver);
+			c->setMode( options.optAll ? MinimizeConstraint::compare_less_equal : MinimizeConstraint::compare_less );
+			if (!options.optVals.empty()) {
+				uint32 m = std::min((uint32)options.optVals.size(), c->numRules());
+				for (uint32 x = 0; x != m; ++x) {
+					c->setOptimum(x, options.optVals[x]);
+				}
 			}
 		}
-		enum_.reset(new MinimizeEnumerator(c));
-		options.solveParams.setEnumerator(*enum_);
+	}
+	if (!options.cons.empty()) {
+		enum_ = new CBConsequences(solver, &preStats_->index, 
+			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, c,
+			new StdOutPrinter(options.quiet), options.modelRestart
+		);
+	}
+	else {
+		AtomIndex* index = &preStats_->index;
+		ModelEnumerator* e = !options.recordSol 
+			? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
+			: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
+		e->startSearch(solver, index, options.project, c);
+		enum_ = e;
 	}
 	ret = ret && solver.endAddConstraints(options.initialLookahead);
+	double r = solver.numVars() / double(solver.numConstraints());
+	if (r < 0.1 || r > 10.0) {
+		problemSize = std::max(solver.numVars(), solver.numConstraints());
+	}
+	else {
+		problemSize = std::min(solver.numVars(), solver.numConstraints());
+	}
 	setState(end_pre);
 	return ret;
 }
@@ -893,15 +1009,6 @@ bool MainApp::parseLparse()
 
 int main(int argc, char **argv) 
 {
-#if defined(_MSC_VER) &&defined(CHECK_HEAP) &&_MSC_VER >= 1200 
-	_CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF);
-	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-#endif
 	try
 	{
 		signal(SIGINT, sigHandler);	// Ctrl + C

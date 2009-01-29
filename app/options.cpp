@@ -226,9 +226,13 @@ void Options::setDefaults() {
 	satPreParams.assign(3, 0);
 	heuristic        = "berkmin";
 	cons             = "";
+	redFract         = 3.0;
+	redInc           = 1.1;
+	redMax           = 3.0;
 	numModels        = 1;
 	seed             = -1;
 	loopRep          = DefaultUnfoundedCheck::common_reason;
+	projectConfig    = -1;
 	lookahead        = -1;
 	eqIters          = 5;
 	transExt         = LparseReader::transform_no;
@@ -236,8 +240,12 @@ void Options::setDefaults() {
 	initialLookahead = false;
 	suppModels       = false;
 	dimacs           = false;
-	optimize         = 0;
+	optAll           = false;
 	ccmExp           = false;
+	redOnRestart     = false;
+	modelRestart     = false;
+	recordSol        = false;
+	project          = false;
 #endif
 }
 
@@ -251,11 +259,14 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("quiet,q" , bool_switch(&quiet),  "Do not print models")
 		("seed"    , value<int>(&seed),    "Set random number generator's seed to <num>\n", "<num>")
 
+                ("restart-on-model", bool_switch(&modelRestart), "Restart (instead of backtrack) after each model")
+		("solution-recording", bool_switch(&recordSol), "Add conflicts for computed models")
+		("project", bool_switch(&project), "Project models to named atoms in enumeration mode\n")
+
 		("brave"    , bool_switch(), "Compute brave consequences")
 		("cautious" , bool_switch(), "Compute cautious consequences\n")
 
 		("opt-all"    , bool_switch(), "Compute all optimal models")
-		("opt-restart", bool_switch(), "Restart (instead of enumerate) to progress to optimum")
 		("opt-value"  , value<std::vector<int> >(&optVals), 
 			"Initialize objective function(s)\n"
 			"      Valid:   <n1[,n2,n3,...]>\n")
@@ -485,6 +496,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	hidden.addOptions()
 #ifdef WITH_CLASP
 		("hParams", value<vector<int> >()->defaultValue(vector<int>()), "Additional parameters for heuristic\n")
+		("project-opt", value<int>(&projectConfig), "Additional options for projection as octal digit\n")
 #endif
 		("files",   value<vector<string> >(&files)->setComposing(), "The files which have to be parsed\n")
 	;
@@ -589,12 +601,6 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 		}
 		eqIters = 0;
 	}
-	if (vm.count("opt-all"))	optimize += 1;
-	if (vm.count("opt-restart")) optimize += 2;
-	if (optimize == 3) {
-		warning_ += "Warning: 'opt-all' and 'opt-restart' are mutually exclusive!\n";
-		optimize = 1;
-	}
 	bool bc = vm.count("brave") != 0;
 	bool cc = vm.count("cautious") != 0;
 	if (bc && cc) {
@@ -607,6 +613,12 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 			warning_ += "Warning: '" + cons + "' and 'dimacs' are mutually exclusive!\n";
 			cons = "";
 		}
+	}
+        if (modelRestart) {
+		recordSol = true;
+	}
+        if (vm.count("project") != 0 && projectConfig == -1) {
+		projectConfig = 7;
 	}
 #endif
 }
@@ -622,7 +634,7 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 	s.strategies().search = value_cast<bool>(vm["lookback"]) ? Clasp::SolverStrategies::use_learning : Clasp::SolverStrategies::no_learning;
 	if (s.strategies().search == SolverStrategies::no_learning) {
 		if (vm.count("heuristic") == 0) { heuristic = "unit"; }
-		if (vm.count("lookahead") == 0)	{ lookahead = Lookahead::auto_lookahead; }
+		if (vm.count("lookahead") == 0) { lookahead = Lookahead::auto_lookahead; }
 		if (heuristic != "unit" && heuristic != "none") {
 			error_ = "Error: selected heuristic requires lookback strategy!\n";
 			return false;
@@ -636,8 +648,8 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 		loopRep = DefaultUnfoundedCheck::no_reason;
 	}
 	else {
-		s.strategies().cflMinAntes	= (SolverStrategies::CflMinAntes)value_cast<int>(vm["strengthen"]);
-		s.strategies().cflMin				= ccmExp ? SolverStrategies::een_minimization : SolverStrategies::beame_minimization;
+		s.strategies().cflMinAntes  = (SolverStrategies::CflMinAntes)value_cast<int>(vm["strengthen"]);
+		s.strategies().cflMin       = ccmExp ? SolverStrategies::een_minimization : SolverStrategies::beame_minimization;
 		s.strategies().setCompressionStrategy(value_cast<int>(vm["contraction"]));
 		s.strategies().saveProgress = vm.count("save-progress") != 0 && value_cast<bool>(vm["save-progress"]);
 	}
@@ -654,13 +666,20 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 	if (s.strategies().search == SolverStrategies::use_learning) {
 		std::vector<double> rp = value_cast<vector<double> >(vm["restarts"]);
 		rp.resize(3, 0.0);
-		bool br = vm.count("bounded-restarts") != 0 && value_cast<bool>(vm["bounded-restarts"]);
+		bool br = false;
+		if (vm.count("bounded-restarts") != 0) {
+			br = value_cast<bool>(vm["bounded-restarts"]);
+		}
+		else {
+			br = project;
+		}
 		bool lr = vm.count("local-restarts") != 0 && value_cast<bool>(vm["local-restarts"]);
 		solveParams.setRestartParams((uint32)rp[0], rp[1], (uint32)rp[2], lr, br);
-		bool redOnRestart = vm.count("reduce-on-restart") != 0 && value_cast<bool>(vm["reduce-on-restart"]);
 		vector<double> del = value_cast<vector<double> >(vm["deletion"]);
 		del.resize(3, 1.0);
-		solveParams.setReduceParams(del[0], del[1], del[2], redOnRestart);
+		redFract      = del[0];
+		redInc        = del[1];
+		redMax        = del[2];
 		const std::pair<int, int>& rando = value_cast<std::pair<int, int> >(vm["rand-prob"]);
 		solveParams.setRandomizeParams(rando.first, rando.second);
 		const std::pair<int, int>& sh = value_cast<std::pair<int, int> >(vm["shuffle"]);
@@ -668,30 +687,30 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 	}
 	else {
 		solveParams.setRestartParams(0, 0, false);
-		solveParams.setReduceParams(0.0, 0.0, 0.0, false);
+		redFract = redInc = redMax = 1.0;
 		solveParams.setRandomizeParams(0,0);
 		solveParams.setShuffleParams(0,0);
 		if (!vm["restarts"].isDefaulted()||!vm["deletion"].isDefaulted()||!vm["rand-prob"].isDefaulted()||!vm["shuffle"].isDefaulted()) {
-			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";			
+			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";     
 		}
 	}
 	return true;
 }
 
 DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) const {
-	DecisionHeuristic* heu = 0;
+	DecisionHeuristic* heu = 0; 
 	if (heuristic == "berkmin") {
 		bool loops = heuParams.empty() || heuParams[0] == 1;
 		uint32 maxB= heuParams.size() < 2 ? 0 : heuParams[1];
 		heu = new ClaspBerkmin(maxB, loops);
 	}
 	else if (heuristic == "vmtf") {
-		bool loops	= !heuParams.empty() && heuParams[0] == 1;
-		uint32 mtf	= heuParams.size() < 2 ? 8 : heuParams[1];
+		bool loops  = !heuParams.empty() && heuParams[0] == 1;
+		uint32 mtf  = heuParams.size() < 2 ? 8 : heuParams[1];
 		heu = new ClaspVmtf( mtf, loops);
 	}
 	else if (heuristic == "vsids") {
-		bool loops	= !heuParams.empty() && heuParams[0] == 1;
+		bool loops  = !heuParams.empty() && heuParams[0] == 1;
 		heu = new ClaspVsids(loops);
 	}
 	else if (heuristic == "none") {
@@ -702,6 +721,7 @@ DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) c
 	}
 	return heu;
 }
+
 #endif
 
 void Options::printSyntax(std::ostream& os) const

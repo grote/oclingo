@@ -103,14 +103,14 @@ namespace bk_lib { namespace detail {
 	typedef char (&no_type)[2];
 	template <class T>
 	struct IterType {
-    static yes_type isPtr(const volatile void*);
-    static no_type isPtr(...);
-    static yes_type isLong(long);
-    static no_type  isLong(...);
-    static T& makeT();
-    enum { ptr = sizeof(isPtr(makeT())) == sizeof(yes_type) };
-    enum { num = sizeof(isLong(makeT())) == sizeof(yes_type) }; 
-    enum { value = ptr ? 1 : num ? 2 : 0 };
+		static yes_type isPtr(const volatile void*);
+		static no_type isPtr(...);
+		static yes_type isLong(long);
+		static no_type  isLong(...);
+		static T& makeT();
+		enum { ptr = sizeof(isPtr(makeT())) == sizeof(yes_type) };
+		enum { num = sizeof(isLong(makeT())) == sizeof(yes_type) }; 
+		enum { value = ptr ? 1 : num ? 2 : 0 };
 	};
 
 } // end namespace bk_lib::detail
@@ -458,7 +458,7 @@ public:
 
 	
 	/** @name nonstd
-   * Non-standard interface 
+	 * Non-standard interface 
 	 */
 	//@{
 	//! optimized version of insert(end(), first, last)

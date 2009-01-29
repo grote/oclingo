@@ -43,6 +43,26 @@ namespace Clasp {
 	};
 #endif
 
+template <unsigned X>
+struct VecBase { char pad[X]; };
+template <> struct VecBase<0> {};
+
+struct VecLayout : VecBase<sizeof(PodVector<void*>::type) - 3*sizeof(void*)> {
+	VecLayout* start;
+	VecLayout* last;
+	VecLayout* end;
+};
+
+template <class T>
+void releaseVec(T& t) {
+	T().swap(t);
+}
+
+template <class T>
+void shrinkVecTo(T& t, typename T::size_type j) {
+	t.erase(t.begin()+j, t.end());
+}
+
 }
 
 #endif

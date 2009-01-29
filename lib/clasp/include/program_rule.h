@@ -35,11 +35,11 @@ class ProgramBuilder;
  * \ingroup problem
  */
 enum RuleType{
-  ENDRULE         = 0,  /**< Not a valid rule, used as sentinel */
-  BASICRULE       = 1,  /**< A normal rule, i.e: A0 :- A1,...,Am, not Am+1,...,not An */
-  CONSTRAINTRULE  = 2,  /**< A cardinality constraint, i.e. A0 :- L{A1,...,Am,not Am+1,...,not An} */
-  CHOICERULE      = 3,  /**< A choice rule, i.e. {A0,...,An} :- BODY */
-  WEIGHTRULE      = 5,  /**< A weight constraint, i.e. A0 :- L[A1=W1,...,Am=Wm,not Am+1=Wm+1,...,not An=Wn] */
+	ENDRULE         = 0,  /**< Not a valid rule, used as sentinel */
+	BASICRULE       = 1,  /**< A normal rule, i.e: A0 :- A1,...,Am, not Am+1,...,not An */
+	CONSTRAINTRULE  = 2,  /**< A cardinality constraint, i.e. A0 :- L{A1,...,Am,not Am+1,...,not An} */
+	CHOICERULE      = 3,  /**< A choice rule, i.e. {A0,...,An} :- BODY */
+	WEIGHTRULE      = 5,  /**< A weight constraint, i.e. A0 :- L[A1=W1,...,Am=Wm,not Am+1=Wm+1,...,not An=Wn] */
 	OPTIMIZERULE    = 6   /**< A minimize statement */
 };
 

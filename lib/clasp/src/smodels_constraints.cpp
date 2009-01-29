@@ -227,8 +227,7 @@ MinimizeConstraint::MinimizeConstraint()
 	: models_(0)
 	, activePL_(0)
 	, activeIdx_(0)
-	, mode_(compare_less) 
-	, restart_(false) {
+	, mode_(compare_less) {
 	undoList_.push_back( UndoLit(posLit(0), 0, true) ); // sentinel
 }
 
@@ -249,7 +248,8 @@ void MinimizeConstraint::minimize(Solver& s, const WeightLitVec& literals) {
 			select2nd<WeightLiteral>()));
 	minRules_.push_back( nr );
 	WeightLitVec::iterator j = nr->lits_.begin();
-	for (WeightLitVec::iterator i = nr->lits_.begin(); i != nr->lits_.end(); ++i) {
+	// Consider only relevant literals, i.e. those with weights > 0
+	for (WeightLitVec::iterator i = nr->lits_.begin(); i != nr->lits_.end() && i->second > 0; ++i) {
 		if (s.isTrue( i->first )) {
 			nr->sum_ += i->second;
 		}
@@ -261,6 +261,7 @@ void MinimizeConstraint::minimize(Solver& s, const WeightLitVec& literals) {
 				s.addWatch(i->first, this, index_[idx]);
 				occurList_.push_back( LitOccurrence() );
 				s.setFrozen(i->first.var(), true);
+				s.setPreferredValue(i->first.var(), falseValue(i->first));
 			}
 			LitRef newOcc;
 			newOcc.ruleIdx_ = (uint32)minRules_.size()-1;
@@ -389,6 +390,8 @@ uint32 MinimizeConstraint::setModel(Solver& s) {
 	}
 	minRules_.back()->opt_ = minRules_.back()->sum_ - (mode_ == compare_less);
 	++models_;
+	activePL_   = 0;
+	activeIdx_  = 0;
 	if (mode_ == compare_less) {
 		// Since mode is compare_less, next model must be strictly better than this one.
 		// Search the literal that was assigned true last, i.e. the last literal that increased
@@ -408,19 +411,9 @@ bool MinimizeConstraint::backtrackFromModel(Solver& s) {
 	if (dl < s.rootLevel() || dl == static_cast<uint32>(-1)) {
 		return false;
 	}
-	if (!restart_) {
-		while (s.backtrack() && dl < s.decisionLevel());
-		assert(dl == s.decisionLevel());
-		activePL_   = 0;
-		activeIdx_  = 0;
-		return backpropagate(s, rule(activePL_));
-	}
-	else {
-		s.undoUntil( 0 );
-		activePL_   = 0;
-		activeIdx_  = 0;
-		return select(s) && backpropagate(s, rule(activePL_));
-	}
+	while (s.backtrack() && dl < s.decisionLevel());
+	assert(dl == s.decisionLevel());
+	return backpropagate(s, rule(activePL_));
 }
 
 void MinimizeConstraint::addUndo(Solver& s, Literal p, uint32 key, bool forced) {
@@ -444,15 +437,6 @@ void MinimizeConstraint::undoLevel(Solver& s) {
 		}
 		undoList_.pop_back();
 	}
-}
-
-
-void MinimizeConstraint::printOptimum(std::ostream& os) const {
-	os << "Optimization: ";
-	for (uint32 i = 0; i != minRules_.size(); ++i) {
-		os << minRules_[i]->sum_ << " ";
-	}
-	os << "\n";
 }
 
 bool MinimizeConstraint::select(Solver& s) {

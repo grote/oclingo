@@ -65,7 +65,6 @@ bool Preprocessor::preprocessSimple(bool bodyEq) {
 				else {
 					prg_->atoms_[*h]->setLiteral(posLit(prg_->vars_.add(Var_t::atom_var)));
 				}
-				if (*h < prg_->stats.index.size()) prg_->stats.index[*h].lit = prg_->atoms_[*h]->literal();
 				const VarVec& bl = prg_->atoms_[*h]->posDep;
 				for (VarVec::const_iterator it = bl.begin(); it != bl.end(); ++it) {
 					PrgBodyNode* nb = prg_->bodies_[*it];
@@ -182,19 +181,10 @@ bool Preprocessor::preprocessEq(uint32 maxIters) {
 		litToNode_.clear();
 		for (Var i = startAtom; i < stopAtom; ++i) {
 			prg_->atoms_[i]->clearVar(false);
-			if (i < (uint32)prg_->stats.index.size()) { prg_->stats.index[i].lit = negLit(0); } 
 		} 
 		if (!classifyProgram(startAtom, stopAtom)) return false;
 	} while (stopAtom != (uint32)prg_->atoms_.size());
-	for (ProgramBuilder::EqNodes::iterator it = prg_->eqAtoms_.begin(), end = prg_->eqAtoms_.end(); it != end; ++it) {
-		Var eq    = it->first;
-		Var root  = it->second;
-		for (Var x; (x = prg_->getEqAtom(root)) != root; root = x);
-		it->second = root;
-		if (eq < prg_->stats.index.size()) { 
-			prg_->stats.index[eq].lit = prg_->atoms_[root]->literal();
-		} 
-	}
+	// replace equivalent atoms in minimize rules
 	for (ProgramBuilder::MinimizeRule* r = prg_->minimize_; r; r = r->next_) {
 		for (WeightLitVec::iterator it = r->lits_.begin(); it != r->lits_.end(); ++it) {
 			it->first = Literal(prg_->getEqAtom(it->first.var()), it->first.sign());
@@ -218,7 +208,7 @@ bool Preprocessor::classifyProgram(uint32 startAtom, uint32& stopAtom) {
 		}
 		follow_.push_back(bodyId);
 		VarVec::size_type index = 0;
-		while ( (bodyId = nextBodyId(index)) != uint32(-1) ) {
+		while ( (bodyId = nextBodyId(index)) != varMax ) {
 			body        = prg_->bodies_[bodyId];
 			if (pass_==1&&body->heads.size()>1) { nodes_[bodyId].sHead = 1; }
 			bodyEqId    = addBodyVar(bodyId, body);
@@ -321,16 +311,11 @@ bool Preprocessor::simplifyClassifiedProgram(uint32 startAtom, uint32& stopAtom)
 			if (stopAtom != prg_->atoms_.size() || (pass_ != maxPass_ && reclassify(a, i, r.second))) {
 				stopAtom = std::min(stopAtom,i);
 				a->clearVar(false);
-				if (i < prg_->stats.index.size()) { prg_->stats.index[i].lit = negLit(0); }
-			}
-			else if (i < prg_->stats.index.size()) { 
-				prg_->stats.index[i].lit = a->literal();
 			}
 		}
 	}
 	return true;
 }
-
 
 // Derived a new fact body. The body is eq to True, therefore does not need a separate variable.
 bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
@@ -518,7 +503,9 @@ uint32 Preprocessor::addAtomVar(Var atomId, PrgAtomNode* a, PrgBodyNode* b) {
 		a->setLiteral( b->literal() );
 		prg_->vars_.setAtomBody(a->var());
 	}
-	else { a->setLiteral( posLit(prg_->vars_.add(Var_t::atom_var)) ); }
+	else {
+		a->setLiteral( posLit(prg_->vars_.add(Var_t::atom_var)) ); 
+	}
 	if (b->value() == value_true) {
 		// Since b is true, it is always a valid support for a, a can never become unfounded. 
 		// So ignore it during SCC check and unfounded set computation.
@@ -547,9 +534,10 @@ uint32 Preprocessor::addAtomVar(Var atomId, PrgAtomNode* a, PrgBodyNode* b) {
 	// duplicates/contradictory body-literals.
 	// In case that a == a', we also mark all bodies containing a
 	// for head simplification in order to detect rules like: a' :- a,B. and a' :- B,not a.
-	bool val  = a->value() != value_free;               
-	bool simp = val || eqAtom !=0;
-	if (!simp && getRootAtom(~a->literal()) != varMax) {
+	bool stableTruth  = a->value() == value_true || a->value() == value_false;
+	bool removeAtom   = stableTruth || eqAtom != 0;
+	bool removeNeg    = removeAtom || a->value() == value_weak_true;
+	if (!removeAtom && getRootAtom(~a->literal()) != varMax) {
 		PrgAtomNode* comp = prg_->atoms_[getRootAtom(~a->literal())];
 		VarVec::size_type i, end;
 		for (i = 0, end = comp->posDep.size(); i != end; ++i) { prg_->bodies_[comp->posDep[i]]->setVisited(1); }
@@ -566,11 +554,11 @@ uint32 Preprocessor::addAtomVar(Var atomId, PrgAtomNode* a, PrgBodyNode* b) {
 		else if (supp) {
 			prg_->initialSupp_.push_back(bodyId);
 		}
-		if (simp || bn->visited() == 1) { 
+		if (removeAtom || bn->visited() == 1) { 
 			setSimplifyBody(bodyId);
 			if (eqAtom != 0) {
 				setSimplifyHeads(bodyId);
-				if (!val) { eqAtom->posDep.push_back( bodyId ); }
+				if (!stableTruth) { eqAtom->posDep.push_back( bodyId ); }
 			}
 		}
 		++i;
@@ -582,16 +570,17 @@ uint32 Preprocessor::addAtomVar(Var atomId, PrgAtomNode* a, PrgBodyNode* b) {
 		if (++nodes_[bodyId].known == bn->size() && nodes_[bodyId].bSeen == 0) {
 			follow_.push_back( bodyId );
 		}
-		if (simp || bn->visited() == 1) { 
+		if (removeNeg || bn->visited() == 1) { 
 			setSimplifyBody(bodyId);
 			if (eqAtom != 0) {
 				setSimplifyHeads(bodyId);
-				if (!val) { eqAtom->negDep.push_back( bodyId ); }
+				if (!stableTruth && a->value() != value_weak_true) { eqAtom->negDep.push_back( bodyId ); }
 			}
 		}
 		++i;
 	}
-	if        (simp) { a->negDep.clear(), a->posDep.clear(); }
+	if (removeNeg)  { a->negDep.clear(); }
+	if (removeAtom) { a->posDep.clear(); }
 	else  if  (getRootAtom(~a->literal()) != varMax) {
 		PrgAtomNode* comp = prg_->atoms_[getRootAtom(~a->literal())];
 		VarVec::size_type i, end;

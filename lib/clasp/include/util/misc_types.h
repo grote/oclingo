@@ -103,10 +103,10 @@ inline unsigned irand(unsigned max) {
 
 //! An unary operator function that calls p->destroy()
 struct DestroyObject {
-  template <class T>
-  void operator()(T* p) const {
-    p->destroy();
-  }
+	template <class T>
+	void operator()(T* p) const {
+		p->destroy();
+	}
 };
 
 //! An unary operator function that calls delete p

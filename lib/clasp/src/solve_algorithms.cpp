@@ -24,24 +24,23 @@
 using std::log;
 namespace Clasp { 
 
-ModelPrinter::~ModelPrinter() {}
-Enumerator::Enumerator() : printer_(0) {}
+Enumerator::Enumerator()  {}
 Enumerator::~Enumerator() {}
-void Enumerator::updateModel(Solver& s)							{ if (printer_) printer_->printModel(s); }
-bool Enumerator::backtrackFromModel(Solver& s)			{	return s.backtrack();		}
-bool Enumerator::allowRestarts() const							{ return false;						}
-uint64 Enumerator::numModels(const Solver& s)	const	{ return s.stats.models;	}
-void Enumerator::report(const Solver&)				const { }
-static Enumerator defaultEnum_s;
+Constraint::PropResult 
+Enumerator::propagate(const Literal&, uint32&, Solver&) { return PropResult(true, false); }
+void Enumerator::reason(const Literal&, LitVec&)    {}
+ConstraintType Enumerator::type() const             { return Constraint_t::native_constraint; }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SolveParams
 /////////////////////////////////////////////////////////////////////////////////////////
 SolveParams::SolveParams() 
-	: reduceBase_(3.0), reduceInc_(1.1), reduceMaxF_(3.0)
+	: reduceInc_(1.1)
 	, restartInc_(1.5)
 	, randFreq_(0.0)
-	, enumerator_(&defaultEnum_s)
+	, enumerator_(0)
+	, reduceBase_(0)
+	, reduceMax_(uint32(-1))
 	, restartBase_(100)
 	, restartOuter_(0)
 	, randRuns_(0), randConflicts_(0)
@@ -63,9 +62,9 @@ public:
 	RestartStrategy(uint32 base, double incA = 0.0, uint32 outer = 0) : incA_(incA), outer_(outer?outer:uint64(-1)), base_(base), idx_(0) {}
 	uint64 next() {
 		uint64 x;
-		if			(base_ == 0)			x = uint64(-1);
-		else if	(incA_ == 0)			x = lubyR();
-		else											x = innerOuterR();
+		if      (base_ == 0)      x = uint64(-1);
+		else if (incA_ == 0)      x = lubyR();
+		else                      x = innerOuterR();
 		++idx_;
 		return x;
 	}
@@ -86,109 +85,92 @@ private:
 	uint64 innerOuterR() {
 		uint64 x = arithR();
 		if (x > outer_) {
-			idx_		= 0;
-			outer_	= static_cast<uint64>(outer_*1.5);
+			idx_    = 0;
+			outer_  = static_cast<uint64>(outer_*1.5);
 			return arithR();
 		}
 		return x;
 	}
-	double	incA_;
-	uint64	outer_;
-	uint32	base_;
-	uint32	idx_;
+	double  incA_;
+	uint64  outer_;
+	uint32  base_;
+	uint32  idx_;
 };
 
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 // solve
 /////////////////////////////////////////////////////////////////////////////////////////
-namespace {
-bool backtrackFromModel(Solver& s, const SolveParams& p) {
-	p.enumerator()->updateModel(s);
-	if (s.strategies().satPrePro.get() && s.strategies().satPrePro->hasSymModel()) {
-		return true;
-	}
-	return p.enumerator()->backtrackFromModel(s);
-}
-}
 
 //#define PRINT_SEARCH_PROGRESS
 
-bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
+bool solve(Solver& s, const SolveParams& p) {
 	if (s.hasConflict()) return false;
-	// ASP-specific. A SAT-Solver typically uses a fraction of the initial number
-	// of clauses. For ASP this does not work as good, because the number of
-	// clauses resulting from Clark's completion is far greater than the number
-	// of rules contained in the logic program and thus maxLearnts tends to be
-	// to large if based on number of clauses.
-	// Of course, one could increase maxLearntDiv (e.g. by a factor 4) to compensate
-	// for this fact. Clasp uses a different approach: it uses the number of heads
-	// plus the number of bodies as basis for maxLearnt. 
-	// Translated into clauses: From Clark's completion Clasp counts only the 
-	// clauses that are not necessarily binary.
-	double lBase				= std::min(s.numVars(), s.numConstraints());
-	double maxLearnts		= p.reduceBase() != 0 ? (uint32)std::max(10.0, lBase / p.reduceBase()) : -1.0;
-	double boundLearnts	= p.reduceMax() != 0 ? lBase * p.reduceMax() : std::numeric_limits<double>::max();
-	if (maxLearnts < s.numLearntConstraints()) maxLearnts = s.numLearntConstraints();
+	double maxLearnts   = p.reduceBase() != 0
+                      ? p.reduceBase()
+                      : std::min(s.numVars(), s.numConstraints()) / 3;
+	double boundLearnts = p.reduceMax();
+	if (maxLearnts < s.numLearntConstraints()) {
+		maxLearnts = std::min(maxLearnts+s.numConstraints(), (double)std::numeric_limits<uint32>::max());
+	}
 	RestartStrategy rs(p.restartBase(), p.restartInc(), p.restartOuter());
-	uint32 asFound	= 0;
 	ValueRep result = value_free;
-	uint32 randRuns	= p.randRuns();
-	double randFreq	= randRuns == 0 ? p.randomProbability() : 1.0;
-	uint64 maxCfl		= randRuns == 0 ? rs.next() : p.randConflicts();
-	uint32 shuffle	= p.shuffleBase();
-	bool	noRestartAfterModel = !p.enumerator()->allowRestarts() && !p.restartBounded();
+	uint32 randRuns = p.randRuns();
+	double randFreq = randRuns == 0 ? p.randomProbability() : 1.0;
+	uint64 maxCfl   = randRuns == 0 ? rs.next() : p.randConflicts();
+	uint32 shuffle  = p.shuffleBase();
 	while (result == value_free) {
 #ifdef PRINT_SEARCH_PROGRESS
 		printf("c V: %7u, C: %8u, L: %8u, ML: %8u (%6.2f%%), IL: %8u\n"
-			, s.numFreeVars()
-			, s.numConstraints()
-			, s.numLearntConstraints()
-			, (uint32)maxLearnts
-			, (maxLearnts/s.numConstraints())*100.0
-			, (uint32)maxCfl
+		  , s.numFreeVars()
+		  , s.numConstraints()
+		  , s.numLearntConstraints()
+		  , (uint32)maxLearnts
+		  , (maxLearnts/(double)s.numConstraints())*100.0
+		  , (uint32)maxCfl
 		);
 #endif
-		result = s.search(maxCfl, (uint64)maxLearnts, randFreq, p.restartLocal());
+		result = s.search(maxCfl, (uint32)maxLearnts, randFreq, p.restartLocal());
 		if (result == value_true) {
-			if ( !backtrackFromModel(s, p) ) {
-				result = value_false;
+			if (!p.enumerator() || !p.enumerator()->backtrackFromModel(s)) {
+				break; // No more models requested
 			}
-			else if (maxAs == 0 || ++asFound != maxAs) {
-				result = value_free;
-				randRuns = 0;
+			else {
+				result = value_free; // continue enumeration
+				randRuns = 0;        // but cancel remaining probings
 				randFreq = p.randomProbability();
-				// Afert the first solution was found we can either disable restarts completely
-				// or limit them to the current backtrack level. Full restarts are
-				// no longer possible - the solver does not record found models and
-				// therefore could recompute them after a complete restart.
-				if (noRestartAfterModel) maxCfl = static_cast<uint64>(-1);
+				if (!p.restartBounded() && !p.enumerator()->allowRestarts()) {
+					// Afert the first solution was found, we allow further restarts only if this
+					// is compatible with the enumerator used. 
+					maxCfl = static_cast<uint64>(-1);	
+				}
 			}
 		}
-		else if (result == value_free){
+		else if (result == value_free){  // restart search
 			if (randRuns == 0) {
 				maxCfl = rs.next();
 				if (p.reduceRestart()) { s.reduceLearnts(.33f); }
-				if (maxLearnts != -1.0 && maxLearnts < boundLearnts && (s.numLearntConstraints()+maxCfl) > maxLearnts) {
-					maxLearnts = std::min(maxLearnts*p.reduceInc(), (double)std::numeric_limits<LitVec::size_type>::max());
+				if (maxLearnts != (double)std::numeric_limits<uint32>::max() && maxLearnts < boundLearnts && (s.numLearntConstraints()+maxCfl) > maxLearnts) {
+					maxLearnts = std::min(maxLearnts*p.reduceInc(), (double)std::numeric_limits<uint32>::max());
 				}
 				if (++s.stats.restarts == shuffle) {
 					shuffle += p.shuffleNext();
 					s.shuffleOnNextSimplify();
 				}
-				
 			}
 			else if (--randRuns == 0) {
-				maxCfl		= rs.next();
-				randFreq	= p.randomProbability();
-			}	
+				maxCfl    = rs.next();
+				randFreq  = p.randomProbability();
+			} 
 		}
 	}
+	if (p.enumerator()) p.enumerator()->endSearch(s);
+	result = s.decisionLevel() > s.rootLevel() ? value_true : value_false;
 	s.undoUntil(0);
 	return result == value_true;
 }
 
-bool solve(Solver& s, const LitVec& assumptions, uint32 maxAs, const SolveParams& p) {
+bool solve(Solver& s, const LitVec& assumptions, const SolveParams& p) {
 	if (s.hasConflict()) return false;
 	if (!assumptions.empty() && !s.simplify()) {
 		return false;
@@ -201,7 +183,7 @@ bool solve(Solver& s, const LitVec& assumptions, uint32 maxAs, const SolveParams
 		}
 	}
 	s.setRootLevel(s.decisionLevel());
-	bool ret = solve(s, maxAs, p);
+	bool ret = solve(s, p);
 	s.clearAssumptions();
 	return ret;
 }

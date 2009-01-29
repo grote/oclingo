@@ -153,12 +153,11 @@ public:
 		 */
 		virtual bool init(const PrgBodyNode& prgBody, const AtomList& prgAtoms, DefaultUnfoundedCheck& ufs, UfsAtomNode** initList, uint32 listLen) = 0;
 		
-		//! Checks whether the body can source a
+		//! Checks whether the body can source its heads
 		/*!
-		 * \pre     a is defined by the body
-		 * \return  true if the body currently can source a
+		 * \return  true if the body currently can source its heads
 		 */
-		virtual bool canSource(const UfsAtomNode& a)  = 0;
+		virtual bool isValidSource(const DefaultUnfoundedCheck& ufs)  = 0;
 
 		//! Notifies the body about the fact that its subgoal a has a new source
 		/*!
@@ -173,6 +172,9 @@ public:
 		 * \return  true if the body no longer can source its heads
 		 */
 		virtual bool atomUnsourced(const UfsAtomNode& a) = 0;
+
+		//! Shall enqueue all predecessors of this body that currently lack a source
+		virtual void enqueueUnsourced(DefaultUnfoundedCheck& ufs) = 0;
 		
 		/*!
 		 * If this body is part of the reason for the current unfounded set stored in ufs
@@ -219,6 +221,14 @@ public:
 		a->markSourceInvalid();
 		sourceQueue_.push_back(a);
 	}
+	// Add atom a to the list of atoms for which a source pointer is needed
+	// Pre: a->hasSource() == false
+	void enqueueFindSource(UfsAtomNode* a) {
+		if (a->typeOrUnfounded == 0 && !solver_->isFalse(a->lit)) {
+			unfounded_.push_back(a);
+			a->typeOrUnfounded = 1;
+		}
+	}
 	void addWatch(Literal p, UfsBodyNode* b, uint32 data);
 	void addReasonLit(Literal p, const UfsBodyNode* reason);
 private:  
@@ -254,7 +264,7 @@ private:
 	bool findSource(UfsAtomNode* head);
 	void setSource(UfsBodyNode* body, UfsAtomNode* head);
 	void removeSource(UfsBodyNode* body);
-	void propagateSource();
+	void propagateSource(bool forceTodo=false);
 // -------------------------------------------------------------------------------------------  
 // Propagating unfounded sets
 	bool assertAtom();
@@ -268,12 +278,6 @@ private:
 		if (head->pickedOrTodo == 0) {
 			todo_.push_back(head);
 			head->pickedOrTodo = 1;
-		}
-	}
-	void enqueueUnfounded(UfsAtomNode* head) {
-		if (head->typeOrUnfounded == 0) {
-			unfounded_.push_back(head);
-			head->typeOrUnfounded = 1;
 		}
 	}
 	UfsAtomNode* dequeueTodo() {

@@ -41,10 +41,10 @@
 
 #ifdef WITH_ICLASP
 const char* const EXECUTABLE = "iclingo";
-const char* const CLASP_VERSION = "1.1.2";
+const char* const CLASP_VERSION = "1.2.0";
 #elif defined WITH_CLASP
 const char* const EXECUTABLE = "clingo";
-const char* const CLASP_VERSION = "1.1.2";
+const char* const CLASP_VERSION = "1.2.0";
 #else
 const char* const EXECUTABLE = "gringo";
 #endif
@@ -112,18 +112,26 @@ public:
 	std::vector<int> satPreParams;     // Params for the SatElite-preprocessor
 	std::string      heuristic;        // Default: berkmin
 	std::string      cons;             // Default: ""
+        double           redFract;         // Default: 3.0
+	double           redInc;           // Default: 1.1
+	double           redMax;           // Default: 3.0
 	int              seed;             // Default: -1 -> use default seed
 	int              transExt;         // Default: 0 -> do not transform extended rules
 	int              eqIters;          // Default: -1 -> run eq-preprocessing to fixpoint
 	int              numModels;        // Default: 1
 	int              lookahead;        // Default: lookahead_no
 	int              loopRep;          // Default: common
-	int              optimize;         // Default: 0
+        int              projectConfig;    // Default: -1
+        bool             optAll;           // Default: false
 	bool             quiet;            // Default: false
+	bool             dimacs;           // Default: false
 	bool             suppModels;       // Default: false
 	bool             initialLookahead; // Default: false
 	bool             ccmExp;           // Default: false
-	bool             dimacs;           // Default: false
+        bool             redOnRestart;     // Default: false
+	bool             modelRestart;     // Default: false
+	bool             recordSol;        // Default: false
+	bool             project;          // Default: false
 #endif
 private:
 	void initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden);

@@ -168,6 +168,7 @@ private:
 	Literal doSelect(Solver& s);
 	Literal selectVsids(Solver& s);
 	Literal selectLiteral(Solver& s, Var v, bool vsids);
+	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	bool hasTopUnsat(Solver& s);
 	bool hasTopUnsat(Solver& s, uint32& maxIdx, uint32 minIdx, ConstraintType t);
 	// Gathers heuristic information for one variable v.
@@ -257,6 +258,7 @@ public:
 	}
 private:
 	Literal doSelect(Solver& s);
+	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	Literal getLiteral(const Solver& s, Var v) const;
 	typedef std::list<Var> VarList;
 	typedef VarList::iterator VarPos;
@@ -342,6 +344,7 @@ public:
 	}
 private:
 	Literal doSelect(Solver& s);
+	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	void updateVarActivity(Var v) {
 		if ( (score_[v].first += inc_) > 1e100 ) {
 			for (LitVec::size_type i = 0; i != score_.size(); ++i) {

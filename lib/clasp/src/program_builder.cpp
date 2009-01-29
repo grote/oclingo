@@ -304,7 +304,10 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 			v = prg.atoms_[a]->hasVar() ? v : value_false; 
 			mark = true;
 		}
-		if (v != value_free) {                // truth value is known
+		if (v == value_weak_true && goals_[i].sign()) {
+			v = value_true;
+		}
+		if (v != value_free && v != value_weak_true) {  // truth value is known
 			if (v == falseValue(goals_[i])) { 
 				// drop rule if normal/choice
 				// or if we can no longer reach the lower bound of card/weight rule
@@ -512,7 +515,7 @@ START:
 					if (a->visited() == 0) {
 						callStack_.push_back(Call(b, true, static_cast<uint32>(it-b->heads.begin()), c.min()));
 						callStack_.push_back(Call(a, false, 0));
-            goto START;
+						goto START;
 					} 
 					if (a->root() < c.min()) {
 						c.setMin(a->root());
@@ -618,7 +621,7 @@ ProgramBuilder& ProgramBuilder::setAtomName(Var atomId, const char* name) {
 }
 ProgramBuilder& ProgramBuilder::setCompute(Var atomId, bool pos) {  
 	resize(atomId);
-	ValueRep v = pos ? value_true : value_false;
+	ValueRep v = pos ? value_weak_true : value_false;
 	if (v == value_false) {
 		computeFalse_.push_back(atomId);
 	}
@@ -907,6 +910,24 @@ bool ProgramBuilder::applyCompute() {
 	}
 	return true;
 }
+
+void ProgramBuilder::setAtomLiteral(uint32 idx) {
+	if (idx < stats.index.size()) {
+		stats.index[idx].lit = atoms_[idx]->literal();
+	}
+}
+
+void ProgramBuilder::setEqAtomLiterals() {
+	for (EqNodes::iterator it = eqAtoms_.begin(), end = eqAtoms_.end(); it != end; ++it) {
+		Var base = it->first;
+		Var root = it->second;
+		for (Var x; (x = getEqAtom(root)) != root; root = x);
+		it->second = root;
+		if (base < stats.index.size()) {
+			stats.index[base].lit = atoms_[root]->literal();
+		}
+	}
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 // program creation - clark's completion
 //
@@ -921,7 +942,9 @@ bool ProgramBuilder::addConstraints(Solver& s, CycleChecker& c, uint32 startAtom
 	for (AtomList::const_iterator it = atoms_.begin()+startAtom; it != atoms_.end(); ++it) {
 		if ( !(*it)->toConstraint(s, gc, *this) ) { return false; }
 		c.visit(*it);
+		setAtomLiteral(static_cast<uint32>(it-atoms_.begin()));
 	}
+	setEqAtomLiterals();
 	freezeMinimize(s);
 	return true;
 }
@@ -1021,7 +1044,7 @@ void ProgramBuilder::writeProgram(std::ostream& os) {
 	// write all bodies together with their heads
 	for (BodyList::iterator it = bodies_.begin(); it != bodies_.end(); ++it) {
 		if ( (*it)->hasVar() ) {
-			writeRule(*it, 0, os);
+			writeRule(*it, os);
 		}
 	}
 	// write the equivalent atoms
@@ -1047,7 +1070,7 @@ void ProgramBuilder::writeProgram(std::ostream& os) {
 		 << "B-\n" << bm.str() << "0\n1\n";
 }
 
-void ProgramBuilder::writeRule(PrgBodyNode* b, Var h, std::ostream& os) {
+void ProgramBuilder::writeRule(PrgBodyNode* b, std::ostream& os) {
 	VarVec::size_type nbs = 0, pbs = 0;
 	std::stringstream body;
 	std::stringstream extended;
@@ -1072,10 +1095,32 @@ void ProgramBuilder::writeRule(PrgBodyNode* b, Var h, std::ostream& os) {
 	}
 	body << extended.str();
 	if (rt != CHOICERULE) {
+		uint32 falseAtom = 0;
+		if (b->value() == value_false && b->heads.empty()) {
+			// This rule is an integrity constraint.
+			// Handle by writing falseAtom :- Body.
+			// where falseAtom is set to false in the compute statement
+			if      (atoms_[1]->value() == value_false)     falseAtom = 1;
+			else if (atoms_.back()->value() == value_false) falseAtom = (uint32)atoms_.size()-1;
+			else {
+				for (uint32 i = 2; i < atoms_.size(); ++i) {
+					if (atoms_[i]->value() == value_false) {
+						falseAtom = i;
+						break;
+					}
+				}
+				if (falseAtom == 0) {
+					atoms_.push_back( new PrgAtomNode() );
+					falseAtom = (Var) atoms_.size() - 1;
+					setCompute(falseAtom, false);
+				}
+			}
+			b->heads.push_back(falseAtom);
+		}
 		for (VarVec::const_iterator it = b->heads.begin(); it != b->heads.end(); ++it) {
-			Var x = h == 0 ? *it : h;
-			if (h != 0 || atoms_[x]->hasVar()) {
-				os << rt << " " << x << " ";
+			Var h = *it;
+			if (atoms_[h]->hasVar() || h == falseAtom) {
+				os << rt << " " << h << " ";
 				if (rt == WEIGHTRULE) {
 					os << b->bound() << " ";
 				}
@@ -1085,7 +1130,6 @@ void ProgramBuilder::writeRule(PrgBodyNode* b, Var h, std::ostream& os) {
 				}
 				os << body.str() << "\n";
 			}
-			if (h != 0) break;
 		}
 	}
 	else {
@@ -1098,9 +1142,11 @@ void ProgramBuilder::writeRule(PrgBodyNode* b, Var h, std::ostream& os) {
 				extended << *it << " ";
 			}
 		}
-		os << heads << " " << extended.str()
-			 << pbs + nbs << " " << nbs << " "
-			 << body.str() << "\n";
+		if (heads > 0) {
+			os << heads << " " << extended.str()
+				 << pbs + nbs << " " << nbs << " "
+				 << body.str() << "\n";
+		}
 	}
 }
 }
