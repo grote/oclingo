@@ -131,7 +131,7 @@ private:
 #ifdef WITH_CLASP
 class StdOutPrinter : public ModelPrinter, public CBConsequences::CBPrinter {
 public:
-	explicit StdOutPrinter(bool quiet) : quiet_(quiet) {}
+	explicit StdOutPrinter(bool quiet, bool report = true) : quiet_(quiet), report_(report) {}
 	void printModel(const Solver& s, const ModelEnumerator& e) {
 		if (quiet_) return;
 		AtomIndex* index = e.getIndex();
@@ -159,6 +159,8 @@ public:
 		printMini(e.getMini(), index?"Optimization":"c Optimization");
 	}
 	void printReport(const Solver& s, const ModelEnumerator& e) {
+		if(!report_)
+			return;
 		const char* modString = e.getIndex() ? "Models" : "c Models";
 		uint64 enumerated = s.stats.models;
 		uint64 models     = e.getMini() ? e.getMini()->models() : enumerated;
@@ -196,6 +198,8 @@ public:
 		}
 	}
 	void printReport(const Solver& s, const CBConsequences& cb) {
+		if(!report_)
+			return;
 		if (quiet_ || s.stats.models == 0) {
 			quiet_ = false;
 			printConsequences(s, cb);
@@ -217,8 +221,13 @@ public:
 		}
 		std::cerr << std::endl;
 	}
+	void enableReport()
+	{
+		report_ = true;
+	}
 private:
 	bool quiet_;
+	bool report_;
 };
 #endif
 
@@ -781,6 +790,7 @@ bool MainApp::solveIncremental()
 		}
 	} istats;
 	Timer all;
+	StdOutPrinter *printer = 0;
 	do 
 	{
 
@@ -807,8 +817,8 @@ bool MainApp::solveIncremental()
 				cerr << "Warning: Computing cautious/brave consequences not supported in incremental setting!\n" << endl;
 			}
 			ModelEnumerator* e = !options.recordSol 
-				? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
-				: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
+				? (ModelEnumerator*)new BacktrackEnumerator(printer = new StdOutPrinter(options.quiet, false), options.projectConfig)
+				: (ModelEnumerator*)new RecordEnumerator(printer = new StdOutPrinter(options.quiet, false), options.modelRestart);
 			enum_ = e;
 			enum_->setNumModels(options.numModels);
 			solver.add(enum_);
@@ -870,6 +880,8 @@ bool MainApp::solveIncremental()
 			enum_->setNumModels(options.numModels + solver.stats.models);
 	}
 	while(options.imax-- > 1 && (options.imin-- > 1 || ret == options.iunsat));
+	printer->enableReport();
+	printer->printReport(solver, *static_cast<ModelEnumerator*>(enum_));
 	// for the summary
 	*lpStats_ = output.getStats();
 	api.stats.moveTo(*preStats_);
