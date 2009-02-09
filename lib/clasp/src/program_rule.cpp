@@ -56,7 +56,7 @@ PrgRule& PrgRule::addToBody(Var atomId, bool pos, weight_t weight) {
 	assert(type_ != ENDRULE && "Invalid operation - Start rule not called");
 	assert( weight >= 0 && "Invalid weight - negative weights are not supported");
 	if (weight == 0) return *this;  // ignore weightless atoms
-	if (weight != 1 && !(type_ == WEIGHTRULE || type_ == OPTIMIZERULE)) {
+	if (weight != 1 && !bodyHasWeights()) {
 		weight = 1;
 	}
 	body.push_back(WeightLiteral(Literal(atomId, pos == false), weight));
@@ -85,20 +85,31 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	RData r = { 0, 0, 0, 0 };
 	// 1. Check body bounds
 	// maximal achievable weight
-	r.sumWeight = (type_ != WEIGHTRULE && type_ != OPTIMIZERULE)
-		? (weight_t)body.size()
-		: std::accumulate(body.begin(), body.end(), weight_t(0), compose22(
-				std::plus<weight_t>(),
-				identity<weight_t>(),
-				select2nd<WeightLiteral>()));
+	r.sumWeight   = (weight_t)body.size();
+	weight_t minW = 1;
+	if (type_ == WEIGHTRULE && !body.empty()) {
+		r.sumWeight   = body[0].second;
+		weight_t maxW = body[0].second;
+		minW          = body[0].second;
+		for (uint32 i = 1; i != body.size(); ++i) {
+			r.sumWeight += body[i].second;
+			if      (body[i].second > maxW) { maxW = body[i].second; }
+			else if (body[i].second < minW) { minW = body[i].second; }
+		}
+		if (minW == maxW) {
+			type_      = CONSTRAINTRULE;
+			bound_     = (bound_+(minW-1))/minW;
+			r.sumWeight= (weight_t)body.size();
+		}
+	}
 	// minimal weight needed to satisfy body
 	// for constraint/weight rules this is the lower bound that was set. For
 	// normal/choice rules all literals must be true to make the body true, thus
 	// set lower bound to body.size().
-	if (type_ != CONSTRAINTRULE && type_ != WEIGHTRULE) bound_ = (weight_t)body.size();
+	if (!bodyHasBound()) bound_ = (weight_t)body.size();
 	if (bound_ <= 0) {
 		body.clear(); // body is satisfied - ignore contained lits
-		if (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE) {
+		if (bodyHasBound()) {
 			type_ = BASICRULE;
 		}
 		r.value_ = value_true;
@@ -109,13 +120,12 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 		r.value_ = value_false;
 		return r;
 	}
-	else if (bound_ == r.sumWeight && (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE)) {
+	else if (bodyHasBound() && r.sumWeight - minW < bound_) {
 		// all subgoals must be true in order to satisfy body
 		// - just like in a normal rule, thus handle this rule as such.
 		type_       = BASICRULE;
 		r.sumWeight = (weight_t)body.size();
 	}
-
 	// 2. NORMALIZE body literals, check for CONTRA
 	WeightLitVec::iterator j = body.begin();
 	for (WeightLitVec::iterator it = body.begin(), bEnd = body.end(); it != bEnd; ++it) {
@@ -125,7 +135,7 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 			if (it->first.sign()) { r.hash += hashId(-it->first.var()); }
 			else                  { ++r.posSize; r.hash += hashId(it->first.var()); }
 		}
-		else if (type_ != BASICRULE && type_ != CHOICERULE) {
+		else if (!bodyIsSet()) {
 			// a is already in the rule. Ignore the duplicate if rule is a normal or choice rule,
 			// otherwise merge the occurrences by merging the weights of the literals.
 			if (type_ == CONSTRAINTRULE) { type_ = WEIGHTRULE; }
@@ -135,17 +145,16 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 			assert(lit != j);
 			lit->second += it->second;
 		}
-		if (rs.inBody(~it->first)) {
+		if (rs.inBody(~it->first) && type_ != OPTIMIZERULE) {
 			// rule contains p and not p - check if both are needed to satisfy body
-			if ( type_ == BASICRULE || type_ == CHOICERULE || (type_ == WEIGHTRULE 
-				&& r.sumWeight - std::min(it->second, weight(it->first.var(), it->first.sign())) < bound_)) {
+			if (!bodyHasBound() || r.sumWeight - std::min(it->second, weight(it->first.var(), it->first.sign())) < bound_) {
 				type_ = ENDRULE;  // CONTRA
 				break;
 			}
 		}
 	}
 	body.erase(j, body.end());
-	if (type_ != CONSTRAINTRULE && type_ != WEIGHTRULE) {
+	if (!bodyHasBound()) {
 		// just in case we removed duplicate atoms
 		bound_ = static_cast<weight_t>(body.size());
 	}
@@ -169,7 +178,7 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 }
 
 weight_t PrgRule::weight(Var id, bool pos) const {
-	if (type_ != WEIGHTRULE && type_ != OPTIMIZERULE) {
+	if (!bodyHasWeights()) {
 		return 1;
 	}
 	return std::find_if(body.begin(), body.end(), compose1(
@@ -178,163 +187,207 @@ weight_t PrgRule::weight(Var id, bool pos) const {
 		))->second;
 }
 
-// Transforms this rule into an equivalent set of normal rules
-uint32 PrgRule::transform(ProgramBuilder& prg, TransformationMode m) {
-	if (type() == ENDRULE || type() == BASICRULE || type() == OPTIMIZERULE) {
+/////////////////////////////////////////////////////////////////////////////////////////
+// class PrgRuleTransform
+//
+// class for transforming extended rules to normal rules
+/////////////////////////////////////////////////////////////////////////////////////////
+class PrgRuleTransform::Impl {
+public:
+	Impl(ProgramBuilder& prg, PrgRule& r);
+	~Impl();
+	uint32 transform();
+private:
+	Impl(const Impl&);
+	Impl& operator=(const Impl&);
+	struct TodoItem {
+		TodoItem(uint32 i, weight_t w, Var v) : idx(i), bound(w), var(v) {}
+		uint32   idx;
+		weight_t bound;
+		Var      var;
+	};
+	typedef std::deque<TodoItem> TodoList;
+	bool   isBogusRule() const { return rule_.bound() > sumW_[0]; }
+	bool   isFact()      const { return rule_.bound() <= 0; }
+	void   createRule(Var head, Literal* bodyFirst, Literal* bodyEnd) const;
+	uint32 addRule(Var head, bool addLit, const TodoItem& aux);
+	Var    getAuxVar(const TodoItem& i) {
+		assert(i.bound > 0);
+		uint32 k = i.bound-1;
+		if (aux_[k] == 0) {
+			todo_.push_back(i);
+			aux_[k]          = prg_.newAtom();
+			todo_.back().var = aux_[k];
+		}
+		return aux_[k];
+	}
+	TodoList        todo_;    // heads todo
+	ProgramBuilder& prg_;     // program to which rules are headed
+	PrgRule&        rule_;    // rule to translate
+	Var*            aux_;     // newly created atoms for one level of the tree
+	weight_t*       sumW_;    // achievable weight for individual literals
+};
+
+PrgRuleTransform::PrgRuleTransform() : impl_(0) {}
+PrgRuleTransform::~PrgRuleTransform() { delete impl_; }
+
+uint32 PrgRuleTransform::transform(ProgramBuilder& prg, PrgRule& rule) {
+	if (rule.type() == CHOICERULE) {
+		return transformChoiceRule(prg, rule);
+	}
+	delete impl_;
+	impl_ = new Impl(prg, rule);
+	return impl_->transform();
+}
+
+PrgRuleTransform::Impl::Impl(ProgramBuilder& prg, PrgRule& r)
+	: prg_(prg)
+	, rule_(r) {
+	aux_     = new Var[r.bound()];
+	sumW_    = new weight_t[r.body.size()];
+	std::memset(aux_ , 0, r.bound()*sizeof(Var));
+	
+	if (r.type() == WEIGHTRULE) {
+		std::stable_sort(r.body.begin(), r.body.end(), compose22(
+				std::greater<weight_t>(),
+				select2nd<WeightLiteral>(),
+				select2nd<WeightLiteral>()));
+	}
+	uint32 i      = (uint32)r.body.size();
+	weight_t wSum = 0;
+	while (i-- != 0) {
+		wSum += r.body[i].second;
+		sumW_[i] = wSum;
+	}
+}
+PrgRuleTransform::Impl::~Impl() {
+	delete [] aux_;
+	delete [] sumW_;
+}
+
+// Quadratic transformation of cardinality and weight constraint.
+// Introduces aux atoms. 
+// E.g. a rule h = 2 {a,b,c,d} is translated into the following eight rules:
+// h       :- a, aux_1_1.
+// h       :- aux_1_2.
+// aux_1_1 :- b.
+// aux_1_1 :- aux_2_1.
+// aux_1_2 :- b, aux_2_1.
+// aux_1_2 :- c, d.
+// aux_2_1 :- c.
+// aux_2_1 :- d.
+uint32 PrgRuleTransform::Impl::transform() {
+	if (isBogusRule()) { 
 		return 0;
 	}
-	if (type_ == CHOICERULE) {
-		return transformChoice(prg);
+	if (isFact()) {
+		createRule(rule_.heads[0], 0, 0);
+		return 1;
 	}
-	else if (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE) {
-		return transformAggregate(prg, m);
+	todo_.push_back(TodoItem(0, rule_.bound(), rule_.heads[0]));
+	uint32 normalRules = 0;
+	uint32 level = 0;
+	while (!todo_.empty()) {
+		TodoItem i = todo_.front();
+		todo_.pop_front();
+		if (i.idx > level) {
+			// We are about to start a new level of the tree.
+			// Reset the aux_ array
+			level = i.idx;
+			std::memset(aux_ , 0, rule_.bound()*sizeof(Var));
+		}
+		// For a todo item i with var v create at most two rules:
+		// r1: v :- lit(i.idx), AuxLit(i.idx+1, i.bound-weight(lit(i.idx)))
+		// r2: v :- AuxLit(i.idx+1, i.bound).
+		// The first rule r1 represents the case where lit(i.idx) is true, while
+		// the second rule encodes the case where the literal is false.
+		normalRules += addRule(i.var, true,  TodoItem(i.idx+1, i.bound - rule_.body[i.idx].second, 0));
+		normalRules += addRule(i.var, false, TodoItem(i.idx+1, i.bound, 0));
 	}
-	assert(!"unknown rule type");
+	return normalRules;
+}
+
+uint32 PrgRuleTransform::Impl::addRule(Var head, bool addLit, const TodoItem& aux) {
+	// create rule head :- posLit(aux.var) resp. head :- posLit(aux.var), ruleLit(aux.idx-1)
+	//
+	// Let B be the bound of aux, 
+	//  - skip rule, iff sumW(aux.idx) < B, i.e. rule is not applicable.
+	//  - replace rule with list of body literals if sumW(aux.idx) == B or B <= 0
+	if (aux.bound <= 0 || sumW_[aux.idx] >= aux.bound) {
+		if (aux.bound <= 0 && addLit) {
+			Literal body = rule_.body[aux.idx-1].first;
+			createRule(head, &body, &body+1);
+		}
+		else if (sumW_[aux.idx] > aux.bound) {
+			Var auxVar      = getAuxVar(aux);
+			Literal body[2] = { rule_.body[aux.idx-1].first, posLit(auxVar) };
+			createRule(head, body+!addLit, body+2);
+		}
+		else {
+			LitVec nb; 
+			if (addLit) nb.push_back(rule_.body[aux.idx-1].first);
+			for (uint32 r = aux.idx; r != rule_.body.size(); ++r) {
+				nb.push_back(rule_.body[r].first);
+			}
+			createRule(head, &nb[0], &nb[0]+nb.size());
+		}
+		return 1;
+	}
 	return 0;
 }
 
-// A choice rule {h1,...hn} :- BODY
-// is replaced with:
-// h1   :- BODY, not aux1.
-// aux1 :- not h1.
-// ...
-// hn   :- BODY, not auxN.
-// auxN :- not hn.
-// If n is large or BODY contains many literals BODY is replaced with auxB and
-// auxB :- BODY.
-uint32 PrgRule::transformChoice(ProgramBuilder& prg) {
-	uint32 newRules = 0;
-	Var extraHead = ((heads.size() * (body.size()+1)) + heads.size()) > (heads.size()*3)+body.size()
-			? prg.newAtom()
-			: varMax;
-	PrgRule r1, r2;
-	r1.setType(BASICRULE); r2.setType(BASICRULE);
-	if (extraHead != varMax) { r1.addToBody( extraHead, true, 1 ); }
-	else { r1.body.swap(body); }
-	for (VarVec::iterator it = heads.begin(), end = heads.end(); it != end; ++it) {
-		r1.heads.clear(); r2.heads.clear();
-		Var aux = prg.newAtom();
-		r1.heads.push_back(*it);  r1.addToBody(aux, false, 1);
-		r2.heads.push_back(aux);  r2.addToBody(*it, false, 1);
-		prg.addRule(r1);  // h    :- body, not aux
-		prg.addRule(r2);  // aux  :- not h
-		r1.body.pop_back();
-		r2.body.pop_back();
-		newRules += 2;
+void PrgRuleTransform::Impl::createRule(Var head, Literal* bodyFirst, Literal* bodyEnd) const {
+	prg_.startRule(BASICRULE);
+	prg_.addHead(head);
+	while (bodyFirst != bodyEnd) {
+		prg_.addToBody(bodyFirst->var(), !bodyFirst->sign());
+		++bodyFirst;
 	}
-	if (extraHead != varMax) {
-		r1.heads.clear();
-		r1.body.clear();
-		r1.body.swap(body);
-		r1.heads.push_back(extraHead);
-		prg.addRule(r1);
-		++newRules;
-	}
-	body.swap(r1.body);
-	return newRules;
+	prg_.endRule();
 }
 
-// Transforms cardinality and weight constraint.
-// Depending on the rule's size, its lower bound and the weights contained
-// in the rule, two different transformation algorithms are applied.
-// The first algorithm introduces new atoms and is quadratically bounded.
-// The second algorithm does not introduce new atoms but creates an exponential number
-// of rules in the worst case. It is applied only for small rules and simple bounds.
-uint32 PrgRule::transformAggregate(ProgramBuilder& prg, TransformationMode m) {
-	if (type_ == WEIGHTRULE) {
-		std::stable_sort(body.begin(), body.end(), compose22(
+// Exponential transformation of cardinality and weight constraint.
+// Creates minimal subsets, no aux atoms.
+// E.g. a rule h = 2 {a,b,c,d} is translated into the following six rules:
+// h :- a, b.
+// h :- a, c.
+// h :- a, d.
+// h :- b, c.
+// h :- b, d.
+// h :- c, d.
+uint32 PrgRuleTransform::transformNoAux(ProgramBuilder& prg, PrgRule& rule) {
+	assert(rule.type() == WEIGHTRULE || rule.type() == CONSTRAINTRULE);
+	if (rule.type() == WEIGHTRULE) {
+		std::stable_sort(rule.body.begin(), rule.body.end(), compose22(
 			std::greater<weight_t>(),
 			select2nd<WeightLiteral>(),
 			select2nd<WeightLiteral>()));
 	}
-	WeightVec sumWeights(body.size() + 1, 0);
-	LitVec::size_type i = (uint32)body.size();
+	WeightVec sumWeights(rule.body.size() + 1, 0);
+	LitVec::size_type i = (uint32)rule.body.size();
 	weight_t sum = 0;
 	while (i != 0) {
 		--i;
-		sum += body[i].second;
+		sum += rule.body[i].second;
 		sumWeights[i] = sum;
 	}
-	return m == quadratic_transform || (m == dynamic_transform && body.size() >= 6 && choose(sumWeights[0], bound_) >= (body.size()*bound_*2))
-		? transformAggregateQuad(prg, sumWeights)
-		: transformAggregateExp(prg, sumWeights);
-}
 
-// quadratic transformation - introduces aux atoms
-uint32 PrgRule::transformAggregateQuad(ProgramBuilder& prg, const WeightVec& sumWeights) {
-	typedef std::pair<uint32, weight_t> Key;
-	typedef std::deque<Key> KeyQueue;
-	if (bound_ == 0) {
-		PrgRule r(BASICRULE);
-		r.addHead(heads[0]);
-		prg.addRule(r);
-		return 1;
-	}
-	VarVec atoms(body.size() * bound_, varMax);
-	atoms[bound_-1] = heads[0];
-	KeyQueue todo;
-	todo.push_back( Key(0, bound_) );
-	PrgRule r(BASICRULE);
-	r.heads.resize(1);
-	uint32 newRules = 0;
-	while (!todo.empty()) {
-		r.body.clear();
-		uint32    n = todo.front().first;
-		weight_t  w = todo.front().second;
-		todo.pop_front();
-		Var a = atoms[(n * bound_) + (w-1)];
-		assert(a != varMax);
-		r.heads[0] = a;
-		if (sumWeights[n+1] >= w) {
-			++newRules;
-			assert(n+1 < (uint32)body.size());
-			uint32 nextKey = ((n+1) * bound_) + (w-1);
-			if (atoms[nextKey] == varMax) {
-				atoms[nextKey] = prg.newAtom();
-				todo.push_back( Key(n+1,w) );
-			}
-			r.addToBody(atoms[nextKey], true);
-			prg.addRule(r);
-			r.body.clear();
-		} 
-		weight_t nk = w - body[n].second;
-		if (nk <= 0 || sumWeights[n+1] >= nk) {
-			++newRules;
-			r.addToBody(body[n].first.var(), body[n].first.sign() == false);
-			if (nk > 0) {
-				assert((n+1) < (uint32)body.size());
-				uint32 nextKey = ((n+1) * bound_) + (nk-1);
-				if (atoms[nextKey] == varMax) {
-					atoms[nextKey] = prg.newAtom();
-					todo.push_back( Key(n+1,nk) );
-				}
-				r.addToBody(atoms[nextKey], true);
-			}
-			prg.addRule(r);
-			r.body.clear();
-		}
-	}
-	return newRules;
-}
-
-// exponential transformation - creates minimal subsets, no aux atoms
-uint32 PrgRule::transformAggregateExp(ProgramBuilder& prg, const WeightVec& sumWeights) {
 	uint32 newRules = 0;
 	VarVec    nextStack;
 	WeightVec weights;
 	PrgRule r(BASICRULE);
-	r.addHead(heads[0]);
-	uint32    end   = (uint32)body.size();
+	r.addHead(rule.heads[0]);
+	uint32    end   = (uint32)rule.body.size();
 	weight_t  cw    = 0;
 	uint32    next  = 0;
 	if (next == end) { prg.addRule(r); return 1; }
 	while (next != end) {
-		r.addToBody(body[next].first.var(), body[next].first.sign() == false);
-		weights.push_back( body[next].second );
+		r.addToBody(rule.body[next].first.var(), rule.body[next].first.sign() == false);
+		weights.push_back( rule.body[next].second );
 		cw += weights.back();
 		++next;
 		nextStack.push_back(next);
-		if (cw >= bound_) {
+		if (cw >= rule.bound()) {
 			prg.addRule(r);
 			r.setType(BASICRULE);
 			++newRules;
@@ -349,12 +402,54 @@ uint32 PrgRule::transformAggregateExp(ProgramBuilder& prg, const WeightVec& sumW
 			weights.pop_back();
 			next = nextStack.back();
 			nextStack.pop_back();
-			if (next != end && (cw + sumWeights[next]) < bound_) {
+			if (next != end && (cw + sumWeights[next]) < rule.bound()) {
 				next = end;
 			}
 		}
 	}
 	return newRules;
 }
+
+// A choice rule {h1,...hn} :- BODY
+// is replaced with:
+// h1   :- BODY, not aux1.
+// aux1 :- not h1.
+// ...
+// hn   :- BODY, not auxN.
+// auxN :- not hn.
+// If n is large or BODY contains many literals BODY is replaced with auxB and
+// auxB :- BODY.
+uint32 PrgRuleTransform::transformChoiceRule(ProgramBuilder& prg, PrgRule& rule) const {
+	uint32 newRules = 0;
+	Var extraHead = ((rule.heads.size() * (rule.body.size()+1)) + rule.heads.size()) > (rule.heads.size()*3)+rule.body.size()
+			? prg.newAtom()
+			: varMax;
+	PrgRule r1, r2;
+	r1.setType(BASICRULE); r2.setType(BASICRULE);
+	if (extraHead != varMax) { r1.addToBody( extraHead, true, 1 ); }
+	else { r1.body.swap(rule.body); }
+	for (VarVec::iterator it = rule.heads.begin(), end = rule.heads.end(); it != end; ++it) {
+		r1.heads.clear(); r2.heads.clear();
+		Var aux = prg.newAtom();
+		r1.heads.push_back(*it);  r1.addToBody(aux, false, 1);
+		r2.heads.push_back(aux);  r2.addToBody(*it, false, 1);
+		prg.addRule(r1);  // h    :- body, not aux
+		prg.addRule(r2);  // aux  :- not h
+		r1.body.pop_back();
+		r2.body.pop_back();
+		newRules += 2;
+	}
+	if (extraHead != varMax) {
+		r1.heads.clear();
+		r1.body.clear();
+		r1.body.swap(rule.body);
+		r1.heads.push_back(extraHead);
+		prg.addRule(r1);
+		++newRules;
+	}
+	rule.body.swap(r1.body);
+	return newRules;
+}
+
 
 }

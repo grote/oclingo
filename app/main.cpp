@@ -1,18 +1,18 @@
-// 
+//
 // Copyright(c) 2006-2007, Benjamin Kaufmann
-// 
-// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
-// 
+//
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/
+//
 // Clasp is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 //(at your option) any later version.
-// 
+//
 // Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -72,7 +72,7 @@ struct MainApp
 	enum Mode { ASP_MODE, SAT_MODE } mode;
 #endif
 	int run(int argc, char **argv);
-private: 
+private:
 	enum State { start_read, start_ground, start_pre, start_solve, end_read, end_ground, end_pre, end_solve };
 	void setState(State s);
 	void ground(Output &output);
@@ -89,13 +89,13 @@ private:
 		static const char pro[] = { '/', '-', '\\', '|' };
 		if(a == SatElite::SatElite::Options::pre_start)
 			cerr << '|';
-		
+
 		else if(a == SatElite::SatElite::Options::iter_start)
 			cerr << '\b' << pro[i % 4];
-		
+
 		else if(a == SatElite::SatElite::Options::pre_done)
 			cerr << '\b' << "Done";
-		
+
 		else if(a == SatElite::SatElite::Options::pre_stopped)
 			cerr << '\b' << "Stop";
 		*/
@@ -121,8 +121,8 @@ private:
 #	endif
 	bool parseLparse();
 	bool readSat();
-	std::auto_ptr < LparseStats > lpStats_;
 	std::auto_ptr < PreproStats > preStats_;
+	std::auto_ptr<AtomIndex>      atomIndex_;
 	Enumerator *enum_;
 	std::ifstream inFile_;
 #endif
@@ -171,7 +171,7 @@ public:
 			int wr    = sprintf(buf, "%llu", models);
 			buf[wr]   = '+';
 			buf[wr+1] = 0;
-			std::cerr << std::setw(6) << buf;	
+			std::cerr << std::setw(6) << buf;
 		}
 		else {
 			std::cerr << std::setw(6) << models;
@@ -263,7 +263,7 @@ static void sigHandler(int)
 	printf("\n*** INTERRUPTED! ***\n");
 #endif
 	_exit(S_UNKNOWN);
-} 
+}
 
 void MainApp::setState(State s)
 {
@@ -398,7 +398,7 @@ int MainApp::run(int argc, char **argv)
 
 namespace
 {
-	// bÃ¤h want a ptr_vector_owner or sth like that
+	// bäh want a ptr_vector_owner or sth like that
 	struct Streams
 	{
 		vector<istream *> streams;
@@ -529,7 +529,7 @@ static double percent(uint32 y, uint32 from)
 	if(from == 0)
 		return 0;
 	return(static_cast < double >(y) / from) *100.0;
-} 
+}
 
 static double percent(const uint32 * arr, uint32 idx)
 {
@@ -541,73 +541,51 @@ static double compAverage(uint64 x, uint64 y)
 	if(!x || !y)
 		return 0.0;
 	return static_cast < double >(x) / static_cast < double >(y);
-} 
+}
 
 void MainApp::printLpStats() const
 {
-	const PreproStats &ps = *preStats_;
-	const LparseStats &lp = *lpStats_;
-	const Options &o = options;
-	uint32 r = lp.rules[0] == 0 
-		? std::accumulate(lp.rules, lp.rules + OPTIMIZERULE + 1, 0) 
-		: lp.rules[0] + lp.rules[1] + lp.rules[OPTIMIZERULE];
-	uint32 a = lp.atoms[0] + lp.atoms[1];
-	cerr << left << setw(12) << "Atoms" << ": " << setw(6) << a;
-	if(lp.atoms[1] != 0)
-	{
-		cerr << "(Original: " << lp.atoms[0] << " Auxiliary: " << lp.atoms[1] << ")";
+	const PreproStats& ps = *preStats_;
+	const Options& o = options;
+	cerr << left << setw(12) << "Atoms" << ": " << setw(6) << ps.atoms;
+	if (ps.trStats) {
+		cerr << " (Original: " << ps.atoms-ps.trStats->auxAtoms << " Auxiliary: " << ps.trStats->auxAtoms << ")";
 	}
 	cerr << "\n";
-	cerr << left << setw(12) << "Rules" << ": " << setw(6) << r << "(";
-	for(int i = 1; i != OPTIMIZERULE; ++i)
-	{
-		if(lp.rules[i] != 0)
-		{
-			if(i != 1)
-				cerr << " ";
-			cerr << i << ": " << lp.rules[i];
-			if(lp.rules[0] != 0)
-			{
-				cerr << "/";
-				if(i == 1)
-					cerr << lp.rules[1] + lp.rules[0];
-				
-				else if((i == 3 &&(o.transExt &LparseReader::transform_choice) != 0))
-					cerr << 0;
-				else if((i == 2 || i == 5) &&(o.transExt &LparseReader::transform_weight) != 0)
-					cerr << 0;
-				else
-					cerr << lp.rules[i];
+	cerr << left << setw(12) << "Rules" << ": " << setw(6) << ps.rules[0] << " (";
+	for (int i = 1; i <= OPTIMIZERULE; ++i) {
+		if (ps.rules[i] != 0) {
+			cerr << i << ": " << ps.rules[i];
+			if (ps.trStats && ps.trStats->rules[0] != 0) {
+				if (i == BASICRULE) {
+					cerr << "/" << ps.rules[BASICRULE]+ps.trStats->rules[0];
+				}
+				else {
+					cerr << "/" << ps.rules[i]-ps.trStats->rules[i];
+				}
 			}
+			cerr << " ";
 		}
 	}
-	if(lp.rules[OPTIMIZERULE] != 0)
-	{
-		cerr << " " << OPTIMIZERULE << ": " << lp.rules[OPTIMIZERULE];
-	}
-	cerr << ")" << "\n";
+	cerr << "\b)" << "\n";
 	cerr << left << setw(12) << "Bodies" << ": " << ps.bodies << "\n";
-	if(ps.numEqs() != 0)
-	{
-		cerr << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() 
-			<< "(Atom=Atom: " << ps.numEqs(Var_t::atom_var)  
-			<< " Body=Body: " << ps.numEqs(Var_t::body_var) 
-			<< " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var)) <<")" << "\n";
+	if (ps.numEqs() != 0) {
+		cerr << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() << " (Atom=Atom: " << ps.numEqs(Var_t::atom_var)
+				 << " Body=Body: "   << ps.numEqs(Var_t::body_var)
+				 << " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var))
+				 << ")" << "\n";
 	}
 	cerr << left << setw(12) << "Tight" << ": ";
-	if(!o.suppModels)
-	{
-		if(ps.sccs == 0)
-		{
+	if (!o.suppModels) {
+		if (ps.sccs == 0) {
 			cerr << "Yes";
 		}
-		else
-		{
-			cerr << setw(6) << "No" << "(SCCs: " << ps.sccs << " Nodes: " << ps.ufsNodes << ")";
+		else {
+			cerr << setw(6) << "No"  << " (SCCs: " << ps.sccs << " Nodes: "
+					 << ps.ufsNodes << ")";
 		}
 	}
-	else
-	{
+	else {
 		cerr << "N/A";
 	}
 	cerr << "\n";
@@ -642,27 +620,27 @@ void MainApp::printAspStats(bool more) const
 	printLpStats();
 	cerr << "\n";
 	uint32 other = st.native[0] - st.native[1] - st.native[2];
-	cerr << left << setw(12) 
-		<< "Variables" << ": " << setw(6) << solver.numVars() 
+	cerr << left << setw(12)
+		<< "Variables" << ": " << setw(6) << solver.numVars()
 		<< "(Eliminated: " << right << setw(4) << solver.numEliminatedVars() << ")" << "\n";
-	cerr << left << setw(12) 
-		<< "Constraints" << ": " << setw(6) << st.native[0]  
-		<< "(Binary: " << right << setw(4) << percent(st.native, 1) << "% "  
-		<< "Ternary: " << right << setw(4) << percent(st.native, 2) << "% "  
+	cerr << left << setw(12)
+		<< "Constraints" << ": " << setw(6) << st.native[0]
+		<< "(Binary: " << right << setw(4) << percent(st.native, 1) << "% "
+		<< "Ternary: " << right << setw(4) << percent(st.native, 2) << "% "
 		<< "Other: " << right << setw(4) << percent(other, st.native[0]) << "%)"  <<"\n";
 	other = st.learnt[0] - st.learnt[1] - st.learnt[2];
-	cerr << left << setw(12) 
-		<< "Lemmas" << ": " << setw(6) << st.learnt[0]  
-		<< "(Binary: " << right << setw(4) << percent(st.learnt, 1) << "% " 
-		<< "Ternary: " << right << setw(4) << percent(st.learnt, 2) << "% " 
+	cerr << left << setw(12)
+		<< "Lemmas" << ": " << setw(6) << st.learnt[0]
+		<< "(Binary: " << right << setw(4) << percent(st.learnt, 1) << "% "
+		<< "Ternary: " << right << setw(4) << percent(st.learnt, 2) << "% "
 		<< "Other: " << right << setw(4) << percent(other, st.learnt[0]) << "%)"  <<"\n";
-	cerr << left << setw(12) 
-		<< "  Conflicts" << ": " << setw(6) << st.learnt[0] - st.loops  
+	cerr << left << setw(12)
+		<< "  Conflicts" << ": " << setw(6) << st.learnt[0] - st.loops
 		<<"(Average Length: " << compAverage(st.lits[0], st.learnt[0] - st.loops) << ")\n";
-	cerr << left << setw(12) 
-		<< "  Loops" << ": " << setw(6) << st.loops  
+	cerr << left << setw(12)
+		<< "  Loops" << ": " << setw(6) << st.loops
 		<< "(Average Length: " << compAverage(st.lits[1], st.loops) << ")\n";
-	
+
 #if MAINTAIN_JUMP_STATS == 1
 	cerr << "\n";
 	cerr << "Backtracks          : " << st.conflicts - st.jumps << "\n";
@@ -671,13 +649,13 @@ void MainApp::printAspStats(bool more) const
 	cerr << "Levels skipped      : " << st.jumpSum - st.boundSum << "(" << 100 *((st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumpSum)) << "%)" << "\n";
 	cerr << "Max Jump Length     : " << st. maxJump << "( Executed: " << st.maxJumpEx << " )\n";
 	cerr << "Max Bound Length    : " << st.maxBound << "\n";
-	cerr << "Average Jump Length : " << st.jumpSum / std::max(1.0, (double)st.jumps) 
+	cerr << "Average Jump Length : " << st.jumpSum / std::max(1.0, (double)st.jumps)
 		<< "( Executed: " <<(st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumps) << " )\n";
 	cerr << "Average Bound Length: " <<(st.boundSum) / std::max(1.0, (double)st.bJumps) << "\n";
 	cerr << "Average Model Length: " <<(st.modLits) / std::max(1.0, (double)st.models) << "\n";
 #endif
 	cerr << endl;
-} 
+}
 
 bool MainApp::runClasp()
 {
@@ -731,18 +709,19 @@ bool MainApp::solveIncremental()
 
 	ProgramBuilder api;
 	enum_ = 0;
-	IClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
+	IClaspOutput output(&api, options.shift);
 	Grounder     grounder(options.grounderOptions);
 	LparseParser parser(&grounder, s.streams);
 
-	lpStats_.reset(new LparseStats());
 	preStats_.reset(new PreproStats());
+	atomIndex_.reset(new AtomIndex());
+  api.setExtendedRuleMode(ProgramBuilder::ExtendedRuleMode(options.transExt));
+	api.startProgram(*atomIndex_, options.suppModels
+		? 0
+		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
+		, (uint32)options.eqIters
+	);
 
-	api.startProgram(options.suppModels 
-		? 0 
-		: new DefaultUnfoundedCheck (DefaultUnfoundedCheck:: ReasonStrategy(options.loopRep)), 
-		(uint32) options.eqIters);
-	
 	if(!parser.parse(&output))
 		throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
 
@@ -752,7 +731,7 @@ bool MainApp::solveIncremental()
 	solver.strategies().heuristic->reinit(options.keepHeuristic);
 	grounder.prepare(true);
 	setState(end_read);
-	
+
 	struct SStats
 	{
 		uint64 restarts;
@@ -774,9 +753,9 @@ bool MainApp::solveIncremental()
 		{
 			cerr << endl;
 			cerr << "Models   : " << models - this->models << endl;
-			cerr << fixed << setprecision(3) << "Time     : " << (ttotal - this->ttotal) 
-				<< " (g: " << (tground - this->tground) 
-				<< ", p: " << (tpre - this->tpre) 
+			cerr << fixed << setprecision(3) << "Time     : " << (ttotal - this->ttotal)
+				<< " (g: " << (tground - this->tground)
+				<< ", p: " << (tpre - this->tpre)
 				<< ", s: " << (tsolve - this->tsolve) << ")" << endl;
 			cerr << "Rules    : " << (rules - this->rules) << endl;
 			cerr << "Choices  : " << choices << endl;
@@ -791,7 +770,7 @@ bool MainApp::solveIncremental()
 	} istats;
 	Timer all;
 	StdOutPrinter *printer = 0;
-	do 
+	do
 	{
 
 		all.start();
@@ -811,12 +790,11 @@ bool MainApp::solveIncremental()
 		// Last param must be false so that Solver::endAddConstraints() is not called.
 		// The enumerator may want to exclude some variables from preprocessing so we have to init it first
 		ret = api.endProgram(solver, options.initialLookahead, false);
-		AtomIndex* index = &api.stats.index;
 		if (enum_ == 0) {
 			if (!options.cons.empty()) {
 				cerr << "Warning: Computing cautious/brave consequences not supported in incremental setting!\n" << endl;
 			}
-			ModelEnumerator* e = !options.recordSol 
+			ModelEnumerator* e = !options.recordSol
 				? (ModelEnumerator*)new BacktrackEnumerator(printer = new StdOutPrinter(options.quiet, false), options.projectConfig)
 				: (ModelEnumerator*)new RecordEnumerator(printer = new StdOutPrinter(options.quiet, false), options.modelRestart);
 			enum_ = e;
@@ -824,9 +802,9 @@ bool MainApp::solveIncremental()
 			solver.add(enum_);
 			options.solveParams.setEnumerator( *enum_ );
 		}
-		static_cast<ModelEnumerator*>(enum_)->startSearch(solver, index, options.project, 0);
+		static_cast<ModelEnumerator*>(enum_)->startSearch(solver, atomIndex_.get(), options.project, 0);
 		// Now that enumerator is configured, finalize solver
-		ret = ret && solver.endAddConstraints(options.initialLookahead);	
+		ret = ret && solver.endAddConstraints(options.initialLookahead);
 		double r = solver.numVars() / double(solver.numConstraints());
 		if (r < 0.1 || r > 10.0) {
 			problemSize = std::max(solver.numVars(), solver.numConstraints());
@@ -834,9 +812,9 @@ bool MainApp::solveIncremental()
 		else {
 			problemSize = std::min(solver.numVars(), solver.numConstraints());
 		}
-	
+
 		setState(end_pre);
-		if(ret) 
+		if(ret)
 		{
 			if (options.redFract == 0.0) {
 				options.solveParams.setReduceParams((uint32)-1, 1.0, (uint32)-1, options.redOnRestart);
@@ -853,7 +831,7 @@ bool MainApp::solveIncremental()
 				cerr << "Solving..." << endl;
 			uint64 models = solver.stats.models;
 			LitVec assumptions;
-			assumptions.push_back(api.stats.index[output.getIncUid()]. lit);
+			assumptions.push_back((*atomIndex_.get())[output.getIncUid()]. lit);
 			more = Clasp::solve(solver, assumptions, options.solveParams);
 			ret = solver.stats.models - models > 0;
 			setState(end_solve);
@@ -867,10 +845,7 @@ bool MainApp::solveIncremental()
 		all.stop();
 		if(options.istats)
 		{
-			uint32 r = output.getStats().rules[0] == 0
-		                ? std::accumulate(output.getStats().rules, output.getStats().rules + OPTIMIZERULE + 1, 0)
-				: output.getStats().rules[0] + output.getStats().rules[1] + output.getStats().rules[OPTIMIZERULE];
-			istats.print(solver.stats.models, all, t_ground, t_pre, t_solve, r, solver.stats.choices, solver.stats.conflicts);
+			istats.print(solver.stats.models, all, t_ground, t_pre, t_solve, api.stats.rules[0], solver.stats.choices, solver.stats.conflicts);
 		}
 		sstats.restarts += solver.stats.restarts;
 		sstats.choices  += solver.stats.choices;
@@ -883,7 +858,6 @@ bool MainApp::solveIncremental()
 	printer->enableReport();
 	printer->printReport(solver, *static_cast<ModelEnumerator*>(enum_));
 	// for the summary
-	*lpStats_ = output.getStats();
 	api.stats.moveTo(*preStats_);
 	solver.stats.restarts  = sstats.restarts;
 	solver.stats.choices   = sstats.choices;
@@ -924,7 +898,7 @@ bool MainApp::solve() {
 
 bool MainApp::readSat() {
 	std::istream& in = getStream();
-	enum_ = options.recordSol 
+	enum_ = options.recordSol
 		? (Enumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart)
 		: (Enumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig);
 	setState(start_read);
@@ -944,32 +918,30 @@ bool MainApp::readSat() {
 bool MainApp::parseLparse()
 {
 	std::istream &in = getStream();
-	lpStats_.reset(new LparseStats());
 	preStats_.reset(new PreproStats());
-	
+	atomIndex_.reset(new AtomIndex());
 	ProgramBuilder api;
-	api.startProgram(options.suppModels 
-		? 0 
-		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
-		(uint32) options.eqIters );
+	api.setExtendedRuleMode(ProgramBuilder::ExtendedRuleMode(options.transExt));
+	api.startProgram(*atomIndex_, options.suppModels
+		? 0
+		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
+		, (uint32)options.eqIters
+	);
 	bool ret = true;
 	if(!options.claspMode)
 	{
-		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt), options.shift);
+		ClaspOutput output(&api, options.shift);
 		ground(output);
-		*lpStats_ = output.getStats();
 	}
 	else
 	{
 		setState(start_read);
 		LparseReader reader;
-		reader.setTransformMode(LparseReader::TransformMode(options.transExt));
 		ret = reader.parse(in, api);
-		*lpStats_ = reader.stats;
 		setState(end_read);
 	}
 	if ( (api.hasMinimize() || !options.cons.empty()) && options.numModels != 0) {
-		options.cons.empty() 
+		options.cons.empty()
 			? cerr << "Warning: Option '--number' is ignored when computing optimal solutions!" << endl
 			: cerr << "Warning: Option '--number' is ignored when computing consequences!" << endl;
 	}
@@ -995,17 +967,16 @@ bool MainApp::parseLparse()
 		}
 	}
 	if (!options.cons.empty()) {
-		enum_ = new CBConsequences(solver, &preStats_->index, 
+		enum_ = new CBConsequences(solver, atomIndex_.get(),
 			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, c,
 			new StdOutPrinter(options.quiet), options.modelRestart
 		);
 	}
 	else {
-		AtomIndex* index = &preStats_->index;
-		ModelEnumerator* e = !options.recordSol 
+		ModelEnumerator* e = !options.recordSol
 			? (ModelEnumerator*)new BacktrackEnumerator(new StdOutPrinter(options.quiet), options.projectConfig)
 			: (ModelEnumerator*)new RecordEnumerator(new StdOutPrinter(options.quiet), options.modelRestart);
-		e->startSearch(solver, index, options.project, c);
+		e->startSearch(solver, atomIndex_.get(), options.project, c);
 		enum_ = e;
 	}
 	ret = ret && solver.endAddConstraints(options.initialLookahead);
@@ -1022,7 +993,7 @@ bool MainApp::parseLparse()
 
 #endif
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
 	try
 	{

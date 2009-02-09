@@ -127,25 +127,47 @@ typedef std::vector<Atom> AtomIndex;
 
 //! For gathering program statistics
 struct PreproStats {
-	PreproStats() : bodies(0), sccs(0), ufsNodes(0) {
-		eqs_[0] = eqs_[1] = eqs_[2] = 0;
+	PreproStats() {
+		std::memset(this, 0, sizeof(*this));
 	}
-	void incEqs(VarType t)  { ++eqs_[t-1]; }
-	void incBAEqs()         { ++eqs_[2]; }
-	uint32 numEqs() const { return numEqs(Var_t::atom_var) + numEqs(Var_t::body_var) + eqs_[2]; }
+	~PreproStats() {
+		delete trStats;
+	}
+	void reset() {
+		delete trStats;
+		std::memset(this, 0, sizeof(*this));
+	}
+	uint32 numEqs()          const { return numEqs(Var_t::atom_var) + numEqs(Var_t::body_var) + eqs_[2]; }
 	uint32 numEqs(VarType t) const { return eqs_[t-1]; }
-	void moveTo(PreproStats& o) {
-		index.swap(o.index);
-		o.bodies = bodies;
-		o.sccs = sccs;
-		o.ufsNodes = ufsNodes;
-		o.eqs_[0] = eqs_[0]; o.eqs_[1] = eqs_[1]; o.eqs_[2] = eqs_[2];
+	void   incEqs(VarType t)  { ++eqs_[t-1]; }
+	void   incBAEqs()         { ++eqs_[2]; }
+	void   updateTrStats(RuleType rt, uint32 newRules) {
+		if (!trStats) {
+			trStats = new TrStats();
+			std::memset(trStats, 0, sizeof(TrStats));
+		}
+		++trStats->rules[rt];
+		trStats->rules[0] += newRules;
 	}
-	AtomIndex index;  /**< Mapping of Atoms to literals in the solver */
+	void moveTo(PreproStats& o) {
+		if (&o != this) {
+			delete o.trStats;
+			std::memcpy(&o, this, sizeof(*this));
+			trStats = 0;
+		}
+	}
 	uint32 bodies;    /**< How many body-objects were created? */
 	uint32 sccs;      /**< How many strongly connected components? */
 	uint32 ufsNodes;  /**< How many nodes in the positive BADG? */
+	uint32 atoms;     /**< Number of program atoms */
+	uint32 rules[7];  /**< Number of rules. rules{0]: sum, rules[RuleType rt]: rules of type rt */
+	struct TrStats {  
+		uint32 auxAtoms;/**< Number of aux atoms created */
+		uint32 rules[7];/**< rules[0]: rules created, rules[RuleType rt]: rules of type rt translated */
+	}*     trStats;   /**< Rule translation statistics (optional) */
 private:
+	PreproStats(const PreproStats&);
+	PreproStats& operator=(const PreproStats& o);
 	uint32 eqs_[3];   // how many equivalences?
 };
 
@@ -160,6 +182,23 @@ public:
 	ProgramBuilder();
 	~ProgramBuilder();
 
+	//! Defines the possible modes for handling extended rules, i.e. choice, cardinality, and weight rules
+	enum ExtendedRuleMode {
+		mode_native           = 0, /**< Handle extended rules natively                          */
+		mode_transform        = 1, /**< Transform extended rules to normal rules                */
+		mode_transform_choice = 2, /**< Transform only choice rules to normal rules             */
+		mode_transform_weight = 3, /**< Transform only cardinality/weight rules to normal rules */
+		mode_transform_dynamic= 4, /**< Decide heuristically whether to transform or not a particular extended rule */
+	};
+
+	//! Sets the mode for handling extended rules.
+	/*!
+	 * The default mode is to handle all extended rules natively.
+	 */
+	void setExtendedRuleMode(ExtendedRuleMode m) {
+		erMode_ = m;
+	}
+
 	//! disposes (parts of) the internal representation of the logic program.
 	/*!
 	 * \param forceFullDispose If set to true, the whole program is disposed. Otherwise,
@@ -170,12 +209,13 @@ public:
 	//! Starts the definition of a logic program
 	/*!
 	 * This function shall be called exactly once before any rules or atoms are added.
+	 * \param index The symbol table in which the program builder stores information about atoms
 	 * \param ufs The object to use for unfounded set detection. If 0, unfounded set detection is disabled.
 	 * \param eqIters run eq-preprocessor for at most eqIters passes
 	 * \note eqIters == -1 means run to fixpoint. eqIters == 0 disables eq preprocessing
 	 * \note If ufsChecker is not 0 it shall point to a heap-allocated object. The ownership is transferred!
 	 */
-	ProgramBuilder& startProgram(DefaultUnfoundedCheck* ufs, uint32 eqIters = uint32(-1));
+	ProgramBuilder& startProgram(AtomIndex& index, DefaultUnfoundedCheck* ufs, uint32 eqIters = uint32(-1));
 
 	//! Unfreezes a program and starts the next step if program is defined incrementally
 	/*!
@@ -297,13 +337,6 @@ public:
 	 */
 	ProgramBuilder& addRule(PrgRule& r);
 	
-	//! Transforms the rule r to a set of equivalent normal rules and adds this set to the program
-	/*!
-	 * \note Translation of rule may introduce new atoms
-	 */
-	uint32 addAsNormalRules(PrgRule& r, PrgRule::TransformationMode m = PrgRule::dynamic_transform);
-	
-	
 	//! Finishes the definition of the logic program (or its current increment).
 	/*!
 	 * Call this method to load the program (increment) into the solver
@@ -347,6 +380,7 @@ private:
 	friend class PrgAtomNode;
 	friend class Preprocessor;
 	class CycleChecker;
+	typedef PodVector<PrgRule*>::type RuleList;
 	typedef std::multimap<uint32, uint32> BodyIndex; // hash -> bodies[offset]
 	typedef std::pair<BodyIndex::iterator, BodyIndex::iterator> BodyRange;
 	typedef std::map<uint32, uint32> EqNodes;
@@ -355,6 +389,9 @@ private:
 	// Program definition
 	PrgAtomNode*  resize(Var atomId);
 	void          addRuleImpl(const PrgRule& r, const PrgRule::RData& rd);
+	bool          handleNatively(const PrgRule& r, const PrgRule::RData& rd) const;
+	bool          transformNoAux(const PrgRule& r, const PrgRule::RData& rd) const;
+	void          transformExtended();
 	void          clearRuleState(const PrgRule& r);
 	Body          findOrCreateBody(const PrgRule& r, const PrgRule::RData& rd);
 	void          addEq(Var x, Var root) {
@@ -383,6 +420,7 @@ private:
 
 	PrgRule       rule_;        // active rule
 	RuleState     ruleState_;   // which atoms appear in the active rule?
+	RuleList      extended_;    // extended rules to be translated
 	BodyIndex     bodyIndex_;   // hash -> body
 	BodyList      bodies_;      // all bodies
 	AtomList      atoms_;       // all atoms
@@ -401,11 +439,12 @@ private:
 		VarVec  freeze_;          // list of frozen atoms
 		VarVec  unfreeze_;        // list of atom that are unfreezed in this iteration
 	}* incData_;                // additional state to handle incrementally defined programs 
-
+	AtomIndex*       atomIndex_;// atom symbol table
 	typedef SingleOwnerPtr<DefaultUnfoundedCheck> Ufs;
-	Ufs           ufs_;         // Unfounded set checker to use if program is not tight
-	uint32        eqIters_;     // process body/atom equalities
-	bool          frozen_;      // is the program currently frozen?
+	Ufs              ufs_;      // Unfounded set checker to use if program is not tight
+	uint32           eqIters_;  // process body/atom equalities
+	ExtendedRuleMode erMode_;   // How to handle extended rules?
+	bool             frozen_;   // is the program currently frozen?
 };
 
 

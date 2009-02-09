@@ -268,7 +268,7 @@ void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 		printConstraintRule(u, a->upper_ + 1, posA_, negA_);
 	}
 	else
-		u = 0;	
+		u = 0;
 }
 
 namespace
@@ -343,7 +343,7 @@ void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg,
 		int parity;
 		negVar = newUid();
 		if(bound >= 1)
-		{	
+		{
 			// parity :- #even { neg }
 			convertParity(neg, 0, parity);
 			// negVar :- times, parity
@@ -397,7 +397,7 @@ void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg,
 	IntVector left(lits.size());
 	IntVector::reverse_iterator itLeftR = left.rbegin();
 	SafeInt w = 1;
-	for(LitVec::const_reverse_iterator it = lits.rbegin(); it != lits.rend(); it++)
+	for(LitVec::const_reverse_iterator it = lits.rbegin(); it != const_cast<const LitVec&>(lits).rend(); it++)
 	{
 		w = w * it->second;
 		*itLeftR++= w;
@@ -523,7 +523,7 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 			else
 				negA_.push_back(-uid), wNegA_.push_back(*wIt);
 		}
-	}	
+	}
 	if((a->bounds_ & Aggregate::L))
 	{
 		l = newUid();
@@ -584,7 +584,7 @@ void SmodelsConverter::handleAvg(bool body, Aggregate *a, int &l, int &u)
 				else
 					negA_.push_back(-uid), wNegA_.push_back(weight);
 			}
-		}	
+		}
 		l = newUid();
 		printWeightRule(l, bound, posA_, negA_, wPosA_, wNegA_);
 	}
@@ -740,7 +740,7 @@ void SmodelsConverter::printBody(Aggregate *a)
 			pos.push_back(l);
 		if(u > 0)
 			neg.push_back(u);
-			
+
 		printBasicRule(h, pos, neg);
 		neg_.push_back(h);
 	}

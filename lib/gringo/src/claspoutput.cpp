@@ -34,7 +34,7 @@ std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift) : SmodelsConverter(&std::cout, shift), b_(b), tf_(tf)
+ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, bool shift) : SmodelsConverter(&std::cout, shift), b_(b)
 {
 }
 
@@ -49,7 +49,6 @@ void ClaspOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 
 void ClaspOutput::printBasicRule(int head, const IntVector &pos, const IntVector &neg)
 {
-	stats_.rules[Clasp::BASICRULE]++;
 	b_->startRule();
 	b_->addHead(head);
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
@@ -70,18 +69,13 @@ void ClaspOutput::printBasicRule(int head, const IntVector &pos, const IntVector
 
 void ClaspOutput::printConstraintRule(int head, int bound, const IntVector &pos, const IntVector &neg)
 {
-	stats_.rules[Clasp::CONSTRAINTRULE]++;
-	Clasp::PrgRule r(Clasp::CONSTRAINTRULE);
-	r.setBound(bound);
-	r.addHead(head);
+	b_->startRule(Clasp::CONSTRAINTRULE, bound);
+	b_->addHead(head);
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
-		r.addToBody(*it, false);
+		b_->addToBody(*it, false);
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
-		r.addToBody(*it, true);
-	if(Clasp::LparseReader::transform_weight & tf_)
-		b_->addAsNormalRules(r);
-	else
-		b_->addRule(r);
+    b_->addToBody(*it, true);
+	b_->endRule();
 #ifdef DEBUG_ICLASP
 	g_out << "api.startRule(Clasp::CONSTRAINTRULE, " << bound << ").addHead(t" << head << ")";
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
@@ -94,18 +88,14 @@ void ClaspOutput::printConstraintRule(int head, int bound, const IntVector &pos,
 
 void ClaspOutput::printChoiceRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
 {
-	stats_.rules[Clasp::CHOICERULE]++;
-	Clasp::PrgRule r(Clasp::CHOICERULE);
+	b_->startRule(Clasp::CHOICERULE);
 	for(IntVector::const_iterator it = head.begin(); it != head.end(); it++)
-		r.addHead(*it);
+		b_->addHead(*it);
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
-		r.addToBody(*it, false);
+		b_->addToBody(*it, false);
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
-		r.addToBody(*it, true);
-	if(Clasp::LparseReader::transform_choice & tf_)
-		b_->addAsNormalRules(r);
-	else
-		b_->addRule(r);
+		b_->addToBody(*it, true);
+	b_->endRule();
 #ifdef DEBUG_ICLASP
 	g_out << "api.startRule(Clasp::CHOICERULE)";
 	for(IntVector::const_iterator it = head.begin(); it != head.end(); it++)
@@ -120,20 +110,15 @@ void ClaspOutput::printChoiceRule(const IntVector &head, const IntVector &pos, c
 
 void ClaspOutput::printWeightRule(int head, int bound, const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
 {
-	stats_.rules[Clasp::WEIGHTRULE]++;
-	Clasp::PrgRule r(Clasp::WEIGHTRULE);
-	r.setBound(bound);
-	r.addHead(head);
+	b_->startRule(Clasp::WEIGHTRULE, bound);
+	b_->addHead(head);
 	IntVector::const_iterator itW = wNeg.begin();
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++, itW++)
-		r.addToBody(*it, false, *itW);
+		b_->addToBody(*it, false, *itW);
 	itW = wPos.begin();
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++, itW++)
-		r.addToBody(*it, true, *itW);
-	if(Clasp::LparseReader::transform_weight & tf_)
-		b_->addAsNormalRules(r);
-	else
-		b_->addRule(r);
+		b_->addToBody(*it, true, *itW);
+	b_->endRule();
 #ifdef DEBUG_ICLASP
 	g_out << "api.startRule(Clasp::WEIGHTRULE, " << bound << ").addHead(t" << head << ")";
 	itW = wNeg.begin();
@@ -148,7 +133,6 @@ void ClaspOutput::printWeightRule(int head, int bound, const IntVector &pos, con
 
 void ClaspOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
 {
-	stats_.rules[Clasp::OPTIMIZERULE]++;
 	b_->startRule(Clasp::OPTIMIZERULE);
 	IntVector::const_iterator itW = wNeg.begin();
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++, itW++)
@@ -172,13 +156,9 @@ void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVe
 		b_->setCompute(*it, true);
 }
 
-void ClaspOutput::finalize(bool last)
+void ClaspOutput::finalize(bool)
 {
-	if(!last)
-	{
-		stats_.atoms[0] = uids_ - 1;
-		stats_.atoms[1] = b_->numAtoms() - uids_;
-	}
+
 }
 
 int ClaspOutput::newUid()
@@ -191,10 +171,6 @@ int ClaspOutput::newUid()
 	return uid;
 }
 
-Clasp::LparseStats &ClaspOutput::getStats()
-{
-	return stats_;
-}
 
 bool ClaspOutput::addAtom(NS_OUTPUT::Atom *r)
 {
@@ -217,7 +193,7 @@ ClaspOutput::~ClaspOutput()
 
 #ifdef WITH_ICLASP
 
-IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift) : ClaspOutput(b, tf, shift), incUid_(0)
+IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, bool shift) : ClaspOutput(b, shift), incUid_(0)
 {
 }
 

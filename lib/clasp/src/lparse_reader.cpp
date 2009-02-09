@@ -73,8 +73,7 @@ bool StreamSource::readLine( char* buf, unsigned maxSize ) {
 
 LparseReader::LparseReader()
 	: source_(0)
-	, api_(0)
-	, tm_(LparseReader::transform_all) {
+	, api_(0) {
 }
 
 LparseReader::~LparseReader() {
@@ -83,9 +82,7 @@ LparseReader::~LparseReader() {
 
 void LparseReader::clear() {
 	rule_.clear();
-	extendedRules_.clear();
 	api_  = 0;
-	stats = LparseStats();
 }
 
 bool LparseReader::parse(std::istream& prg, ProgramBuilder& api) {
@@ -129,7 +126,6 @@ bool LparseReader::readRule(int rt) {
 		throw ReadError(source_->line(), "Unsupported rule type!");
 	}
 	RuleType type(static_cast<RuleType>(rt));
-	++stats.rules[type];
 	rule_.setType(type);
 	if ( type == BASICRULE || rt == CONSTRAINTRULE || rt == WEIGHTRULE) {
 		rule_.addHead(parseAtom());
@@ -182,13 +178,7 @@ bool LparseReader::readBody(uint32 lits, uint32 neg, bool readWeights) {
 			rule_.body[i].second = toWeight(w);
 		}
 	} 
-	if ( ( (tm_&transform_weight)!=0 && (rule_.type() == CONSTRAINTRULE || rule_.type() == WEIGHTRULE)) || (rule_.type() == CHOICERULE && (tm_&transform_choice)!=0)) {
-		extendedRules_.push_back(new PrgRule());
-		extendedRules_.back()->swap(rule_);
-	}
-	else {
-		api_->addRule(rule_);
-	}
+	api_->addRule(rule_);
 	rule_.clear();
 	return match(*source_, '\n', true) ? true : throw ReadError(source_->line(), "Illformed rule body!");
 }
@@ -253,13 +243,6 @@ bool LparseReader::readModels() {
 }
 
 bool LparseReader::endParse() {
-	stats.atoms[0] = api_->numAtoms() - 1; // don't count atom 0
-	for (RuleList::iterator it = extendedRules_.begin(); it != extendedRules_.end(); ++it) {
-		stats.rules[0] += api_->addAsNormalRules(**it);
-		delete *it;
-	}
-	extendedRules_.clear();
-	stats.atoms[1] = (api_->numAtoms()-1) - stats.atoms[0];
 	return true;
 }
 

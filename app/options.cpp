@@ -1,18 +1,18 @@
-// 
+//
 // Copyright (c) 2006-2007, Benjamin Kaufmann
-// 
-// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
-// 
+//
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/
+//
 // Clasp is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
-// 
+//
 // Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -54,11 +54,12 @@ bool mapTransExt(const std::string& s, int& i, int*) {
 	std::string temp = toLower(s);
 	bool b = temp == "all";
 	if (b || parseValue(s, b, 1)) {
-		i = b ? LparseReader::transform_all : LparseReader::transform_no;
+		i = b ? ProgramBuilder::mode_transform : ProgramBuilder::mode_native;
 		return true;
 	}
-	else if (temp == "choice")	{ i = LparseReader::transform_choice; return true; }
-	else if (temp == "weight")	{ i = LparseReader::transform_weight; return true; }
+	else if (temp == "choice")  { i = ProgramBuilder::mode_transform_choice; return true; }
+	else if (temp == "weight")  { i = ProgramBuilder::mode_transform_weight; return true; }
+	else if (temp == "dynamic") { i = ProgramBuilder::mode_transform_dynamic; return true; }
 	return false;
 }
 bool mapLookahead(const std::string& s, int& i, int*) {
@@ -187,7 +188,7 @@ Options::Options() { }
 void Options::setDefaults() {
 	files.clear();
 	stats   = false;
-	help    = false;	
+	help    = false;
 	version = false;
 	verbose = false;
 	syntax  = false;
@@ -235,7 +236,7 @@ void Options::setDefaults() {
 	projectConfig    = -1;
 	lookahead        = -1;
 	eqIters          = 5;
-	transExt         = LparseReader::transform_no;
+	transExt         = ProgramBuilder::mode_native;
 	quiet            = false;
 	initialLookahead = false;
 	suppModels       = false;
@@ -253,7 +254,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 #ifdef WITH_CLASP
 	OptionGroup clasp("\n\nClasp - General Options:\n");
 	clasp.addOptions()
-		("number,n", value<int>(&numModels), 
+		("number,n", value<int>(&numModels),
 			"Compute at most <num> models (0 for all)\n"
 			"      Default: 1", "<num>")
 		("quiet,q" , bool_switch(&quiet),  "Do not print models")
@@ -267,7 +268,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("cautious" , bool_switch(), "Compute cautious consequences\n")
 
 		("opt-all"    , bool_switch(), "Compute all optimal models")
-		("opt-value"  , value<std::vector<int> >(&optVals), 
+		("opt-value"  , value<std::vector<int> >(&optVals),
 			"Initialize objective function(s)\n"
 			"      Valid:   <n1[,n2,n3,...]>\n")
 
@@ -277,13 +278,14 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("trans-ext", value<int>(&transExt)->parser(mapTransExt),
 			"Configure handling of Lparse-like extended rules\n"
 			"      Default: no\n"
-			"      Valid:   all, choice, weight, no\n"
-			"        all   : Transform all extended rules to basic rules\n"
-			"        choice: Transform choice rules, but keep cardinality and weight rules\n"
-			"        weight: Transform cardinality and weight rules, but keep choice rules\n"
-			"        no    : Do not transform extended rules\n")
+			"      Valid:   all, choice, weight, dynamic, no\n"
+			"        all    : Transform all extended rules to basic rules\n"
+			"        choice : Transform choice rules, but keep cardinality and weight rules\n"
+			"        weight : Transform cardinality and weight rules, but keep choice rules\n"
+			"        dynamic: Transform \"simple\" extended rules, but keep more complex ones\n"
+			"        no     : Do not transform extended rules\n")
 
-		("eq", value<int>(&eqIters), 
+		("eq", value<int>(&eqIters),
 			"Configure equivalence preprocessing\n"
 			"      Default: 5\n"
 			"      Valid:\n"
@@ -300,7 +302,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        <n3>: Run for at most <n3> seconds              (-1=no time limit)\n"
 			"        yes : Run to fixpoint, no cutoff and no time limit\n")
 
-		("rand-watches", value<bool>()->defaultValue(true), 
+		("rand-watches", value<bool>()->defaultValue(true),
 			"Configure watched literal initialization\n"
 			"      Default: yes\n"
 			"      Valid:   yes, no\n"
@@ -310,7 +312,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(clasp);
 	OptionGroup basic("\nClasp - Search Options:\n");
 	basic.addOptions()
-		("lookback"		,value<bool>()->defaultValue(true), 
+		("lookback"		,value<bool>()->defaultValue(true),
 			"Configure lookback strategies\n"
 			"      Default: yes\n"
 			"      Valid:   yes, no\n"
@@ -328,7 +330,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        no    : Do not apply failed-literal detection")
 		("initial-lookahead", bool_switch(&initialLookahead), "Apply failed-literal detection for preprocessing\n")
 
-		("heuristic", value<string>(&heuristic)->parser(mapHeuristic), 
+		("heuristic", value<string>(&heuristic)->parser(mapHeuristic),
 			"Configure decision heuristic\n"
 			"      Default: Berkmin (Unit, if --lookback=no)\n"
 			"      Valid:   Berkmin, Vmtf, Vsids, Unit, None\n"
@@ -337,7 +339,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        Vsids  : Apply Chaff-like heuristic\n"
 			"        Unit   : Apply Smodels-like heuristic\n"
 			"        None   : Select the first free variable")
-		("rand-freq", value<double>()->defaultValue(0.0), 
+		("rand-freq", value<double>()->defaultValue(0.0),
 			"Make random decisions with probability <p>\n"
 			"      Default: 0.0\n"
 			"      Valid:   [0.0...1.0]\n", "<p>")
@@ -353,7 +355,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(basic);
 	OptionGroup lookback("\nClasp - Lookback Options (Require: lookback=yes):\n");
 	lookback.addOptions()
-		("restarts,r", value<vector<double> >()->defaultValue(restartDefault())->parser(mapVec), 
+		("restarts,r", value<vector<double> >()->defaultValue(restartDefault())->parser(mapVec),
 			"Configure restart policy\n"
 			"      Default: 100,1.5\n"
 			"      Valid:   <n1[,n2,n3]> (<n1> >= 0, <n2>,<n3> > 0), no\n"
@@ -373,7 +375,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        <n1> = 0: Do not shuffle problem after restarts\n"
 			"        <n2> = 0: Do not re-shuffle problem\n", "<n1,n2>")
 
-		("deletion,d", value<vector<double> >()->defaultValue(delDefault())->parser(mapVec), 
+		("deletion,d", value<vector<double> >()->defaultValue(delDefault())->parser(mapVec),
 			"Configure size of learnt nogood database\n"
 			"      Default: 3.0,1.1,3.0\n"
 			"      Valid:   <n1[,n2,n3]> (<n3> >= <n1> >= 0, <n2> >= 1.0), no\n"
@@ -416,7 +418,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 
 		("text,t"          , bool_switch(&textOut), "Print plain text format")
 		("lparse,l"        , bool_switch(&smodelsOut), "Print Lparse format")
-		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), 
+		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils),
 			"Print ASPils format in normal form <num>\n"
 			"      Default: 7\n"
 			"      Valid:   [1...7]\n"
@@ -431,7 +433,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("ground,g", bool_switch(&convert), "Enable lightweight mode for ground input\n")
 		("shift"           , bool_switch(&shift), "Shift disjunctions into the body\n")
 
-		("bindersplit" , value<bool>(&grounderOptions.binderSplit), 
+		("bindersplit" , value<bool>(&grounderOptions.binderSplit),
 		        "Configure binder splitting\n"
 			"      Default: yes\n"
 			"      Valid:   yes, no\n"
@@ -450,24 +452,24 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("imin"        , value<int>(&imin)    , "Perform at least <num> incremental steps", "<num>")
 		("imax"        , value<int>(&imax)    , "Perform at most <num> incremental steps\n", "<num>")
 
-		("istop"      , value<bool>(&iunsat)->parser(mapStop), 
+		("istop"      , value<bool>(&iunsat)->parser(mapStop),
 			"Configure termination condition\n"
 			"      Default: SAT\n"
 			"      Valid:   SAT, UNSAT\n"
 			"        SAT  : Terminate after first satisfiable subproblem\n"
 			"        UNSAT: Terminate after first unsatisfiable subproblem\n")
 
-		("iquery"      , value<int>(&grounderOptions.iquery), 
+		("iquery"      , value<int>(&grounderOptions.iquery),
 			"Start solving at step <num>\n"
 			"      Default: 1\n", "<num>")
 
-		("ilearnt" , value<bool>(&keepLearnts)->parser(mapKeepForget), 
+		("ilearnt" , value<bool>(&keepLearnts)->parser(mapKeepForget),
 			"Configure persistence of learnt nogoods\n"
 			"      Default: keep\n"
 			"      Valid:   keep, forget\n"
 			"        keep  : Maintain learnt nogoods between incremental steps\n"
 			"        forget: Drop learnt nogoods after every incremental step")
-		("iheuristic", value<bool>(&keepHeuristic)->parser(mapKeepForget), 
+		("iheuristic", value<bool>(&keepHeuristic)->parser(mapKeepForget),
 			"Configure persistence of heuristic information\n"
 			"      Default: forget\n"
 			"      Valid:   keep, forget\n"
@@ -513,7 +515,7 @@ bool Options::parse(int argc, char** argv, std::ostream& os, OptionValues& value
 		warning_.clear();
 		error_.clear();
 		values.store(parseCommandLine(argc, argv, allOpts, false, optionCallback));
-		if (help) { 
+		if (help) {
 			printHelp(visible, os);
 			return true;
 		}
@@ -551,7 +553,7 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 	if(f(smodelsOut) + f(aspilsOut > 0) + f(textOut) > 1)
 #endif
 		throw(GrinGoException("multiple outputs defined"));
-	
+
 	if(smodelsOut)
 		outf = SMODELS_OUT;
 	if(aspilsOut > 0)
@@ -691,14 +693,14 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 		solveParams.setRandomizeParams(0,0);
 		solveParams.setShuffleParams(0,0);
 		if (!vm["restarts"].isDefaulted()||!vm["deletion"].isDefaulted()||!vm["rand-prob"].isDefaulted()||!vm["shuffle"].isDefaulted()) {
-			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";     
+			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";
 		}
 	}
 	return true;
 }
 
 DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) const {
-	DecisionHeuristic* heu = 0; 
+	DecisionHeuristic* heu = 0;
 	if (heuristic == "berkmin") {
 		bool loops = heuParams.empty() || heuParams[0] == 1;
 		uint32 maxB= heuParams.size() < 2 ? 0 : heuParams[1];
@@ -794,14 +796,14 @@ void Options::printVersion(std::ostream& os) const {
 	os << "Copyright (C) Roland Kaminski" << "\n";
 	os << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
 	os << "GrinGo is free software: you are free to change and redistribute it.\n";
-	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
+	os << "There is NO WARRANTY, to the extent permitted by law." << endl;
 #ifdef WITH_CLASP
 	os << endl;
 	os << "clasp " << CLASP_VERSION << "\n";
 	os << "Copyright (C) Benjamin Kaufmann" << "\n";
 	os << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
 	os << "clasp is free software: you are free to change and redistribute it.\n";
-	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
+	os << "There is NO WARRANTY, to the extent permitted by law." << endl;
 #endif
 }
 

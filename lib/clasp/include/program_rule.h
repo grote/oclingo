@@ -173,23 +173,6 @@ public:
 	//! Simplifies the rule and returns information about the simplified rule
 	RData   simplify(RuleState& r);
 	
-	//! Defines the possible transformation modes to be used when transforming constraint/weight rules.
-	enum TransformationMode {
-		dynamic_transform,    /**< Let the rule decide which algorithm to use */
-		exponential_tranform, /**< Use the exponential-algorithm (no aux-atoms needed) */
-		quadratic_transform   /**< Use the quadratic-algorithm (introduces aux-atoms) */
-	};
-	
-	//! Adds this rule as a set of equivalent normal rules to the given program
-	/*!
-	 * If the rule is not a normal rule, the method transforms the rule
-	 * into an equivalent set of normal rules and adds the resulting set to
-	 * the program. Otherwise the operation is a noop.
-	 * \note During transformation new (auxiallary) atoms may be added to the program.
-	 * \return the number of rules added
-	 */
-	uint32 transform(ProgramBuilder& prg, TransformationMode m = dynamic_transform);
-
 	VarVec        heads;        /**< list of rule heads (note: conjunctive heads!) */
 	WeightLitVec  body;         /**< body of this rule */
 private:
@@ -202,20 +185,28 @@ private:
 		}
 		const PrgRule* self_;
 	};
-	bool    selfblocker(RuleState& r, Var aId, weight_t sw) const;
-	
-	uint32  transformChoice(ProgramBuilder&);
-	uint32  transformAggregate(ProgramBuilder&, TransformationMode m);
-	uint32  transformAggregateQuad(ProgramBuilder&, const WeightVec&);
-	uint32  transformAggregateExp(ProgramBuilder&, const WeightVec&);
-
+	bool     bodyHasWeights() const { return type_ == WEIGHTRULE || type_ == OPTIMIZERULE;   }
+	bool     bodyHasBound()   const { return type_ == WEIGHTRULE || type_ == CONSTRAINTRULE; }
+	bool     bodyIsSet()      const { return type_ == BASICRULE  || type_ == CHOICERULE;     }
+	bool     selfblocker(RuleState& r, Var aId, weight_t sw) const;
 	weight_t weight(Var id, bool pos) const;
-	
-	weight_t        bound_;       // lower bound (i.e. number/weight of lits that must be true before rule fires)
-	RuleType        type_;        // type of rule
+	weight_t bound_; // lower bound (i.e. number/weight of lits that must be true before rule fires)
+	RuleType type_;  // type of rule
 };
 
-
+class PrgRuleTransform {
+public:
+	PrgRuleTransform();
+	~PrgRuleTransform();
+	uint32 transform(ProgramBuilder& prg, PrgRule& rule);
+	uint32 transformNoAux(ProgramBuilder& prg, PrgRule& rule);
+private:
+	PrgRuleTransform(const PrgRuleTransform&);
+	PrgRuleTransform& operator=(const PrgRuleTransform&);
+	uint32 transformChoiceRule(ProgramBuilder& prg, PrgRule& rule) const;
+	class Impl;
+	Impl* impl_;
+};
 
 }
 #endif

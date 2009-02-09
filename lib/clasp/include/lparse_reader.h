@@ -141,37 +141,16 @@ inline bool match(StreamSource& in, const char* str, bool sw) {
 	return *str == 0;
 }
 
-//! Gathers some statistics about an lparse-program
-struct LparseStats {
-	LparseStats() {
-		std::memset(this, 0, sizeof(LparseStats));
-	}
-	uint32 atoms[2];  /**< Number of atoms, 0: original, 1: auxiliary (added by clasp) */
-	uint32 rules[7];  /**< Number of rules, 0: transformed, rules[RuleType rt]: rules of type rt */
-};
-
 //! Reads a logic program in lparse-format.
 /*!
  * \ingroup problem
  * Reads a logic program in lparse-format and creates an internal represenation of the
  * program using a ProgramBuilder object.
- *
- * \note By default extended rules (i.e. choice rules, constraint rules and weight rules)
- * are transformed to normal rules.
  */
 class LparseReader {
 public:
 	LparseReader();
 	~LparseReader();
-	enum TransformMode {
-		transform_no      = 0,  /**< Do not transform extended rules. Handle them natively            */
-		transform_choice  = 1,  /**< Transform choice rules, but keep weight/cardinality constraints  */
-		transform_weight  = 2,  /**< Transform weight/cardinality constraints but keep choice rules   */
-		transform_all     = 3   /**< Transform all extended rules */
-	};
-	
-	//! What to do with extended rules?
-	void setTransformMode(TransformMode m) { tm_ = m; } 
 	
 	//! parses the logic program given in prg.
 	/*!
@@ -182,8 +161,6 @@ public:
 	 * \pre api.startProgram() was called
 	 */
 	bool parse(std::istream& prg, ProgramBuilder& api);
-
-	LparseStats stats; /**< program statistics */
 private:
 	LparseReader(const LparseReader&);
 	LparseReader& operator=(const LparseReader&);
@@ -196,13 +173,9 @@ private:
 	bool  endParse();
 	bool  readRule(int);
 	bool  readBody(uint32 lits, uint32 neg, bool weights);
-	typedef std::vector<PrgRule*> RuleList;
-	RuleList        extendedRules_;
 	PrgRule         rule_;
 	StreamSource*   source_;
 	ProgramBuilder* api_;
-	TransformMode   tm_;
-	
 };
 
 //! Instances of this class are thrown if a logic program contains errors.

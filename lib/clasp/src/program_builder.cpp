@@ -583,7 +583,7 @@ void VarList::addTo(Solver& s, Var startVar) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // class ProgramBuilder
 /////////////////////////////////////////////////////////////////////////////////////////
-ProgramBuilder::ProgramBuilder() : minimize_(0), incData_(0), ufs_(0) { }
+ProgramBuilder::ProgramBuilder() : minimize_(0), incData_(0), ufs_(0), erMode_(mode_native) { }
 ProgramBuilder::~ProgramBuilder() { disposeProgram(true); }
 ProgramBuilder::Incremental::Incremental() : startAtom_(0), startVar_(1) {}
 void ProgramBuilder::disposeProgram(bool force) {
@@ -613,10 +613,10 @@ void ProgramBuilder::disposeProgram(bool force) {
 
 ProgramBuilder& ProgramBuilder::setAtomName(Var atomId, const char* name) {
 	resize(atomId);
-	if (stats.index.size() <= (AtomIndex::size_type)atomId) {
-		stats.index.resize( (AtomIndex::size_type)atomId + 1 );
+	if (atomIndex_->size() <= (AtomIndex::size_type)atomId) {
+		atomIndex_->resize( (AtomIndex::size_type)atomId + 1 );
 	}
-	stats.index[atomId].name = name;  
+	(*atomIndex_)[atomId].name = name;
 	return *this;
 }
 ProgramBuilder& ProgramBuilder::setCompute(Var atomId, bool pos) {  
@@ -645,13 +645,15 @@ ProgramBuilder& ProgramBuilder::unfreeze(Var atomId) {
 	return *this;
 }
 
-ProgramBuilder& ProgramBuilder::startProgram(DefaultUnfoundedCheck* ufs, uint32 numEqIters) {
+ProgramBuilder& ProgramBuilder::startProgram(AtomIndex& index, DefaultUnfoundedCheck* ufs, uint32 numEqIters) {
 	disposeProgram(true);
+	index.clear();
 	// atom 0 is always false
 	atoms_.push_back( new PrgAtomNode() );
 	incData_  = 0;
 	eqIters_  = numEqIters;
-	stats     = PreproStats();
+	stats.reset();
+	atomIndex_= &index;
 	ufs_      = ufs;
 	frozen_   = false;
 	return *this;
@@ -683,26 +685,53 @@ ProgramBuilder& ProgramBuilder::updateProgram() {
 ProgramBuilder& ProgramBuilder::addRule(PrgRule& r) {
 	// simplify rule, mark literals
 	PrgRule::RData rd = r.simplify(ruleState_); 
-	if (r.type() != ENDRULE) {  // rule is relevant, add it
-		addRuleImpl(r, rd);
+	if (r.type() != ENDRULE) {     // rule is relevant
+		++stats.rules[0];
+		++stats.rules[r.type()];
+		if (handleNatively(r, rd)) { // and can be handled natively
+			addRuleImpl(r, rd);
+		}
+		else {
+			// rule is to be replaced with a set of normal rules
+			clearRuleState(r);
+			if (!transformNoAux(r, rd)) {
+				// Since rule transformation needs aux atoms, we must
+				// defer the transformation until all rules were added
+				// because only then we can safely assign new unique consecutive atom ids.
+				extended_.push_back(new PrgRule());
+				extended_.back()->swap(r);
+			}
+			else {
+				PrgRuleTransform rt;
+				stats.updateTrStats(r.type(), rt.transformNoAux(*this, r));
+			}
+		}
 	}
-	else {                      // rule is not relevant, ignore it
-		clearRuleState(r);        // but don't forget to clear the rule state
+	else { // rule is not relevant - don't forget to clear rule state
+		clearRuleState(r);
 	}
 	return *this;
 }
 
-uint32 ProgramBuilder::addAsNormalRules(PrgRule& r, PrgRule::TransformationMode m) {
-	PrgRule::RData rd = r.simplify(ruleState_); 
-	if (r.type() == BASICRULE || r.type() == OPTIMIZERULE) {
-		addRuleImpl(r, rd);
-		return 1;
+bool ProgramBuilder::handleNatively(const PrgRule& r, const PrgRule::RData& rd) const {
+	if (erMode_ == mode_native) { 
+		return true;
 	}
-	clearRuleState(r);
-	if (r.type() != ENDRULE) {
-		return r.transform(*this, m);
+	else if (erMode_ == mode_transform_dynamic) {
+		return (r.type() != CONSTRAINTRULE && r.type() != WEIGHTRULE)
+			|| transformNoAux(r, rd) == false;
 	}
-	return 0;
+	else if (erMode_ == mode_transform) {
+		return r.type() == BASICRULE || r.type() == OPTIMIZERULE;
+	}
+	else if (erMode_ == mode_transform_choice) {
+		return r.type() != CHOICERULE;
+	}
+	else if (erMode_ == mode_transform_weight) {
+		return r.type() != CONSTRAINTRULE && r.type() != WEIGHTRULE;
+	}
+	assert(false && "unhandled extended rule mode");
+	return true;
 }
 
 void ProgramBuilder::addRuleImpl(const PrgRule& r, const PrgRule::RData& rd) {
@@ -785,7 +814,6 @@ ProgramBuilder::Body ProgramBuilder::findOrCreateBody(const PrgRule& r, const Pr
 	return Body(b, bodyId);
 }
 
-
 void ProgramBuilder::clearRuleState(const PrgRule& r) {
 	for (VarVec::const_iterator it = r.heads.begin(), end = r.heads.end();  it != end; ++it) {
 		// clear flag only if a node was added for the head!
@@ -798,8 +826,31 @@ void ProgramBuilder::clearRuleState(const PrgRule& r) {
 	} 
 }
 
+bool ProgramBuilder::transformNoAux(const PrgRule& r, const PrgRule::RData&) const {
+	return r.type() != CHOICERULE && (r.bound() == 1 || (r.body.size() <= 6 && choose((uint32)r.body.size(), r.bound()) <= 15));
+}
+
+void ProgramBuilder::transformExtended() {
+	uint32 a   = numAtoms();
+	PrgRuleTransform tm;
+	for (RuleList::size_type i = 0; i != extended_.size(); ++i) {
+		stats.updateTrStats(extended_[i]->type(), tm.transform(*this, *extended_[i]));
+		delete extended_[i];
+	}
+	extended_.clear();
+	if (stats.trStats) {
+		stats.trStats->auxAtoms += numAtoms() - a;
+		stats.rules[BASICRULE]  -= stats.trStats->rules[0];
+		for (uint32 rt = BASICRULE+1; rt <= OPTIMIZERULE; ++rt) {
+			stats.rules[0] -= stats.trStats->rules[rt];
+		}
+	}
+}
+
 bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool finalizeSolver) {
 	if (frozen_ == false) {
+		transformExtended();
+		stats.atoms = numAtoms()-1;
 		stats.bodies += (uint32)bodies_.size();
 		updateFrozenAtoms(solver);
 		frozen_ = true;
@@ -912,8 +963,8 @@ bool ProgramBuilder::applyCompute() {
 }
 
 void ProgramBuilder::setAtomLiteral(uint32 idx) {
-	if (idx < stats.index.size()) {
-		stats.index[idx].lit = atoms_[idx]->literal();
+	if (idx < atomIndex_->size()) {
+		(*atomIndex_)[idx].lit = atoms_[idx]->literal();
 	}
 }
 
@@ -923,8 +974,8 @@ void ProgramBuilder::setEqAtomLiterals() {
 		Var root = it->second;
 		for (Var x; (x = getEqAtom(root)) != root; root = x);
 		it->second = root;
-		if (base < stats.index.size()) {
-			stats.index[base].lit = atoms_[root]->literal();
+		if (base < atomIndex_->size()) {
+			(*atomIndex_)[base].lit = atoms_[root]->literal();
 		}
 	}
 }
@@ -1059,8 +1110,8 @@ void ProgramBuilder::writeProgram(std::ostream& os) {
 			std::stringstream& str = atoms_[i]->value() == value_true ? bp : bm;
 			str << i << "\n";
 		}
-		if (i < stats.index.size() && stats.index[i].lit != negLit(sentVar) && !stats.index[i].name.empty()) {
-			symTab << i << " " << stats.index[i].name << "\n";
+		if (i < atomIndex_->size() && (*atomIndex_)[i].lit != negLit(sentVar) && !(*atomIndex_)[i].name.empty()) {
+			symTab << i << " " << (*atomIndex_)[i].name << "\n";
 		}
 	}
 	os << delimiter << "\n";

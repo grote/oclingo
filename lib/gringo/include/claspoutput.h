@@ -36,12 +36,11 @@ namespace NS_GRINGO
 		class ClaspOutput : public SmodelsConverter
 		{
 		public:
-			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift);
+			ClaspOutput(Clasp::ProgramBuilder *b, bool shift);
 			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void finalize(bool last);
 			bool addAtom(NS_OUTPUT::Atom *r);
 			int newUid();
-			Clasp::LparseStats &getStats();
 			~ClaspOutput();
 		protected:
 			void printBasicRule(int head, const IntVector &pos, const IntVector &neg);
@@ -52,9 +51,7 @@ namespace NS_GRINGO
 			void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
 			void printComputeRule(int models, const IntVector &pos, const IntVector &neg);
 		protected:
-			Clasp::LparseStats stats_;
 			Clasp::ProgramBuilder *b_;
-			Clasp::LparseReader::TransformMode tf_;
 		};
 	}
 }
@@ -68,7 +65,7 @@ namespace NS_GRINGO
 		class IClaspOutput : public ClaspOutput
 		{
 		public:
-			IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf, bool shift);
+			IClaspOutput(Clasp::ProgramBuilder *b, bool shift);
 			void print(NS_OUTPUT::Object *o);
 			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);
