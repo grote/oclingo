@@ -27,18 +27,16 @@
 
 class Timer {
 public:
-	Timer() : start_(0), split_(0), stop_(TIMER_CLOCK_MAX) {}
-	void   start()   { start_ = split_ = clockStamp(); }
-	void   split()   { split_ = clockStamp(); }
-	void   stop()    { stop_  = clockStamp(); }
+	Timer() : start_(0), last_(0), elapsed_(0) {}
+	void   start()   { start_    = clockStamp(); }
+	void   stop()    { last_ = clockStamp() - start_; elapsed_ += last_; }
 	void   reset()   { *this  = Timer(); }
-	double elapsed() const { 
-		if (stop_ == TIMER_CLOCK_MAX) stop_  = clockStamp();
-		return double(stop_ - split_) / ticksPerSec();
+	double current() const 
+	{ 
+		return last_ / ticksPerSec();
 	}
-	double total()   const {
-		if (stop_ == TIMER_CLOCK_MAX) stop_  = clockStamp();
-		return double(stop_ - start_) / ticksPerSec();
+	double elapsed() const { 
+		return elapsed_ / ticksPerSec();
 	}
 	static double clockStamp();
 	static double ticksPerSec();
@@ -48,9 +46,8 @@ public:
 	}
 private:
 	double start_;
-	double split_;
-	mutable double stop_;
-	static const int TIMER_CLOCK_MAX = -1;
+	double last_;
+	double elapsed_;
 };
 
 #endif
