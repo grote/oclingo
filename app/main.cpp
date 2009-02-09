@@ -545,7 +545,13 @@ static double compAverage(uint64 x, uint64 y)
 
 void MainApp::printLpStats() const
 {
-	const PreproStats& ps = *preStats_;
+	PreproStats& ps = *preStats_;
+	if (ps.trStats) {
+	  ps.rules[BASICRULE] -= ps.trStats->rules[0];
+	  for (uint32 rt = BASICRULE+1; rt <= OPTIMIZERULE; ++rt) {
+			ps.rules[0] -= ps.trStats->rules[rt];
+		}
+	}
 	const Options& o = options;
 	cerr << left << setw(12) << "Atoms" << ": " << setw(6) << ps.atoms;
 	if (ps.trStats) {

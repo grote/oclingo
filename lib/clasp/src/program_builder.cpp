@@ -1,18 +1,18 @@
-// 
+//
 // Copyright (c) 2006-2007, Benjamin Kaufmann
-// 
-// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
-// 
+//
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/
+//
 // Clasp is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
-// 
+//
 // Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -33,9 +33,9 @@
 #include <numeric>
 
 
-namespace Clasp { 
+namespace Clasp {
 /////////////////////////////////////////////////////////////////////////////////////////
-// class PrgAtomNode 
+// class PrgAtomNode
 //
 // Objects of this class represent atoms in the atom-body-dependency graph.
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -47,8 +47,8 @@ namespace Clasp {
 // Note: If b is a body of a choice rule, no binary clause [~b h] is created, since
 // FTA and BFA do not apply to choice rules.
 bool PrgAtomNode::toConstraint(Solver& s, ClauseCreator& gc, ProgramBuilder& prg) {
-	if (value() != value_free && !s.force(trueLit(),0)) { 
-		return false; 
+	if (value() != value_free && !s.force(trueLit(),0)) {
+		return false;
 	}
 	if (!hasVar()) { return true; }
 	ClauseCreator bc(&s);
@@ -75,7 +75,7 @@ bool PrgAtomNode::toConstraint(Solver& s, ClauseCreator& gc, ProgramBuilder& prg
 					return false;
 				}
 			}
-		}   
+		}
 	}
 	preds.erase(j, preds.end());
 	prg.vars_.unmark( var() );
@@ -118,7 +118,7 @@ PrgAtomNode::SimpRes PrgAtomNode::simplifyBodies(Var atomId, ProgramBuilder& prg
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// class PrgBodyNode 
+// class PrgBodyNode
 //
 // Objects of this class represent bodies in the atom-body-dependency graph.
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -163,9 +163,9 @@ PrgBodyNode::~PrgBodyNode() {
 	delete extended_;
 }
 
-PrgBodyNode::Extended::Extended(PrgBodyNode* self, uint32 b, bool w) 
-	: bound_(b) 
-	, weights_( w ? new weight_t[self->size()] : 0 ) {  
+PrgBodyNode::Extended::Extended(PrgBodyNode* self, uint32 b, bool w)
+	: bound_(b)
+	, weights_( w ? new weight_t[self->size()] : 0 ) {
 }
 
 PrgBodyNode::Extended::~Extended() {
@@ -182,7 +182,7 @@ void PrgBodyNode::buildHeadSet() {
 
 // Type of the body
 RuleType PrgBodyNode::type() const {
-	return extended_ == 0 
+	return extended_ == 0
 		? (choice_ == 0 ? BASICRULE : CHOICERULE)
 		: extended_->type();
 }
@@ -227,7 +227,7 @@ bool PrgBodyNode::equal(const PrgBodyNode& other) const {
 	return false;
 }
 
-// The atom v, which must be a positive subgoal of this body, is supported, 
+// The atom v, which must be a positive subgoal of this body, is supported,
 // check if this body is now also supported.
 bool PrgBodyNode::onPosPredSupported(Var v) {
 	if (!extended_ || extended_->weights_ == 0) {
@@ -261,7 +261,7 @@ bool PrgBodyNode::toConstraint(Solver& s, ClauseCreator& c, const ProgramBuilder
 bool PrgBodyNode::addPredecessorClauses(Solver& s, ClauseCreator& gc, const AtomList& prgAtoms) {
 	const Literal negBody = ~literal();
 	ClauseCreator bc(&s);
-	gc.start().add(literal()); 
+	gc.start().add(literal());
 	bool sat = false;
 	for (Literal* it = goals_, *end = goals_+size_; it != end; ++it) {
 		assert(it->var() != 0);
@@ -301,14 +301,14 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 		bool mark = false;
 		if (prg.atoms_[a]->hasVar() || strong) {
 			p = goals_[i].sign() ? ~prg.atoms_[a]->literal() : prg.atoms_[a]->literal();
-			v = prg.atoms_[a]->hasVar() ? v : value_false; 
+			v = prg.atoms_[a]->hasVar() ? v : value_false;
 			mark = true;
 		}
 		if (v == value_weak_true && goals_[i].sign()) {
 			v = value_true;
 		}
 		if (v != value_free && v != value_weak_true) {  // truth value is known
-			if (v == falseValue(goals_[i])) { 
+			if (v == falseValue(goals_[i])) {
 				// drop rule if normal/choice
 				// or if we can no longer reach the lower bound of card/weight rule
 				ok = extended_ != 0 && (extended_->sumWeights_ -= weight(i)) >= bound();
@@ -316,11 +316,11 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 					pre.setSimplifyHeads(bodyId);
 				}
 			}
-			else if (extended_) { 
+			else if (extended_) {
 				// subgoal is true: remove from rule and decrease necessary lower bound
 				weight_t w = weight(i);
 				extended_->sumWeights_  -= w;
-				extended_->bound_       -= w; 
+				extended_->bound_       -= w;
 			}
 		}
 		else if (!mark || !prg.vars_.marked(p)) {
@@ -358,7 +358,7 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 	uint32 posS = 0;
 	for (uint32 i = 0, end = (uint32)size_; i != end; ++i) {
 		prg.vars_.unmark( prg.atoms_[goals_[i].var()]->var() );
-		hashes.second += hashId(goals_[i].sign()?-goals_[i].var():goals_[i].var()); 
+		hashes.second += hashId(goals_[i].sign()?-goals_[i].var():goals_[i].var());
 		posS          += goals_[i].sign() == false;
 	}
 	posSize_ = posS;
@@ -375,7 +375,7 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 		size_ = posSize_ = hashes.second = 0;
 		delete extended_; extended_ = 0;
 		return setValue(value_true);
-	} 
+	}
 	else if (bound() == sumWeights() || size_ == 1) { // body is normal
 		delete extended_; extended_ = 0;
 	}
@@ -443,13 +443,13 @@ weight_t PrgBodyNode::findWeight(Literal p, const AtomList& prgAtoms) const {
 /////////////////////////////////////////////////////////////////////////////////////////
 class ProgramBuilder::CycleChecker {
 public:
-	CycleChecker(const AtomList& prgAtoms, const BodyList& prgBodies, bool check) 
+	CycleChecker(const AtomList& prgAtoms, const BodyList& prgBodies, bool check)
 		: atoms_(prgAtoms)
 		, bodies_(prgBodies)
 		, count_(0)
 		, sccs_(0)
 		, check_(check) {
-	} 
+	}
 	void visit(PrgBodyNode* b) { if (check_) visitDfs(b, true); }
 	void visit(PrgAtomNode* a) { if (check_) visitDfs(a, false); }
 	bool hasCycles() const {
@@ -508,7 +508,7 @@ START:
 		}
 		// visit successors
 		if (body) {
-			PrgBodyNode* b = static_cast<PrgBodyNode*>(n);  
+			PrgBodyNode* b = static_cast<PrgBodyNode*>(n);
 			for (VarVec::const_iterator it = b->heads.begin() + c.next(), end = b->heads.end(); it != end; ++it) {
 				PrgAtomNode* a = atoms_[*it];
 				if (a->hasVar() && !a->ignore()) {
@@ -516,7 +516,7 @@ START:
 						callStack_.push_back(Call(b, true, static_cast<uint32>(it-b->heads.begin()), c.min()));
 						callStack_.push_back(Call(a, false, 0));
 						goto START;
-					} 
+					}
 					if (a->root() < c.min()) {
 						c.setMin(a->root());
 					}
@@ -524,7 +524,7 @@ START:
 			}
 		}
 		else if (!body) {
-			PrgAtomNode* a = static_cast<PrgAtomNode*>(n);  
+			PrgAtomNode* a = static_cast<PrgAtomNode*>(n);
 			VarVec::size_type end = a->posDep.size();
 			assert(c.next() <= end);
 			for (VarVec::size_type it = c.next(); it != end; ++it) {
@@ -562,7 +562,7 @@ START:
 					inCC[i]->setScc(sccs_);
 				}
 				++sccs_;
-			} 
+			}
 		}
 	}
 }
@@ -604,7 +604,7 @@ void ProgramBuilder::disposeProgram(bool force) {
 		AtomList().swap(atoms_);
 		eqAtoms_.clear();
 		ufs_ = 0;
-		delete incData_;  
+		delete incData_;
 		VarVec().swap(computeFalse_);
 		vars_.clear();
 		ruleState_.clear();
@@ -619,7 +619,7 @@ ProgramBuilder& ProgramBuilder::setAtomName(Var atomId, const char* name) {
 	(*atomIndex_)[atomId].name = name;
 	return *this;
 }
-ProgramBuilder& ProgramBuilder::setCompute(Var atomId, bool pos) {  
+ProgramBuilder& ProgramBuilder::setCompute(Var atomId, bool pos) {
 	resize(atomId);
 	ValueRep v = pos ? value_weak_true : value_false;
 	if (v == value_false) {
@@ -661,8 +661,8 @@ ProgramBuilder& ProgramBuilder::startProgram(AtomIndex& index, DefaultUnfoundedC
 
 ProgramBuilder& ProgramBuilder::updateProgram() {
 	if (!incData_)  { incData_ = new Incremental(); }
-	else            { 
-		incData_->startAtom_  = (uint32)atoms_.size(); 
+	else            {
+		incData_->startAtom_  = (uint32)atoms_.size();
 		incData_->startVar_   = (uint32)vars_.size();
 		incData_->unfreeze_.clear();
 		for (VarVec::iterator it = incData_->freeze_.begin(), end = incData_->freeze_.end(); it != end; ++it) {
@@ -684,7 +684,7 @@ ProgramBuilder& ProgramBuilder::updateProgram() {
 
 ProgramBuilder& ProgramBuilder::addRule(PrgRule& r) {
 	// simplify rule, mark literals
-	PrgRule::RData rd = r.simplify(ruleState_); 
+	PrgRule::RData rd = r.simplify(ruleState_);
 	if (r.type() != ENDRULE) {     // rule is relevant
 		++stats.rules[0];
 		++stats.rules[r.type()];
@@ -714,7 +714,7 @@ ProgramBuilder& ProgramBuilder::addRule(PrgRule& r) {
 }
 
 bool ProgramBuilder::handleNatively(const PrgRule& r, const PrgRule::RData& rd) const {
-	if (erMode_ == mode_native) { 
+	if (erMode_ == mode_native) {
 		return true;
 	}
 	else if (erMode_ == mode_transform_dynamic) {
@@ -765,10 +765,10 @@ void ProgramBuilder::addRuleImpl(const PrgRule& r, const PrgRule::RData& rd) {
 	else {
 		assert(r.heads.empty());
 		ProgramBuilder::MinimizeRule* mr = new ProgramBuilder::MinimizeRule;
-		for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) { 
+		for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) {
 			resize(it->first.var());
 			ruleState_.popFromRule(it->first.var());
-		} 
+		}
 		mr->lits_ = r.body;
 		mr->next_ = minimize_;
 		minimize_ = mr;
@@ -792,12 +792,12 @@ ProgramBuilder::Body ProgramBuilder::findOrCreateBody(const PrgRule& r, const Pr
 					if (i < o.posSize() && !ruleState_.inBody(posLit(o.pos(i)))) { break; }
 					if (i < o.negSize() && !ruleState_.inBody(negLit(o.neg(i)))) { break; }
 				}
-				if (i == end) { 
+				if (i == end) {
 					// found an equivalent body - clear flags, i.e. unmark all body literals of this rule
-					for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) { 
+					for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) {
 						ruleState_.popFromRule(it->first.var());
 					}
-					return Body(&o, eqRange.first->second); 
+					return Body(&o, eqRange.first->second);
 				}
 			}
 		}
@@ -817,13 +817,13 @@ ProgramBuilder::Body ProgramBuilder::findOrCreateBody(const PrgRule& r, const Pr
 void ProgramBuilder::clearRuleState(const PrgRule& r) {
 	for (VarVec::const_iterator it = r.heads.begin(), end = r.heads.end();  it != end; ++it) {
 		// clear flag only if a node was added for the head!
-		if ((*it) < ruleState_.size()) {    
+		if ((*it) < ruleState_.size()) {
 			ruleState_.popFromRule(*it);
 		}
 	}
-	for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) { 
+	for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) {
 		ruleState_.popFromRule(it->first.var());
-	} 
+	}
 }
 
 bool ProgramBuilder::transformNoAux(const PrgRule& r, const PrgRule::RData&) const {
@@ -840,10 +840,6 @@ void ProgramBuilder::transformExtended() {
 	extended_.clear();
 	if (stats.trStats) {
 		stats.trStats->auxAtoms += numAtoms() - a;
-		stats.rules[BASICRULE]  -= stats.trStats->rules[0];
-		for (uint32 rt = BASICRULE+1; rt <= OPTIMIZERULE; ++rt) {
-			stats.rules[0] -= stats.trStats->rules[rt];
-		}
 	}
 }
 
@@ -898,17 +894,19 @@ void ProgramBuilder::updateFrozenAtoms(const Solver& solver) {
 				atoms_[i]->setValue(v == trueValue(atoms_[i]->literal()) ? value_true : value_false);
 			}
 		}
+		ExtendedRuleMode oldMode = erMode_;
+		erMode_ = mode_native;
 		for (VarVec::iterator it = incData_->unfreeze_.begin(), end = incData_->unfreeze_.end(); it != end; ++it) {
-			PrgAtomNode* a = atoms_[*it]; 
+			PrgAtomNode* a = atoms_[*it];
 			assert(a->hasVar() && "Error: Can't unfreeze atom that is not frozen");
 			// Mark literal of a so that we can remove a from freeze-list
-			Literal x = a->literal(); 
+			Literal x = a->literal();
 			x.watch();
 			a->setLiteral( x );
 		}
 		VarVec::iterator j = incData_->freeze_.begin();
 		for (VarVec::iterator it = j, end = incData_->freeze_.end(); it != end; ++it) {
-			PrgAtomNode* a = atoms_[*it]; 
+			PrgAtomNode* a = atoms_[*it];
 			if (a->literal().watched()) { // atom is no longer frozen
 				Literal x = a->literal();
 				x.clearWatch();
@@ -921,10 +919,15 @@ void ProgramBuilder::updateFrozenAtoms(const Solver& solver) {
 				// This way, no special handling during preprocessing/nogood creation is necessary
 				// Note: The choice is removed on next call to updateProgram!
 				startRule(CHOICERULE).addHead(*it).endRule();
+				// Note: Don't count this rule - it is only an implementation detail
+				--stats.rules[CHOICERULE];
+				--stats.rules[0];
+
 				*j++ = *it;
 			}
 		}
 		incData_->freeze_.erase(j, incData_->freeze_.end());
+		erMode_ = oldMode;
 	}
 }
 
@@ -934,7 +937,7 @@ bool ProgramBuilder::applyCompute() {
 		// falseAtom is false, thus all its non-choice-bodies must be false
 		for (VarVec::iterator it = falseAtom->preds.begin(), end = falseAtom->preds.end(); it != end; ++it) {
 			PrgBodyNode* b = bodies_[*it];
-			if (b->visited() == 0) { 
+			if (b->visited() == 0) {
 				b->setVisited(true);
 				b->buildHeadSet();
 				if (b->type() != CHOICERULE) {
@@ -1052,7 +1055,7 @@ PrgAtomNode* ProgramBuilder::resize(Var atomId) {
 }
 
 // for each var in vars_, adds a corresponding variable to the solver solver and
-// clears all flags used during scc-checking.  
+// clears all flags used during scc-checking.
 void ProgramBuilder::cloneVars(Solver& solver) {
 	vars_.addTo(solver, incData_?incData_->startVar_:1);
 	for (VarVec::size_type i = 0; i < bodies_.size(); ++i) {
@@ -1066,7 +1069,7 @@ void ProgramBuilder::cloneVars(Solver& solver) {
 			atoms_[incData_->unfreeze_[i]]->resetSccFlags();
 		}
 	}
-	
+
 }
 
 void ProgramBuilder::writeProgram(std::ostream& os) {
@@ -1089,7 +1092,7 @@ void ProgramBuilder::writeProgram(std::ostream& os) {
 				weights << it->second << " ";
 			}
 		}
-		os << pbs+nbs << " " << nbs << " " 
+		os << pbs+nbs << " " << nbs << " "
 			 << nBody.str() << pBody.str() << weights.str() << "\n";
 	}
 	// write all bodies together with their heads
