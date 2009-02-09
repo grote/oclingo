@@ -13,24 +13,20 @@ connect(X,Y,D,0) :- connect(X,Y,D).
 
 pushed(0).
 
-%%  All neighboring fields in horizontal direction D
-
-dneighbor(e,X,Y,X,Y+1) :- field(X,Y;(Y+1)).
-xneighbor(e,X,Y,X,  1) :- field(X,Y), num_cols(Y).
-dneighbor(w,X,Y,X,Y-1) :- field(X,Y;(Y-1)).
-xneighbor(w,X,1,X,  Y) :- field(X,Y), num_cols(Y).
-
-%%  All neighboring fields in vertical direction D
+%%  Direct neighbors
 
 dneighbor(n,X,Y,X+1,Y) :- field(X;(X+1),Y).
-xneighbor(n,X,Y,1,  Y) :- field(X,Y), num_rows(X).
 dneighbor(s,X,Y,X-1,Y) :- field(X;(X-1),Y).
-xneighbor(s,1,Y,X,  Y) :- field(X,Y), num_rows(X).
+dneighbor(e,X,Y,X,Y+1) :- field(X,Y;(Y+1)).
+dneighbor(w,X,Y,X,Y-1) :- field(X,Y;(Y-1)).
 
 %%  All neighboring fields
 
 neighbor(D,X,Y,XX,YY) :- dneighbor(D,X,Y,XX,YY).
-neighbor(D,X,Y,XX,YY) :- xneighbor(D,X,Y,XX,YY).
+neighbor(n,X,Y, 1, Y) :- field(X,Y), num_rows(X).
+neighbor(s,1,Y, X, Y) :- field(X,Y), num_rows(X).
+neighbor(e,X,Y, X, 1) :- field(X,Y), num_cols(Y).
+neighbor(w,X,1, X, Y) :- field(X,Y), num_cols(Y).
 
 
 % #cumulative t.
