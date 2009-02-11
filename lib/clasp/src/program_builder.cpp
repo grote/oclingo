@@ -140,14 +140,14 @@ PrgBodyNode::PrgBodyNode(uint32 id, const PrgRule& rule, const PrgRule::RData& r
 			goals_[p] =   g.first;
 			spw       +=  g.second;
 			a->posDep.push_back(id);
-			if (extended_ && extended_->weights_) { extended_->weights_[p] = g.second; }
+			if (extended_ && extended_->weights_) { assert(g.second>0);extended_->weights_[p] = g.second; }
 			++p;
 		}
 		else {                  // B- atom
 			goals_[posSize_+n]  = g.first;
 			snw += g.second;
 			if (prg.eqIters_ != 0) { a->negDep.push_back(id); }
-			if (extended_ && extended_->weights_) { extended_->weights_[posSize_+n] = g.second; }
+			if (extended_ && extended_->weights_) { assert(g.second>0);extended_->weights_[posSize_+n] = g.second; }
 			++n;
 		}
 	}

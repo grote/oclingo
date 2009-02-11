@@ -88,13 +88,20 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	r.sumWeight   = (weight_t)body.size();
 	weight_t minW = 1;
 	if (type_ == WEIGHTRULE && !body.empty()) {
-		r.sumWeight   = body[0].second;
-		weight_t maxW = body[0].second;
-		minW          = body[0].second;
-		for (uint32 i = 1; i != body.size(); ++i) {
-			r.sumWeight += body[i].second;
-			if      (body[i].second > maxW) { maxW = body[i].second; }
-			else if (body[i].second < minW) { minW = body[i].second; }
+		r.sumWeight   = 0;
+		weight_t maxW = 0;
+		minW          = std::numeric_limits<weight_t>::max();
+		for (uint32 i = 0; i < body.size();) {
+			if (body[i].second > 0) {
+				r.sumWeight += body[i].second;
+				if      (body[i].second > maxW) { maxW = body[i].second; }
+				else if (body[i].second < minW) { minW = body[i].second; }
+				++i;
+			}
+			else {
+				body[i] = body.back();
+				body.pop_back();
+			}
 		}
 		if (minW == maxW) {
 			type_      = CONSTRAINTRULE;
@@ -125,6 +132,7 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 		// - just like in a normal rule, thus handle this rule as such.
 		type_       = BASICRULE;
 		r.sumWeight = (weight_t)body.size();
+		
 	}
 	// 2. NORMALIZE body literals, check for CONTRA
 	WeightLitVec::iterator j = body.begin();
