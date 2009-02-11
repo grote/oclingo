@@ -27,7 +27,7 @@ using namespace NS_GRINGO;
 
 DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant) :
 	g_(g), r_(r), lit_(*lits), dom_(lits->size()), var_(lits->size()), dep_(lits->size()), 
-	closestBinderVar_(lits->size()), closestBinderDep_(lits->size()), closestBinderRel_(lits->size() + 1), 
+	closestBinderVar_(lits->size()), closestBinderDep_(lits->size()), closestBinderRel_(lits->size() + 1), closestBinderSol_(lits->size())
 	global_(dg->getGlobalVars()),
 	relevant_(relevant),
 	provided_(lits->size())
@@ -173,7 +173,9 @@ void DLVGrounder::calcDependency()
 		
 		closestBinderDep_[i] = closestBinder(i, dep_[i], firstBinder);
 	}
-
+	
+	for(size_t i = 0; i < lit_.size(); i++)
+		closestBinderSol_[i] = closestBinder(i, global_, firstBinder);
 	for(size_t i = 0; i < var_.size(); i++)
 		closestBinderVar_[i] = closestBinder(i, var_[i], firstBinder);
 	for(size_t i = 0; i < lit_.size() + 1; i++)
@@ -270,7 +272,7 @@ void DLVGrounder::ground()
 			case FailureOnNextMatch:
 			{
 				if(l == csb)
-					csb = closestBinderRel_[l];
+					csb = closestBinderSol_[l];
 				l = std::max(csb, closestBinderDep_[l]);
 				/*
 				std::cerr << "FailureOnNextMatch bj to: ";

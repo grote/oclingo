@@ -45,6 +45,7 @@ namespace NS_GRINGO
 		VarVector closestBinderVar_;
 		VarVector closestBinderDep_;
 		VarVector closestBinderRel_;
+		VarVector closestBinderSol_;
 		VarVector global_;
 		VarVector relevant_;
 		VarSet    index_;
