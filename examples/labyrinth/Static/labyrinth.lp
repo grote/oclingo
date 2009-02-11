@@ -11,8 +11,6 @@ goal(X,Y,0)      :- goal_on(X,Y).
 reach(X,Y,0)     :- init_on(X,Y).
 connect(X,Y,D,0) :- connect(X,Y,D).
 
-pushed(0).
-
 %%  Direct neighbors
 
 dneighbor(n,X,Y,X+1,Y) :- field(X;(X+1),Y).
@@ -33,12 +31,7 @@ neighbor(w,X,1, X, Y) :- field(X,Y), num_cols(Y).
 
 %%  Select a row or column to push
 
-{ pushed(T) } :- pushed(T-1), max_steps(S), T = 1..S.
-1 { push(X,e;w,T) : X=1..M, push(Y,n;s,T) : Y=1..N } 1 :- pushed(T), num_rows(M), num_cols(N), max_steps(S), T = 1..S.
-
-%%  Don't push if goal is reachable !
-
-:- pushed(T), goal(X,Y,T-1), reach(X,Y,T-1).
+1 { push(X,e;w,T) : X=1..M, push(Y,n;s,T) : Y=1..N } 1 :- num_rows(M), num_cols(N), max_steps(S), T = 1..S, goal(X,Y,T-1), not reach(X,Y,T-1).
 
 %%  Determine new position of a (pushed) field
 
@@ -73,4 +66,4 @@ reach(X,Y,T) :- reach(XX,YY,T), dneighbor(D,XX,YY,X,Y), connect(XX,YY,D,T), conn
 % #base.
 
 #hide.
-#show push/3.
+#show push(Z,D,T).
