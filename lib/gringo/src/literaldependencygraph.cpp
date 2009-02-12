@@ -59,55 +59,6 @@ const VarVector &LDG::getParentVars() const
 	return parentVars_;
 }
 
-/*
-void LDG::check(VarVector &free)
-{
-	// propagate the dependencies
-	std::queue<LiteralNode*> bf;
-	for(LiteralNodeVector::iterator it = litNodes_.begin(); it != litNodes_.end(); it++)
-		if((*it)->in_ == 0)
-			bf.push(*it);
-	while(bf.size() > 0)
-	{
-		LiteralNode *top = bf.front();
-		bf.pop();
-		for(VarNodeVector::iterator it = top->out_.begin(); it != top->out_.end(); it++)
-		{
-			VarNode *n = *it;
-			if(n->done_)
-				continue;
-			n->done_ = true;
-			for(LiteralNodeVector::iterator jt = n->out_.begin(); jt != n->out_.end(); jt++)
-			{
-				(*jt)->in_--;
-				(*jt)->done_++;
-				if((*jt)->in_ == 0)
-					bf.push(*jt);
-			}
-		}
-		for(LDGVector::iterator it = top->sub_.begin(); it != top->sub_.end(); it++)
-			(*it)->check(free);
-	}
-	// check if there are still variables left which depend on some literals
-	for(VarNodeVector::iterator it = varNodes_.begin(); it != varNodes_.end(); it++)
-	{
-		if(!(*it)->done_)
-			free.push_back((*it)->var_);
-	}
-	if(free.size() == 0)
-		for(LiteralNodeVector::iterator it = litNodes_.begin(); it != litNodes_.end(); it++)
-			assert((*it)->in_ == 0);
-	// reset the graph
-	for(VarNodeVector::iterator it = varNodes_.begin(); it != varNodes_.end(); it++)
-		(*it)->done_ = false;
-	for(LiteralNodeVector::iterator i = litNodes_.begin(); i != litNodes_.end(); i++)
-	{
-		(*i)->in_  += (*i)->done_;
-		(*i)->done_ = 0;
-	}
-}
-*/
-
 void LDG::start(LiteralList &list)
 {
 	assert(globalVars_.size() == varNodes_.size());

@@ -65,7 +65,6 @@ namespace NS_GRINGO
 
 		const VarVector &getGlobalVars() const;
 		const VarVector &getParentVars() const;
-		//void check(VarVector &free);
 
 		void start(LiteralList &list);
 		void propagate(Literal *l, LiteralList &list);
