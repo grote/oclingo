@@ -59,6 +59,7 @@ const VarVector &LDG::getParentVars() const
 	return parentVars_;
 }
 
+/*
 void LDG::check(VarVector &free)
 {
 	// propagate the dependencies
@@ -105,19 +106,20 @@ void LDG::check(VarVector &free)
 		(*i)->done_ = 0;
 	}
 }
+*/
 
-void LDG::start(LiteralSet &list)
+void LDG::start(LiteralList &list)
 {
 	assert(globalVars_.size() == varNodes_.size());
 	for(LiteralNodeVector::iterator it = litNodes_.begin(); it != litNodes_.end(); it++)
 	{
 		litMap_[(*it)->l_] = new LiteralData(*it);
 		if((*it)->in_ == 0 && !(*it)->head_)
-			list.insert((*it)->l_);
+			list.push_back((*it)->l_);
 	}
 }
 
-void LDG::propagate(Literal *l, LiteralSet &list)
+void LDG::propagate(Literal *l, LiteralList &list)
 {
 	assert(litMap_.find(l) != litMap_.end());
 	LiteralData *data = litMap_[l];
@@ -134,14 +136,14 @@ void LDG::propagate(Literal *l, LiteralSet &list)
 			(*jt)->in_--;
 			(*jt)->done_++;
 			assert(litMap_.find((*jt)->l_) != litMap_.end());
-			litMap_[(*jt)->l_]->needed_.push_back(n->var_);
+			LiteralData *d = litMap_[(*jt)->l_];
+			d->needed_.push_back(n->var_);
 			// dont propagate head nodes since they never provide vars
 			// and will confuse the dlvgrounder
 			if((*jt)->in_ == 0 && !(*jt)->head_)
-				list.insert((*jt)->l_);
+				list.push_back((*jt)->l_);
 		}
 	}
-	list.erase(l);
 }
 
 const VarVector &LDG::getNeededVars(Literal *l) const
@@ -169,7 +171,7 @@ void LDG::sortLiterals(LiteralVector *lits)
 {
 	if(sorted_)
 		return;
-	LiteralSet list;
+	LiteralList list;
 	start(list);
 
 	for(size_t i = 0; i < lits->size(); i++)
@@ -177,9 +179,10 @@ void LDG::sortLiterals(LiteralVector *lits)
 		assert(list.size() > 0);
 		// choose the literal with the least heuristic value
 		LiteralCmp cmp;
-		Literal *l = *std::min_element(list.begin(), list.end(), cmp);
-		propagate(l, list);
-		(*lits)[i] = l;
+		LiteralList::iterator l = std::min_element(list.begin(), list.end(), cmp);
+		propagate(*l, list);
+		(*lits)[i] = *l;
+		list.erase(l);
 	}
 	sorted_ = true;
 	assert(list.size() == 0);

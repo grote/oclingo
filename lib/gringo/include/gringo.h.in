@@ -106,7 +106,7 @@ namespace NS_GRINGO
 
 	class Literal;
 	typedef std::vector<Literal*> LiteralVector;
-	typedef std::set<Literal*> LiteralSet;
+	typedef std::list<Literal*> LiteralList;
 
 	class SDGNode;
 	typedef std::vector<SDGNode*> SDGNodeVector;

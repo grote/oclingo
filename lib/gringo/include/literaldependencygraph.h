@@ -56,6 +56,7 @@ namespace NS_GRINGO
 			LiteralNode *n_;
 			VarVector needed_;
 			VarVector provided_;
+			LiteralList::iterator pos;
 		};
 
 		typedef std::map<Literal*, LiteralData*> LiteralDataMap;
@@ -64,10 +65,10 @@ namespace NS_GRINGO
 
 		const VarVector &getGlobalVars() const;
 		const VarVector &getParentVars() const;
-		void check(VarVector &free);
+		//void check(VarVector &free);
 
-		void start(LiteralSet &list);
-		void propagate(Literal *l, LiteralSet &list);
+		void start(LiteralList &list);
+		void propagate(Literal *l, LiteralList &list);
 
 		void sortLiterals(LiteralVector *lits);
 
