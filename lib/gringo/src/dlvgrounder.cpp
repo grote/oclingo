@@ -231,8 +231,8 @@ void DLVGrounder::ground()
 				// this causes nextMatch to be called
 				status = FailureOnNextMatch;
 				r_->grounded(g_);
-				csb    = closestBinderRel_[l + 1];
-				l      = csb;
+				l   = closestBinderRel_[l + 1];
+				csb = closestBinderRel_[l];
 				/*
 				std::cerr << "found solution backjump to: ";
 				if(l == -1)
@@ -252,8 +252,8 @@ void DLVGrounder::ground()
 			{
 				l = closestBinderVar_[l];
 				//if(rel_.contains(l, csb))
-				if(l < csb)
-					csb = l;
+				//if(l < csb)
+				//	csb = l;
 				/*
 				std::cerr << "FailureOnFirstMatch bj to: ";
 				if(l == -1)
@@ -271,9 +271,11 @@ void DLVGrounder::ground()
 			}
 			case FailureOnNextMatch:
 			{
+				// TODO: closestBinderSol_ should be the failure set 
+				// but i am not sure if its worth the work
+				l = std::max(csb, closestBinderSol_[l]);
 				if(l == csb)
-					csb = closestBinderSol_[l];
-				l = std::max(csb, closestBinderDep_[l]);
+					csb = closestBinderRel_[l];
 				/*
 				std::cerr << "FailureOnNextMatch bj to: ";
 				if(l == -1)
