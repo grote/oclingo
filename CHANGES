@@ -8,6 +8,10 @@ gringo 2.0.3
 	* fixed a bug in the lparseconverter
 	* fixed a bug concerning top-level conflicts while incremental solving
 	* fixed a bug with ; nested in aggregates
+	* added clasp-1.2.0 to the clingo/iclingo variants
+	* fixed a bug in the instantiator
+	* changed the ordering of predicates in rule bodies
+	  (the previous implementation may have led to non-deterministic behaviour)
 gringo 2.0.2
 	* removed some wrong assertions
 	* fixed handling of min- and max-aggregates
