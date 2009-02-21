@@ -516,7 +516,7 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 			if((a->bounds_ & Aggregate::U))
 				a->upper_-= *wIt;
 		}
-		else if(uid > 0)
+		else if(*wIt > 0)
 		{
 			if(uid > 0)
 				posA_.push_back(uid), wPosA_.push_back(*wIt);
