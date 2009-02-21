@@ -12,6 +12,7 @@ gringo 2.0.3
 	* fixed a bug in the instantiator
 	* changed the ordering of predicates in rule bodies
 	  (the previous implementation may have led to non-deterministic behaviour)
+	* fixed a bug in sum aggregates (negative literals did not work)
 gringo 2.0.2
 	* removed some wrong assertions
 	* fixed handling of min- and max-aggregates
