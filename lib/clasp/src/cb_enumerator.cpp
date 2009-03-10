@@ -87,6 +87,9 @@ bool CBConsequences::backtrackFromModel(Solver& s) {
 	}
 	if (restart_) {
 		s.undoUntil(0);
+		if (C_.size() == 1) {
+			s.addUnary(~C_[0]);
+		}
 	}
 	else {
 		s.setConflict(C_);

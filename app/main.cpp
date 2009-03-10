@@ -252,13 +252,15 @@ static void sigHandler(int)
 	signal(SIGTERM, SIG_IGN); // kill(but not kill -9)
 #ifdef WITH_CLASP
 	bool satM = clasp_g.mode == MainApp::SAT_MODE;
-	printf("\n%s*** INTERRUPTED! ***\n",(satM ? "c " : ""));
+	printf("\n%s*** INTERRUPTED! ***\n", (satM?"c ":""));
 	clasp_g.t_all.stop();
-	printf("%sTime      : %.3f\n",(satM ? "c " : ""), clasp_g.t_all.elapsed());
-	printf("%sModels    : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.models);
-	printf("%sChoices   : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.choices);
-	printf("%sConflicts : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.conflicts);
-	printf("%sRestarts  : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.restarts);
+	printf("%sTime      : %.3f\n",(satM?"c ":""), clasp_g.t_all.elapsed());
+	printf("%sModels    : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.models);
+	printf("%sChoices   : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.choices);
+	printf("%sConflicts : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.conflicts);
+	printf("%sRestarts  : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.restarts);
+	printf("%s%s\n", (satM?"s ":""), clasp_g.solver.stats.models > 0 ? "SATISFIABLE" : "UNKNOWN");
+	exit(clasp_g.solver.stats.models > 0 ? S_SATISFIABLE : S_UNKNOWN);
 #else
 	printf("\n*** INTERRUPTED! ***\n");
 #endif
@@ -795,7 +797,7 @@ bool MainApp::solveIncremental()
 			cerr << "Preprocessing..." << endl;
 		// Last param must be false so that Solver::endAddConstraints() is not called.
 		// The enumerator may want to exclude some variables from preprocessing so we have to init it first
-		ret = api.endProgram(solver, options.initialLookahead, false);
+		ret = api.endProgram(solver, false);
 		if (enum_ == 0) {
 			if (!options.cons.empty()) {
 				cerr << "Warning: Computing cautious/brave consequences not supported in incremental setting!\n" << endl;
@@ -810,7 +812,7 @@ bool MainApp::solveIncremental()
 		}
 		static_cast<ModelEnumerator*>(enum_)->startSearch(solver, atomIndex_.get(), options.project, 0);
 		// Now that enumerator is configured, finalize solver
-		ret = ret && solver.endAddConstraints(options.initialLookahead);
+		ret = ret && solver.endAddConstraints();
 		double r = solver.numVars() / double(solver.numConstraints());
 		if (r < 0.1 || r > 10.0) {
 			problemSize = std::max(solver.numVars(), solver.numConstraints());
@@ -914,7 +916,7 @@ bool MainApp::readSat() {
 		setState(start_pre);
 		if(options.verbose)
 			cerr << "c Preprocessing..." << endl;
-		res = solver.endAddConstraints(options.initialLookahead);
+		res = solver.endAddConstraints();
 		setState(end_pre);
 	}
 	problemSize = solver.numConstraints();
@@ -959,7 +961,7 @@ bool MainApp::parseLparse()
 		setState(start_pre);
 		if(options.verbose)
 			cerr << "Preprocessing..." << endl;
-		ret = api.endProgram(solver, options.initialLookahead, false);
+		ret = api.endProgram(solver, false);
 		api.stats.moveTo(*preStats_);
 		if (ret && api.hasMinimize()) {
 			c = api.createMinimize(solver);
@@ -985,7 +987,7 @@ bool MainApp::parseLparse()
 		e->startSearch(solver, atomIndex_.get(), options.project, c);
 		enum_ = e;
 	}
-	ret = ret && solver.endAddConstraints(options.initialLookahead);
+	ret = ret && solver.endAddConstraints();
 	double r = solver.numVars() / double(solver.numConstraints());
 	if (r < 0.1 || r > 10.0) {
 		problemSize = std::max(solver.numVars(), solver.numConstraints());

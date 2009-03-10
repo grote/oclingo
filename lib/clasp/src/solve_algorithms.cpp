@@ -178,7 +178,7 @@ bool solve(Solver& s, const LitVec& assumptions, const SolveParams& p) {
 	for (LitVec::size_type i = 0; i != assumptions.size(); ++i) {
 		Literal p = assumptions[i];
 		if (!s.isTrue(p) && (s.isFalse(p) || !(s.assume(p)&&s.stats.choices--) || !s.propagate())) {
-			s.undoUntil(0);
+			s.clearAssumptions();
 			return false;
 		}
 	}

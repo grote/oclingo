@@ -66,14 +66,12 @@ public:
 	};
 	/*!
 	 * \param t Type of variables to consider during failed-literal detection.
+	 * \param m Disable failed-literal detection after m choices (-1 always keep enabled)
 	 * \param heuristic if 0 use the results of failed-literal-detection to determine
 	 * next choice. Otherwise use the given heuristic.
 	 */
-	Lookahead(Type t, DecisionHeuristic* heuristic = 0) : select_(heuristic), type_(t) {
-	}
-	~Lookahead() {
-		delete select_;
-	}
+	Lookahead(Type t, int m = -1, DecisionHeuristic* heuristic = 0);
+	~Lookahead();
 	void startInit(const Solver& /* s */);
 	void endInit(const Solver& s) {
 		if (select_) select_->endInit(s);
@@ -88,17 +86,23 @@ public:
 	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit) {
 		if (select_) select_->updateReason(s, lits, resolveLit);
 	}
+	void reinit(bool b) {
+		inc_ = true;
+		if (select_) select_->reinit(b);
+	}
 private:
 	Literal doSelect(Solver& s);
 	Literal heuristic(Solver& s);
 	void checkScore(uint32& min, uint32& max, Var v, const VarScore& vs, Literal& r);
 	VarScores           scores_;
 	VarVec              deps_;
+	uint64              maxDecisions_;
 	DecisionHeuristic*  select_;
 	Type                type_;
 	VarType             varTypes_;
 	Var                 var_;
 	Var                 startVar_;
+	bool                inc_;
 };
 
 

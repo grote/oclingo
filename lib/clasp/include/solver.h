@@ -325,15 +325,13 @@ public:
 	/*!
 	 * endAddConstraints must be called once before a search is started. After endAddConstraints
 	 * was called learnt constraints may be added to the solver.
-	 * \param lookahead true if solve should simplify the problem using a 
-	 * one-step lookahead-operation.
 	 * \return 
 	 *  - false if the constraints are initially conflicting. True otherwise.
 	 * \note
 	 * The solver can't recover from top-level conflicts, i.e. if endAddConstraints
 	 * returned false, the solver is in an unusable state.
 	 */
-	bool endAddConstraints(bool lookahead = false);
+	bool endAddConstraints();
 	//@}
 	/*!
 	 * \name watch management

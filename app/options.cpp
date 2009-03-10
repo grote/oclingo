@@ -235,10 +235,10 @@ void Options::setDefaults() {
 	loopRep          = DefaultUnfoundedCheck::common_reason;
 	projectConfig    = -1;
 	lookahead        = -1;
+	initialLookahead = -1;
 	eqIters          = 5;
 	transExt         = ProgramBuilder::mode_native;
 	quiet            = false;
-	initialLookahead = false;
 	suppModels       = false;
 	dimacs           = false;
 	optAll           = false;
@@ -319,8 +319,8 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        yes: Enable lookback strategies (backjumping, learning, restarts)\n"
 			"        no : Disable lookback strategies\n")
 
-		("lookahead"	, value<int>(&lookahead)->parser(mapLookahead),
-			"Configure failed-literal detection\n"
+		("lookahead"  , value<int>(&lookahead)->parser(mapLookahead),
+			"Configure failed-literal detection (fld)\n"
 			"      Default: no (auto, if --lookback=no)\n"
 			"      Valid:   atom, body, hybrid, auto, no\n"
 			"        atom  : Apply failed-literal detection to atoms\n"
@@ -328,7 +328,8 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        hybrid: Apply Nomore++-like failed-literal detection\n"
 			"        auto  : Let Clasp pick a failed-literal detection strategy\n"
 			"        no    : Do not apply failed-literal detection")
-		("initial-lookahead", bool_switch(&initialLookahead), "Apply failed-literal detection for preprocessing\n")
+		("initial-lookahead", value<int>(&initialLookahead), "Restrict fld to <arg> decisions\n")
+
 
 		("heuristic", value<string>(&heuristic)->parser(mapHeuristic),
 			"Configure decision heuristic\n"
@@ -655,8 +656,18 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 		s.strategies().setCompressionStrategy(value_cast<int>(vm["contraction"]));
 		s.strategies().saveProgress = vm.count("save-progress") != 0 && value_cast<bool>(vm["save-progress"]);
 	}
-	if (heuristic == "unit" && lookahead == -1) {
-		warning_ += "Warning: Unit-heuristic implies lookahead. Forcing auto-lookahead!\n";
+	if (heuristic == "unit") {
+		if (lookahead == -1) {
+			warning_ += "Warning: Unit-heuristic implies lookahead. Forcing auto-lookahead!\n";
+			lookahead = Lookahead::auto_lookahead;
+		}
+		else if (initialLookahead != -1) {
+			warning_ += "Warning: Unit-heuristic implies lookahead. Ignoring 'initial-lookahead'!\n";
+			initialLookahead = -1;
+		}
+	}
+	else if (initialLookahead != -1 && lookahead == -1) {
+		// could warn but why bother?
 		lookahead = Lookahead::auto_lookahead;
 	}
 	s.strategies().heuristic.reset( createHeuristic(value_cast<vector<int> >(vm["hParams"])) );
@@ -718,8 +729,8 @@ DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) c
 	else if (heuristic == "none") {
 		heu = new SelectFirst();
 	}
-	if (lookahead != -1) {
-		return new Lookahead(Lookahead::Type(lookahead), heu);
+	if (lookahead != -1 || initialLookahead != -1) {
+		return new Lookahead(Lookahead::Type(lookahead), initialLookahead, heu);
 	}
 	return heu;
 }

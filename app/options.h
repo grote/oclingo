@@ -1,18 +1,18 @@
-// 
+//
 // Copyright (c) 2006-2007, Benjamin Kaufmann
-// 
-// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
-// 
+//
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/
+//
 // Clasp is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
-// 
+//
 // Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -66,7 +66,7 @@ public:
 	const std::string getWarning() const {
 		return warning_;
 	}
-	
+
 	// common stuff
 	bool             help;             // Default: false
 	bool             version;          // Defailt: false
@@ -120,15 +120,15 @@ public:
 	int              eqIters;          // Default: -1 -> run eq-preprocessing to fixpoint
 	int              numModels;        // Default: 1
 	int              lookahead;        // Default: lookahead_no
+	int              initialLookahead; // Default: -1
 	int              loopRep;          // Default: common
-        int              projectConfig;    // Default: -1
-        bool             optAll;           // Default: false
+	int              projectConfig;    // Default: -1
+	bool             optAll;           // Default: false
 	bool             quiet;            // Default: false
 	bool             dimacs;           // Default: false
 	bool             suppModels;       // Default: false
-	bool             initialLookahead; // Default: false
 	bool             ccmExp;           // Default: false
-        bool             redOnRestart;     // Default: false
+	bool             redOnRestart;     // Default: false
 	bool             modelRestart;     // Default: false
 	bool             recordSol;        // Default: false
 	bool             project;          // Default: false

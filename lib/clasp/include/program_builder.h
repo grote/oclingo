@@ -342,7 +342,6 @@ public:
 	 * Call this method to load the program (increment) into the solver
 	 *
 	 * \param solver The solver object in which the optimized representation of the lp should be stored.
-	 * \param initialLookahead if true and finalizeSolver is true, the program is simplified using a one-step lookahead operation.
 	 * \param finalizeSolver if true, endProgram() calls solver.endAddConstraints()
 	 * \return false if the program is initially conflicting, true otherwise.
 	 *
@@ -354,7 +353,7 @@ public:
 	 * \note To load the same program into different solvers, call endProgram for each solver.
 	 *
 	 */
-	bool endProgram(Solver& solver, bool initialLookahead = false, bool finalizeSolver = true);
+	bool endProgram(Solver& solver, bool finalizeSolver);
 
 	//! returns true if the program contains at least one minimize statement
 	bool hasMinimize() const { return minimize_ != 0; }
@@ -565,7 +564,7 @@ public:
 			for (uint32 i = 0; i != negSize(); ++i) {
 				snw += weight(i, false);
 			}
-			return (unsupp_ = bound() - negSize()) <= 0;
+			return (unsupp_ = bound() - snw) <= 0;
 		}
 		return false;
 	}
@@ -634,7 +633,7 @@ public:
 	weight_t bound() const;
 
 	//! returns the number of atoms in the body
-	uint32 size() const { return size_; }
+	uint32 size()    const { return size_; }
 	//! returns the number of positive atoms in the body
 	uint32 posSize() const { return posSize_; }
 	//! returns the number of negative atoms in the body

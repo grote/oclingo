@@ -30,6 +30,16 @@ inline uint32 heuRand() {
 /////////////////////////////////////////////////////////////////////////////////////////
 // Lookahead selection strategies
 /////////////////////////////////////////////////////////////////////////////////////////
+Lookahead::Lookahead(Type t, int m, DecisionHeuristic* h) 
+	: maxDecisions_(m < 0 || !h ? (uint64)-1 : (uint64)m)
+	, select_(h)
+	, type_(t)
+	, inc_(false) {
+}
+Lookahead::~Lookahead() {
+	delete select_;
+}
+
 void Lookahead::startInit(const Solver& s) {
 	deps_.clear();
 	scores_.clear();
@@ -75,21 +85,37 @@ void Lookahead::simplify(Solver& s, LitVec::size_type st) {
 
 
 Literal Lookahead::doSelect(Solver& s) {
-	// no need to call s.failedLiteral on decision level 0, because that was already done
-	// in Lookahead::simplify!
-	if (s.decisionLevel() > 0 && s.failedLiteral(var_, scores_, varTypes_, type_ != hybrid_lookahead, deps_)) {
+	if (s.stats.choices < maxDecisions_) {
+		// no need to call s.failedLiteral on decision level 0, because that was already done
+		// in Lookahead::simplify!
+		if (s.decisionLevel() > 0 && s.failedLiteral(var_, scores_, varTypes_, type_ != hybrid_lookahead, deps_)) {
+			return Literal();
+		}
+		if (!select_ || maxDecisions_ != (uint64)-1) {
+			// No literal failed - select literal with best heuristic value
+			return heuristic(s);
+		}
+		else {
+			// We are working in decoration mode - heuristic is not our business
+			for (VarVec::size_type i = 0, end = deps_.size(); i != end; ++i) {
+				scores_[deps_[i]].clear();
+			}
+			deps_.clear();
+			select_->select(s);
+			return Literal();
+		}
+	}
+	else if (!inc_) {
+		// Disable failed literal detection - time to commit suicide
+		s.strategies().heuristic.release();
+		s.strategies().heuristic.reset(select_);
+		select_ = 0;
+		delete this;
+		s.strategies().heuristic->select(s);
 		return Literal();
 	}
-	if (!select_) {
-		// No literal failed - select literal with best heuristic value
-		return heuristic(s);
-	}
 	else {
-		// We are working in decoration mode - selecting is not our business
-		for (VarVec::size_type i = 0, end = deps_.size(); i != end; ++i) {
-			scores_[deps_[i]].clear();
-		}
-		deps_.clear();
+		// simplify forward to heuristic
 		select_->select(s);
 		return Literal();
 	}
@@ -381,6 +407,10 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 				ms  = ls;
 			}
 		}
+		if (ms < 2) {
+			// Scores are not really relevant - disable Moms
+			score_[0].activity_ = 1;
+		}
 	}
 #endif
 	return selectLiteral(s, var, true);
@@ -391,6 +421,11 @@ Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
 	if ( (l = preferredLiteral(s,var)) == posLit(0) ) {
 		int32 w0 = vsids ? (int32)s.estimateBCP(posLit(var), 5) : score_[var].occ_;
 		int32 w1 = vsids ? (int32)s.estimateBCP(negLit(var), 5) : 0;
+		if (w1 == 1 && w0 == w1) {
+			// no binary bcp - use occurrences
+			w0 = score_[var].occ_;
+			w1 = 0;
+		}
 		return w0 != w1 
 			? Literal(var, (w0-w1)<0)
 			: s.preferredLiteralByType(var);

@@ -32,26 +32,28 @@ namespace Clasp {
 //! Class implementing smodels-like cardinality- and weight constraints.
 /*!
  * \ingroup constraint
- * This Constraint class represents the body of a smodels-like cardinality- 
- * resp. weight-constraint (i.e. only a lower bound is supported and weights must be
- * positive integers). A cardinality-constraint is handled like a weight-constraint where
- * all weights are equal to 1.
+ * This constraint class represents a smodels-like weight constraint, i.e.
+ * the body of a basic weight rule. Only a lower bound is supported and
+ * weights must be positive integers > 0.
+ * A cardinality constraint is handled like a weight constraint where all weights are equal to 1.
  *
  * The class implements the following four inference rules:
- * let sumWeights be the sum of the weights of all predecessors that are currently true.
- * let sumReach be the sum of the weights of all predecessors that are currently not false.
- * - FTB: If sumWeigts >= bound: set the body to true.
- * - BFB: If the body is false: set false all literals p for which sumWeights + weight(p) >= bound.
- * - FFB: If sumReach < bound: set the body to false.
- * - BTB: If the body is true: set true all literals p for which sumReach - weight(p) < bound.
+ * Let L be the set of literals of the constraint,
+ * let sumTrue be the sum of the weights of all literals l in L that are currently true,
+ * let sumReach be the sum of the weights of all literals l in L that are currently not false,
+ * let U = {l in L | value(l.var()) == value_free}
+ * - FTB: If sumTrue >= bound: set the constraint (i.e. the body variable) to true.
+ * - BFB: If the constraint is false: set false all literals l in U for which sumTrue + weight(l) >= bound.
+ * - FFB: If sumReach < bound: set the constraint (i.e. the body variable) to false.
+ * - BTB: If the constraint is true: set true all literals l in U for which sumReach - weight(l) < bound.
  */
-class BasicAggregate : public Constraint {
+class WeightConstraint : public Constraint {
 public:
-	//! Creates a new BasicAggregate constraint from the given weight constraint
+	//! Creates a new weight constraint from the given weight literals
 	/*!
-	 * If the given weight constraint is initially true/false,
+	 * If the weight constraint is initially true/false (FTB/FFB),
 	 * its associated literal is assigned appropriately but no constraint is created. Otherwise
-	 * the new BasicAggregate constraint is added to the solver.
+	 * the new weight constraint is added to the solver.
 	 * \param s solver in which the new constraint is to be used.
 	 * \param con the literal that is associated with the constraint
 	 * \param lits the literals of the weight constraint
@@ -61,6 +63,8 @@ public:
 	 * to 1.
 	 */
 	static bool newWeightConstraint(Solver& s, Literal con, WeightLitVec& lits, weight_t bound);
+	
+	// constraint interface
 	bool simplify(Solver& s, bool = false);
 	void destroy();
 	PropResult propagate(const Literal& p, uint32& data, Solver& s);
@@ -68,49 +72,76 @@ public:
 	void undoLevel(Solver& s);
 	ConstraintType type() const { return Constraint_t::native_constraint; }
 private:
-	enum ActiveAggregate {
-		ffb_btb = 1,  // watches con, ~l1, ..., ~ln
-		ftb_bfb = 2   // watches ~con, l1, ..., ln
+	WeightConstraint(Solver& s, Literal con, const WeightLitVec& lits, uint32 bound, uint32 sumW, bool card);
+	~WeightConstraint();
+	// Logically, we distinguish two constraints:
+	// FFB/BTB: (SumW-bound)+1 [~con=1, l1=w1,...,ln=wn]; watches con and ~l1,...,~ln
+	// FTB/BFB: bound [con=1, ~l1=w1,...,~ln=wn]; watches ~con and l1,...,ln
+	// Physically, we store the literals in one array: ~con=1, l1=w1,...,ln=wn
+	enum ActiveConstraint {
+		FFB_BTB   = 0,
+		FTB_BFB   = 1,
 	};
-	BasicAggregate(Solver& s, Literal con, const WeightLitVec& lits, uint32 bound, uint32 sumWeights, bool cardinality);
-	~BasicAggregate();
+	static const uint32 NOT_ACTIVE = 3u;
 	
-	// returns the idx-th literal of sub-constraints c, i.e.
-	// if c == ffb_btb: lits[idx]
-	// if c == ftb_bfb: ~lits[idx]
-	Literal lit(uint32 idx, ActiveAggregate c) const {
-		return Literal::fromIndex(
-			lits_[idx].index() ^ (c-1)
-		);
+	// Represents a literal on the undo stack
+	// idx()        returns the index of the literal
+	// constraint() returns the constraint that added the literal to the undo stack
+	// inReason()   returns true if the literal is part of the reason for a future assignment
+	//              or false if it was propagated by constraint().
+	struct UndoInfo {
+		UndoInfo(uint32 d) : data(d) {}
+		uint32           idx()        const { return data >> 2; }
+		ActiveConstraint constraint() const { return static_cast<ActiveConstraint>((data&2) != 0); }
+		bool             inReason()   const { return (data&1) != 0; }
+		uint32 data;
+	};
+	// Returns the literal of constraint c at index idx i.e.
+	//	lits[idx], iff c == FFB_BTB
+	// ~lits[idx], iff c == FTB_BFB
+	Literal	 lit(uint32 idx, ActiveConstraint c) const {
+		assert(wc_ == 0 || (idx&1) == 0);
+		return Literal::fromIndex( lits_[idx].index() ^ c );
 	}
-	void    addUndo(Solver& s, uint32 idx, ActiveAggregate a, bool markAsProcessed);
-	uint32  lastUndoLevel(Solver&);
-	uint32  undoStart() const { return wr_ == 0 ? size_ : size_<<1; }
-	uint32& next()  { assert(wr_ == 1); return lits_[size_*3].asUint(); }
-	uint32& bp()    { assert(wr_ == 1); return lits_[(size_*3)+1].asUint(); }
-	
-	// returns the weight of literal with the given index.
-	// Note: if aggregate is a cardinality constraint the returned weight is always 1
-	weight_t weight(uint32 index) const {
-		return wr_ == 0
-			? weight_t(1)
-			: (weight_t)lits_[size_+index].asUint();
+	// Returns the weight of the literal at the given index.
+	// Note: For weight constraints the weight of a literal at index idx is stored
+	// at position idx+1. For cardinality constraint no weights are stored and
+	// the returned weight is always 1.
+	weight_t weight(uint32 index)	const {
+		return wc_ == 0 ? weight_t(1) : (weight_t)lits_[index+1].asUint();
 	}
-	uint32  size_     : 30;   // number of lits in aggregate (incl. the literal associated with the constraint)
-	uint32  active_   : 2;    // which of the two sub-constraints is currently relevant?
-	uint32  undo_     : 31;   // undo position. Literals in the range [undoStart(), undo_) were processed in propagate
-	uint32  wr_       : 1;    // 1 if this is a weight constraint, otherwise 0
-	int32   bound_[2];        // bound_[0]: init: (sumW-bound)+1, if <= 0: FFB-BTB
-														// bound_[1]: init: bound, if <= 0: FTB/BFB
-	// if size is n and wr_ == 1, then
-	// [0, n)       stores the literals of this aggregate, i.e. ~B, l1, ..., ln-1
-	// [n, 2n)      stores the weights of the literals
-	// [2n, 3n)     stores the assigned (and relevant) literals of this aggregate
-	// lits_[3n]    position of next literal to look at during backpropagation
-	// lits_[3n+1]  number of literals forced during backpropagation
-	Literal   lits_[0]; 
+	// Updates bound_[c] and adds an undo watch to the solver if necessary.
+	// Then adds the literal at position idx to the reason set (and the undo stack).
+	void updateConstraint(Solver& s, uint32 idx, ActiveConstraint c);
+	// Returns the starting index of the undo stack.
+	uint32   undoStart()       const { return size_<<wc_; }
+	// Adds the literal at position idx to the undo stack.
+	void     undoPush(uint32 idx, ActiveConstraint c, bool inReason) {
+		lits_[++undo_].asUint()	= (idx<<2) + (c<<1) + inReason;
+	}
+	UndoInfo undoTop()         const { return lits_[undo_].asUint(); }
+	UndoInfo undoPos(uint32 i) const { assert(i >= undoStart()); return lits_[i].asUint(); }
+	// Returns the decision level of the last assigned literal
+	// or 0 if no literal was assigned yet.
+	inline uint32	highestUndoLevel(Solver&) const;
+	// Returns the index of next literal to look at during backward propagation.
+	uint32&  getBpIndex(uint32& idx) {
+		if (wc_ == 0) return idx;
+		return lits_[1].asUint() == 1 ? ++lits_[1].asUint() : lits_[1].asUint();
+	}
+	uint32   size_   : 30; // number of lits in constraint (counting the literal associated with the constraint)
+	uint32   active_ :  2; // which of the two sub-constraints is currently unit?
+	uint32   undo_   : 31; // undo position; [undoStart(), undo_) is the undo stack
+	uint32   wc_     :  1; // 1 if this is a weight constraint, otherwise 0 
+	weight_t bound_[2];    // FFB_BTB: (sumW-bound)+1 / FTB_BFB: bound
+	Literal  lits_[0];     // Literals of constraint, followed by undo stack
+	// For cardinality constraints with n = size_:
+	// [0, n)  stores literals of this aggregate, i.e. ~B, l1, ..., ln-1 and
+	// [n, 2n) stores the undo stack
+	// For weight constraints with n = size_:
+	// [0,2n)   stores literals and weights of this aggregate, i.e. ~B, 1, l1, W1,..., ln-1, Wn-1 and
+	// [2n, 3n)	stores the undo stack
 };
-
 
 //! Implements a (meta-)constraint for supporting Smodels-like minimize statements
 /*!
@@ -210,9 +241,7 @@ public:
 	 */
 	bool backtrackFromModel(Solver& s);
 
-	bool backpropagate(Solver& s) {
-		return backpropagate(s, rule(activePL_));
-	}
+	bool backpropagate(Solver& s);
 
 	//! returns the number of optimal models found so far
 	uint64 models() const;

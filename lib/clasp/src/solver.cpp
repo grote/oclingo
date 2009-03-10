@@ -149,6 +149,12 @@ void Solver::freeMem() {
 	PodVector<WL>::destruct(watches_);
 	delete levConflicts_;
 	delete randHeuristic_;
+	// free undo lists
+	// first those still in use
+	for (TrailLevels::size_type i = 0; i != levels_.size(); ++i) {
+		delete levels_[i].second;
+	}
+	// then those in the free list
 	for (VecLayout* x = undoHead_; x; ) {
 		VecLayout* t = x;
 		x = x->last;
@@ -171,7 +177,7 @@ void Solver::startAddConstraints() {
 	strategy_.heuristic->startInit(*this);
 }
 
-bool Solver::endAddConstraints(bool look) {
+bool Solver::endAddConstraints() {
 	Antecedent::checkPlatformAssumptions();
 	if (strategy_.satPrePro.get() != 0) {
 		SolverStrategies::SatPrePro temp(strategy_.satPrePro.release());
@@ -179,20 +185,13 @@ bool Solver::endAddConstraints(bool look) {
 		strategy_.satPrePro.reset(temp.release());
 		if (!r) return false;
 	}
-	VarVec deps;
-	Var v = 0;
-	VarScores scores;
-	while (simplify() && look && failedLiteral(v, scores,Var_t::atom_var, true, deps)) {
-		deps.clear();
-	}
+	if (!simplify()) return false;
 	stats.native[0] = numConstraints();
 	stats.native[1] = numBinaryConstraints();
 	stats.native[2] = numTernaryConstraints();
-	if (!hasConflict()) {
-		strategy_.heuristic->endInit(*this);  
-		if (randHeuristic_) randHeuristic_->endInit(*this);
-	}
-	return !hasConflict();
+	strategy_.heuristic->endInit(*this);  
+	if (randHeuristic_) randHeuristic_->endInit(*this);
+	return true;
 }
 
 Var Solver::addVar(VarType t) {
@@ -599,6 +598,7 @@ bool Solver::lookahead(Literal p, VarScores& scores, VarVec& deps, VarType types
 	}
 	else {
 		resolveConflict();
+		--stats.conflicts;
 	}
 	--stats.choices;
 	return ok;

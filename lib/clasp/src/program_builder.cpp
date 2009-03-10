@@ -249,7 +249,7 @@ bool PrgBodyNode::toConstraint(Solver& s, ClauseCreator& c, const ProgramBuilder
 		Literal eq = goals_[i].sign() ? ~atoms[goals_[i].var()]->literal() : atoms[goals_[i].var()]->literal();
 		lits.push_back( WeightLiteral(eq, weight(i)) );
 	}
-	return BasicAggregate::newWeightConstraint(s, literal(), lits, bound());
+	return WeightConstraint::newWeightConstraint(s, literal(), lits, bound());
 }
 
 // Adds clauses for the tableau-rules FFB and BTB as well as FTB, BFB.
@@ -597,6 +597,10 @@ void ProgramBuilder::disposeProgram(bool force) {
 		delete t;
 	}
 	minimize_ = 0;
+	for (RuleList::size_type i = 0; i != extended_.size(); ++i) {
+		delete extended_[i];
+	}
+	extended_.clear();
 	VarVec().swap(initialSupp_);
 	rule_.clear();
 	if (force) {
@@ -843,7 +847,7 @@ void ProgramBuilder::transformExtended() {
 	}
 }
 
-bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool finalizeSolver) {
+bool ProgramBuilder::endProgram(Solver& solver, bool finalizeSolver) {
 	if (frozen_ == false) {
 		transformExtended();
 		stats.atoms = numAtoms()-1;
@@ -882,7 +886,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool fina
 		stats.ufsNodes = (uint32)ufs_->nodes();
 	}
 	if (incData_) atoms_.resize( atoms_.size() - incData_->unfreeze_.size() );
-	return ret && (!finalizeSolver || solver.endAddConstraints(initialLookahead));
+	return ret && (!finalizeSolver || solver.endAddConstraints());
 }
 
 void ProgramBuilder::updateFrozenAtoms(const Solver& solver) {

@@ -89,13 +89,14 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	weight_t minW = 1;
 	if (type_ == WEIGHTRULE && !body.empty()) {
 		r.sumWeight   = 0;
-		weight_t maxW = 0;
-		minW          = std::numeric_limits<weight_t>::max();
+		body[0].second= std::min(body[0].second, bound());
+		weight_t maxW = body[0].second;
+		minW          = body[0].second;
 		for (uint32 i = 0; i < body.size();) {
 			if (body[i].second > 0) {
-				r.sumWeight += body[i].second;
-				if      (body[i].second > maxW) { maxW = body[i].second; }
+				if      (body[i].second > maxW) { body[i].second = maxW = std::min(body[i].second,bound()); }
 				else if (body[i].second < minW) { minW = body[i].second; }
+				r.sumWeight += body[i].second;
 				++i;
 			}
 			else {
@@ -107,6 +108,7 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 			type_      = CONSTRAINTRULE;
 			bound_     = (bound_+(minW-1))/minW;
 			r.sumWeight= (weight_t)body.size();
+			minW       = 1;
 		}
 	}
 	// minimal weight needed to satisfy body
@@ -252,7 +254,7 @@ PrgRuleTransform::Impl::Impl(ProgramBuilder& prg, PrgRule& r)
 	: prg_(prg)
 	, rule_(r) {
 	aux_     = new Var[r.bound()];
-	sumW_    = new weight_t[r.body.size()];
+	sumW_    = new weight_t[r.body.size()+1];
 	std::memset(aux_ , 0, r.bound()*sizeof(Var));
 	
 	if (r.type() == WEIGHTRULE) {
@@ -263,6 +265,7 @@ PrgRuleTransform::Impl::Impl(ProgramBuilder& prg, PrgRule& r)
 	}
 	uint32 i      = (uint32)r.body.size();
 	weight_t wSum = 0;
+	sumW_[i]      = 0;
 	while (i-- != 0) {
 		wSum += r.body[i].second;
 		sumW_[i] = wSum;
@@ -320,24 +323,28 @@ uint32 PrgRuleTransform::Impl::addRule(Var head, bool addLit, const TodoItem& au
 	//
 	// Let B be the bound of aux, 
 	//  - skip rule, iff sumW(aux.idx) < B, i.e. rule is not applicable.
-	//  - replace rule with list of body literals if sumW(aux.idx) == B or B <= 0
+	//  - replace rule with list of body literals if sumW(aux.idx)-minW < B or B <= 0
+	weight_t minW = rule_.body.back().second;
 	if (aux.bound <= 0 || sumW_[aux.idx] >= aux.bound) {
-		if (aux.bound <= 0 && addLit) {
+		if (aux.bound <= 0) {
+			assert(addLit);
 			Literal body = rule_.body[aux.idx-1].first;
 			createRule(head, &body, &body+1);
 		}
-		else if (sumW_[aux.idx] > aux.bound) {
-			Var auxVar      = getAuxVar(aux);
-			Literal body[2] = { rule_.body[aux.idx-1].first, posLit(auxVar) };
-			createRule(head, body+!addLit, body+2);
-		}
-		else {
-			LitVec nb; 
-			if (addLit) nb.push_back(rule_.body[aux.idx-1].first);
+		else if ((sumW_[aux.idx] - minW) < aux.bound) {
+			LitVec nb;
+			if (addLit) {
+				nb.push_back(rule_.body[aux.idx-1].first);
+			}
 			for (uint32 r = aux.idx; r != rule_.body.size(); ++r) {
 				nb.push_back(rule_.body[r].first);
 			}
 			createRule(head, &nb[0], &nb[0]+nb.size());
+		}
+		else {
+			Var auxVar      = getAuxVar(aux);
+			Literal body[2] = { rule_.body[aux.idx-1].first, posLit(auxVar) };
+			createRule(head, body+!addLit, body+2);
 		}
 		return 1;
 	}
