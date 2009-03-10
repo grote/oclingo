@@ -336,6 +336,7 @@ void SmodelsConverter::printRule(int head, ...)
 
 void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg, int bound, int &var)
 {
+	bool inverted = false;
 	int times = newUid();
 	int negVar;
 	if(neg.size() > 0)
@@ -351,11 +352,13 @@ void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg,
 		}
 		else
 		{
-			// negVar :- #odd { neg }
-			convertParity(neg, 1, parity);
+			// parity :- #even { neg }
+			convertParity(neg, 0, parity);
+			printRule(negVar, parity, 0);
 			// negVar :- not times
-			printRule(negVar, -times, parity, 0);
-			bound = bound + 1;
+			printRule(negVar, -times, 0);
+			bound = 1 - bound;
+			inverted = true;
 		}
 	}
 	else
@@ -363,7 +366,8 @@ void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg,
 	if(zero.size() > 0)
 	{
 		var = newUid();
-		if(neg.size() > 0 ? (bound - 1 > 0) : (bound > 0))
+		// fail if there is a zero
+		if(!inverted && bound > 0)
 		{
 			// var :- negVar, neg
 			posA_.clear();
