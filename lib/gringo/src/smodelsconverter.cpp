@@ -382,6 +382,7 @@ void SmodelsConverter::convertTimes(LitVec &lits, IntVector zero, IntVector neg,
 			}
 			printBasicRule(var, posA_, negA_);
 		}
+		// aggregate is trivially satisfied if there is a zero
 		else
 		{
 			// var :- negVar
