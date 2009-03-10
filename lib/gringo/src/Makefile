@@ -1,7 +1,5 @@
 CC      = g++
-#AR      = gar
 CFLAGS  = -O3 -Wno-deprecated -I../include -I../.. -DNDEBUG
-#CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 
 
 SOURCES = $(wildcard *.cpp) lparselexer.cpp lparseconverter_impl.cpp plainlparselexer.cpp lparseparser_impl.cpp
@@ -10,6 +8,7 @@ OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 all: ../../../bin/libgringo.a
 
 ../../../bin/libgringo.a: $(OBJECTS)
+	mkdir -p ../../../bin
 	$(AR) cvrs $@ $(OBJECTS)
 
 %.o: %.cpp
@@ -35,13 +34,15 @@ lparselexer.cpp: lparselexer.re
 lemon: lemon.c
 	gcc -o $@ $<
 
-lparseconverter_impl.cpp lparseconverter_impl.h: lparseconverter_impl.y lemon lempar.c
+lparseconverter_impl.h: lparseconverter_impl.cpp
+lparseconverter_impl.cpp: lparseconverter_impl.y lemon lempar.c
 	./lemon lparseconverter_impl.y
 	rm lparseconverter_impl.out
 	mv lparseconverter_impl.c lparseconverter_impl.cpp
 	touch lparseconverter_impl.h lparseconverter_impl.cpp
 
-lparseparser_impl.cpp lparseparser_impl.h: lparseparser_impl.y lemon lempar.c
+lparseparser_impl.h: lparseparser_impl.cpp
+lparseparser_impl.cpp: lparseparser_impl.y lemon lempar.c
 	./lemon lparseparser_impl.y
 	rm lparseparser_impl.out
 	mv lparseparser_impl.c lparseparser_impl.cpp
