@@ -25,6 +25,19 @@ true:
 
 # DO NOT DELETE
 
+cb_enumerator.o: ../../clasp/include/cb_enumerator.h
+cb_enumerator.o: ../../clasp/include/solve_algorithms.h
+cb_enumerator.o: ../../clasp/include/literal.h
+cb_enumerator.o: ../../clasp/include/util/platform.h
+cb_enumerator.o: ../../clasp/include/pod_vector.h
+cb_enumerator.o: ../../clasp/include/util/pod_vector.h
+cb_enumerator.o: ../../clasp/include/constraint.h
+cb_enumerator.o: ../../clasp/include/program_builder.h
+cb_enumerator.o: ../../clasp/include/solver_types.h
+cb_enumerator.o: ../../clasp/include/program_rule.h
+cb_enumerator.o: ../../clasp/include/util/misc_types.h
+cb_enumerator.o: ../../clasp/include/solver.h ../../clasp/include/clause.h
+cb_enumerator.o: ../../clasp/include/smodels_constraints.h
 clause.o: ../../clasp/include/clause.h ../../clasp/include/constraint.h
 clause.o: ../../clasp/include/literal.h ../../clasp/include/util/platform.h
 clause.o: ../../clasp/include/pod_vector.h
@@ -55,6 +68,20 @@ lparse_reader.o: ../../clasp/include/constraint.h
 lparse_reader.o: ../../clasp/include/program_rule.h
 lparse_reader.o: ../../clasp/include/util/misc_types.h
 lparse_reader.o: ../../clasp/include/clause.h ../../clasp/include/solver.h
+model_enumerators.o: ../../clasp/include/model_enumerators.h
+model_enumerators.o: ../../clasp/include/solve_algorithms.h
+model_enumerators.o: ../../clasp/include/literal.h
+model_enumerators.o: ../../clasp/include/util/platform.h
+model_enumerators.o: ../../clasp/include/pod_vector.h
+model_enumerators.o: ../../clasp/include/util/pod_vector.h
+model_enumerators.o: ../../clasp/include/constraint.h
+model_enumerators.o: ../../clasp/include/program_builder.h
+model_enumerators.o: ../../clasp/include/solver_types.h
+model_enumerators.o: ../../clasp/include/program_rule.h
+model_enumerators.o: ../../clasp/include/util/misc_types.h
+model_enumerators.o: ../../clasp/include/clause.h
+model_enumerators.o: ../../clasp/include/solver.h
+model_enumerators.o: ../../clasp/include/smodels_constraints.h
 preprocessor.o: ../../clasp/include/preprocessor.h
 preprocessor.o: ../../clasp/include/literal.h
 preprocessor.o: ../../clasp/include/util/platform.h
@@ -112,9 +139,9 @@ solve_algorithms.o: ../../clasp/include/literal.h
 solve_algorithms.o: ../../clasp/include/util/platform.h
 solve_algorithms.o: ../../clasp/include/pod_vector.h
 solve_algorithms.o: ../../clasp/include/util/pod_vector.h
+solve_algorithms.o: ../../clasp/include/constraint.h
 solve_algorithms.o: ../../clasp/include/solver.h
 solve_algorithms.o: ../../clasp/include/solver_types.h
-solve_algorithms.o: ../../clasp/include/constraint.h
 solve_algorithms.o: ../../clasp/include/smodels_constraints.h
 solver.o: ../../clasp/include/solver.h ../../clasp/include/solver_types.h
 solver.o: ../../clasp/include/literal.h ../../clasp/include/util/platform.h
