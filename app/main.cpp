@@ -263,8 +263,8 @@ static void sigHandler(int)
 	_exit(clasp_g.solver.stats.models > 0 ? S_SATISFIABLE : S_UNKNOWN);
 #else
 	printf("\n*** INTERRUPTED! ***\n");
-#endif
 	_exit(S_UNKNOWN);
+#endif
 }
 
 void MainApp::setState(State s)
@@ -1012,24 +1012,24 @@ int main(int argc, char **argv)
 #ifdef WITH_CLASP
 	catch(const ReadError &e)
 	{
-		cerr << "\nError(" << e.line_ << "): " << e.
+		cerr << "\nERROR: line(" << e.line_ << "): " << e.
 			what() << endl;
 		return S_ERROR;
 	}
 #endif
 	catch(const GrinGoException &e)
 	{
-		cerr << "\ngringo " << e.what() << endl;
+		cerr << "\nERROR: " << e.what() << endl;
 		return S_ERROR;
 	}
 	catch(const std::bad_alloc &)
 	{
-		cerr << "\nclasp ERROR: out of memory" << endl;
+		cerr << "\nERROR: out of memory" << endl;
 		return S_MEMORY;
 	}
 	catch(const std::exception &e)
 	{
-		cerr << "\nclasp ERROR: " << e.what() << endl;
+		cerr << "\nERROR: " << e.what() << endl;
 		return S_ERROR;
 	}
 	return S_UNKNOWN;
