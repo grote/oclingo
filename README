@@ -19,6 +19,7 @@ Distribution contents:
                     api documentation and latex to build the guide)
    *.cmake        - Auxiliary files for cmake
 
-gringo is written in (mostly) Standard-C++ and was successfully built and run 
-under Linux (x86-32, x86-64) using gcc and Windows (x86-32) using MinGW. Further
-notes can be found in the INSTALL file.
+gringo is written in mostly Standard-C++ and was successfully built and run 
+under Linux (x86-32, x86-64) using gcc and Windows (x86-32) using MinGW. 
+Currently, it cannot be compiled using Microsoft Visual Studio because it
+uses some gnu extensions. Further notes can be found in the INSTALL file.
