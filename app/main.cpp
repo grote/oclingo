@@ -260,7 +260,7 @@ static void sigHandler(int)
 	printf("%sConflicts : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.conflicts);
 	printf("%sRestarts  : %u\n",  (satM?"c ":""), (uint32)clasp_g.solver.stats.restarts);
 	printf("%s%s\n", (satM?"s ":""), clasp_g.solver.stats.models > 0 ? "SATISFIABLE" : "UNKNOWN");
-	exit(clasp_g.solver.stats.models > 0 ? S_SATISFIABLE : S_UNKNOWN);
+	_exit(clasp_g.solver.stats.models > 0 ? S_SATISFIABLE : S_UNKNOWN);
 #else
 	printf("\n*** INTERRUPTED! ***\n");
 #endif
