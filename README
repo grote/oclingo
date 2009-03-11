@@ -1,28 +1,24 @@
-Gringo 2.0.0
+gringo - A grounder for logic programs:
+---------------------------------------
+gringo is distributed under the GNU Public Licence, see file COPYING for 
+details.
 
-Gringo is a state of the art grounder and has many features that make writing
-logic programs easy. Gringo 2.0.0 is an enhanced Version of its predesessor
-gringo 1.0.0. It supports binder splitting, backjumping and all other features
-already implemented in gringo 1.0.0. A broad set of potentialities for writing 
-encodings for logic programs exists. Currently, no other grounder supports such
-a rich featured language.
+Distribution contents:
+   COPYING        - GNU Public Licence
+   CHANGES        - Major changes between versions
+   README         - This file
+   INSTALL        - Installation instructions
+   Makefile       - Very simple makefile for building the library and the
+                    gringo/clingo/iclingo binary
+   CMakeLists.txt - Used to build project using cmake
+   init.sh        - Helper script to initialize out-of-source builds
+   app/           - Source code directory of the command-line interface
+   bin/           - Directory for binaries
+   lib/           - Sourcecode + includes for both gringo and clasp library
+   doc/           - Documentation directory (doxygen is required to build the
+                    api documentation and latex to build the guide)
+   *.cmake        - Auxiliary files for cmake
 
-There are three different packages of gringo 2.0.0. 
-
-1. Gringo
-The ﬁrst version is gringo, it acts as a grounder and supports several output 
-formats including a human readable format for debugging purposes. This version
-can ground logic programs and output them to ﬁles or pipe them to a solver like
-clasp or smodels.
-
-2. Clingo
-The second version is called clingo and is a grounder with the built-in solver
-clasp. Output can directly be passed to the solver to compute answer sets
-without the overhead of a pipe and an additional re-reading of the program.
-
-3. Iclingo
-The third package is called iclingo, which stands for "incremental clingo". In 
-this version the grounder gringo can be used with clasp incrementally.
-
-Detailed information can be found the in the gringo documentation in the doc 
-folder.
+gringo is written in (mostly) Standard-C++ and was successfully built and run 
+under Linux (x86-32, x86-64) using gcc and Windows (x86-32) using MinGW. Further
+notes can be found in the INSTALL file.
