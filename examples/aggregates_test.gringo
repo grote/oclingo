@@ -1,6 +1,0 @@
-1 sum [ a,b,c ] 1.
-1 min [ a,b,c ] 1.
-1 max [ a,b,c ] 1.
-1 count { a,b,c } 1.
-1 { a,b,c } 1.
-1 [ a=2,b,c ] 1.
