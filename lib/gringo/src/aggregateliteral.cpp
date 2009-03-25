@@ -176,7 +176,11 @@ void AggregateLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 			if(upper_)
 				upper_->getVars(needed);
 		}
-		dg->createDelayedNode(this, head, needed, provided);
+		// there has to be at least one literal in a delayed node
+		if(literals_ && literals_->size() > 0)
+			dg->createDelayedNode(this, head, needed, provided);
+		else
+			dg->createNode(needed, provided);
 	}
 }
 
