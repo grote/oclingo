@@ -57,6 +57,7 @@ Object *createDisjunction(Object *disj, Object *pred)
 }
 
 %name lparseconverter
+%stack_size 0
 %token_prefix LPARSECONVERTER_
 
 %extra_argument { LparseConverter *pConverter }

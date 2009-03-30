@@ -70,6 +70,7 @@ using namespace NS_GRINGO;
 }  
 
 %name lparseparser
+%stack_size 0
 %token_prefix LPARSEPARSER_
 
 %extra_argument { LparseParser *pParser }
