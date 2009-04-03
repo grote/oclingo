@@ -85,7 +85,7 @@ NS_OUTPUT::Object *OptimizeLiteral::convert()
 			{
 				// caution there is no -0
 				// match has to be called before isFact
-				if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second || !p->match() || p->isFact())
+				if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second || !p->match()/* || p->isFact()*/)
 				{
 					p->remove();
 					continue;
@@ -102,7 +102,7 @@ NS_OUTPUT::Object *OptimizeLiteral::convert()
 			ConditionalLiteral *p = *it;
 			for(p->start(); p->hasNext(); p->next())
 			{
-				if(p->getWeight() == 0 || !p->match() || p->isFact())
+				if(p->getWeight() == 0 || !p->match()/* || p->isFact()*/)
 				{
 					p->remove();
 					continue;
