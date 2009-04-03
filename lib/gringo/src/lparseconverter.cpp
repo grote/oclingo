@@ -55,9 +55,13 @@ bool LparseConverter::parse(NS_OUTPUT::Output *output)
 		}
 	}
 	lparseconverter(pParser, 0, lval, this);
-	output_->finalize(true);
-
-	return !getError();
+	if(getError())
+		return false;
+	else
+	{
+		output_->finalize(true);
+		return true;
+	}
 }
 
 LparseConverter::~LparseConverter()
