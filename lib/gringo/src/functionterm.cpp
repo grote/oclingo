@@ -131,7 +131,7 @@ Value FunctionTerm::getValue(Grounder *g)
 		case MINUS:
 			return Value(Value::INT, a_->getValue(g) - b_->getValue(g));
 		case POWER:
-			return Value(Value::INT, pow(a_->getConstValue(g), b_->getConstValue(g)));
+			return Value(Value::INT, pow(a_->getValue(g), b_->getValue(g)));
 		case TIMES:
 			return Value(Value::INT, a_->getValue(g) * b_->getValue(g));
 		case DIVIDE:
