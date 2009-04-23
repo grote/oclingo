@@ -1,22 +1,29 @@
-CC      = g++
-CFLAGS  = -O3 -Wno-deprecated -I../lib/gringo/include -I../lib -DNDEBUG
-#CFLAGS  = -O0 -Wall -g -I.
-LDFLAGS = 
-STATICLIBS = ../bin/libgringo.a
-
 ifeq ($(WITH_CLASP), 1)
-SOURCES     = $(wildcard *.cpp program_opts/*.cpp)
-STATICLIBS += ../bin/libclasp.a
+SOURCES    = $(wildcard *.cpp program_opts/*.cpp)
+STATICLIBS = ../bin/libclasp.a
+ifeq ($(WITH_ICLASP), 1)
+DEFINES = $(GLOBAL_DEFS) -DEXECUTABLE="\"iclingo\""
+EXECUTABLE = iclingo
+else
+DEFINES = $(GLOBAL_DEFS) -DEXECUTABLE="\"clingo\""
+EXECUTABLE = clingo
+endif
 else
 SOURCES = main.cpp options.cpp timer.cpp $(wildcard program_opts/*.cpp)
+EXECUTABLE = gringo 
+DEFINES = $(GLOBAL_DEFS) -DEXECUTABLE="\"gringo\""
 endif
+
+CC      = g++
+CFLAGS  = $(GLOBAL_CFLAGS) -I../lib/gringo/include -I../lib $(DEFINES)
+LDFLAGS = 
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-all: ../bin/gringo
+all: ../bin/$(EXECUTABLE)
 
-../bin/gringo: $(OBJECTS) $(STATICLIBS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ${STATICLIBS}
+../bin/$(EXECUTABLE): $(OBJECTS) $(STATICLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ../bin/libgringo.a ${STATICLIBS}
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -30,7 +37,6 @@ depend: $(SOURCES)
 
 # DO NOT DELETE
 
-enumerator.o: enumerator.h
 main.o: options.h program_opts/program_options.h program_opts/value_base.h
 main.o: program_opts/detail/smartpointer.h timer.h
 options.o: options.h program_opts/program_options.h program_opts/value_base.h

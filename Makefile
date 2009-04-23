@@ -1,10 +1,22 @@
-#note if WITH_ICLASP is defined also WITH_CLASP has to be defined
-export WITH_ICLASP = 0
-export WITH_CLASP = 0
+WITH_ICLASP = 0
+WITH_CLASP = 0
+GRINGO_VERSION = "2.0.4"
+CLASP_VERSION = "1.2.0"
+CFLAGS  = -DNDEBUG -O3 -w
 
 ifeq ($(WITH_ICLASP), 1)
 export WITH_CLASP = 1
+export WITH_ICLASP = 1
+export GLOBAL_DEFS = -DWITH_CLASP -DWITH_ICLASP -DGRINGO_VERSION=\"$(GRINGO_VERSION)\" -DCLASP_VERSION=\"$(CLASP_VERSION)\"
+else
+ifeq ($(WITH_CLASP), 1)
+export WITH_CLASP = 1
+export GLOBAL_DEFS = -DWITH_CLASP -DGRINGO_VERSION=\"$(GRINGO_VERSION)\" -DCLASP_VERSION=\"$(CLASP_VERSION)\"
+else
+export GLOBAL_DEFS = -DGRINGO_VERSION=\"$(GRINGO_VERSION)\"
 endif
+endif
+export GLOBAL_CFLAGS = $(CFLAGS)
 
 note:
 	@echo "This Makefile file is deprecated."

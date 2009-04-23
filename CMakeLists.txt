@@ -17,28 +17,6 @@ SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/" "relea
 SET(CPACK_SOURCE_GENERATOR "TGZ")
 include (CPack)
 
-# add macros for version information
-ADD_DEFINITIONS(-DPACK_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
-ADD_DEFINITIONS(-DGRINGO_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
-ADD_DEFINITIONS(-DCLASP_VERSION="\\"1.2.0\\"")
-if(WITH_CLASP)
-	ADD_DEFINITIONS(-DWITH_CLASP)
-endif(WITH_CLASP)
-
-if(WITH_ICLASP)
-	ADD_DEFINITIONS(-DWITH_ICLASP)
-endif(WITH_ICLASP)
-
-if(WITH_ICLASP)
-	ADD_DEFINITIONS(-DEXECUTABLE="\\"iclingo\\"")
-else(WITH_ICLASP)
-	if(WITH_CLASP)
-		ADD_DEFINITIONS(-DEXECUTABLE="\\"clingo\\"")
-	else(WITH_CLASP)
-		ADD_DEFINITIONS(-DEXECUTABLE="\\"gringo\\"")
-	endif(WITH_CLASP)
-endif(WITH_ICLASP)
-
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)
 set(LIBRARY_OUTPUT_PATH ${GrinGo_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries." FORCE)
 if(LINK_STATIC)
@@ -63,6 +41,28 @@ set(WITH_CLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an internal
 set(WITH_ICLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an incremental clasp interface.")
 if(WITH_ICLASP)
 	set(WITH_CLASP ON CACHE BOOL "Enable this flag to build GrinGo with an internal clasp version.")
+endif(WITH_ICLASP)
+
+# add macros for version information
+ADD_DEFINITIONS(-DPACK_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
+ADD_DEFINITIONS(-DGRINGO_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
+ADD_DEFINITIONS(-DCLASP_VERSION="\\"1.2.0\\"")
+if(WITH_CLASP)
+	ADD_DEFINITIONS(-DWITH_CLASP)
+endif(WITH_CLASP)
+
+if(WITH_ICLASP)
+	ADD_DEFINITIONS(-DWITH_ICLASP)
+endif(WITH_ICLASP)
+
+if(WITH_ICLASP)
+	ADD_DEFINITIONS(-DEXECUTABLE="\\"iclingo\\"")
+else(WITH_ICLASP)
+	if(WITH_CLASP)
+		ADD_DEFINITIONS(-DEXECUTABLE="\\"clingo\\"")
+	else(WITH_CLASP)
+		ADD_DEFINITIONS(-DEXECUTABLE="\\"gringo\\"")
+	endif(WITH_CLASP)
 endif(WITH_ICLASP)
 
 add_subdirectory (app)

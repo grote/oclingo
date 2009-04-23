@@ -1,7 +1,5 @@
 CC      = g++
-#AR      = gar
-CFLAGS  = -O3 -Wno-deprecated -I../.. -DNDEBUG
-#CFLAGS  = -O0 -Wall -g -I.
+CFLAGS  = $(GLOBAL_CFLAGS) -I../.. $(GLOBAL_DEFS)
 LDFLAGS = 
 
 SOURCES = $(wildcard *.cpp)

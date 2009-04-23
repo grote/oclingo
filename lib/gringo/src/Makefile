@@ -1,5 +1,5 @@
 CC      = g++
-CFLAGS  = -O3 -Wno-deprecated -I../include -I../.. -DNDEBUG
+CFLAGS  = $(GLOBAL_CFLAGS) -I../include -I../.. $(GLOBAL_DEFS)
 LDFLAGS = 
 
 SOURCES = $(wildcard *.cpp) lparselexer.cpp lparseconverter_impl.cpp plainlparselexer.cpp lparseparser_impl.cpp
@@ -13,17 +13,6 @@ all: ../../../bin/libgringo.a
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-../include/gringo.h: ../include/gringo.h.in
-ifeq ($(WITH_ICLASP), 1)
-	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP/#define WITH_CLASP/" -e "s/#cmakedefine WITH_ICLASP/#define WITH_ICLASP/" > $@
-else 
-ifeq ($(WITH_CLASP), 1)
-	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP/#define WITH_CLASP/" -e "s/#cmakedefine WITH_ICLASP//" > $@
-else
-	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP//" -e "s/#cmakedefine WITH_ICLASP//" > $@
-endif
-endif
 
 plainlparselexer.cpp: plainlparselexer.re
 	re2c -o $@ $<
@@ -49,9 +38,9 @@ lparseparser_impl.cpp: lparseparser_impl.y lemon lempar.c
 	touch lparseparser_impl.h lparseparser_impl.cpp
 
 clean:
-	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparseconverter_impl.h lparseconverter_impl.cpp lparselexer.cpp lemon plainlparselexer.cpp ../../../bin/libgringo.a ../include/gringo.h
+	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparseconverter_impl.h lparseconverter_impl.cpp lparselexer.cpp lemon plainlparselexer.cpp ../../../bin/libgringo.a
 
-depend: ../include/gringo.h $(SOURCES) true
+depend: $(SOURCES) true
 	makedepend -Y -- $(CFLAGS) -- $(SOURCES) &> /dev/null
 	rm Makefile.bak
 true:
@@ -79,6 +68,11 @@ assignmentliteral.o: ../include/output.h ../include/globalstorage.h
 assignmentliteral.o: ../include/funcsymbol.h
 assignmentliteral.o: ../include/literaldependencygraph.h
 assignmentliteral.o: ../include/statementchecker.h
+avgaggregate.o: ../include/aggregateliteral.h ../include/gringo.h
+avgaggregate.o: ../include/literal.h ../include/printable.h
+avgaggregate.o: ../include/expandable.h ../include/avgaggregate.h
+avgaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
+avgaggregate.o: ../include/term.h ../include/value.h ../include/output.h
 basicprogramevaluator.o: ../include/basicprogramevaluator.h
 basicprogramevaluator.o: ../include/gringo.h ../include/evaluator.h
 basicprogramevaluator.o: ../include/output.h ../include/value.h
@@ -245,8 +239,10 @@ lparseparser_impl.o: ../include/assignmentliteral.h
 lparseparser_impl.o: ../include/computeliteral.h ../include/optimizeliteral.h
 lparseparser_impl.o: ../include/sumaggregate.h ../include/minaggregate.h
 lparseparser_impl.o: ../include/maxaggregate.h ../include/countaggregate.h
+lparseparser_impl.o: ../include/avgaggregate.h ../include/timesaggregate.h
 lparseparser_impl.o: ../include/disjunctionaggregate.h
-lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h
+lparseparser_impl.o: ../include/conjunctionaggregate.h
+lparseparser_impl.o: ../include/parityaggregate.h ../include/term.h
 lparseparser_impl.o: ../include/constant.h ../include/variable.h
 lparseparser_impl.o: ../include/functionterm.h ../include/funcsymbolterm.h
 lparseparser_impl.o: ../include/rangeterm.h ../include/multipleargsterm.h
@@ -301,6 +297,12 @@ output.o: ../include/output.h ../include/gringo.h ../include/value.h
 output.o: ../include/printable.h ../include/domain.h ../include/grounder.h
 output.o: ../include/globalstorage.h ../include/funcsymbol.h
 output.o: ../include/pilsoutput.h ../include/gringoexception.h
+parityaggregate.o: ../include/parityaggregate.h ../include/gringo.h
+parityaggregate.o: ../include/aggregateliteral.h ../include/literal.h
+parityaggregate.o: ../include/printable.h ../include/expandable.h
+parityaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
+parityaggregate.o: ../include/term.h ../include/value.h ../include/output.h
+parityaggregate.o: ../include/constant.h
 pilsoutput.o: ../include/pilsoutput.h ../include/gringo.h ../include/output.h
 pilsoutput.o: ../include/value.h ../include/printable.h
 plainlparselexer.o: ../include/plainlparselexer.h ../include/gringo.h
@@ -354,8 +356,9 @@ relationliteral.o: ../include/output.h ../include/globalstorage.h
 relationliteral.o: ../include/funcsymbol.h
 smodelsconverter.o: ../include/smodelsconverter.h ../include/gringo.h
 smodelsconverter.o: ../include/output.h ../include/value.h
-smodelsconverter.o: ../include/printable.h ../include/grounder.h
-smodelsconverter.o: ../include/globalstorage.h ../include/funcsymbol.h
+smodelsconverter.o: ../include/printable.h ../include/gringoexception.h
+smodelsconverter.o: ../include/grounder.h ../include/globalstorage.h
+smodelsconverter.o: ../include/funcsymbol.h
 smodelsoutput.o: ../include/smodelsoutput.h ../include/gringo.h
 smodelsoutput.o: ../include/smodelsconverter.h ../include/output.h
 smodelsoutput.o: ../include/value.h ../include/printable.h
@@ -378,7 +381,15 @@ sumaggregate.o: ../include/aggregateliteral.h ../include/literal.h
 sumaggregate.o: ../include/printable.h ../include/expandable.h
 sumaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
 sumaggregate.o: ../include/term.h ../include/value.h ../include/output.h
+sumaggregate.o: ../include/indexeddomain.h ../include/dlvgrounder.h
+sumaggregate.o: ../include/grounder.h ../include/globalstorage.h
+sumaggregate.o: ../include/funcsymbol.h ../include/variable.h
 term.o: ../include/term.h ../include/gringo.h ../include/printable.h
+timesaggregate.o: ../include/timesaggregate.h ../include/gringo.h
+timesaggregate.o: ../include/aggregateliteral.h ../include/literal.h
+timesaggregate.o: ../include/printable.h ../include/expandable.h
+timesaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
+timesaggregate.o: ../include/term.h ../include/value.h ../include/output.h
 value.o: ../include/value.h ../include/gringo.h ../include/printable.h
 value.o: ../include/gringoexception.h ../include/globalstorage.h
 value.o: ../include/funcsymbol.h
@@ -410,8 +421,10 @@ lparseparser_impl.o: ../include/assignmentliteral.h
 lparseparser_impl.o: ../include/computeliteral.h ../include/optimizeliteral.h
 lparseparser_impl.o: ../include/sumaggregate.h ../include/minaggregate.h
 lparseparser_impl.o: ../include/maxaggregate.h ../include/countaggregate.h
+lparseparser_impl.o: ../include/avgaggregate.h ../include/timesaggregate.h
 lparseparser_impl.o: ../include/disjunctionaggregate.h
-lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h
+lparseparser_impl.o: ../include/conjunctionaggregate.h
+lparseparser_impl.o: ../include/parityaggregate.h ../include/term.h
 lparseparser_impl.o: ../include/constant.h ../include/variable.h
 lparseparser_impl.o: ../include/functionterm.h ../include/funcsymbolterm.h
 lparseparser_impl.o: ../include/rangeterm.h ../include/multipleargsterm.h
