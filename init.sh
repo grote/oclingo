@@ -13,12 +13,9 @@ while [[ $# > 0 ]]; do
 			debug=1
 			;;
 		"--iclingo")
-			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=ON"
-			clasp=1
 			iclingo=1
 			;;
 		"--clingo")
-			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=OFF"
 			clingo=1
 			;;
 		"--kdev") 
@@ -37,6 +34,7 @@ while [[ $# > 0 ]]; do
 			echo "--clingo  : enable build-in clasp version"
 			echo "--iclingo : enable incremental clasp interface "
 			echo "--debug   : also create debug builds"
+			echo "--kdev    : generate project files for kdevelop"
 			echo "--mingw32 : crosscompile for windows"
 			echo "            Note: u may have to change the file \"mingw32.cmake\""
 			echo "--x86-pc-linux-gnu : "
