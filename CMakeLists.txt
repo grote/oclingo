@@ -1,6 +1,7 @@
 project (GrinGo)
 
 cmake_minimum_required(VERSION 2.4)
+cmake_policy(SET CMP0005 OLD)
 
 include (pch.cmake)
 
@@ -8,7 +9,7 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 #FIND_PACKAGE(RE2C REQUIRED)
 
 SET(CPACK_PACKAGE_VERSION "2.0.3")
-SET(CPACK_PACKAGE_VERSION_MAJOR "3")
+SET(CPACK_PACKAGE_VERSION_MAJOR "2")
 SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "3")
 # that sucks this is nowhere documented!!!
@@ -16,6 +17,22 @@ SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/" "relea
 SET(CPACK_SOURCE_GENERATOR "TGZ")
 include (CPack)
 
+# add macros for version information
+ADD_DEFINITIONS(-DPACK_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
+ADD_DEFINITIONS(-DGRINGO_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
+ADD_DEFINITIONS(-DCLASP_VERSION="\\"1.2.0\\"")
+ADD_DEFINITIONS(-DWITH_CLASP=${WITH_CLASP})
+ADD_DEFINITIONS(-DWITH_ICLASP=${WITH_ICLASP})
+
+if(WITH_ICLASP)
+	ADD_DEFINITIONS(-DEXECUTABLE="\\"iclingo\\"")
+else(WITH_ICLASP)
+	if(WITH_CLASP)
+		ADD_DEFINITIONS(-DEXECUTABLE="\\"clingo\\"")
+	else(WITH_CLASP)
+		ADD_DEFINITIONS(-DEXECUTABLE="\\"gringo\\"")
+	endif(WITH_CLASP)
+endif(WITH_ICLASP)
 
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)
 set(LIBRARY_OUTPUT_PATH ${GrinGo_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries." FORCE)

@@ -59,10 +59,10 @@ add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 target_link_libraries (gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/gringo.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/gringo.h)
+#CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/gringo.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/gringo.h)
 
 IF(PCHSupport_FOUND)
-	add_precompiled_header(gringo-lib ${CMAKE_CURRENT_BINARY_DIR}/config/gringo.h)
+	add_precompiled_header(gringo-lib ${CMAKE_CURRENT_SOURCE_DIR}/include/gringo.h)
 ENDIF(PCHSupport_FOUND)
 
 

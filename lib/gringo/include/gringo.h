@@ -18,8 +18,8 @@
 #ifndef GRINGO_H
 #define GRINGO_H
 
-#cmakedefine WITH_CLASP
-#cmakedefine WITH_ICLASP
+//#cmakedefine WITH_CLASP
+//#cmakedefine WITH_ICLASP
 
 #include <cassert>
 #include <iostream>
