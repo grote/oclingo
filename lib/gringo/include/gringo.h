@@ -18,8 +18,8 @@
 #ifndef GRINGO_H
 #define GRINGO_H
 
-//#cmakedefine WITH_CLASP
-//#cmakedefine WITH_ICLASP
+#define WITH_CLASP
+#define WITH_ICLASP
 
 #include <cassert>
 #include <iostream>
@@ -73,7 +73,7 @@ namespace NS_GRINGO
 	enum MatchStatus { SuccessfulMatch, FailureOnNextMatch, FailureOnFirstMatch };
 	enum IncPart { NONE, BASE, LAMBDA, DELTA };
 	enum GroundStep { PREPARE, REINIT, GROUND, RELEASE };
-	
+
 	class DLVGrounder;
 
 	class StatementChecker;
@@ -116,7 +116,7 @@ namespace NS_GRINGO
 
 	class Term;
 	typedef std::vector<Term*> TermVector;
-	
+
 	class ConditionalLiteral;
 	typedef std::vector<ConditionalLiteral*> ConditionalLiteralVector;
 
@@ -125,11 +125,11 @@ namespace NS_GRINGO
 
 	class FuncSymbol;
 	typedef std::vector<FuncSymbol* > FuncSymbolVector;
-	
+
 	class ConditionalLiteralTarget;
 
 	inline std::ostream& NL(std::ostream& os)
-	{ 
+	{
 		return os.put(os.widen('\n'));
 	}
 
