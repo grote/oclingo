@@ -18,9 +18,6 @@
 #ifndef GRINGO_H
 #define GRINGO_H
 
-#define WITH_CLASP
-#define WITH_ICLASP
-
 #include <cassert>
 #include <iostream>
 #include <iomanip>
