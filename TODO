@@ -10,6 +10,10 @@ performance:
 - optimize datastructures (in view of memoryconsumption)
 - it would be better to use a ptr_vector or sth like that instead of std::vector<T*>
 
+features:
+- add an #include directive
+- add information about different ruletypes to the statistics
+
 code:
 - find a better way (a. :- a. ? ) to state that no answer set exists
 - use more c++ exceptions
