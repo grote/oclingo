@@ -267,7 +267,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("brave"    , bool_switch(), "Compute brave consequences")
 		("cautious" , bool_switch(), "Compute cautious consequences\n")
 
-		("opt-all"    , bool_switch(), "Compute all optimal models")
+		("opt-all"    , bool_switch(&optAll), "Compute all optimal models")
 		("opt-value"  , value<std::vector<int> >(&optVals),
 			"Initialize objective function(s)\n"
 			"      Valid:   <n1[,n2,n3,...]>\n")
@@ -383,7 +383,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        <n1,n2,n3>: Store at most min(P/<n1>*(<n2>^i),P*<n3>) learnt nogoods,\n"
 			"                    P and i being initial problem size and number of restarts\n"
 			"        no        : Do not delete learnt nogoods")
-		("reduce-on-restart", bool_switch(), "Delete some learnt nogoods after every restart\n")
+		("reduce-on-restart", bool_switch(&redOnRestart), "Delete some learnt nogoods after every restart\n")
 
 		("strengthen", value<int>()->defaultValue(SolverStrategies::all_antes)->parser(mapCflMinimize),
 			"Configure conflict nogood strengthening\n"
