@@ -274,7 +274,7 @@ void DLVGrounder::ground()
 				// TODO: closestBinderSol_ should be the failure set 
 				// but i am not sure if its worth the work
 				l = std::max(csb, closestBinderSol_[l]);
-				if(l == csb)
+				if(l == csb && l != -1)
 					csb = closestBinderRel_[l];
 				/*
 				std::cerr << "FailureOnNextMatch bj to: ";

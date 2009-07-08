@@ -59,7 +59,6 @@ void Grounder::addDomains(int id, std::vector<IntVector*>::iterator pos, std::ve
 			addDomains(id, pos + 1, end, list);
 			list.pop_back();
 		}
-		delete (*pos);
 	}
 }
 
@@ -67,6 +66,8 @@ void Grounder::addDomains(int id, std::vector<IntVector*>* list)
 {
 	IntVector empty;
 	addDomains(id, list->begin(), list->end(), empty);
+	for(std::vector<IntVector*>::iterator i = list->begin(); i != list->end(); ++i)
+		delete (*i);
 	delete list;
 }
 
