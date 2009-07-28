@@ -232,7 +232,10 @@ void DLVGrounder::ground()
 				status = FailureOnNextMatch;
 				r_->grounded(g_);
 				l   = closestBinderRel_[l + 1];
-				csb = closestBinderRel_[l];
+				if (l != -1) 
+				{
+					csb = closestBinderRel_[l];
+				}
 				/*
 				std::cerr << "found solution backjump to: ";
 				if(l == -1)
