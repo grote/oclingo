@@ -76,6 +76,7 @@ namespace NS_GRINGO
 		 * \param e Reference to the object that is preprocessed
 		 */
 		virtual void preprocess(Grounder *g, Expandable *e) = 0;
+		virtual void preprocessHead(Grounder *g) { };
 		/**
 		 * \brief This method is called to undo a call to finish() and evaluate()
 		 */

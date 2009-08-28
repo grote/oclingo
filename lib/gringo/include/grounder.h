@@ -32,6 +32,7 @@ namespace NS_GRINGO
 		typedef std::map<int, int> VariableMap;
 		typedef std::map<int, std::pair<bool, Term*> > ConstTerms;
 		typedef std::vector<std::pair<std::pair<IncPart, Value>, int> > IncParts;
+		typedef std::map<int, int> IncShifts;
 	public:
 		struct Options
 		{
@@ -67,9 +68,12 @@ namespace NS_GRINGO
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
 		/// Adds a domain that never occurs in any head
-		void addZeroDomain(Domain *d);
+		void addZeroDomain(int uid);
 		void setIncPart(IncPart part, const Value &v);
-		
+		void setIncShift(const std::string &id, int arity);
+		int getIncShift(int uid) const;
+		bool checkIncShift(int uid) const;
+
 		int getIncStep() const;
 		bool isIncGrounding() const;
 
@@ -88,7 +92,6 @@ namespace NS_GRINGO
 		bool incremental_;
 		int incStep_;
 		
-
 		int internalVars_;
 		ProgramVector sccs_;
 		VariableMap varMap_;
@@ -100,6 +103,7 @@ namespace NS_GRINGO
 		ValueVector substitution_;
 		IntVector binder_;
 		std::set<Signature> trueNegPred_;
+		IncShifts shifts_;
 	};
 }
 

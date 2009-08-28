@@ -79,6 +79,7 @@ begin:
 		LAMBDA          = "#cumulative";
 		BASE            = "#base";
 		DELTA           = "#volatile";
+		ISHIFT          = "#ishift";
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
@@ -96,6 +97,7 @@ begin:
 		LAMBDA          { return LPARSEPARSER_LAMBDA; }
 		BASE            { return LPARSEPARSER_BASE; }
 		DELTA           { return LPARSEPARSER_DELTA; }
+		ISHIFT          { return LPARSEPARSER_ISHIFT; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"#"? "times"    { backwardWarning(); return LPARSEPARSER_TIMES; }

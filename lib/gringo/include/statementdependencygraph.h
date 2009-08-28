@@ -68,12 +68,13 @@ namespace NS_GRINGO
 		enum Type {STATEMENTNODE = 0, PREDICATENODE = 1};
 	public:
 		SDGNode(Statement *rule);
-		SDGNode(Domain *dom);
+		SDGNode(int dom);
 		SDGNodeVector *getDependency() const;
 		SDGNodeVector *getNegDependency() const;
 		Statement *getStatement() const;
-		Domain *getDomain() const;
+		int getDomain() const;
 		Type getType() const;
+		SDG::SCC *getSCC() const { return scc_; }
 
 		void addDependency(SDGNode *n, bool neg = false);
 		~SDGNode();
@@ -85,7 +86,7 @@ namespace NS_GRINGO
 		union
 		{
 			Statement  *rule_;
-			Domain     *dom_;
+			int         dom_;
 		};
 		SDGNodeVector dependency_;
 		SDGNodeVector negDependency_;

@@ -475,6 +475,11 @@ void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a,
 	}
 }
 
+void ConditionalLiteral::preprocessHead(Grounder *g)
+{
+	pred_->preprocessHead(g);
+}
+
 void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	ConditionalLiteralExpander cle(this, e, conditionals_, weight_);

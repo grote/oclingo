@@ -49,12 +49,10 @@ SDGNode *SDG::createStatementNode(Statement *r, bool preserveOrder)
 
 SDGNode *SDG::createPredicateNode(PredicateLiteral *pred)
 {
-	if((int)predicateNodes_.size() < pred->getUid() + 1)
-		predicateNodes_.resize(pred->getUid() + 1);
-	SDGNode *&n = predicateNodes_[pred->getUid()];
-	if(!n)
-		n = new SDGNode(pred->getDomain());
-	return n;
+	int uid = pred->getUid();
+	for(int i = predicateNodes_.size(); i <= uid; i++)
+		predicateNodes_.push_back(new SDGNode(i));
+	return predicateNodes_[uid];
 }
 
 namespace
@@ -212,9 +210,39 @@ void SDG::calcSCCs(Grounder *g)
 		if(v->index_ == 0)
 			tarjan(v, index, back, stack);
 		// set the type of the domain
-		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->type_));
-		if(v->dependency_.size() == 0)
-			g->addZeroDomain(v->getDomain());
+		g->getDomain(v->getDomain())->setType(static_cast<Domain::Type>(v->scc_->type_));
+	}
+
+	std::stack<SCC*> s;
+
+	for(SDGNodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
+	{
+		if(g->checkIncShift((*it)->getDomain()))
+			s.push((*it)->getSCC());
+	}
+
+	while(!s.empty())
+	{
+		SCC *scc = s.top();
+		s.pop();
+		if(scc->type_ != SCC::NORMAL)
+		{
+			scc->type_ = SCC::NORMAL;
+			for(SCCSet::iterator it = scc->sccs_.begin(); it != scc->sccs_.end(); it++)
+				s.push(*it);
+		}
+	}
+
+	for(SDGNodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
+	{
+		SDGNode *v = *it;
+		if(v->scc_->type_ == SCC::NORMAL)
+			g->getDomain(v->getDomain())->setType(static_cast<Domain::Type>(v->scc_->type_));
+		else if(v->dependency_.size() == 0)
+		{
+			if(g->getIncShift(v->getDomain()) == v->getDomain()) g->addZeroDomain(v->getDomain());
+			else g->getDomain(v->getDomain())->setSolved(true);
+		}
 	}
 
 	// do a topological sort
@@ -258,7 +286,7 @@ SDG::~SDG()
 
 // =================================== SDGNode ===========================================
 
-SDGNode::SDGNode(Domain *domain) : index_(0), type_(PREDICATENODE), done_(0), scc_(0), dom_(domain)
+SDGNode::SDGNode(int domain) : index_(0), type_(PREDICATENODE), done_(0), scc_(0), dom_(domain)
 {
 }
 
@@ -276,12 +304,12 @@ SDGNodeVector *SDGNode::getDependency() const
 	return const_cast<SDGNodeVector *>(&dependency_);
 }
 
-Domain* SDGNode::getDomain() const
+int SDGNode::getDomain() const
 {
 	if(type_ == PREDICATENODE)
 		return dom_; 
 	else
-		return 0;
+		return -1;
 }
 
 Statement* SDGNode::getStatement() const

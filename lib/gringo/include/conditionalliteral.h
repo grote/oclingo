@@ -48,6 +48,7 @@ namespace NS_GRINGO
 		void ground(Grounder *g, GroundStep step);
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
+		virtual void preprocessHead(Grounder *g);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual double heuristicValue();
 		virtual void addIncParam(Grounder *g, const Value &v);

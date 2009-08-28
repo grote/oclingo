@@ -37,11 +37,11 @@
 
 using namespace NS_GRINGO;
 		
-PredicateLiteral::PredicateLiteral(Grounder *g, int id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
+PredicateLiteral::PredicateLiteral(Grounder *g, int id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), aid_(uid_), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
 {
 }
 
-PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : Literal(p), uid_(p.uid_), predNode_(p.predNode_), id_(p.id_), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : Literal(p), uid_(p.uid_), aid_(p.aid_), predNode_(p.predNode_), id_(p.id_), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -247,7 +247,7 @@ bool PredicateLiteral::match(Grounder *g)
 
 NS_OUTPUT::Object * PredicateLiteral::convert(const ValueVector &values)
 {
-	return new NS_OUTPUT::Atom(getNeg(), predNode_, uid_, values);
+	return new NS_OUTPUT::Atom(getNeg(), predNode_, aid_, values);
 }
 
 NS_OUTPUT::Object *PredicateLiteral::convert()
@@ -304,6 +304,13 @@ PredicateLiteral::~PredicateLiteral()
 Domain *PredicateLiteral::getDomain() const
 {
 	return predNode_;
+}
+
+void PredicateLiteral::preprocessHead(Grounder *g)
+{
+	aid_      = uid_;
+	uid_      = g->getIncShift(uid_);
+	predNode_ = g->getDomain(uid_);
 }
 
 void PredicateLiteral::preprocess(Grounder *g, Expandable *e)

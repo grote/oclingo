@@ -42,8 +42,10 @@ namespace NS_GRINGO
 		void addDomain(const ValueVector &values);
 		void removeDomain(const ValueVector &values);
 		void setType(Type type_);
+		Type getType() const { return type_; }
 		int getDefines();
 		ValueVectorSet &getDomain() const;
+		void moveDomain(Domain *nextDomain);
 		~Domain();
 	private:
 		enum Type type_;

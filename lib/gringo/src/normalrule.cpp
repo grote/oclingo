@@ -409,6 +409,7 @@ void NormalRule::preprocess(Grounder *g)
 	if(head_)
 	{
 		NormalRuleExpander nre(this, g, body_);
+		head_->preprocessHead(g);
 		head_->preprocess(g, &nre);
 	}
 	if(body_)

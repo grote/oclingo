@@ -71,6 +71,26 @@ void Grounder::addDomains(int id, std::vector<IntVector*>* list)
 	delete list;
 }
 
+void Grounder::setIncShift(const std::string &id, int arity)
+{
+	shifts_[createPred(createString(id), arity)] = createPred(createString("#next_" + id), arity);
+}
+
+int Grounder::getIncShift(int uid) const
+{
+	IncShifts::const_iterator res = shifts_.find(uid);
+	if(res != shifts_.end()) return res->second;
+	else return uid;
+}
+
+bool Grounder::checkIncShift(int uid) const
+{
+	if(getDomain(uid)->getType() == Domain::NORMAL) return false;
+	IncShifts::const_iterator res = shifts_.find(uid);
+	if(res == shifts_.end()) return false;
+	else return getDomain(res->second)->getType() == Domain::NORMAL;
+}
+
 void Grounder::buildDepGraph()
 {
 	SDG dg;
@@ -116,18 +136,12 @@ void Grounder::addDomains()
 	}
 }
 
-void Grounder::addZeroDomain(Domain *d)
+void Grounder::addZeroDomain(int uid)
 {
+	Domain *d = getDomain(uid);
 	d->setSolved(true);
-	for(int uid = 0; uid < (int)getDomains()->size(); uid++)
-	{
-		if(d == (*getDomains())[uid])
-		{
-			Signature &sig = (*getPred())[uid];
-			std::cerr << "Warning: " << *getString(sig.first) << "/" << sig.second << " is never defined." << std::endl;
-			break;
-		}
-	}
+	Signature &sig = (*getPred())[uid];
+	std::cerr << "Warning: " << *getString(sig.first) << "/" << sig.second << " is never defined." << std::endl;
 }
 
 void Grounder::reset()
@@ -284,6 +298,13 @@ void Grounder::ground_()
 		}
 		eval_->evaluate();
 		eval_ = 0;
+	}
+
+	for(IncShifts::iterator it = shifts_.begin(); it != shifts_.end(); it++)
+	{
+		Domain *next = getDomain(it->second);
+		Domain *before = getDomain(it->first);
+		before->moveDomain(next);
 	}
 }
 

@@ -123,6 +123,14 @@ ValueVectorSet &Domain::getDomain() const
 	return const_cast<ValueVectorSet &>(domain_);
 }
 
+void Domain::moveDomain(Domain *nextDomain)
+{
+	domain_.swap(nextDomain->domain_);
+	facts_.swap(nextDomain->facts_);
+	nextDomain->domain_.clear();
+	nextDomain->facts_.clear();
+}
+
 Domain::~Domain() 
 {
 }

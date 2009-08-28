@@ -37,6 +37,7 @@ namespace NS_GRINGO
 		void ground(Grounder *g, GroundStep step);
 		virtual void reset();
 		virtual void finish();
+		virtual void preprocessHead(Grounder *g);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
