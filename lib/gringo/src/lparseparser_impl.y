@@ -188,16 +188,26 @@ using namespace NS_GRINGO;
 
 start ::= program.
 
-program ::= program BASE DOT.                                   { GROUNDER->setIncPart(BASE, Value()); }
-program ::= program LAMBDA IDENTIFIER(id) DOT.                  { GROUNDER->setIncPart(LAMBDA, Value(Value::STRING, STRING(id))); }
-program ::= program DELTA IDENTIFIER(id) DOT.                   { GROUNDER->setIncPart(DELTA, Value(Value::STRING, STRING(id))); }
-program ::= program ISHIFT IDENTIFIER(id) DIVIDE NUMBER(n) DOT. { GROUNDER->setIncShift(*id, atol(n->c_str())); DELETE_PTR(n); DELETE_PTR(id); } 
-program ::= program rule(rule) DOT.                             { if(rule) pParser->getGrounder()->addStatement(rule); }
+program ::= program BASE DOT.                  { GROUNDER->setIncPart(BASE, Value()); }
+program ::= program LAMBDA IDENTIFIER(id) DOT. { GROUNDER->setIncPart(LAMBDA, Value(Value::STRING, STRING(id))); }
+program ::= program DELTA IDENTIFIER(id) DOT.  { GROUNDER->setIncPart(DELTA, Value(Value::STRING, STRING(id))); }
+program ::= program rule(rule) DOT.            { if(rule) pParser->getGrounder()->addStatement(rule); }
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
+program ::= program ISHIFT shift_list DOT.  
 program ::= program DOMAIN domain_list DOT.
-program ::= program CONST IDENTIFIER(id) ASSIGN const_term(term) DOT. { pParser->getGrounder()->setConstValue(STRING(id), term); }
+program ::= program CONST const_list DOT.
 program ::= .
+
+const_list ::= constid.
+const_list ::= const_list COMMA constid.
+
+constid ::= IDENTIFIER(id) ASSIGN const_term(term). { pParser->getGrounder()->setConstValue(STRING(id), term); }
+
+shift_list ::= shift.
+shift_list ::= shift_list COMMA shift.
+
+shift ::= IDENTIFIER(id) DIVIDE NUMBER(n). { GROUNDER->setIncShift(*id, atol(n->c_str())); DELETE_PTR(n); DELETE_PTR(id); }
 
 show_list ::= show_list COMMA show_predicate.
 show_list ::= show_predicate.
