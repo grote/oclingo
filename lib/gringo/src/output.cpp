@@ -462,7 +462,7 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			break;
 	}
 	IntVector::iterator itWeight = weights_.begin();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++, itWeight++)
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 	{
 		if(comma)
 			out << ", ";
@@ -472,7 +472,7 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 		if(type_ != COUNT && type_ != PARITY)
 		{
 			out << " = ";
-			out << *itWeight;
+			out << *itWeight++;
 		}
 	}
 	if(type_ == COUNT || type_ == PARITY)

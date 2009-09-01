@@ -79,17 +79,16 @@ void SmodelsConverter::handleHead(Object *o)
 		{
 			for(IntVector::iterator it = head_.begin(); it != head_.end(); it++)
 				neg_.push_back(*it);
-			for(IntVector::iterator it = neg_.end() - head_.size(); it != neg_.end(); it++)
+			for(IntVector::size_type i = neg_.size() - head_.size(); i != neg_.size(); i++)
 			{
 				int head = neg_.back();
 				neg_.pop_back();
 				printBasicRule(head, pos_, neg_);
-				std::swap(head, *it);
 				neg_.push_back(head);
+				if(i != neg_.size()) std::swap(neg_[i], neg_.back());
 			}
 		}
-		else
-			printDisjunctiveRule(head_, pos_, neg_);
+		else printDisjunctiveRule(head_, pos_, neg_);
 	}
 	else
 	{
