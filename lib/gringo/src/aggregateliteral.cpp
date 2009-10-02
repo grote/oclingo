@@ -291,18 +291,11 @@ void AggregateLiteral::appendLiteral(Literal *l, ExpansionType type)
 	literals_->push_back((ConditionalLiteral*)l);
 }
 
-void AggregateLiteral::preprocessHead(Grounder *g)
+void AggregateLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
-			(*literals_)[i]->preprocessHead(g);
-}
-
-void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
-{
-	if(literals_)
-		for(size_t i = 0; i < literals_->size(); i++)
-			(*literals_)[i]->preprocess(g, this);
+			(*literals_)[i]->preprocess(g, this, head);
 	if(equal_)
 	{
 		// equal_ doesnt need to be preprocessed

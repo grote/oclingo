@@ -306,15 +306,13 @@ Domain *PredicateLiteral::getDomain() const
 	return predNode_;
 }
 
-void PredicateLiteral::preprocessHead(Grounder *g)
+void PredicateLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
-	aid_      = uid_;
-	uid_      = g->getIncShift(uid_);
+	std::pair<int,int> r = g->getIncShift(uid_, head);
+	uid_      = r.first;
+	aid_      = r.second;
 	predNode_ = g->getDomain(uid_);
-}
 
-void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
-{
 	if(variables_)
 	{
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)

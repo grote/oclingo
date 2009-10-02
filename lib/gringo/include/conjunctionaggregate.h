@@ -34,7 +34,7 @@ namespace NS_GRINGO
 		virtual bool match(Grounder *g);
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~ConjunctionAggregate();
 	public:

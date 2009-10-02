@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		DisjunctionAggregate(const DisjunctionAggregate &a);
 		virtual void setNeg(bool neg);
 		virtual Literal *clone() const;
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual bool match(Grounder *g);
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;

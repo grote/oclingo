@@ -40,7 +40,7 @@ namespace NS_GRINGO
 		virtual bool match(Grounder *g);
 		virtual void reset();
 		virtual void finish();
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual double heuristicValue();

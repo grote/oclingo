@@ -240,7 +240,7 @@ void SDG::calcSCCs(Grounder *g)
 			g->getDomain(v->getDomain())->setType(static_cast<Domain::Type>(v->scc_->type_));
 		else if(v->dependency_.size() == 0)
 		{
-			if(g->getIncShift(v->getDomain()) == v->getDomain()) g->addZeroDomain(v->getDomain());
+			if(!g->isIncShift(v->getDomain())) g->addZeroDomain(v->getDomain());
 			else g->getDomain(v->getDomain())->setSolved(true);
 		}
 	}

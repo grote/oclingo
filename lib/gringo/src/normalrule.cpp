@@ -409,12 +409,11 @@ void NormalRule::preprocess(Grounder *g)
 	if(head_)
 	{
 		NormalRuleExpander nre(this, g, body_);
-		head_->preprocessHead(g);
-		head_->preprocess(g, &nre);
+		head_->preprocess(g, &nre, true);
 	}
 	if(body_)
 		for(size_t i = 0; i < body_->size(); i++)
-			(*body_)[i]->preprocess(g, this);
+			(*body_)[i]->preprocess(g, this, false);
 	//std::cerr << this << std::endl;
 }
 
@@ -434,7 +433,7 @@ namespace
 		DeltaLiteral(const DeltaLiteral &l) : Literal(l) { }
 		void getVars(VarSet &vars) const { }
 		bool checkO(LiteralVector &unsolved) { return true; }
-		void preprocess(Grounder *g, Expandable *e) { }
+		void preprocess(Grounder *g, Expandable *e, bool head) { }
 		void reset() { assert(false); }
 		void finish() { assert(false); }
 		void evaluate() { assert(false); }

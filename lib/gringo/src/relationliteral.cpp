@@ -132,7 +132,7 @@ bool RelationLiteral::match(Grounder *g)
 	assert(false);
 }
 
-void RelationLiteral::preprocess(Grounder *g, Expandable *e)
+void RelationLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	a_->preprocess(this, a_, g, e);
 	b_->preprocess(this, b_, g, e);

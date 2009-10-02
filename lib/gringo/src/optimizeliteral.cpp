@@ -214,11 +214,11 @@ void OptimizeLiteral::appendLiteral(Literal *l, ExpansionType type)
 	literals_->push_back((ConditionalLiteral*)l);
 }
 
-void OptimizeLiteral::preprocess(Grounder *g, Expandable *e)
+void OptimizeLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
-			(*literals_)[i]->preprocess(g, this);
+			(*literals_)[i]->preprocess(g, this, head);
 }
 
 void OptimizeLiteral::print(const GlobalStorage *g, std::ostream &out) const

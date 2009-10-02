@@ -95,11 +95,11 @@ ConjunctionAggregate::ConjunctionAggregate(const ConjunctionAggregate &a) : Aggr
 {
 }
 
-void ConjunctionAggregate::preprocess(Grounder *g, Expandable *e)
+void ConjunctionAggregate::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	assert(literals_);
 	for(size_t i = 0; i < literals_->size(); i++)
-		(*literals_)[i]->preprocessDisjunction(g, this, e);
+		(*literals_)[i]->preprocessDisjunction(g, this, e, head);
 	assert(!upper_);
 	assert(!lower_);
 }

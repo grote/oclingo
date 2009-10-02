@@ -37,7 +37,7 @@ namespace NS_GRINGO
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual void finish();
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual bool solved();
 		virtual bool isFact(Grounder *g);
 		virtual Literal* clone() const;

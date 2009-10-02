@@ -32,7 +32,8 @@ namespace NS_GRINGO
 		typedef std::map<int, int> VariableMap;
 		typedef std::map<int, std::pair<bool, Term*> > ConstTerms;
 		typedef std::vector<std::pair<std::pair<IncPart, Value>, int> > IncParts;
-		typedef std::map<int, int> IncShifts;
+		typedef std::map<int, std::pair<bool, int> > IncShifts;
+		typedef std::map<int, int> InvShifts;
 	public:
 		struct Options
 		{
@@ -71,8 +72,10 @@ namespace NS_GRINGO
 		void addZeroDomain(int uid);
 		void setIncPart(IncPart part, const Value &v);
 		void setIncShift(const std::string &id, int arity);
-		int getIncShift(int uid) const;
+		void setIncShift(const std::string &a, const std::string &b, int arity);
+		std::pair<int,int> getIncShift(int uid, bool head) const;
 		bool checkIncShift(int uid) const;
+		bool isIncShift(int uid) const;
 
 		int getIncStep() const;
 		bool isIncGrounding() const;
@@ -104,6 +107,7 @@ namespace NS_GRINGO
 		IntVector binder_;
 		std::set<Signature> trueNegPred_;
 		IncShifts shifts_;
+		InvShifts invShifts_;
 	};
 }
 

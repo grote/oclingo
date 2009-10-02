@@ -207,7 +207,8 @@ constid ::= IDENTIFIER(id) ASSIGN const_term(term). { pParser->getGrounder()->se
 shift_list ::= shift.
 shift_list ::= shift_list COMMA shift.
 
-shift ::= IDENTIFIER(id) DIVIDE NUMBER(n). { GROUNDER->setIncShift(*id, atol(n->c_str())); DELETE_PTR(n); DELETE_PTR(id); }
+shift ::= IDENTIFIER(id) DIVIDE NUMBER(n).                         { GROUNDER->setIncShift(*id, atol(n->c_str())); DELETE_PTR(n); DELETE_PTR(id); }
+shift ::= IDENTIFIER(a) RIGHTARROW IDENTIFIER(b) DIVIDE NUMBER(n). { GROUNDER->setIncShift(*a, *b, atol(n->c_str())); DELETE_PTR(n); DELETE_PTR(a); DELETE_PTR(b); }
 
 show_list ::= show_list COMMA show_predicate.
 show_list ::= show_predicate.

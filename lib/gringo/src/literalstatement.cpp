@@ -66,7 +66,7 @@ bool LiteralStatement::check(Grounder *g, VarVector &free)
 
 void LiteralStatement::preprocess(Grounder *g)
 {
-	lit_->preprocess(g, 0);
+	lit_->preprocess(g, 0, false);
 }
 
 void LiteralStatement::reset()

@@ -44,7 +44,7 @@ namespace NS_GRINGO
 		virtual void evaluate();
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
 		virtual void addIncParam(Grounder *g, const Value &v);

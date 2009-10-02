@@ -156,7 +156,7 @@ IndexedDomain *RangeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-void RangeLiteral::preprocess(Grounder *g, Expandable *e)
+void RangeLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	lower_->preprocess(this, lower_, g, e);
 	upper_->preprocess(this, upper_, g, e);

@@ -96,7 +96,7 @@ bool AssignmentLiteral::match(Grounder *g)
 	return c_->getValue(g).equal(t_->getValue(g));
 }
 
-void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
+void AssignmentLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	t_->preprocess(this, t_, g, e);
 }

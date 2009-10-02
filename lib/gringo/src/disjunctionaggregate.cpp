@@ -94,11 +94,11 @@ NS_OUTPUT::Object *DisjunctionAggregate::convert()
 	return new NS_OUTPUT::Disjunction(lits);
 }
 
-void DisjunctionAggregate::preprocess(Grounder *g, Expandable *e)
+void DisjunctionAggregate::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	assert(literals_);
 	for(size_t i = 0; i < literals_->size(); i++)
-		(*literals_)[i]->preprocessDisjunction(g, this, e);
+		(*literals_)[i]->preprocessDisjunction(g, this, e, head);
 	assert(!upper_);
 	assert(!lower_);
 }

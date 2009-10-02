@@ -37,7 +37,7 @@ namespace NS_GRINGO
 		virtual void finish();
 		virtual bool solved();
 		virtual bool isFact(Grounder *g);
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual NS_OUTPUT::Object *convert();

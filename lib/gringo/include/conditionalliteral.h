@@ -48,8 +48,7 @@ namespace NS_GRINGO
 		void ground(Grounder *g, GroundStep step);
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
-		virtual void preprocessHead(Grounder *g);
-		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual double heuristicValue();
 		virtual void addIncParam(Grounder *g, const Value &v);
 		void setNeg(bool neg);
@@ -73,7 +72,7 @@ namespace NS_GRINGO
 		int getWeight();
 
 		void clonePredicate(PredicateLiteral *clone);
-		void preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e);
+		void preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e, bool head);
 		virtual ~ConditionalLiteral();
 	protected:
 		PredicateLiteral *pred_;

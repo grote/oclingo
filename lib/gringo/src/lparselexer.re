@@ -137,6 +137,7 @@ begin:
 		"/"             { return LPARSEPARSER_DIVIDE; }
 		"="             { return LPARSEPARSER_ASSIGN; }
 		"=="            { return LPARSEPARSER_EQ; }
+		"->"            { return LPARSEPARSER_RIGHTARROW; }
 		"!="            { return LPARSEPARSER_NE; }
 		">"             { return LPARSEPARSER_GT; }
 		"<"             { return LPARSEPARSER_LT; }

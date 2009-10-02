@@ -119,7 +119,7 @@ namespace
 		// not used!
 		void getVars(VarSet &vars) const { assert(false); };
 		bool checkO(LiteralVector &unsolved) { assert(false); }
-		void preprocess(Grounder *g, Expandable *e) { assert(false); }
+		void preprocess(Grounder *g, Expandable *e, bool head) { assert(false); }
 		void reset() { assert(false); }
 		void finish() { assert(false); }
 		bool solved() { assert(false); }
@@ -463,31 +463,26 @@ NS_OUTPUT::Object *ConditionalLiteral::convert()
 	return pred_->convert(getValues());
 }
 
-void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e)
+void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e, bool head)
 {
 	assert(!weight_);
 	DisjunctiveConditionalLiteralExpander cle(this, a, e);
-	pred_->preprocess(g, &cle);
+	pred_->preprocess(g, &cle, head);
 	if(conditionals_)
 	{
 		for(size_t i = 0; i < conditionals_->size(); i++)
-			(*conditionals_)[i]->preprocess(g, this);
+			(*conditionals_)[i]->preprocess(g, this, false);
 	}
 }
 
-void ConditionalLiteral::preprocessHead(Grounder *g)
-{
-	pred_->preprocessHead(g);
-}
-
-void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
+void ConditionalLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 {
 	ConditionalLiteralExpander cle(this, e, conditionals_, weight_);
-	pred_->preprocess(g, &cle);
+	pred_->preprocess(g, &cle, head);
 	if(conditionals_)
 	{
 		for(size_t i = 0; i < conditionals_->size(); i++)
-			(*conditionals_)[i]->preprocess(g, this);
+			(*conditionals_)[i]->preprocess(g, this, false);
 	}
 	if(weight_)
 		weight_->preprocess(this, weight_, g, e);

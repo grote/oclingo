@@ -73,14 +73,32 @@ void Grounder::addDomains(int id, std::vector<IntVector*>* list)
 
 void Grounder::setIncShift(const std::string &id, int arity)
 {
-	shifts_[createPred(createString(id), arity)] = createPred(createString("#next_" + id), arity);
+	shifts_[createPred(createString(id), arity)] = std::make_pair(true, createPred(createString("#next_" + id), arity));
 }
 
-int Grounder::getIncShift(int uid) const
+void Grounder::setIncShift(const std::string &a, const std::string &b, int arity)
+{
+	shifts_[createPred(createString(a), arity)] = std::make_pair(false, createPred(createString(b), arity));
+	invShifts_[createPred(createString(b), arity)] = createPred(createString(a), arity);
+}
+
+std::pair<int,int> Grounder::getIncShift(int uid, bool head) const
 {
 	IncShifts::const_iterator res = shifts_.find(uid);
-	if(res != shifts_.end()) return res->second;
-	else return uid;
+	if(head && res != shifts_.end() && res->second.first)
+		return std::make_pair(res->second.second, uid);
+	else
+	{
+		InvShifts::const_iterator res = invShifts_.find(uid);
+		if(res != invShifts_.end())
+			return std::make_pair(uid, res->second);
+	}
+	return std::make_pair(uid, uid);
+}
+
+bool Grounder::isIncShift(int uid) const
+{
+	return shifts_.find(uid) != shifts_.end();
 }
 
 bool Grounder::checkIncShift(int uid) const
@@ -88,7 +106,7 @@ bool Grounder::checkIncShift(int uid) const
 	if(getDomain(uid)->getType() == Domain::NORMAL) return false;
 	IncShifts::const_iterator res = shifts_.find(uid);
 	if(res == shifts_.end()) return false;
-	else return getDomain(res->second)->getType() == Domain::NORMAL;
+	else return getDomain(res->second.second)->getType() == Domain::NORMAL;
 }
 
 void Grounder::buildDepGraph()
@@ -302,10 +320,11 @@ void Grounder::ground_()
 
 	for(IncShifts::iterator it = shifts_.begin(); it != shifts_.end(); it++)
 	{
-		Domain *next = getDomain(it->second);
+		Domain *next = getDomain(it->second.second);
 		Domain *before = getDomain(it->first);
 		before->moveDomain(next);
 	}
+
 }
 
 int Grounder::createUniqueVar()
