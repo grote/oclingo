@@ -1,15 +1,14 @@
 gringo - A grounder for logic programs:
 ---------------------------------------
 gringo is distributed under the GNU Public Licence, see file COPYING for 
-details.
+details. For instructions on how to compile and install gringo consult 
+the INSTALL file.
 
 Distribution contents:
    COPYING        - GNU Public Licence
    CHANGES        - Major changes between versions
    README         - This file
    INSTALL        - Installation instructions
-   Makefile       - Very simple makefile for building the library and the
-                    gringo/clingo/iclingo binary
    CMakeLists.txt - Used to build project using cmake
    init.sh        - Helper script to initialize out-of-source builds
    app/           - Source code directory of the command-line interface

@@ -1,11 +1,7 @@
-The recommended way to build gringo is using the build system cmake. There are
-also some handwritten Makefiles, but these may be deleted in future releases. 
-WARNING: Using these Makefiles will interfere with the cmake builds. If the 
-handwritten Makefiles were used, make shure to type "make clean" before using 
-cmake.
-To build the lexers used by gringo, the lexer-generator re2c is needed. The
-source code release contains pregenerated lexer files, so re2c is only needed 
-if you checked out a svn version.
+To build gringo the build system cmake is used. To build the lexers used by
+gringo, the lexer-generator re2c is needed. The source code release contains
+pregenerated paser and lexer files, so re2c is only needed if you checked out
+a svn version.
 
 The usual way to compile and install gringo should be:
 ./init.sh
@@ -15,7 +11,6 @@ cp bin/gringo <somewhere-in-your-path>
 
 1 Configuration:
 ----------------
-
 There is a script called init.sh simplifying the build process. This script is 
 capable of initializing out-of-source builds to build different versions of
 gringo.
@@ -45,14 +40,12 @@ short descriptions.
 
 2 Compilation:
 --------------
-
 Change into the folder build/{gringo,clingo,iclingo}/{release,debug} and type
 "make". Alternativly you can call the script build.sh which compiles everything
 inside build.
 
 3 Installation:
 ---------------
-
 Although make install should work, it is sufficient to copy the binary inside
 build/{gringo,clingo,iclingo}/{release,debug}/bin somewhere in your path or use
 the binary directly.
