@@ -44,7 +44,7 @@
 #include <stdexcept>
 #include <limits>
 
-#define FAIL_CONCAT2(x, y) x ## "(" ## #y ## "): Assertion failed!"
+#define FAIL_CONCAT2(x,y) x "( " #y "): Assertion failed!"
 #define FAIL_CONCAT(x, y) FAIL_CONCAT2(x, y)
 #define FAIL(x) !(x) || (throw std::logic_error(FAIL_CONCAT(__FILE__,__LINE__)),true)
 
