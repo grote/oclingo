@@ -17,10 +17,6 @@
 
 #ifndef GRINGO_H
 #define GRINGO_H
-#if defined (_MSC_VER)
-#define HAS_TR1_UNORDERED 1
-#define NS_TR1 std::tr1
-#endif
 
 #include <cassert>
 #include <iostream>

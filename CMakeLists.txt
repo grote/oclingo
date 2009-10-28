@@ -3,9 +3,10 @@ project (GrinGo)
 cmake_minimum_required(VERSION 2.4)
 cmake_policy(SET CMP0005 OLD)
 
-include (pch.cmake)
+IF(NOT MSVC)
+	include (pch.cmake)
+ENDIF(NOT MSVC)
 include (macros.cmake)
-
 ENSURE_OUT_OF_SOURCE_BUILD("you have to create an out-of-source build")
 
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
