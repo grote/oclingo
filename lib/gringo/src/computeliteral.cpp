@@ -32,12 +32,12 @@ ComputeLiteral::ComputeLiteral(ConditionalLiteralVector *literals, int number) :
 
 bool ComputeLiteral::solved()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool ComputeLiteral::isFact(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool ComputeLiteral::checkO(LiteralVector &unsolved) 
@@ -68,7 +68,7 @@ namespace
 			return a.first == b.first && equal(a.second, b.second);
 		}
 	};
-	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
+	typedef HashSet<std::pair<int, ValueVector>, Hash, Equal>::type UidValueSet;
 }
 
 NS_OUTPUT::Object *ComputeLiteral::convert()
@@ -142,17 +142,17 @@ void ComputeLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 
 void ComputeLiteral::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void ComputeLiteral::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 IndexedDomain *ComputeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
-	assert(false);
+	FAIL(true);
 }
 
 ComputeLiteral::ComputeLiteral(const ComputeLiteral &a) : Literal(a), number_(a.number_)
@@ -204,12 +204,12 @@ void ComputeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 
 double ComputeLiteral::heuristicValue()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void  ComputeLiteral::addIncParam(Grounder *g, const Value &v)
 {
-	assert(false);
+	FAIL(true);
 }
 
 ComputeLiteral::~ComputeLiteral()

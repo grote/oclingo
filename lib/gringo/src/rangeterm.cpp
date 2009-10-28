@@ -31,13 +31,13 @@ RangeTerm::RangeTerm(Term *lower, Term *upper) : Term(), lower_(lower), upper_(u
 void RangeTerm::getVars(VarSet &vars) const
 {
 	// rangeterms are eliminated while preprocessing
-	assert(false);
+	FAIL(true);
 }
 
 bool RangeTerm::isComplex()
 {
 	// rangeterms are eliminated while preprocessing
-	assert(false);
+	FAIL(true);
 }
 
 void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
@@ -73,12 +73,12 @@ Term *RangeTerm::getUpper()
 
 Value RangeTerm::getConstValue(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 Value RangeTerm::getValue(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 RangeTerm::RangeTerm(const RangeTerm &r) : lower_(r.lower_->clone()), upper_(r.upper_->clone())

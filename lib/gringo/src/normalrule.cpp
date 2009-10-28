@@ -434,9 +434,9 @@ namespace
 		void getVars(VarSet &vars) const { }
 		bool checkO(LiteralVector &unsolved) { return true; }
 		void preprocess(Grounder *g, Expandable *e, bool head) { }
-		void reset() { assert(false); }
-		void finish() { assert(false); }
-		void evaluate() { assert(false); }
+		void reset() { FAIL(true); }
+		void finish() { FAIL(true); }
+		void evaluate() { FAIL(true); }
 		bool solved() { return false; }
 		void createNode(StatementChecker *dg, bool head, bool delayed) { }
 		void addIncParam(Grounder *g, const Value &v) { }

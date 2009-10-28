@@ -50,7 +50,7 @@ void IndexedDomainMatchOnly::firstMatch(int binder, DLVGrounder *g, MatchStatus 
 
 void IndexedDomainMatchOnly::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
 {
-	assert(false);
+	FAIL(true);
 }
 
 IndexedDomainMatchOnly::~IndexedDomainMatchOnly()

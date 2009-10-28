@@ -43,22 +43,22 @@ void MultipleArgsTerm::print(const GlobalStorage *g, std::ostream &out) const
 
 void MultipleArgsTerm::getVars(VarSet &vars) const
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool MultipleArgsTerm::isComplex()
 {
-	assert(false);
+	FAIL(true);
 }
 
 Value MultipleArgsTerm::getConstValue(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 Value MultipleArgsTerm::getValue(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 namespace
@@ -75,14 +75,14 @@ namespace
 		}
 		~CloneSentinel() { }
 		// the rest is unused
-		void getVars(VarSet &vars) const { assert(false); }
-		bool isComplex() { assert(false); }
-		Value getValue(Grounder *g) { assert(false); }
-		Value getConstValue(Grounder *g) { assert(false); }
-		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
-		void print(const GlobalStorage *g, std::ostream &out) const { assert(false); }
-		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const { assert(false); }
-		void addIncParam(Grounder *g, Term *&p, const Value &v) { assert(false); }
+		void getVars(VarSet &vars) const { FAIL(true); }
+		bool isComplex() { FAIL(true); }
+		Value getValue(Grounder *g) { FAIL(true); }
+		Value getConstValue(Grounder *g) { FAIL(true); }
+		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { FAIL(true); }
+		void print(const GlobalStorage *g, std::ostream &out) const { FAIL(true); }
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const { FAIL(true); }
+		void addIncParam(Grounder *g, Term *&p, const Value &v) { FAIL(true); }
 	protected:
 		Term *a_;
 	};

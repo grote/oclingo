@@ -41,7 +41,7 @@ void Variable::print(const GlobalStorage *g, std::ostream &out) const
 
 Value Variable::getConstValue(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 Value Variable::getValue(Grounder *g)
@@ -93,6 +93,6 @@ bool Variable::unify(const GlobalStorage *g, const Value& t, const VarVector& va
 				return vals[i].equal(t);
 		}
 	}
-	assert(false);
+	FAIL(true);
 }
 

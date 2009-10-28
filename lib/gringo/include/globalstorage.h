@@ -46,9 +46,9 @@ namespace NS_GRINGO
 		{
 			inline size_t operator()(const Signature &a) const;
 		};
-		typedef __gnu_cxx::hash_map<std::string*, int, string_hash, string_equal> StringHash;
-		typedef __gnu_cxx::hash_map<FuncSymbol*, int, funcSym_hash, funcSym_equal> FuncSymbolHash;
-		typedef __gnu_cxx::hash_map<Signature, int, sig_hash> SignatureHash;
+		typedef HashMap<std::string*, int, string_hash, string_equal>::type StringHash;
+		typedef HashMap<FuncSymbol*, int, funcSym_hash, funcSym_equal>::type FuncSymbolHash;
+		typedef HashMap<Signature, int, sig_hash>::type SignatureHash;
 	public:
 		GlobalStorage();
 		
@@ -85,7 +85,7 @@ namespace NS_GRINGO
 
 	size_t GlobalStorage::string_hash::operator()(const std::string* a) const
 	{
-		return __gnu_cxx::__stl_hash_string(a->c_str());
+		return hashString(*a);
 	}
 
 	bool GlobalStorage::funcSym_equal::operator()(const FuncSymbol* a, const FuncSymbol* b) const

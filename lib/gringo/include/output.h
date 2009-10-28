@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		class Output
 		{
 		protected:
-			typedef __gnu_cxx::hash_map<ValueVector, int, Value::VectorHash, Value::VectorEqual> AtomHash;
+			typedef HashMap<ValueVector, int, Value::VectorHash, Value::VectorEqual>::type AtomHash;
 			typedef std::vector<AtomHash> AtomLookUp;
 		public:
 			Output(std::ostream *out);

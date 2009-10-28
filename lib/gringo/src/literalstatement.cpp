@@ -103,7 +103,7 @@ bool LiteralStatement::ground(Grounder *g, GroundStep step)
 
 void LiteralStatement::addDomain(PredicateLiteral *pl)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void LiteralStatement::print(const GlobalStorage *g, std::ostream &out) const

@@ -233,7 +233,7 @@ LDG::VarNode *LDGBuilder::createVarNode(int var)
 void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided, bool graph)
 {
 	LDG::LiteralNode *n = createLiteralNode(l, head);
-	for(VarSet::iterator it = needed.begin(); it != needed.end(); it++)
+	for(VarSet::const_iterator it = needed.begin(); it != needed.end(); it++)
 	{
 		LDG::VarNode *v = createVarNode(*it);
 		if(v)
@@ -242,7 +242,7 @@ void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const V
 			v->out_.push_back(n);
 		}		
 	}
-	for(VarSet::iterator it = provided.begin(); it != provided.end(); it++)
+	for(VarSet::const_iterator it = provided.begin(); it != provided.end(); it++)
 	{
 		LDG::VarNode *v = createVarNode(*it);
 		if(v)

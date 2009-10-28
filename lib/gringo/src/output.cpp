@@ -578,7 +578,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 			 }
 		default:
 			 {
-				 assert(false);
+				 FAIL(true);
 			 }
 	}
 
@@ -922,7 +922,7 @@ DeltaObject::DeltaObject()
 
 void DeltaObject::print(NS_OUTPUT::Output *o, std::ostream &out)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void DeltaObject::print_plain(NS_OUTPUT::Output *o, std::ostream &out)
@@ -932,7 +932,7 @@ void DeltaObject::print_plain(NS_OUTPUT::Output *o, std::ostream &out)
 
 void DeltaObject::addDomain(bool fact)
 {
-	assert(false);
+	FAIL(true);
 }
 
 DeltaObject::~DeltaObject()

@@ -83,12 +83,12 @@ bool AssignmentLiteral::checkO(LiteralVector &unsolved)
 
 void AssignmentLiteral::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void AssignmentLiteral::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool AssignmentLiteral::match(Grounder *g)
@@ -160,7 +160,7 @@ Literal* AssignmentLiteral::clone() const
 
 NS_OUTPUT::Object *AssignmentLiteral::convert()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void AssignmentLiteral::addIncParam(Grounder *g, const Value &v)

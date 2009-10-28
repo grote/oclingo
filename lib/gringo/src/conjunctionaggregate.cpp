@@ -59,7 +59,7 @@ bool ConjunctionAggregate::match(Grounder *g)
 
 void ConjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void ConjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) const

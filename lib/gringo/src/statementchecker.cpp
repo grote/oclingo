@@ -153,12 +153,12 @@ void StatementChecker::createNode(const VarSet &needed, const VarSet &provided)
 	if(parent_)
 	{
 		VarSet p, n;
-		for(VarSet::iterator it = provided.begin(); it != provided.end(); it++)
+		for(VarSet::const_iterator it = provided.begin(); it != provided.end(); it++)
 			if(parent_->vars_.find(*it) != parent_->vars_.end())
 				parent_->providedSub_.back().first.insert(*it);
 			else
 				p.insert(*it);
-		for(VarSet::iterator it = needed.begin(); it != needed.end(); it++)
+		for(VarSet::const_iterator it = needed.begin(); it != needed.end(); it++)
 			if(parent_->vars_.find(*it) != parent_->vars_.end())
 				parent_->providedSub_.back().first.insert(*it);
 			else

@@ -83,12 +83,12 @@ bool RangeLiteral::checkO(LiteralVector &unsolved)
 
 void RangeLiteral::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void RangeLiteral::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool RangeLiteral::match(Grounder *g)
@@ -170,7 +170,7 @@ void RangeLiteral::addIncParam(Grounder *g, const Value &v)
 
 NS_OUTPUT::Object *RangeLiteral::convert()
 {
-	assert(false);
+	FAIL(true);
 }
 
 RangeLiteral::RangeLiteral(const RangeLiteral &r) : Literal(r), var_(static_cast<Variable*>(r.var_->clone())), lower_(r.lower_->clone()), upper_(r.upper_->clone())

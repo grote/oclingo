@@ -101,7 +101,7 @@ namespace
 		bool isComplex() { return false; }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { }
 		void print(const GlobalStorage *g, std::ostream &out) const { out << "incremental"; }
-		void addIncParam(Grounder *g, Term *&p, const Value &v) { assert(false); }
+		void addIncParam(Grounder *g, Term *&p, const Value &v) { FAIL(true); }
 		~IncTerm() { }
 	};
 }

@@ -101,7 +101,7 @@ Value FunctionTerm::getConstValue(Grounder *g)
 		case MINUS:
 			return Value(Value::INT, a_->getConstValue(g) - b_->getConstValue(g));
 		case POWER:
-			return Value(Value::INT, pow(a_->getConstValue(g), b_->getConstValue(g)));
+			return Value(Value::INT, (int)pow(double(a_->getConstValue(g)), int(b_->getConstValue(g))));
 		case TIMES:
 			return Value(Value::INT, a_->getConstValue(g) * b_->getConstValue(g));
 		case DIVIDE:
@@ -117,7 +117,7 @@ Value FunctionTerm::getConstValue(Grounder *g)
 		case COMPLEMENT:
 			return Value(Value::INT, ~a_->getConstValue(g));
 	}
-	assert(false);
+	FAIL(true);
 }
 
 Value FunctionTerm::getValue(Grounder *g)
@@ -131,7 +131,7 @@ Value FunctionTerm::getValue(Grounder *g)
 		case MINUS:
 			return Value(Value::INT, a_->getValue(g) - b_->getValue(g));
 		case POWER:
-			return Value(Value::INT, pow(a_->getValue(g), b_->getValue(g)));
+			return Value(Value::INT, (int)pow(double(a_->getValue(g)), int(b_->getValue(g))));
 		case TIMES:
 			return Value(Value::INT, a_->getValue(g) * b_->getValue(g));
 		case DIVIDE:
@@ -147,7 +147,7 @@ Value FunctionTerm::getValue(Grounder *g)
 		case COMPLEMENT:
 			return Value(Value::INT, ~a_->getValue(g));
 	}
-	assert(false);
+	FAIL(true);
 }
 
 FunctionTerm::FunctionTerm(const FunctionTerm &f) : type_(f.type_), a_(f.a_->clone()), b_(f.b_ ? f.b_->clone() : 0)

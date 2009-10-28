@@ -62,7 +62,7 @@ bool DisjunctionAggregate::match(Grounder *g)
 
 void DisjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void DisjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) const

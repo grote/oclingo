@@ -110,7 +110,7 @@ namespace NS_GRINGO
 	}
 	
 	/// Type to efficiently access values
-	typedef __gnu_cxx::hash_set<ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorSet;
+	typedef HashSet<ValueVector, Value::VectorHash, Value::VectorEqual>::type ValueVectorSet;
 
 	size_t Value::hashValue() const
 	{
@@ -124,7 +124,7 @@ namespace NS_GRINGO
 				return ~(size_t)uid_;
 			default:
 				// this shouldnt happen
-				assert(false);
+				FAIL(true);
 		}
 	}
 

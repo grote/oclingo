@@ -37,7 +37,7 @@ namespace NS_GRINGO
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const
 		{
-			assert(false);
+			FAIL(true);
 		}
 		Term *getLower();
 		Term *getUpper();

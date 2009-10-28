@@ -33,12 +33,12 @@ BinderSplitter::BinderSplitter(Domain *domain, TermVector *param, const VarVecto
 
 bool BinderSplitter::checkO(LiteralVector &unsolved)
 {
-	assert(false);
+	FAIL(true);
 }
 
 SDGNode *BinderSplitter::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void BinderSplitter::createNode(LDGBuilder *dg, bool head)
@@ -49,7 +49,7 @@ void BinderSplitter::createNode(LDGBuilder *dg, bool head)
 
 void BinderSplitter::createNode(StatementChecker *dg, bool head, bool delayed)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void BinderSplitter::print(const GlobalStorage *g, std::ostream &out) const
@@ -59,17 +59,17 @@ void BinderSplitter::print(const GlobalStorage *g, std::ostream &out) const
 
 void BinderSplitter::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void BinderSplitter::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void BinderSplitter::evaluate()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool BinderSplitter::isFact(Grounder *g)
@@ -85,12 +85,12 @@ bool BinderSplitter::solved()
 bool BinderSplitter::match(Grounder *g)
 {
 	// theres always a constructed indexed domain
-	assert(false);
+	FAIL(true);
 }
 
 NS_OUTPUT::Object *BinderSplitter::convert()
 {
-	assert(false);
+	FAIL(true);
 }
 
 namespace NS_GRINGO
@@ -117,7 +117,7 @@ namespace NS_GRINGO
 		class IndexedDomainBS : public IndexedDomain
 		{
 		private:
-			typedef __gnu_cxx::hash_map<ValueVector, ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorMap;
+			typedef HashMap<ValueVector, ValueVector, Value::VectorHash, Value::VectorEqual>::type ValueVectorMap;
 		public:
 			IndexedDomainBS(Grounder *g, ValueVectorSet &domain, VarSet &index, TermVector &param, VarVector &relevant)
 			{
@@ -252,7 +252,7 @@ IndexedDomain *BinderSplitter::createIndexedDomain(Grounder *g, VarSet &index)
 
 Literal* BinderSplitter::clone() const
 {
-	assert(false);
+	FAIL(true);
 }
 
 BinderSplitter::~BinderSplitter()
@@ -261,12 +261,12 @@ BinderSplitter::~BinderSplitter()
 
 void  BinderSplitter::addIncParam(Grounder *g, const Value &v)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void BinderSplitter::preprocess(Grounder *g, Expandable *e, bool head)
 {
-	assert(false);
+	FAIL(true);
 }
 
 double BinderSplitter::heuristicValue()

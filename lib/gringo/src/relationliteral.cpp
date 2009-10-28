@@ -104,12 +104,12 @@ bool RelationLiteral::checkO(LiteralVector &unsolved)
 
 void RelationLiteral::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void RelationLiteral::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool RelationLiteral::match(Grounder *g)
@@ -129,7 +129,7 @@ bool RelationLiteral::match(Grounder *g)
 		case LT:
 			return a_->getValue(g).compare(g, b_->getValue(g)) < 0;
 	}
-	assert(false);
+	FAIL(true);
 }
 
 void RelationLiteral::preprocess(Grounder *g, Expandable *e, bool head)
@@ -166,7 +166,7 @@ Literal* RelationLiteral::clone() const
 
 NS_OUTPUT::Object *RelationLiteral::convert()
 {
-	assert(false);
+	FAIL(true);
 }
 
 RelationLiteral::~RelationLiteral()

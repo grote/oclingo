@@ -92,7 +92,7 @@ void SmodelsConverter::handleHead(Object *o)
 	}
 	else
 	{
-		assert(false);
+		FAIL(true);
 	}
 }
 
@@ -120,7 +120,7 @@ void SmodelsConverter::handleBody(ObjectVector &body)
 		}
 		else
 		{
-			assert(false);
+			FAIL(true);
 		}
 	}
 }
@@ -157,7 +157,7 @@ void SmodelsConverter::printHead(Aggregate *a)
 			handleTimes(false, a, l, u);
 			break;
 		default:
-			assert(false);
+			FAIL(true);
 			break;
 	}
 	if(l > 0)
@@ -307,7 +307,7 @@ namespace
 	{
 		return b * a;
 	}
-	typedef __gnu_cxx::hash_map<int, int> TimesMap;
+	typedef HashMap<int, int>::type TimesMap;
 	bool litCmp(const std::pair<int, int> &a, const std::pair<int, int> &b)
 	{
 		return a.second > b.second;
@@ -732,7 +732,7 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleTimes(true, a, l, u);
 			break;
 		default:
-			assert(false);
+			FAIL(true);
 			break;
 	}
 	if(a->neg_)
@@ -844,7 +844,7 @@ void SmodelsConverter::print(Object *r)
 	}
 	else
 	{
-		assert(false);
+		FAIL(true);
 	}
 }
 

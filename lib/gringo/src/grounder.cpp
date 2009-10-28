@@ -347,7 +347,7 @@ const std::string *Grounder::getVarString(int uid)
 		if(it->second == uid)
 			return getString(it->first);
 	// we should get a string for every variable
-	assert(false);
+	FAIL(true);
 }
 
 int Grounder::getVar(int var)

@@ -17,6 +17,10 @@
 
 #ifndef GRINGO_H
 #define GRINGO_H
+#if defined (_MSC_VER)
+#define HAS_TR1_UNORDERED 1
+#define NS_TR1 std::tr1
+#endif
 
 #include <cassert>
 #include <iostream>
@@ -37,9 +41,43 @@
 #include <cstdlib>
 #include <climits>
 #include <memory>
+#include <stdexcept>
+#include <limits>
+
+#define FAIL_CONCAT2(x, y) x ## "(" ## #y ## "): Assertion failed!"
+#define FAIL_CONCAT(x, y) FAIL_CONCAT2(x, y)
+#define FAIL(x) !(x) || (throw std::logic_error(FAIL_CONCAT(__FILE__,__LINE__)),true)
+
+#if !defined(HAS_TR1_UNORDERED) || HAS_TR1_UNORDERED == 0
 #include <ext/hash_set>
 #include <ext/hash_map>
-#include <limits>
+template<class Key, class T, class F = __gnu_cxx::hash<Key>, class Eq = std::equal_to<Key>, class A= std::allocator<T> >
+struct HashMap {
+    typedef __gnu_cxx::hash_map<Key, T, F, Eq, A> type;
+};
+template<class V, class H= __gnu_cxx::hash<V>, class Eq = std::equal_to<V>, class A=std::allocator<V> >
+struct HashSet {
+    typedef  __gnu_cxx::hash_set<V, H, Eq, A> type;
+};
+inline size_t hashString(const std::string& str) {
+	return __gnu_cxx::__stl_hash_string(str.c_str());
+}
+#else
+#include <unordered_map>
+#include <unordered_set>
+template<class Key, class Ty, class Hash = NS_TR1::hash<Key>, class Pred = std::equal_to<Key>, class Alloc = std::allocator<Key> >
+struct HashMap {
+    typedef NS_TR1::unordered_map<Key, Ty, Hash, Pred, Alloc> type;
+};
+template<class Value, class Hash = NS_TR1::hash<Value>, class Pred = std::equal_to<Value>, class Alloc = std::allocator<Value> >
+struct HashSet {
+    typedef NS_TR1::unordered_set<Value, Hash, Pred, Alloc> type;
+};
+inline size_t hashString(const std::string& str) {
+	return NS_TR1::hash<std::string>()(str);
+}
+#endif
+
 
 namespace NS_GRINGO
 {
@@ -139,8 +177,8 @@ namespace NS_GRINGO
 	namespace NS_OUTPUT
 	{
 		class Output;
-		class Object;
-		class Atom;
+		struct Object;
+		struct Atom;
 	}
 }
 

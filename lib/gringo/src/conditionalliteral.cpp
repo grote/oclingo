@@ -117,22 +117,22 @@ namespace
 		}
 
 		// not used!
-		void getVars(VarSet &vars) const { assert(false); };
-		bool checkO(LiteralVector &unsolved) { assert(false); }
-		void preprocess(Grounder *g, Expandable *e, bool head) { assert(false); }
-		void reset() { assert(false); }
-		void finish() { assert(false); }
-		bool solved() { assert(false); }
-		bool isFact(Grounder *g) { assert(false); }
-		Literal* clone() const { assert(false); }
-		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index) { assert(false); }
-		bool match(Grounder *g) { assert(false); }
-		NS_OUTPUT::Object *convert() { assert(false); }
-		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) { assert(false); }
-		void createNode(StatementChecker *dg, bool head, bool delayed) { assert(false); }
-		double heuristicValue() { assert(false); }
-		void addIncParam(Grounder *g, const Value &v) { assert(false); }
-		void print(const GlobalStorage *g, std::ostream &out) const { assert(false); }
+		void getVars(VarSet &vars) const { FAIL(true); };
+		bool checkO(LiteralVector &unsolved) { FAIL(true); }
+		void preprocess(Grounder *g, Expandable *e, bool head) { FAIL(true); }
+		void reset() { FAIL(true); }
+		void finish() { FAIL(true); }
+		bool solved() { FAIL(true); }
+		bool isFact(Grounder *g) { FAIL(true); }
+		Literal* clone() const { FAIL(true); }
+		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index) { FAIL(true); }
+		bool match(Grounder *g) { FAIL(true); }
+		NS_OUTPUT::Object *convert() { FAIL(true); }
+		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) { FAIL(true); }
+		void createNode(StatementChecker *dg, bool head, bool delayed) { FAIL(true); }
+		double heuristicValue() { FAIL(true); }
+		void addIncParam(Grounder *g, const Value &v) { FAIL(true); }
+		void print(const GlobalStorage *g, std::ostream &out) const { FAIL(true); }
 	private:
 		PredicateLiteral *pred_;
 		VarSet vars_;
@@ -182,12 +182,12 @@ void ConditionalLiteral::print(const GlobalStorage *g, std::ostream &out) const
 
 bool ConditionalLiteral::match(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool ConditionalLiteral::isFact(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 void ConditionalLiteral::start()
@@ -344,7 +344,7 @@ bool ConditionalLiteral::isEmpty()
 
 IndexedDomain *ConditionalLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
-	assert(false);
+	FAIL(true);
 }
 
 ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : Literal(p), pred_(p.clone_ ? p.clone_ : static_cast<PredicateLiteral*>(p.pred_->clone())), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(0)
@@ -500,7 +500,7 @@ void ConditionalLiteral::addIncParam(Grounder *g, const Value &v)
 
 double ConditionalLiteral::heuristicValue()
 {
-	assert(false);
+	FAIL(true);
 }
 
 int ConditionalLiteral::getUid()

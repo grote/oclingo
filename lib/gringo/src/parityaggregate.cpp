@@ -42,7 +42,7 @@ namespace
 			return a.first == b.first && equal(a.second, b.second);
 		}
 	};
-	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
+	typedef HashSet<std::pair<int, ValueVector>, Hash, Equal>::type UidValueSet;
 }
 
 ParityAggregate::ParityAggregate(bool even, ConditionalLiteralVector *literals) : 

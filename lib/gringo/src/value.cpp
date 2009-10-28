@@ -54,9 +54,9 @@ int Value::compare(const GlobalStorage *g, const Value &b) const
 		case STRING:
 			return g->getString(uid_)->compare(*g->getString(b.uid_));
 		case UNDEF:
-			assert(false);
+			FAIL(true);
 	}
-	assert(false);
+	FAIL(true);
 }
 
 int Value::toInt() const
@@ -74,8 +74,7 @@ int Value::toInt() const
 	{
 		throw GrinGoException("error trying to convert functionsymbol to int");
 	}
-	assert(false);
-	return 42;
+	FAIL(true);
 	/*
 	switch(type_)
 	{
@@ -105,8 +104,7 @@ Value::operator int() const
 	{
 		throw GrinGoException("error trying to convert functionsymbol to int");
 	}
-	assert(false);
-	return 0;
+	FAIL(true);
 	/*
 	switch(type_)
 	{

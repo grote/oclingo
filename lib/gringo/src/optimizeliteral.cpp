@@ -32,12 +32,12 @@ OptimizeLiteral::OptimizeLiteral(Type type, ConditionalLiteralVector *literals, 
 
 bool OptimizeLiteral::solved()
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool OptimizeLiteral::isFact(Grounder *g)
 {
-	assert(false);
+	FAIL(true);
 }
 
 bool OptimizeLiteral::checkO(LiteralVector &unsolved) 
@@ -68,7 +68,7 @@ namespace
 			return a.first == b.first && equal(a.second, b.second);
 		}
 	};
-	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
+	typedef HashSet<std::pair<int, ValueVector>, Hash, Equal>::type UidValueSet;
 }
 
 NS_OUTPUT::Object *OptimizeLiteral::convert()
@@ -176,17 +176,17 @@ void OptimizeLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 
 void OptimizeLiteral::reset()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void OptimizeLiteral::finish()
 {
-	assert(false);
+	FAIL(true);
 }
 
 IndexedDomain *OptimizeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
-	assert(false);
+	FAIL(true);
 }
 
 OptimizeLiteral::OptimizeLiteral(const OptimizeLiteral &a) : Literal(a), type_(a.type_), setSemantic_(a.setSemantic_)
@@ -238,12 +238,12 @@ void OptimizeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 
 double OptimizeLiteral::heuristicValue()
 {
-	assert(false);
+	FAIL(true);
 }
 
 void  OptimizeLiteral::addIncParam(Grounder *g, const Value &v)
 {
-	assert(false);
+	FAIL(true);
 }
 
 OptimizeLiteral::~OptimizeLiteral()

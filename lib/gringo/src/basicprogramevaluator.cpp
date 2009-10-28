@@ -125,7 +125,7 @@ void BasicProgramEvaluator::add(NS_OUTPUT::Object *r)
 		add(static_cast<NS_OUTPUT::Fact*>(r));
 	}
 	else
-		assert(false);
+		FAIL(true);
 	// for grounding it is essentiell to add the domains
 	r->addDomain();
 }

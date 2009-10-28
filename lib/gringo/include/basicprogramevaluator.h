@@ -31,7 +31,7 @@ namespace NS_GRINGO
 	{
 	private:
 		/// Type used to assign an id to a (variable free) predicate
-                typedef __gnu_cxx::hash_map<ValueVector, int, Value::VectorHash, Value::VectorEqual> AtomHash;
+		typedef HashMap<ValueVector, int, Value::VectorHash, Value::VectorEqual>::type AtomHash;
 		/// Type used to store the ids to all possible predicates
 		typedef std::vector<AtomHash> AtomLookUp;
 		/// Used to store the atoms
