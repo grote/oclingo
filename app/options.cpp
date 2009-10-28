@@ -50,7 +50,7 @@ std::string toLower(const std::string& s) {
 	return ret;
 }
 #ifdef WITH_CLASP
-bool mapTransExt(const std::string& s, int& i, int*) {
+bool mapTransExt(const std::string& s, int& i) {
 	std::string temp = toLower(s);
 	bool b = temp == "all";
 	if (b || parseValue(s, b, 1)) {
@@ -62,7 +62,7 @@ bool mapTransExt(const std::string& s, int& i, int*) {
 	else if (temp == "dynamic") { i = ProgramBuilder::mode_transform_dynamic; return true; }
 	return false;
 }
-bool mapLookahead(const std::string& s, int& i, int*) {
+bool mapLookahead(const std::string& s, int& i) {
 	std::string temp = toLower(s);
 	bool b = temp == "auto";
 	if (b || parseValue(s, b, 1)) {
@@ -74,7 +74,7 @@ bool mapLookahead(const std::string& s, int& i, int*) {
 	else if (temp == "hybrid")		{ i = Lookahead::hybrid_lookahead; return true; }
 	return false;
 }
-bool mapHeuristic(const std::string& s, std::string& out, std::string*) {
+bool mapHeuristic(const std::string& s, std::string& out) {
 	std::string temp = toLower(s);
 	if			(temp == "berkmin")		{ out = temp; return true; }
 	else if (temp == "vmtf")			{ out = temp; return true; }
@@ -83,7 +83,7 @@ bool mapHeuristic(const std::string& s, std::string& out, std::string*) {
 	else if (temp == "none")			{ out = temp; return true; }
 	return false;
 }
-bool mapCflMinimize(const std::string& s, int& i, int*) {
+bool mapCflMinimize(const std::string& s, int& i) {
 	std::string temp = toLower(s);
 	bool b = temp == "all";
 	if (b || parseValue(s, b, 1)) {
@@ -94,7 +94,7 @@ bool mapCflMinimize(const std::string& s, int& i, int*) {
 	else if (temp == "tern")	{ i = SolverStrategies::binary_ternary_antes; return true; }
 	return false;
 }
-bool mapLoops(const std::string& s, int& i, int*) {
+bool mapLoops(const std::string& s, int& i) {
 	std::string temp = toLower(s);
 	bool b = temp == "common";
 	if (b || parseValue(s, b, 1)) {
@@ -105,18 +105,17 @@ bool mapLoops(const std::string& s, int& i, int*) {
 	else if (temp == "distinct")	{ i = DefaultUnfoundedCheck::distinct_reason; return true; }
 	return false;
 }
-bool mapVec(const std::string& s, std::vector<double>& v, std::vector<double>* def) {
-	assert(def);
+bool mapVec(const std::string& s, std::vector<double>& v) {
 	v.clear();
 	bool b;
 	if (parseValue(s, b, 1)) {
-		if (b)	{ v = *def; }
-		else		{ v.resize(def->size(), 0.0); }
+		if (b) { v.clear(); }
+		else   { v.resize(3, 0.0); }
 		return true;
 	}
 	return parseValue(s, v, 1);
 }
-bool mapRandomize(const std::string& s, std::pair<int, int>& r, std::pair<int, int>*) {
+bool mapRandomize(const std::string& s, std::pair<int, int>& r) {
 	bool b;
 	if (parseValue(s, b, 1)) {
 		r.first		= b ? 50 : 0;
@@ -125,7 +124,7 @@ bool mapRandomize(const std::string& s, std::pair<int, int>& r, std::pair<int, i
 	}
 	return parseValue(s, r, 1);
 }
-bool mapSatElite(const std::string& s, std::vector<int>& v, std::vector<int>*) {
+bool mapSatElite(const std::string& s, std::vector<int>& v) {
 	bool b; v.clear();
 	if (s != "1" && parseValue(s, b, 1)) {
 		if		(b) { v.push_back(-1); v.push_back(-1); v.push_back(-1); }
@@ -141,25 +140,25 @@ bool mapSatElite(const std::string& s, std::vector<int>& v, std::vector<int>*) {
 }
 #endif
 
-bool mapKeepForget(const std::string& s, bool &out, bool*) {
+bool mapKeepForget(const std::string& s, bool &out) {
 	std::string temp = toLower(s);
 	if (temp == "keep")   { out = true;  return true; }
 	if (temp == "forget") { out = false; return true; }
 	return false;
 }
 
-bool mapASPils(const std::string& s, int &out, int*) {
+bool mapASPils(const std::string& s, int &out) {
 	return parseValue(s, out, 1) && out >= 1 && out <= 7;
 }
 
-bool mapMode(const std::string& s, bool &out, bool*) {
+bool mapMode(const std::string& s, bool &out) {
 	std::string temp = toLower(s);
 	if (temp == "no") { out = true;  return true; }
 	if (temp == "yes")   { out = false; return true; }
 	return false;
 }
 
-bool mapStop(const std::string& s, bool &out, bool*) {
+bool mapStop(const std::string& s, bool &out) {
 	std::string temp = toLower(s);
 	if (temp == "unsat") { out = true;  return true; }
 	if (temp == "sat")   { out = false; return true; }
@@ -171,14 +170,6 @@ bool parseInt(const std::string &s)
 	char *endptr;
 	strtol(s.c_str(), &endptr, 10);
 	return (endptr != s.c_str() && !*endptr);
-}
-
-void optionCallback(OptionParser *p, const std::string &s)
-{
-	if(parseInt(s))
-		p->addOptionValue("number", s);
-	else
-		p->addOptionValue("files", s);
 }
 
 }
@@ -356,7 +347,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(basic);
 	OptionGroup lookback("\nClasp - Lookback Options (Require: lookback=yes):\n");
 	lookback.addOptions()
-		("restarts,r", value<vector<double> >()->defaultValue(restartDefault())->parser(mapVec),
+		("restarts,r", value<vector<double> >()->parser(mapVec)->defaultValue(restartDefault()),
 			"Configure restart policy\n"
 			"      Default: 100,1.5\n"
 			"      Valid:   <n1[,n2,n3]> (<n1> >= 0, <n2>,<n3> > 0), no\n"
@@ -376,7 +367,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"        <n1> = 0: Do not shuffle problem after restarts\n"
 			"        <n2> = 0: Do not re-shuffle problem\n", "<n1,n2>")
 
-		("deletion,d", value<vector<double> >()->defaultValue(delDefault())->parser(mapVec),
+		("deletion,d", value<vector<double> >()->parser(mapVec)->defaultValue(delDefault()),
 			"Configure size of learnt nogood database\n"
 			"      Default: 3.0,1.1,3.0\n"
 			"      Valid:   <n1[,n2,n3]> (<n3> >= <n1> >= 0, <n2> >= 1.0), no\n"
@@ -515,7 +506,17 @@ bool Options::parse(int argc, char** argv, std::ostream& os, OptionValues& value
 		allOpts.addOptions(visible).addOptions(hidden);
 		warning_.clear();
 		error_.clear();
-		values.store(parseCommandLine(argc, argv, allOpts, false, optionCallback));
+		values.store(parseCommandLine(argc, argv, allOpts, false, "files"));
+#ifdef WITH_CLASP
+		size_t j = 0;
+		bool hasNum = values.count("number") != 0;
+		for (size_t i = 0; i < files.size(); ++i) {
+			if (!parseInt(files[i])) { files[j++] = files[i]; }
+			else if (hasNum)         { throw ProgramOptions::MultipleOccurences("Option '--number'"); }
+			else                     { ProgramOptions::parseValue(files[i], numModels, 1); hasNum = true; }
+		}
+		files.erase(files.begin()+j, files.end());
+#endif
 		if (help) {
 			printHelp(visible, os);
 			return true;
@@ -678,6 +679,7 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 	solveParams.setRandomProbability( value_cast<double>(vm["rand-freq"]) );
 	if (s.strategies().search == SolverStrategies::use_learning) {
 		std::vector<double> rp = value_cast<vector<double> >(vm["restarts"]);
+		if (rp.empty()) rp = restartDefault();
 		rp.resize(3, 0.0);
 		bool br = false;
 		if (vm.count("bounded-restarts") != 0) {
@@ -689,6 +691,7 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 		bool lr = vm.count("local-restarts") != 0 && value_cast<bool>(vm["local-restarts"]);
 		solveParams.setRestartParams((uint32)rp[0], rp[1], (uint32)rp[2], lr, br);
 		vector<double> del = value_cast<vector<double> >(vm["deletion"]);
+		if (del.empty()) del = delDefault();
 		del.resize(3, 1.0);
 		redFract      = del[0];
 		redInc        = del[1];
