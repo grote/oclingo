@@ -5,8 +5,12 @@ else(WITH_CLASP)
 	file(GLOB GRINGO_SRC main.cpp options.cpp timer.cpp)
 	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/lib/libprogram_opts)
 endif(WITH_CLASP)
-
+if (MSVC)
+file(GLOB GRINGO_HEAD *.h)
+add_executable (gringo-app ${GRINGO_SRC} ${GRINGO_HEAD})
+else (MSVC)
 add_executable (gringo-app ${GRINGO_SRC})
+endif (MSVC)
 
 if (WITH_ICLASP)
 	target_link_libraries (gringo-app gringo-lib clasp-lib program_opts-lib)
