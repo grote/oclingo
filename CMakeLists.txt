@@ -22,6 +22,8 @@ include (CPack)
 
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)
 set(LIBRARY_OUTPUT_PATH ${GrinGo_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries." FORCE)
+
+
 if(LINK_STATIC)
 	set(CMAKE_CXX_FLAGS_DEBUG "-g -D_GLIBCXX_DEBUG -D_DEBUG -O0 -Wall -Wno-deprecated -static" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wno-deprecated -static" CACHE STRING "Flags used by the compiler during release builds" FORCE)
@@ -29,6 +31,12 @@ else(LINK_STATIC)
 	set(CMAKE_CXX_FLAGS_DEBUG "-g -D_GLIBCXX_DEBUG -D_DEBUG -O0 -Wall -Wno-deprecated" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wno-deprecated" CACHE STRING "Flags used by the compiler during release builds" FORCE)
 endif(LINK_STATIC)
+
+IF(MSVC)
+	set(CMAKE_CXX_FLAGS_DEBUG "/Od /D \"_DEBUG\" /D \"_SCL_SECURE_NO_WARNINGS\" /D \"_UNICODE\" /D \"UNICODE\" /Gm /EHsc /RTC1 /MDd /W3 /nologo /c /ZI /TP" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Oi /GL /D \"NDEBUG\" /D \"_UNICODE\" /D \"UNICODE\" /FD /EHsc /MD /Gy /W3 /nologo /c /Zi /TP" CACHE STRING "Flags used by the compiler during release builds" FORCE)
+ENDIF(MSVC)
+
 
 
 if(NOT CMAKE_VERBOSE_MAKEFILE)
