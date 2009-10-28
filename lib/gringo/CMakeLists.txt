@@ -1,9 +1,6 @@
 file(GLOB LIBGRINGO_SRC src/*.cpp)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include generated ..)
-if (MSVC)
-ADD_DEFINITIONS(/D \"HAS_TR1_UNORDERED=1\" /D \"NS_TR1=std::tr1\")
-endif (MSVC)
 
 include(../macros.cmake)
 

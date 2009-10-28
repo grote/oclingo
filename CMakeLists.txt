@@ -36,6 +36,7 @@ endif(LINK_STATIC)
 IF(MSVC)
 	set(CMAKE_CXX_FLAGS_DEBUG "/Od /D \"_DEBUG\" /D \"_SCL_SECURE_NO_WARNINGS\" /D \"_UNICODE\" /D \"UNICODE\" /Gm /EHsc /RTC1 /MDd /W3 /nologo /c /ZI /TP" CACHE STRING "Flags used by the compiler during debug builds." FORCE)
 	set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Oi /GL /D \"NDEBUG\" /D \"_UNICODE\" /D \"UNICODE\" /FD /EHsc /MD /Gy /W3 /nologo /c /Zi /TP" CACHE STRING "Flags used by the compiler during release builds" FORCE)
+	ADD_DEFINITIONS(/D \"HAS_TR1_UNORDERED=1\" /D \"NS_TR1=std::tr1\")
 ENDIF(MSVC)
 
 
