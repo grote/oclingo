@@ -263,6 +263,8 @@ namespace ProgramOptions {
 	///////////////////////////////////////////////////////////////////////////////
 	// parse functions
 	///////////////////////////////////////////////////////////////////////////////
+	typedef bool (*PosOption)(const std::string&, std::string&);
+	
 	/*!
 	* parses the command line starting at index 1 and removes
 	* all found options from argv.
@@ -270,8 +272,11 @@ namespace ProgramOptions {
 	* \param argv the command line arguments
 	* \param grp options to search in the command line.
 	* \param allowUnregistered Allow arguments that match no option in grp
-	* \param positionalOption Name of the option that should receive command line tokens
-	* that have no option name. The selected Option must be an option of grp.
+	* \param positionalOption An optional function that is called for
+	         command line tokens that have no option name. The function must either 
+					 return true and store tthe name of the option in grp that 
+					 should receive the token as value in out 
+					 or return false to signal an error.
 	* \return A ParsedOptions-Object containing names and values for all options found.
 	* 
 	* \throw std::runtime_error if command line syntax is incorrect
@@ -281,7 +286,7 @@ namespace ProgramOptions {
 	*/
 	ParsedOptions parseCommandLine(int& argc, char** argv, OptionGroup& grp,
 		bool allowUnregistered = true,
-		const char* positionalOption = 0);
+		PosOption positionalOption = 0);
 
 	/*!
 	* parses a config file having the format key = value.

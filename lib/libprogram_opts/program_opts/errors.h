@@ -14,9 +14,9 @@
 #include <stdexcept>
 namespace ProgramOptions
 {
-	
+
 	//! thrown when a value has an unexpected type
-		class BadValue : public std::logic_error
+	class BadValue : public std::logic_error
 	{
 	public:
 		BadValue(const std::string& msg)
@@ -32,7 +32,7 @@ namespace ProgramOptions
 	};
 
 	//! thrown when an option has an illegal name
-		class BadOptionName : public std::logic_error
+	class BadOptionName : public std::logic_error
 	{
 	public:
 		BadOptionName(const std::string& name)
@@ -40,9 +40,9 @@ namespace ProgramOptions
 		{}
 		~BadOptionName() throw () {}
 	};
-	
-		//! thrown when more than one option in a group has the same name
-		class DuplicateOption : public std::logic_error
+
+	//! thrown when more than one option in a group has the same name
+	class DuplicateOption : public std::logic_error
 	{
 	public:
 		DuplicateOption(const std::string& name, const std::string& grp)
@@ -57,9 +57,9 @@ namespace ProgramOptions
 		const std::string name_;
 		const std::string grpDesc_;
 	};
-	
+
 	//! thrown when an unknown option is requested
-		class UnknownOption : public std::logic_error
+	class UnknownOption : public std::logic_error
 	{
 	public:
 		UnknownOption(const std::string& name)
@@ -69,7 +69,7 @@ namespace ProgramOptions
 	};
 
 	//! thrown when there's ambiguity amoung several possible options.
-		class AmbiguousOption : public std::logic_error
+	class AmbiguousOption : public std::logic_error
 	{
 	public:
 		AmbiguousOption(const std::string& optname)
@@ -79,7 +79,7 @@ namespace ProgramOptions
 	};
 
 	//! thrown when there are several occurrences of an option in one source
-		class MultipleOccurences : public std::logic_error
+	class MultipleOccurences : public std::logic_error
 	{
 	public:
 		MultipleOccurences(const std::string& opt)

@@ -58,7 +58,7 @@ class AppOptions {
 public:
 	AppOptions() {}
 	virtual ~AppOptions() {}
-	bool parse(int argc, char** argv);
+	bool parse(int argc, char** argv, ProgramOptions::PosOption p = 0);
 	
 	// n warnings and at most one error
 	Messages messages;

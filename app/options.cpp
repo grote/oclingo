@@ -165,11 +165,13 @@ bool mapStop(const std::string& s, bool &out) {
 	return false;
 }
 
-bool parseInt(const std::string &s)
-{
-	char *endptr;
-	strtol(s.c_str(), &endptr, 10);
-	return (endptr != s.c_str() && !*endptr);
+bool parsePositional(const std::string& t, std::string& out) {
+#ifdef WITH_CLASP	
+	int num;
+	if (ProgramOptions::parseValue(t, num, 1)) { out = "number"; return true; }
+#endif
+	out = "files";
+	return true;
 }
 
 }
@@ -506,17 +508,7 @@ bool Options::parse(int argc, char** argv, std::ostream& os, OptionValues& value
 		allOpts.addOptions(visible).addOptions(hidden);
 		warning_.clear();
 		error_.clear();
-		values.store(parseCommandLine(argc, argv, allOpts, false, "files"));
-#ifdef WITH_CLASP
-		size_t j = 0;
-		bool hasNum = values.count("number") != 0;
-		for (size_t i = 0; i < files.size(); ++i) {
-			if (!parseInt(files[i])) { files[j++] = files[i]; }
-			else if (hasNum)         { throw ProgramOptions::MultipleOccurences("Option '--number'"); }
-			else                     { ProgramOptions::parseValue(files[i], numModels, 1); hasNum = true; }
-		}
-		files.erase(files.begin()+j, files.end());
-#endif
+		values.store(parseCommandLine(argc, argv, allOpts, false, parsePositional));
 		if (help) {
 			printHelp(visible, os);
 			return true;

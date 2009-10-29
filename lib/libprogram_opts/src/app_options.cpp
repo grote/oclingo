@@ -59,7 +59,7 @@ void GenericOptions::addDefaults(std::string&) {}
 /////////////////////////////////////////////////////////////////////////////////////////
 // Parsing & Validation of command line
 /////////////////////////////////////////////////////////////////////////////////////////
-bool AppOptions::parse(int argc, char** argv) {
+bool AppOptions::parse(int argc, char** argv, ProgramOptions::PosOption p) {
 	OptionValues values;
 	try {
 		defaults_ = "";
@@ -70,7 +70,7 @@ bool AppOptions::parse(int argc, char** argv) {
 		generic.addDefaults(defaults_);
 		allOpts.addOptions(visible).addOptions(hidden);
 		messages.clear();
-		values.store(parseCommandLine(argc, argv, allOpts, false, "file"));
+		values.store(parseCommandLine(argc, argv, allOpts, false, p));
 		if (generic.help || generic.version) { 
 			stringstream str;
 			str << visible;
