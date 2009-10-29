@@ -25,6 +25,7 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <cctype>
 namespace ProgramOptions {
 //! typed value of an option
 template <class T>
