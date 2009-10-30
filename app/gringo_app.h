@@ -64,27 +64,28 @@ private:
 class Application : public AppOptions{
 public:
 	Application();
-	void printHelp()    const;
-	void printVersion() const;
-	int  run(int argc, char** argv); // "entry-point"
-	static Application& instance();
-	void printWarnings();
+	void         printHelp()    const;
+	virtual void printVersion() const = 0;
+	int          run(int argc, char** argv); // "entry-point"
+	static       Application& instance();
+	void         printWarnings();
 private:
 	Application(const Application&);
 	Application& operator=(const Application&);
-	static void sigHandler(int sig);   // signal/timeout handler
-	void   installSigHandlers();       // adds handlers for SIGINT, SIGTERM, SIGALRM
-	virtual void handleSignal(int sig) = 0;
-	virtual int  doRun() = 0; 
+	static void sigHandler(int sig);    // signal/timeout handler
+	void    installSigHandlers();       // adds handlers for SIGINT, SIGTERM
 	virtual std::string getVersion() const = 0;
 	virtual std::string getUsage()   const = 0;
+	virtual void handleSignal(int sig)     = 0;
+	virtual int  doRun()                   = 0; 
 	virtual ProgramOptions::PosOption getPositionalParser() const = 0;
 };
 
 // gringo application
 class GringoApp : public Application {
 public:
-	void printSyntax() const;
+	void printVersion() const;
+	void printSyntax()  const;
 	void ground(NS_OUTPUT::Output&) const;
 	void printGrounderStats(NS_OUTPUT::Output&) const;
 	GringoOptions opts;
@@ -117,6 +118,8 @@ protected:
 
 // (i)Clingo application, i.e. gringo+clasp
 class ClingoApp : public GringoApp, public Clasp::ClaspFacade::Callback {
+public:
+	void printVersion() const;
 protected:
 	// ---------------------------------------------------------------------------------------
 	// AppOptions interface

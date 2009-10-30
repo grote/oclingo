@@ -121,23 +121,6 @@ void Application::printHelp() const {
 			 << "  " << EXECUTABLE << " " << getDefaults() << endl;
 }
 
-void Application::printVersion() const {
-	cout << EXECUTABLE << " " << getVersion()
-		   << "\n\n";
-	cout << "Copyright (C) Roland Kaminski" << "\n";
-	cout << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
-	cout << "GrinGo is free software: you are free to change and redistribute it.\n";
-	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
-#ifdef WITH_CLASP
-	cout << endl;
-	cout << "clasp " << CLASP_VERSION << "\n";
-	cout << "Copyright (C) Benjamin Kaufmann" << "\n";
-	cout << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
-	cout << "clasp is free software: you are free to change and redistribute it.\n";
-	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
-#endif
-}
-
 Streams::~Streams() {
 	for(StreamVec::iterator i = streams.begin(); i != streams.end(); i++) {
 		delete *i;
@@ -187,6 +170,15 @@ void GringoApp::printSyntax() const {
 	     << "can be found at <http://potassco.sourceforge.net/>." << std::endl;
 }
 
+void GringoApp::printVersion() const {
+	cout << EXECUTABLE << " " << getVersion()
+		   << "\n\n";
+	cout << "Copyright (C) Roland Kaminski" << "\n";
+	cout << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
+	cout << "GrinGo is free software: you are free to change and redistribute it.\n";
+	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
+}
+
 int GringoApp::doRun() {
 	if (opts.syntax) { printSyntax(); return EXIT_SUCCESS; }
 	std::auto_ptr<NS_OUTPUT::Output> out;
@@ -201,11 +193,9 @@ int GringoApp::doRun() {
 	}
 	if (out.get()) {
 		ground(*out.get());
-#if !defined(WITH_CLASP)
 		if (opts.stats) {
 			printGrounderStats(*out.get());
 		}
-#endif
 	}
 	return EXIT_SUCCESS;
 }
@@ -273,10 +263,11 @@ void GringoApp::addConstStream(Streams& s) const {
 		*constants << "#const " << *i << ".\n";
 	}
 }
-#if defined(WITH_CLASP)
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClingoApp
 /////////////////////////////////////////////////////////////////////////////////////////
+#if defined(WITH_CLASP)
 namespace {
 // class for using gringos output as clasps input
 struct FromGringo : public Clasp::Input {
@@ -334,7 +325,15 @@ struct FromGringo : public Clasp::Input {
 	bool                   clingo;
 };
 }
-
+void ClingoApp::printVersion() const {
+	GringoApp::printVersion();
+	cout << endl;
+	cout << "clasp " << CLASP_VERSION << "\n";
+	cout << "Copyright (C) Benjamin Kaufmann" << "\n";
+	cout << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
+	cout << "clasp is free software: you are free to change and redistribute it.\n";
+	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
+}
 std::string ClingoApp::getVersion() const { 
 	std::string r(GRINGO_VERSION);
 	r += " (clasp ";
@@ -535,8 +534,7 @@ void ClingoApp::printResult(ReasonEnd end) {
 	}
 	if (cmdOpts_.basic.stats) { 
 		out_->printStats(s.stats, en); 
-	}
-	
+	}	
 }
 #endif
 }
