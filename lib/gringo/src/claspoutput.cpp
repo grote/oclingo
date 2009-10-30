@@ -29,7 +29,7 @@ std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
 
 #include "gringoexception.h"
 #include "grounder.h"
-#include <clasp/include/program_builder.h>
+#include <clasp/program_builder.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;

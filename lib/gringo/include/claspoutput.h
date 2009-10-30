@@ -22,7 +22,6 @@
 
 #ifdef WITH_CLASP
 #include <smodelsconverter.h>
-#include <clasp/include/lparse_reader.h>
 
 namespace Clasp
 {
@@ -41,6 +40,7 @@ namespace NS_GRINGO
 			virtual void finalize(bool last);
 			bool addAtom(NS_OUTPUT::Atom *r);
 			int newUid();
+			void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 			~ClaspOutput();
 		protected:
 			void printBasicRule(int head, const IntVector &pos, const IntVector &neg);

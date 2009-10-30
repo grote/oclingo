@@ -1,6 +1,10 @@
 file(GLOB LIBGRINGO_SRC src/*.cpp)
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include generated ..)
+ 
+if (WITH_CLASP)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include generated  ../libclasp)
+else (WITH_CLASP)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include generated)
+endif (WITH_CLASP)
 
 include(../macros.cmake)
 
