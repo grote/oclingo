@@ -12,19 +12,21 @@
 #include <program_opts/value.h>
 #include <algorithm>
 #include <sstream>
+#include <iterator>
 #include <cctype>
 using namespace std;
-namespace ProgramOptions {
-
-namespace {
-	inline char toLower(char c) {
-		return tolower(static_cast<unsigned char>(c));
-	}
+namespace ProgramOptions { namespace {
+	struct ToLower {
+		char operator()(char in) const { return (char)std::tolower(static_cast<unsigned char>(in)); }
+	};
+	struct ToUpper {
+		char operator()(char in) const { return (char)std::toupper(static_cast<unsigned char>(in)); }
+	};
 }
+
 bool parseValue(const std::string& s, bool& b, int)
 {
-	string copy(s);
-	transform(copy.begin(), copy.end(), copy.begin(), toLower);
+	string copy = toLower(s);
 	if (copy.empty() || copy == "true" || copy == "1" || copy == "yes" || copy == "on")
 	{
 		b = true;
@@ -50,4 +52,18 @@ Value<bool>* bool_switch(bool* b)
 	nv->setImplicit();
 	return nv;
 }
+
+std::string toLower(const std::string& s) {
+	std::string ret; ret.reserve(s.size());
+	std::transform(s.begin(), s.end(), std::back_inserter(ret), ToLower());
+	return ret;
+}
+
+std::string toUpper(const std::string& s) {
+	std::string ret; ret.reserve(s.size());
+	std::transform(s.begin(), s.end(), std::back_inserter(ret), ToUpper());
+	return ret;
+}
+
+
 }
