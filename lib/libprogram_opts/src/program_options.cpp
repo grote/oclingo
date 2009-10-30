@@ -248,7 +248,8 @@ namespace ProgramOptions {
 	}
 	void OptionGroup::writeToStream(std::ostream& os, FormatFunction f) const
 	{
-		for (std::size_t i = 0; i != options_.size(); ++i)
+		// print all sub-groups
+		for (std::size_t i = 1; i < options_.size(); ++i)
 		{
 			if (!options_[i].first.empty())
 				os << "\n" << options_[i].first << ":\n" << endl;
@@ -258,8 +259,15 @@ namespace ProgramOptions {
 				os << '\n';
 			}
 		}
-
-
+		// print main group
+		if (!options_[0].first.empty()) {
+			os << "\n" << options_[0].first << ":\n" << endl;
+		}
+		for (std::size_t j = 0; j != options_[0].second.size(); ++j)
+		{
+			f(os, *options_[0].second[j]);
+			os << '\n';
+		}
 	}
 
 	OptionGroup::PrefixRange OptionGroup::getPrefixRange(const char* prefix) const

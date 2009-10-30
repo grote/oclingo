@@ -63,7 +63,7 @@ bool AppOptions::parse(int argc, char** argv, ProgramOptions::PosOption p) {
 	OptionValues values;
 	try {
 		defaults_ = "";
-		OptionGroup allOpts, visible, hidden;
+		OptionGroup allOpts, visible("Basic Options"), hidden;
 		initOptions(visible, hidden);
 		generic.initOptions(visible, hidden);
 		addDefaults(defaults_);
