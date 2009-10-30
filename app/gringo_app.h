@@ -99,7 +99,7 @@ protected:
 	void addDefaults(std::string& defaults) { 
 		opts.addDefaults(defaults);
 	}
-	bool validateOptions(ProgramOptions::OptionValues& v , StringSeq&, Messages& m) { 
+	bool validateOptions(ProgramOptions::OptionValues& v, Messages& m) { 
 		return opts.validateOptions(v, m); 
 	}
 	// ---------------------------------------------------------------------------------------
@@ -138,8 +138,8 @@ protected:
 		if (cmdOpts_.basic.timeout != -1) {
 			m.warning.push_back("Time limit not supported in " EXECUTABLE);
 		}
-		return cmdOpts_.validateOptions(v, in, m)
-			&& GringoApp::validateOptions(v, in, m)
+		return cmdOpts_.validateOptions(v, m)
+			&& GringoApp::validateOptions(v, m)
 			&& clingo_.validateOptions(v, GringoApp::opts, m);
 	}
 	// ---------------------------------------------------------------------------------------

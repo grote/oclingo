@@ -72,7 +72,7 @@ private:
 	AppOptions& operator=(const AppOptions&);
 	virtual void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) = 0;
 	virtual void addDefaults(std::string& defaults) = 0;
-	virtual bool validateOptions(ProgramOptions::OptionValues&, StringSeq&, Messages&) = 0;
+	virtual bool validateOptions(ProgramOptions::OptionValues&, Messages&) = 0;
 	std::string help_;
 	std::string defaults_;
 };

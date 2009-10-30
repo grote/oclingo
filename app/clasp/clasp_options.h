@@ -81,7 +81,7 @@ struct BasicOptions {
 struct GeneralOptions {
 	GeneralOptions() : config(0) {}
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
-	bool validateOptions(ProgramOptions::OptionValues& values, StringSeq& in, Messages&);
+	bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
 	typedef SolverStrategiesWrapper Strategies;
 	ClaspConfig* config;
 	Strategies   solverOpts;
@@ -112,7 +112,7 @@ public:
 	void setConfig(ClaspConfig* config);
 
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
-	bool validateOptions(ProgramOptions::OptionValues& values, StringSeq&, Messages&);
+	bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
 	void addDefaults(std::string& def);
 private:
 	GeneralOptions mode;

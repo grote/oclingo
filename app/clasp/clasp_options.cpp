@@ -277,7 +277,7 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 		("project-opt", storeTo(config->enumerate.projectOpts), "Additional options for projection as octal digit\n")
 	;
 }
-bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, StringSeq& in,  Messages& m) {
+bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages&) {
 	if (vm.count("opt-value") != 0) {
 		const std::vector<int>& vals = value_cast<std::vector<int> >(vm["opt-value"]);
 		config->enumerate.opt.vals.assign(vals.begin(), vals.end());
@@ -435,8 +435,8 @@ void ClaspOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions
 	basic.initOptions(root);
 }
 
-bool ClaspOptions::validateOptions(ProgramOptions::OptionValues& vm, StringSeq& in, Messages& m) {
-	if (mode.validateOptions(vm, in, m) && search.validateOptions(vm, m)) {
+bool ClaspOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages& m) {
+	if (mode.validateOptions(vm, m) && search.validateOptions(vm, m)) {
 		return mode.config->validate(m.error);
 	}
 	return false;

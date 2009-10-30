@@ -78,7 +78,7 @@ bool AppOptions::parse(int argc, char** argv, ProgramOptions::PosOption p) {
 			return true;
 		}
 		return generic.validateOptions(values, messages) 
-			&&   validateOptions(values, generic.input, messages);
+			&&   validateOptions(values, messages);
 	}
 	catch(const std::exception& e) {
 		messages.error = e.what();
