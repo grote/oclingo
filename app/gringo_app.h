@@ -113,9 +113,6 @@ protected:
 };
 
 #if defined(WITH_CLASP)
-
-#define STATUS(v1,x) if (generic.verbose<v1);else (x)
-
 // (i)Clingo application, i.e. gringo+clasp
 class ClingoApp : public GringoApp, public Clasp::ClaspFacade::Callback {
 public:
@@ -139,7 +136,7 @@ protected:
 	}
 	bool validateOptions(ProgramOptions::OptionValues& v , StringSeq& in, Messages& m) { 
 		if (cmdOpts_.basic.timeout != -1) {
-			m.warning.push_back("Time limits not supported in " EXECUTABLE);
+			m.warning.push_back("Time limit not supported in " EXECUTABLE);
 		}
 		return cmdOpts_.validateOptions(v, in, m)
 			&& GringoApp::validateOptions(v, in, m)
@@ -159,17 +156,20 @@ protected:
 	void warning(const char* msg) { messages.warning.push_back(msg); }
 	// -------------------------------------------------------------------------------------------
 	enum ReasonEnd { reason_timeout, reason_interrupt, reason_end };
+	enum { numStates = Clasp::ClaspFacade::num_states };
 	void printResult(ReasonEnd re);
 	void configureInOut(Streams& s);
-	Clasp::Solver        solver_;
-	Clasp::SolveStats    stats_;
-	Clasp::ClaspConfig   config_;
-	Clasp::ClaspOptions  cmdOpts_;
-	ClingoOptions        clingo_;
-	Timer                timer_[Clasp::ClaspFacade::num_states]; // one for each state
-	std::auto_ptr<Clasp::OutputFormat>   out_;
-	std::auto_ptr<Clasp::Input>          in_;
-	Clasp::ClaspFacade*  facade_;
+	typedef std::auto_ptr<Clasp::OutputFormat> ClaspOutPtr;
+	typedef std::auto_ptr<Clasp::Input> ClaspInPtr;
+	Clasp::Solver        solver_;           // solver to use for search
+	Clasp::SolveStats    stats_;            // accumulates clasp solve stats in incremental setting
+	Clasp::ClaspConfig   config_;           // clasp configuration - from command-line
+	Clasp::ClaspOptions  cmdOpts_;          // clasp basic options - from command-line
+	ClingoOptions        clingo_;           // (i)clingo options   - from command-line
+	Timer                timer_[numStates]; // one timer for each state
+	ClaspOutPtr          out_;              // printer for printing result of search
+	ClaspInPtr           in_;               // input for clasp
+	Clasp::ClaspFacade*  facade_;           // interface to clasp lib
 };
 #endif
 

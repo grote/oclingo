@@ -268,6 +268,7 @@ void GringoApp::addConstStream(Streams& s) const {
 // ClingoApp
 /////////////////////////////////////////////////////////////////////////////////////////
 #if defined(WITH_CLASP)
+#define STATUS(v1,x) if (generic.verbose<v1);else (x)
 namespace {
 // class for using gringos output as clasps input
 struct FromGringo : public Clasp::Input {
@@ -536,5 +537,6 @@ void ClingoApp::printResult(ReasonEnd end) {
 		out_->printStats(s.stats, en); 
 	}	
 }
+#undef STATUS
 #endif
 }
