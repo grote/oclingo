@@ -134,7 +134,7 @@ protected:
 		defaults += "  --verbose=1";
 		GringoApp::addDefaults(defaults);
 	}
-	bool validateOptions(ProgramOptions::OptionValues& v , StringSeq& in, Messages& m) { 
+	bool validateOptions(ProgramOptions::OptionValues& v, Messages& m) { 
 		if (cmdOpts_.basic.timeout != -1) {
 			m.warning.push_back("Time limit not supported in " EXECUTABLE);
 		}
