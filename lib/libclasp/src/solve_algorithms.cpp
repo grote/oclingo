@@ -181,7 +181,7 @@ private:
 // solve
 /////////////////////////////////////////////////////////////////////////////////////////
 bool solve(Solver& s, const SolveParams& p) {
-	s.stats.resetSolve();
+	s.stats.solve.reset();
 	if (s.hasConflict()) return false;
 	double maxLearnts   = p.computeReduceBase(s);
 	double boundLearnts = p.reduce.max();

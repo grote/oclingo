@@ -79,30 +79,6 @@ struct SolveStats {
 	uint64 restarts;  /**< Number of restarts */ 
 	uint64 lits[2];   /**< 0: conflict, 1: loop */
 	uint32 learnt[4]; /**< 0: all, 1: binary, 2: ternary, 3: deleted */
-	void updateLearnt(LitVec::size_type n, ConstraintType t) {
-		assert(t != Constraint_t::native_constraint);
-		++learnt[0];  
-		lits[t-1] += n;
-		loops += t == Constraint_t::learnt_loop;
-		if (n > 1 && n < 4) {
-			++learnt[n-1];
-		}
-	}
-	void   reset() { *this = SolveStats(); }
-	void   accu(const SolveStats& o) {
-		models   += o.models;
-		conflicts+= o.conflicts;
-		loops    += o.loops;
-		choices  += o.choices;
-		restarts += o.restarts;
-		for (int i = 0; i != 2; ++i) lits[i]   += o.lits[i];
-		for (int i = 0; i != 4; ++i) learnt[i] += o.learnt[i];
-	}
-};
-
-//! A struct for aggregating jump statistics relative to one solve operation
-struct JumpStats {
-	JumpStats() { std::memset(this, 0, sizeof(*this)); }
 #if MAINTAIN_JUMP_STATS == 1
 	uint64  modLits;  /**< Number of decision literals in models */
 	uint64  jumps;    /**< Number of backjumps (i.e. number of analyzed conflicts) */
@@ -137,19 +113,42 @@ struct JumpStats {
 	void updateModels(uint32) {}
   void updateJumps(uint32, uint32, uint32) {}
 #endif
-	void   reset() { *this = JumpStats(); }
+	void updateLearnt(LitVec::size_type n, ConstraintType t) {
+		assert(t != Constraint_t::native_constraint);
+		++learnt[0];  
+		lits[t-1] += n;
+		loops += t == Constraint_t::learnt_loop;
+		if (n > 1 && n < 4) {
+			++learnt[n-1];
+		}
+	}
+	void   reset() { *this = SolveStats(); }
+	void   accu(const SolveStats& o) {
+		models   += o.models;
+		conflicts+= o.conflicts;
+		loops    += o.loops;
+		choices  += o.choices;
+		restarts += o.restarts;
+		for (int i = 0; i != 2; ++i) lits[i]   += o.lits[i];
+		for (int i = 0; i != 4; ++i) learnt[i] += o.learnt[i];
+#if MAINTAIN_JUMP_STATS == 1
+		modLits += o.modLits;
+		jumps   += o.jumps;
+		bJumps  += o.bJumps;
+		jumpSum += o.jumpSum;
+		boundSum+= o.boundSum;
+		if (o.maxJump   > maxJump)   maxJump   = o.maxJump;
+		if (o.maxJumpEx > maxJumpEx) maxJumpEx = o.maxJumpEx;
+		if (o.maxBound  > maxBound)  maxBound  = o.maxBound;
+#endif
+	}
 };
 
 //! A struct for aggregating some solver statistics
 struct SolverStatistics{
 	SolverStatistics() { }
 	SolveStats   solve;
-	JumpStats    jump;
 	ProblemStats problem;
-	void resetSolve() {
-		solve.reset();
-		jump.reset();
-	}
 };
 ///////////////////////////////////////////////////////////////////////////////
 

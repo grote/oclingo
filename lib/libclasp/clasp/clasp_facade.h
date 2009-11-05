@@ -31,6 +31,7 @@
 #include <clasp/program_builder.h>
 #include <clasp/unfounded_check.h>
 #include <clasp/reader.h>
+#include <clasp/util/misc_types.h>
 #include <string>
 
 /*!
@@ -55,7 +56,6 @@ struct ApiOptions {
 	int  eq;              /**< iterations of equivalence preprocessing */
 	bool backprop;        /**< enable backpropagation in eq-preprocessing? */
 	bool supported;       /**< compute supported models? */
-	bool onlyPre;         /**< only run preprocessor? */
 };
 
 //! Options that control the enumeration algorithm
@@ -118,6 +118,7 @@ public:
 	SolveParams      solve;
 	HeuristicOptions heuristic;
 	Solver*          solver;
+	bool             onlyPre;    /**< stop after preprocessing step? */
 private:
 	ClaspConfig(const ClaspConfig&);
 	ClaspConfig& operator=(const ClaspConfig&);
@@ -177,6 +178,8 @@ public:
 	 * \pre config is valid, i.e. config.valid() returned true
 	 * \note Once solve() returned, the result of the computation can be
 	 * queried via the function result().
+	 * \note if config.onlyPre is true, solve() returns after
+	 * the preprocessing step (i.e. once the solver is prepared) and does not start a search.
 	 */
 	void solve(Input& problem, ClaspConfig& config, Callback* c);
 
@@ -185,6 +188,7 @@ public:
 	 * \pre config is valid, i.e. config.valid() returned true
 	 * \note Once solve() returned, the result of the computation can be
 	 * queried via the function result().
+	 * \note config.onlyPre is ignored in incremental setting!
 	 */
 	void solveIncremental(Input& problem, ClaspConfig& config, IncrementalConfig& inc, Callback* c);
 
@@ -201,8 +205,12 @@ public:
 	//! returns the ProgramBuilder-object that was used to transform a logic program into nogoods
 	/*!
 	 * \note A ProgramBuilder-object is only created if input()->format() == Input::SMODELS
+	 * \note The ProgramBuilder-object is destroyed after the event
+	 *       event_p_prepared was fired. Call releaseApi to disable auto-deletion of api.
+	 *       In that case you must later manually delete it!
 	 */
-	ProgramBuilder* api() const { return api_.get(); }
+	ProgramBuilder* api() const  { return api_.get();     }
+	ProgramBuilder* releaseApi() { return api_.release(); }
 
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	const SearchLimits& limits() const { return limits_; }
@@ -210,7 +218,7 @@ public:
 private:
 	ClaspFacade(const ClaspFacade&);
 	ClaspFacade& operator=(const ClaspFacade&);
-	typedef std::auto_ptr<ProgramBuilder> Api;
+	typedef SingleOwnerPtr<ProgramBuilder> Api;
 	// -------------------------------------------------------------------------------------------  
 	// Status information
 	void setState(State s, Event e)   { state_ = s; if (cb_) cb_->state(e, *this); }

@@ -370,10 +370,15 @@ void ClingoApp::configureInOut(Streams& s) {
 		s.open(generic.input);
 		in_.reset(new FromGringo(opts, s, clingo_.clingoMode));
 	}
+	if (config_.onlyPre) { 
+		if (clingo_.claspMode || clingo_.clingoMode) {
+			generic.verbose = 0; 
+		}
+		else { warning("Option '--pre' is ignored in incremental setting!"); config_.onlyPre = false; }
+	}
 	if (in_->format() == Input::SMODELS) {
 		out_.reset(new AspOutput(cmdOpts_.basic.asp09));
 		if (cmdOpts_.basic.asp09){ generic.verbose = 0; }
-		if (config_.api.onlyPre) { generic.verbose = 0; }
 	}
 	else if (in_->format() == Input::DIMACS) { out_.reset(new SatOutput()); }
 	else if (in_->format() == Input::OPB)    { out_.reset(new PbOutput());  }
@@ -465,17 +470,31 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 		}
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
-		out_->initSolve(solver_, f.api());
+		if (config_.onlyPre) {
+			if (f.api()) f.releaseApi(); // keep api so that we can later print the program
+			else         STATUS(0, cout << "Vars: " << solver_.numVars() << " Constraints: " <<  solver_.numConstraints()<<endl);
+			solver_.strategies().satPrePro.reset(0);
+			solver_.reset();
+		}
+		else { out_->initSolve(solver_, f.api()); }
 	}
 }
 
 void ClingoApp::printResult(ReasonEnd end) {
 	using namespace Clasp;
-	if (config_.api.onlyPre) {
-		if (end == reason_end) {
+	if (config_.onlyPre) {
+		if (end != reason_end) return;
+		if (facade_->api()) { // asp-mode
 			facade_->result() == ClaspFacade::result_unsat
 				? (void)(std::cout << "0\n0\nB+\n1\n0\nB-\n1\n0\n0\n")
 				: facade_->api()->writeProgram(std::cout);
+			delete facade_->api();
+		}
+		else {
+			if (facade_->result() != ClaspFacade::result_unsat) {
+				STATUS(0, cout << "Search not started because of option '--pre'!" << endl);
+			}
+			cout << "S UNKNWON" << endl;
 		}
 		return;
 	}

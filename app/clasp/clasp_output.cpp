@@ -86,19 +86,18 @@ void OutputFormat::printSolution(const Solver& s, const Enumerator& en, bool com
 void OutputFormat::printJumpStats(const SolverStatistics& stats) {
 	(void)stats;
 #if MAINTAIN_JUMP_STATS == 1
-	const JumpStats&   js = stats.jump;
 	const SolveStats& st  = stats.solve; 
 	int w = 20 - (int)strlen(format[comment]);
 	const char* c = format[comment];
-	printf("%s\n%-*s: %-6"PRIu64"\n", c, w, "Backtracks",st.conflicts-js.jumps);
-	printf("%s%-*s: %-6"PRIu64" (Bounded: %"PRIu64")\n", c, w, "Backjumps", js.jumps, js.bJumps);
-	printf("%s%-*s: %-6"PRIu64"\n", c, w, "Skippable Levels",js.jumpSum);
-	printf("%s%-*s: %-6"PRIu64" (%5.1f%%)\n", c, w, "Levels skipped",js.jumpSum - js.boundSum, percent(js.jumpSum - js.boundSum, js.jumpSum));
-	printf("%s%-*s: %-6u (Executed: %u)\n", c, w, "Max Jump Length",js.maxJump, js.maxJumpEx);
-	printf("%s%-*s: %-6u\n", c, w, "Max Bound Length",js.maxBound);
-	printf("%s%-*s: %-6.1f (Executed: %.1f)\n", c, w, "Average Jump Length",js.avgJumpLen(), js.avgJumpLenEx());
-	printf("%s%-*s: %-6.1f\n", c, w, "Average Bound Length",average(js.boundSum,js.bJumps));
-	printf("%s%-*s: %-6.1f\n", c, w, "Average Model Length",average(js.modLits,st.models));
+	printf("%s\n%-*s: %-6"PRIu64"\n", c, w, "Backtracks",st.conflicts-st.jumps);
+	printf("%s%-*s: %-6"PRIu64" (Bounded: %"PRIu64")\n", c, w, "Backjumps", st.jumps, st.bJumps);
+	printf("%s%-*s: %-6"PRIu64"\n", c, w, "Skippable Levels",st.jumpSum);
+	printf("%s%-*s: %-6"PRIu64" (%5.1f%%)\n", c, w, "Levels skipped",st.jumpSum - st.boundSum, percent(st.jumpSum - st.boundSum, st.jumpSum));
+	printf("%s%-*s: %-6u (Executed: %u)\n", c, w, "Max Jump Length",st.maxJump, st.maxJumpEx);
+	printf("%s%-*s: %-6u\n", c, w, "Max Bound Length",st.maxBound);
+	printf("%s%-*s: %-6.1f (Executed: %.1f)\n", c, w, "Average Jump Length",st.avgJumpLen(), st.avgJumpLenEx());
+	printf("%s%-*s: %-6.1f\n", c, w, "Average Bound Length",average(st.boundSum,st.bJumps));
+	printf("%s%-*s: %-6.1f\n", c, w, "Average Model Length",average(st.modLits,st.models));
 #endif
 }
 /////////////////////////////////////////////////////////////////////////////////////////

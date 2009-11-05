@@ -223,7 +223,7 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 		("brave"    , bool_switch(&config->enumerate.brave), "Compute brave consequences")
 		("cautious" , bool_switch(&config->enumerate.cautious), "Compute cautious consequences\n")
 
-		("pre" , bool_switch(&config->api.onlyPre), "Run ASP preprocessor and exit")
+		("pre" , bool_switch(&config->onlyPre), "Run ASP preprocessor and exit")
  
 		("opt-all"    , bool_switch(&config->enumerate.opt.all), "Compute all optimal models")
 		("opt-ignore" , bool_switch(&config->enumerate.opt.no), "Ignore minimize statements")

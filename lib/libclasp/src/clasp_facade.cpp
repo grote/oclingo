@@ -28,8 +28,7 @@ ApiOptions::ApiOptions()
 	, loopRep(DefaultUnfoundedCheck::common_reason)
 	, eq(5)
 	, backprop(false)
-	, supported(false)
-	, onlyPre(false) {
+	, supported(false) {
 }
 
 ProgramBuilder* ApiOptions::createApi(AtomIndex& index) {
@@ -136,6 +135,7 @@ ClaspFacade::ClaspFacade()
 	, inc_(0)
 	, cb_(0)
 	, input_(0)
+	, api_(0)
 	, result_(result_unknown)
 	, state_(state_not_started)
 	, step_(0)
@@ -164,9 +164,9 @@ void ClaspFacade::validateWeak() {
 			warning("Max incremental steps must be > 0!"); 
 			inc_->maxSteps = 1;
 		}
-		if (config_->api.onlyPre) {
-			warning("Option --pre is ignored in incremental setting!"); 
-			config_->api.onlyPre = false;
+		if (config_->onlyPre) {
+			warning("Option 'onlyPre' is ignored in incremental setting!"); 
+			config_->onlyPre = false;
 		}
 	}
 	if (config_->api.supported && config_->api.eq != 0) {
@@ -196,7 +196,7 @@ void ClaspFacade::solve(Input& problem, ClaspConfig& config, Callback* c) {
 		more_   = false;
 		reportSolution(*config.solver, *config.solve.enumerator(), true);
 	}
-	else if (!config.api.onlyPre) {
+	else if (!config.onlyPre) {
 		config_->solve.reduce.setProblemSize(computeProblemSize());
 		setState(state_solve, event_state_enter);
 		more_ = Clasp::solve(*config.solver, config.solve); 
@@ -244,15 +244,11 @@ bool ClaspFacade::read() {
 	if (input_->format() == Input::SMODELS) {
 		if (step_ == 0) {
 			config_->solver->strategies().symTab.reset(new AtomIndex());
-			api_.reset(config_->api.createApi(*config_->solver->strategies().symTab));
+			api_ = config_->api.createApi(*config_->solver->strategies().symTab);
 		}
 		if (inc_) {
 			api_->updateProgram();
 		}
-	}
-	else if (config_->api.onlyPre) {
-		warning("Option '--pre' only works in ASP-mode and is ignored!"); 
-		config_->api.onlyPre = false;
 	}
 	if (input_->format() == Input::DIMACS && config_->enumerate.numModels == -1) {
 		config_->enumerate.numModels = 1;
@@ -276,16 +272,13 @@ bool ClaspFacade::preprocess() {
 		if (!api_->endProgram(*config_->solver, false, config_->api.backprop)) {
 			return false;
 		}
-		else if (config_->api.onlyPre) {
-			return true;
-		}
 	}
 	if (!config_->enumerate.opt.no && step_ == 0 && input_->hasMinimize()) {
 		configureMinimize(input_->createMinimize(*config_->solver, config_->enumerate.opt.heu));
 	}
 	fireEvent(event_p_prepared);
-	if (!inc_) {
-		api_.reset(0);
+	if (!inc_ && api_.is_owner()) {
+		api_ = 0;
 	}
 	initEnumerator();
 	if (!config_->solver->endAddConstraints()) {
