@@ -443,7 +443,7 @@ void DefaultUnfoundedCheck::reset() {
 	activeClause_->clear();
 }
 
-bool DefaultUnfoundedCheck::propagate() {
+bool DefaultUnfoundedCheck::propagateFixpoint(Solver&) {
 	return solver_->strategies().search != SolverStrategies::no_learning 
 		? assertAtom()
 		: assertSet();
@@ -770,7 +770,7 @@ bool DefaultUnfoundedCheck::assertSet() {
 		while (!unfounded_.empty() && solver_->force(~unfounded_[0]->lit, 0)) {
 			dequeueUnfounded();
 		}
-		if (!unfounded_.empty() || !unitPropagate(*solver_)) {
+		if (!unfounded_.empty() || !solver_->propagateUntil(this)) {
 			return false;
 		}
 	}
@@ -863,7 +863,7 @@ bool DefaultUnfoundedCheck::assertAtom(Literal a) {
 		solver_->force(~a, 0);
 		loopAtoms_.push_back(~a);
 	}
-	if ( (conflict = !unitPropagate(*solver_)) == true && !loopAtoms_.empty()) {
+	if ( (conflict = !solver_->propagateUntil(this)) == true && !loopAtoms_.empty()) {
 		createLoopFormula();
 	}
 	return !conflict;

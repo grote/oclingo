@@ -34,20 +34,6 @@ uint32 randSeed_g = 1;
 
 SatPreprocessor::~SatPreprocessor() {}
 DecisionHeuristic::~DecisionHeuristic() {}
-PostPropagator::PostPropagator() {}
-PostPropagator::~PostPropagator() {}
-void PostPropagator::reset() {}
-Constraint::PropResult     
-PostPropagator::propagate(const Literal&, uint32&, Solver&) { return PropResult(true, false); }
-void PostPropagator::reason(const Literal&, LitVec&) {}
-ConstraintType PostPropagator::type() const { return Constraint_t::native_constraint; }
-bool PostPropagator::doCheckModel(Solver&) { return true; }
-bool PostPropagator::nextSymModel() { return false; }
-bool PostPropagator::isModel(Solver& s) {
-	if (doCheckModel(s)) return true;
-	if (s.hasConflict()) s.resolveConflict();
-	return false;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SelectFirst selection strategy
@@ -104,12 +90,87 @@ private:
 	VarVec::size_type pos_;
 };
 /////////////////////////////////////////////////////////////////////////////////////////
+// Post propagator list
+/////////////////////////////////////////////////////////////////////////////////////////
+Solver::PPList::PPList() : head(0), saved(0) { }
+Solver::PPList::~PPList() {
+	for (PostPropagator* r = head; r;) {
+		PostPropagator* t = r;
+		r = r->next;
+		t->destroy();
+	}
+}
+void Solver::PPList::add(PostPropagator* p, bool front) {
+	assert(p && p->next == 0);
+	if (!head || front) {
+		p->next = head;
+		head    = p;
+	}
+	else {
+		for (PostPropagator* r = head; ; r = r->next) {
+			if (r->next == 0) {
+				r->next = p;
+				break;
+			}
+		}
+	}
+	saved = head;
+}
+void Solver::PPList::remove(PostPropagator* p) {
+	assert(p);
+	if (!head) return;
+	if (p == head) {
+		head = head->next;
+		p->next = 0;
+	}
+	else {
+		for (PostPropagator* r = head; ; r = r->next) {
+			if (r->next == p) {
+				r->next = r->next->next;
+				p->next = 0;
+				break;
+			}
+		}
+	}
+	saved = head;
+}
+bool Solver::PPList::propagate(Solver& s, PostPropagator* x) {
+	if (x == head) return true;
+	PostPropagator* p = head, *t;
+	do {
+		// just in case t removes itself from the list
+		// during propagateFixpoint
+		t = p;
+		p = p->next;
+		if (!t->propagateFixpoint(s)) { return false; }
+	}
+	while (p != x);
+	return true;
+}
+bool PostPropagator::propagateFixpoint(Solver& s) {
+	bool r;
+	while ((r=propagate(s)) && s.queueSize() > 0 && (r=s.propagateUntil(this))) { ; }
+	return r;
+}
+void Solver::PPList::reset()            { for (PostPropagator* r = head; r; r = r->next) { r->reset(); } }
+bool Solver::PPList::isModel(Solver& s) {
+	for (PostPropagator* r = head; r; r = r->next) {
+		if (!r->isModel(s)) return false;
+	}
+	return true;
+}
+bool Solver::PPList::nextSymModel(Solver& s, bool expand) {
+	for (; saved; saved = saved->next) {
+		if (saved->nextSymModel(s, expand)) return true;
+	}
+	return false;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
 // SolverStrategies
 /////////////////////////////////////////////////////////////////////////////////////////
 SolverStrategies::SolverStrategies()
 	: satPrePro(0)
 	, heuristic(new SelectFirst) 
-	, postProp(new NoPostPropagator)
 	, symTab(0)
 	, search(use_learning)
 	, saveProgress(0) 
@@ -222,9 +283,10 @@ uint32 Solver::problemComplexity() const {
 	return r;
 }
 
-Var Solver::addVar(VarType t) {
+Var Solver::addVar(VarType t, bool eq) {
 	Var v = vars_.numVars();
 	vars_.add(t == Var_t::body_var);
+	if (eq) vars_.setEq(v, true);
 	levelSeen_.push_back(0);
 	reason_.push_back(Antecedent());
 	return v;
@@ -275,6 +337,20 @@ bool Solver::addTernary(Literal p, Literal q, Literal r, bool asserting) {
 	watches_[(~q).index()].push_back(TernStub(p, r));
 	watches_[(~r).index()].push_back(TernStub(p, q));
 	return !asserting || force(p, Antecedent(~q, ~r));
+}
+bool Solver::clearAssumptions()  {
+	rootLevel_ = btLevel_ = 0;
+	undoUntil(0);
+	assert(decisionLevel() == 0);
+	if (!hasConflict()) {
+		for (ImpliedLits::size_type i = 0; i != impliedLits_.size(); ++i) {
+			if (impliedLits_[i].level == 0 && !force(impliedLits_[i].lit, impliedLits_[i].ante)) {
+				return false;
+			}
+		}
+	}
+	impliedLits_.clear();
+	return simplify();
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 // Solver: Watch management
@@ -463,13 +539,13 @@ bool Solver::assume(const Literal& p) {
 }
 
 bool Solver::propagate() {
-	if (!unitPropagate() || !strategy_.postProp->propagate()) {
-		front_ = trail_.size();
-		strategy_.postProp->reset();
-		return false;
+	if (unitPropagate() && post_.propagate(*this, 0)) {
+		assert(queueSize() == 0);
+		return true;
 	}
-	assert(queueSize() == 0);
-	return true;
+	front_ = trail_.size();
+	post_.reset();
+	return false;
 }
 
 bool Solver::unitPropagate() {
@@ -877,7 +953,7 @@ ValueRep Solver::search(uint64 maxConflicts, uint32 maxLearnts, double randProp,
 		levConflicts_->assign(decisionLevel()+1, (uint32)stats.solve.conflicts);
 	}
 	do {
-		if (!simplify()) { return value_false; }
+		if ((hasConflict()&&!resolveConflict()) || !simplify()) { return value_false; }
 		do {
 			while (!propagate()) {
 				if (!resolveConflict() || (decisionLevel() == 0 && !simplify())) {
@@ -895,7 +971,7 @@ ValueRep Solver::search(uint64 maxConflicts, uint32 maxLearnts, double randProp,
 		} while (decideNextBranch());
 		// found a model candidate
 		assert(numFreeVars() == 0);
-	} while (!strategy_.postProp->isModel(*this));
+	} while (!post_.isModel(*this));
 	++stats.solve.models;
 	stats.solve.updateModels(decisionLevel());
 	if (strategy_.satPrePro.get()) {
@@ -913,14 +989,17 @@ bool Solver::nextSymModel(bool expand) {
 			strategy_.satPrePro->extendModel(vars_);
 			return true;
 		}
-		else if (strategy_.postProp->nextSymModel()) {
+		else if (post_.nextSymModel(*this, true)) {
 			++stats.solve.models;
 			stats.solve.updateModels(decisionLevel());
 			return true;
 		}
 	}
-	else if (strategy_.satPrePro.get()) {
-		strategy_.satPrePro->clearModel();
+	else {
+		post_.nextSymModel(*this, false);
+		if (strategy_.satPrePro.get()) {
+			strategy_.satPrePro->clearModel();
+		}
 	}
 	return false;
 }

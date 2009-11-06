@@ -69,7 +69,6 @@ private:
 //! Parameter-Object for configuring a solver.
 struct SolverStrategies {
 	typedef std::auto_ptr<DecisionHeuristic>  Heuristic;
-	typedef std::auto_ptr<PostPropagator>     PostProp;
 	typedef std::auto_ptr<SatPreprocessor>    SatPrePro;
 	typedef std::auto_ptr<AtomIndex>          SymbolTable;
 	//! Clasp's two general search strategies
@@ -86,7 +85,6 @@ struct SolverStrategies {
 	};
 	SatPrePro           satPrePro;
 	Heuristic           heuristic;
-	PostProp            postProp;
 	SymbolTable         symTab; 
 	SearchStrategy      search;
 	int                 saveProgress;
@@ -110,7 +108,7 @@ private:
 //! clasp's Solver class
 /*!
  * A Solver-object maintains the state and provides the functions 
- * necessary to implement the Conflict-Driven Nogood-Learning DPLL-algorithm. 
+ * necessary to implement our CDNL-algorithm. 
  *
  * The interface supports incremental solving (search under assumptions) as well as
  * solution enumeration. To make this possible the solver maintains two special  
@@ -128,12 +126,11 @@ private:
  * backjumping in order to prevent repeating already enumerated solutions.
  * The solver will never backjump above that level and conflicts on the backtrack-level 
  * are resolved by backtracking, i.e. flipping the corresponding decision literal.
- * To make model enumeration possible call backtrack whenever a model was found.
+ *
  * \see "Conflict-Driven Answer Set Enumeration" for a detailed description of this approach. 
  *
  */
 class Solver {
-	friend class PostPropagator;
 public:
 	/*!
 	 * \name construction/destruction/setup
@@ -165,10 +162,10 @@ public:
 	 * Functions for adding variables and constraints.
 	 * \note Problem specification is a three-stage process:
 	 * - First all variables must be added.
-	 * - Second startAddConstraints must be called and constraints can be added.
+	 * - Second startAddConstraints must be called and problem constraints can be added.
 	 * - Finally endAddConstraints must be called to finished problem-specification.
 	 * .
-	 * \note Constraints can only be added in stage two. Afterwards only learnt constraints
+	 * \note Problem constraints can only be added in stage two. Afterwards only learnt constraints
 	 * may be added to the solver.
 	 * \note This process can be repeated, i.e. if incremental solving is used,
 	 * one can add new variables and problem constraints by calling
@@ -179,7 +176,7 @@ public:
 	//! reserve space for at least numVars variables
 	/*!
 	 * \note if the number of variables is known upfront, calling this method
-	 * avoids repeated regrowing of the state data structure
+	 * avoids repeated regrowing of the state data structures
 	 */
 	void reserveVars(uint32 numVars) {  
 		vars_.reserve(numVars);
@@ -190,41 +187,38 @@ public:
 	//! adds a new variable of type t to the solver.
 	/*!
 	 * \pre startAddConstraints was not yet called.
-	 * \param t type of the new variable
+	 * \param t  type of the new variable (either Var_t::atom_var or Var_t::body_var)
+	 * \param eq true if var represents both an atom and a body. In that case
+	 *           t is the variable's primary type and determines the preferred literal.
 	 * \return The index of the new variable
 	 * \note The problem variables are numbered from 1 onwards!
 	 */
-	Var addVar(VarType t);
+	Var addVar(VarType t, bool eq = false);
 	
 	//! returns the type of variable v.
+	/*!
+	 * If v was added with parameter eq=true, the return value
+	 * is Var_t::atom_body_var.
+	 */
 	VarType type(Var v) const {
 		assert(validVar(v));
 		return vars_.eq(v)
 			? Var_t::atom_body_var
 			: VarType(Var_t::atom_var + vars_.body(v));
 	}
-	//! changes the type of variable v to new type
-	void changeVarType(Var v, VarType t) {
-		assert(validVar(v));
-		vars_.setEq(v, t == Var_t::atom_body_var);
-		if (!vars_.eq(v)) {
-			vars_.setBody(v, t == Var_t::body_var);
-		}
-	}
-
+	
 	//! returns the preferred decision literal of variable v w.r.t its type
 	/*!
 	 * \return 
 	 *  - posLit(v) if type(v) == body_var
 	 *  - negLit(v) if type(v) == atom_var
-	 *  - posLit(v) if type(v) changed from body_var to atom_body_var
-	 *  - negLit(v) if type(v) changed from atom_var to atom_body_var
+	 * \note if type(v) is atom_body_var, the preferred literal is determined
+	 *       by v's primary type, i.e. the one that was initially passed to addVar().
 	 */
 	Literal preferredLiteralByType(Var v) const {
 		assert(validVar(v));
 		return Literal(v, !vars_.body(v));
 	}
-	
 	//! sets the preferred value of variable v
 	/*!
 	 * \param v the variable for which a value should be set
@@ -239,7 +233,6 @@ public:
 		assert(validVar(v));
 		return vars_.prefValue(v);
 	}
-
 	//! returns true if v is currently eliminated, i.e. no longer part of the problem
 	bool eliminated(Var v)  const     { assert(validVar(v)); return vars_.eliminated(v); }
 	//! returns true if v is excluded from variable elimination
@@ -290,14 +283,23 @@ public:
 	 */
 	bool addTernary(Literal p, Literal q, Literal r, bool asserting);
 
-	//! adds the learnt constraint c to the solver.
+	//! adds p as post propagator to this solver
 	/*!
-	 * \pre endAddConstraints was called.
+	 * If front is true, p is added to the front
+	 * of the list of post propagators. Otherwise
+	 * it is appended.
+	 * \pre p was not added previously and is not part of any other solver
 	 */
-	void addLearnt(LearntConstraint* c) {
-		learnts_.push_back(c);
-		stats.solve.updateLearnt(c->size(), c->type()); 
+	void addPost(PostPropagator* p, bool front = false) {
+		post_.add(p, front);
 	}
+	
+	//! removes p from the solver's list of post propagators
+	/*!
+	 * \note removePost(p) shall only be called during propagation
+	 *       of p or if no propagation is currently active.
+	 */
+	void removePost(PostPropagator* p) { post_.remove(p); }
 
 	//! initializes the solver
 	/*!
@@ -311,7 +313,21 @@ public:
 	 */
 	bool endAddConstraints();
 
+	//! estimates the problem complexity
+	/*!
+	 * \return sum of c->estimateComplexity(*this) for each problem 
+	 *         constraint c.
+	 */
 	uint32 problemComplexity() const;
+
+	//! adds the learnt constraint c to the solver.
+	/*!
+	 * \pre endAddConstraints was called.
+	 */
+	void addLearnt(LearntConstraint* c) {
+		learnts_.push_back(c);
+		stats.solve.updateLearnt(c->size(), c->type()); 
+	}
 	//@}
 	/*!
 	 * \name watch management
@@ -321,7 +337,6 @@ public:
 	//@{
 	//! returns the number of constraints watching the literal p
 	uint32 numWatches(Literal p) const;
-	
 	//! returns true if the constraint c watches the literal p
 	bool    hasWatch(Literal p, Constraint* c) const;
 	//! returns c's watch-structure associated with p
@@ -376,7 +391,7 @@ public:
 	/*!
 	 * \note The special sentine-var 0 is not counted, i.e. numVars() returns
 	 * the number of problem-variables.
-	 * To iterate all problem-variables use a loop like:
+	 * To iterate over all problem variables use a loop like:
 	 * \code
 	 * for (Var i = 1; i <= s.numVars(); ++i) {...}
 	 * \endcode
@@ -439,7 +454,7 @@ public:
 
 	//! returns the reason for p being true
 	/*!
-	 * \pre p is true wrt the current assignment
+	 * \pre p is true w.r.t the current assignment
 	 * \note if solver is used in no-learning mode, the reason is always null
 	 */
 	const Antecedent& reason(Literal p) const {
@@ -503,7 +518,6 @@ public:
 	
 	//! returns true, if the current assignment is conflicting
 	bool hasConflict() const { return !conflict_.empty(); }
-	
 	//! returns the current conflict as a set of literals
 	const LitVec& conflict() const { return conflict_; }
 	
@@ -524,7 +538,6 @@ public:
 		rootLevel_  = std::min(decisionLevel(), dl); 
 		btLevel_    = std::max(btLevel_, rootLevel_);
 	}
-
 	//! returns the current root level
 	uint32 rootLevel() const { return rootLevel_; }
 
@@ -539,26 +552,13 @@ public:
 	 * The function also resets the current backtrack-level and re-asserts learnt
 	 * facts.
 	 */
-	bool clearAssumptions() {
-		rootLevel_ = btLevel_ = 0;
-		undoUntil(0);
-		assert(decisionLevel() == 0);
-		if (!hasConflict()) {
-			for (ImpliedLits::size_type i = 0; i != impliedLits_.size(); ++i) {
-				if (impliedLits_[i].level == 0 && !force(impliedLits_[i].lit, impliedLits_[i].ante)) {
-					return false;
-				}
-			}
-		}
-		impliedLits_.clear();
-		return simplify();
-	}
+	bool clearAssumptions();
 
 	//! If called on top-level removes SAT-clauses + Constraints for which Constraint::simplify returned true
 	/*!
 	 * \note if this method is called on a decision-level > 0 it is a noop and will
 	 * simply return true.
-	 * \return If a top-level conflict is detected false, otherwise true.
+	 * \return fallse, if a top-level conflict is detected. Otherwise, true.
 	 */
 	bool simplify();
 
@@ -621,8 +621,16 @@ public:
 	 * \pre !hasConflict()
 	 * \see Solver::force
 	 * \see Solver::assume
+	 * \note shall not be called recursively
 	 */
 	bool propagate();
+
+	/*!
+	 * Does unit propagation and calls x->propagateFixpoint(*this)
+	 * for all post propagators up to but not including p.
+	 * \note The function is meant to be called only in the context of p
+	 */
+	bool propagateUntil(PostPropagator* p) { return unitPropagate() && (p == post_.head || post_.propagate(*this, p)); }
 
 	//! executes a one-step failed-literal test beginning at variable startVar.
 	/*!
@@ -693,13 +701,10 @@ public:
 	 * \return
 	 *  - true if backtracking was possible
 	 *  - false if decisionLevel() == rootLevel()
-	 * \note
-	 * If models should be enumerated this method must be called whenever
-	 * a model was found.
 	 */
 	bool backtrack();
 
-	//! undoes all assignments upto (but not including) decision level level.
+	//! undoes all assignments up to (but not including) decision level dl.
 	/*!
 	 * \pre dl > 0 (assignments made on decision level 0 cannot be undone)
 	 * \pre dl <= decisionLevel()
@@ -711,11 +716,10 @@ public:
 	
 	//! searches for a model for at most maxConflict number of conflicts.
 	/*!
-	 * The search function implements the conflict-driven nogood-Learning DPLL-algorithm.
+	 * The search function implements clasp's CDNL-algorithm.
 	 * It searches for a model for at most maxConflict number of conflicts.
 	 * The number of learnt clauses is kept below maxLearnts. 
 	 * \pre endAddConstraint() returned true and !hasConflict()
-	 * \pre decisionLevel() == 0 || simplify was called on top-level.
 	 * \param maxConflict stop search after maxConflict (-1 means: infinite)
 	 * \param maxLearnts reduce learnt constraints after maxLearnts constraints have been learnt (-1 means: never reduce learnt constraints).
 	 * \param randProb pick next decision variable randomly with a probability of randProp
@@ -771,6 +775,18 @@ private:
 		void push_back(const Watch& w)    { genW.push_back(w); }
 	};
 	typedef PodVector<WL>::type Watches;
+	struct PPList {
+		PPList();
+		~PPList();
+		void add(PostPropagator* p, bool front);
+		void remove(PostPropagator* p);
+		bool propagate(Solver& s, PostPropagator* p);
+		void reset();
+		bool isModel(Solver& s);
+		bool nextSymModel(Solver& s, bool expand);
+		PostPropagator* head;
+		PostPropagator* saved;
+	};
 	inline bool validWatch(Literal p) const {
 		return p.index() < (uint32)watches_.size();
 	}
@@ -817,6 +833,7 @@ private:
 	LitVec            trail_;       // Assignment stack; stores assigments in the order they were made
 	TrailLevels       levels_;      // Stores start-position in trail of every decision level
 	Watches           watches_;     // watches_[p.index()] is a list of constraints watching p
+	PPList            post_;        // (possibly empty) list of post propagators
 	DecisionHeuristic*randHeuristic_;
 	VarVec*           levConflicts_;// For a DL d, levConflicts_[d-1] stores num conflicts when d was started
 	ConstraintDB*     undoHead_;    // Free list of undo DBs
@@ -829,88 +846,6 @@ private:
 	uint32            eliminated_;  // number of vars currently eliminated
 	bool              shuffle_;     // shuffle program on next simplify?
 };
-
-//! base class for all post propagators.
-/*!
- * Post propagators are called after a solver finished unit-propagation and once after a total assignment is found.
- * They may add more elaborate propagation mechanisms.
- * The typical asp example would be an unfounded set check.
- */
-class PostPropagator : public Constraint {
-public:
-	PostPropagator();
-	virtual ~PostPropagator();
-	using Constraint::propagate;  // Enable overloading!
-	//! propagates the current assignment
-	/*!
-	 * \return
-	 *  - false if propagation led to conflict
-	 *  - true otherwise
-	 * \pre the assignment is fully propagated.
-	 * \post if the function returned true, the assignment is fully propagated.
-	 *
-	 * \note 
-	 * In the context of a solver-object this method is called once for each decision level. 
-	 *
-	 */
-	virtual bool propagate() = 0;
-
-	//! is the current total assignment a model?
-	/*!
-	 * \pre the assignment is total and not conflicting
-	 * \return
-	 *  - true if the assignment is a model w.r.t this post propagator
-	 *  - false otherwise
-	 * \post if false is returned, the post propagator either backtracked or
-	 *       there is a root-level conflict.
-	 *
-	 * \note The function forwards the actual check to the virtual doCheckModel(Solver&) function. 
-	 * This function must either return true or force a conflict. In the latter case, at  
-	 * least one literal in the conflict must be from the highest DL. 
-	 */
-	bool isModel(Solver& s);
-
-	//! checks whether there is a model that is symmetric to the current model
-	/*!
-	 * The function shall check for and expand symmetric models, i.e. models that differ only in the 
-	 * assignment of variables outside of the solver's assignment. 
-	 * \pre the current assignment is a model
-	 * \note the default implementation always returns false
-	 */ 
-	virtual bool nextSymModel();
-
-	//! resets the internal state of this object.
-	/*!
-	 * resets the internal state of this object and aborts any active propagation.
-	 * \note the solver containing this object calls this method whenever a conflict is
-	 * detected during unit-propagation.
-	 */
-	virtual void reset();
-protected:
-	virtual bool doCheckModel(Solver&);
-	// Constraint interface - noops
-	PropResult     propagate(const Literal&, uint32&, Solver&);
-	void           reason(const Literal& p, LitVec& lits);
-	ConstraintType type() const;
-	// provides access to the solver's unit-propagation function.
-	// A propagator typically runs a simple loop:
-	// first one or more vars are asserted, then unitPropagate
-	// is called to propagate the newly asserted vars.
-	// This process is repeated until a fixpoint is reached.
-	bool unitPropagate(Solver& s) const {
-		return s.unitPropagate();
-	}
-private:
-	PostPropagator(const PostPropagator&);
-	PostPropagator& operator=(const PostPropagator&);
-};
-
-//! A "null-object" that implements the PostPropagator interface
-class NoPostPropagator : public PostPropagator {
-public:
-	bool propagate() { return true; }
-};
-
 //@}
 
 

@@ -22,29 +22,35 @@
 #include <stdexcept>
 
 namespace Clasp {
-Constraint::Constraint() {}
-Constraint::~Constraint() {}
-
-LearntConstraint::~LearntConstraint() {}
-
-bool Constraint::simplify(Solver&, bool) {
-	return false;
+/////////////////////////////////////////////////////////////////////////////////////////
+// (Learnt)Constraint
+/////////////////////////////////////////////////////////////////////////////////////////
+Constraint::Constraint()                  {}
+Constraint::~Constraint()                 {}
+bool Constraint::simplify(Solver&, bool)  { return false; }
+void Constraint::destroy()                { delete this; }
+void Constraint::undoLevel(Solver&)       {}
+uint32 Constraint::estimateComplexity(const Solver&) const { return 1;  }
+LearntConstraint::~LearntConstraint()     {}
+LearntConstraint::LearntConstraint()      {}
+uint32 LearntConstraint::activity() const { return 0; }
+void LearntConstraint::decreaseActivity() {}
+/////////////////////////////////////////////////////////////////////////////////////////
+// PostPropagator
+/////////////////////////////////////////////////////////////////////////////////////////
+PostPropagator::PostPropagator() : next(0)           {}
+PostPropagator::~PostPropagator()                    {}
+void PostPropagator::reset()                         {}
+bool PostPropagator::isModel(Solver&)                { return true; }
+bool PostPropagator::nextSymModel(Solver&, bool)     { return false; }
+void PostPropagator::reason(const Literal&, LitVec&) {}
+ConstraintType PostPropagator::type() const          { return Constraint_t::native_constraint; }
+Constraint::PropResult PostPropagator::propagate(const Literal&, uint32&, Solver&) { 
+	return PropResult(true, false); 
 }
-
-void Constraint::destroy() {
-	delete this;
-}
-
-void Constraint::undoLevel(Solver&) {}
-
-uint32 Constraint::estimateComplexity(const Solver&) const { return 1; }
-
-LearntConstraint::LearntConstraint() {}
-uint32 LearntConstraint::activity() const {
-	return 0;
-}
-void LearntConstraint::decreaseActivity() { }
-
+/////////////////////////////////////////////////////////////////////////////////////////
+// Antecedent
+/////////////////////////////////////////////////////////////////////////////////////////
 bool Antecedent::checkPlatformAssumptions() {
 	int32* i = new int32(22);
 	uint64 p = (uint64)(uintp)i;

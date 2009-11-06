@@ -176,6 +176,87 @@ protected:
 	~LearntConstraint();
 };
 
+//! Base class for all post propagators.
+/*!
+ * Post propagators are called after a solver finished unit-propagation and once after 
+ * a total assignment is found.
+ * They may add more elaborate propagation mechanisms.
+ * The typical asp example would be an unfounded set check.
+ */
+class PostPropagator : public Constraint {
+public:
+	PostPropagator();
+	virtual ~PostPropagator();
+	using Constraint::propagate;  // Enable overloading!
+
+	PostPropagator* next; // for supporting lists of post propagators
+
+	//! propagates the current assignment until a fixpoint is reached w.r.t this post propagator
+	/*!
+	 * \param  s The solver in which this object is used
+	 * \return false if propagation led to conflict, true otherwise
+	 * \pre    the assignment is fully propagated.
+	 * \post   a fixpoint was reached or propagation led to a conflict.
+	 * \note   The default implementation implements the following loop:
+	 *   while (propagate() && PQ.size() > 0) 
+	 *     if (!s.propagateUntil(this)) return false;
+	 *   return true
+	 * \note   normally, subclasses only need to implement propagate(Solver& s) 
+	 */
+	virtual bool propagateFixpoint(Solver& s);
+
+	//! clears internal state of this object and aborts any active propagation.
+	/*!
+	 * The solver containing this object calls reset() whenever a conflict is
+	 * detected during propagation.
+	 * \note The default implementation is a noop
+	 */
+	virtual void reset();
+
+	//! is the current total assignment a model?
+	/*!
+	 * \pre the assignment is total and not conflicting
+	 * \return
+	 *  - true if the assignment is a model w.r.t this post propagator
+	 *  - false otherwise
+	 * \post if false is returned, the post propagator must have forced a
+	 *  conflict and at least one conflicting literal must be assigned on
+	 *  the current decision level.
+	 */
+	virtual bool isModel(Solver& s);
+
+	//! checks whether there is a model that is symmetric to the current model
+	/*!
+	 * The function shall check for and (optionally) expand symmetric models, 
+	 * i.e. models that differ only in the assignment of variables outside of the 
+	 * solver's assignment. 
+	 * \param s      The solver in which this object is used
+	 * \param expand If true, symmetric models shall be expanded. Otherwise they
+	 *               they shall be ignored.
+	 * \pre the current assignment is a model
+	 * \return 
+	 *   - true, if there are symmetric models and expand is true
+	 *   - false, otherwise.
+	 * \note the default implementation always returns false
+	 */ 
+	virtual bool nextSymModel(Solver& s, bool expand);
+protected:
+	/*!
+	 * Shall enqueue new assignments to be propagated.
+	 * \note The function is called in the context of
+	 *       PostPropagator::propagateFixpoint(Solver& s).
+	 *       It must not call s.propagate()!
+	 * \see PostPropagator::propagateFixpoint(Solver& s)
+	 */
+	virtual bool propagate(Solver& s) = 0;
+	// Constraint interface - noops
+	PropResult     propagate(const Literal&, uint32&, Solver&);
+	void           reason(const Literal& p, LitVec& lits);
+	ConstraintType type() const;
+private:
+	PostPropagator(const PostPropagator&);
+	PostPropagator& operator=(const PostPropagator&);
+};
 //@}
 
 //! Stores a reference to the constraint that implied a literal.

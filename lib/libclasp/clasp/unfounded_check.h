@@ -84,7 +84,8 @@ public:
 	
 	// base interface
 	void reset();
-	bool propagate();
+	bool propagateFixpoint(Solver& s);
+	bool propagate(Solver& s) { return DefaultUnfoundedCheck::propagateFixpoint(s); }
 	
 	// public - so that tests can access the data-structures
 	struct UfsNode;

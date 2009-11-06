@@ -689,11 +689,7 @@ START:
 void VarList::addTo(Solver& s, Var startVar) {
 	s.reserveVars((uint32)vars_.size());
 	for (Var i = startVar; i != (Var)vars_.size(); ++i) {
-		Var x = s.addVar( type(i) );
-		assert(x == i);
-		if (hasFlag(x, eq_f)) {
-			s.changeVarType(x, Var_t::atom_body_var);
-		}
+		s.addVar( type(i), hasFlag(i, eq_f) );
 	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1068,7 +1064,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool finalizeSolver, bool backpr
 		uint32 oldNodes = (uint32)ufs_->nodes();
 		if (ufs_.is_owner()) {
 			// Transfer ownership of ufs to solver...
-			solver.strategies().postProp.reset(ufs_.release());
+			solver.addPost(ufs_.release(), true);
 		}
 		// and init the unfounded set checker with new SCCs.
 		ufs_->startInit(solver);
