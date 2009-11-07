@@ -261,16 +261,6 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 			"        <n2>: Run variable elimination with cutoff <n2> (-1=no cutoff)\n"
 			"        <n3>: Run for at most <n3> seconds              (-1=no time limit)\n"
 			"        yes : Run to fixpoint, no cutoff and no time limit\n","<opts>")
-
-			("loops", storeTo(config->api.loopRep),
-			"Configure representation and learning of loop formulas\n"
-			"      Default: common\n"
-			"      Valid:   common, distinct, shared, no\n"
-			"        common  : Create loop nogoods for atoms in an unfounded set\n"
-			"        distinct: Create distinct loop nogood for each atom in an unfounded set\n"
-			"        shared  : Create loop formula for a whole unfounded set\n"
-			"        no      : Do not learn loop formulas\n")
-
 	;
 	root.addOptions(general);
 	hidden.addOptions()
@@ -377,6 +367,15 @@ void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 			"        all : Check all antecedents for self-subsumption\n"
 			"        no  : Do not check antecedents for self-subsumption")
 		("recursive-str", bool_switch(&solverOpts.opts->strengthenRecursive), "Enable MiniSAT-like conflict nogood strengthening\n")
+
+		("loops", storeTo(config->api.loopRep),
+			"Configure representation and learning of loop formulas\n"
+			"      Default: common\n"
+			"      Valid:   common, distinct, shared, no\n"
+			"        common  : Create loop nogoods for atoms in an unfounded set\n"
+			"        distinct: Create distinct loop nogood for each atom in an unfounded set\n"
+			"        shared  : Create loop formula for a whole unfounded set\n"
+			"        no      : Do not learn loop formulas\n")
 
 		("contraction", storeTo(solverOpts)->parser(&SolverStrategiesWrapper::mapContract),
 			"Configure (temporary) contraction of learnt nogoods\n"
