@@ -246,17 +246,18 @@ bool solve(Solver& s, const LitVec& assumptions, const SolveParams& p) {
 	// Next, add assumptions.
 	// If this fails, the problem is unsat under the current assumptions
 	// but not necessarily unsat.
-	for (LitVec::size_type i = 0; i != assumptions.size(); ++i) {
+	LitVec::size_type i;
+	for (i = 0; i != assumptions.size(); ++i) {
 		Literal p = assumptions[i];
-		if (!s.isTrue(p) && (s.isFalse(p) || !(s.assume(p)&&s.stats.solve.choices--) || !s.propagate())) {
-			s.clearAssumptions();
-			return false;
-		}
+		if (s.value(p.var()) == value_free) {
+			s.assume(p); --s.stats.solve.choices;
+			// increase root level - assumption can't be undone during search
+			s.setRootLevel(s.decisionLevel());
+			if (!s.propagate())  break;
+		} 
+		else if (s.isFalse(p)) break;
 	}
-	// Now that all assumptions are true, initialize the root level
-	// and solve the problem under the current assumptions.
-	s.setRootLevel(s.decisionLevel());
-	bool ret = solve(s, p);
+	bool ret = i == assumptions.size() && solve(s, p);
 	// Finally, remove the assumptions again and restore
 	// the solver to a usable state if possible.
 	s.clearAssumptions();

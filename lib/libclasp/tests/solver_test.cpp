@@ -38,16 +38,18 @@ struct TestingConstraint : public LearntConstraint {
 	bool* deleted;
 };
 struct TestingPostProp : public PostPropagator {
-	TestingPostProp(bool cfl) : props(0), resets(0), conflict(cfl) {}
-	bool propagate() {
+	TestingPostProp(bool cfl) : props(0), resets(0), prio(PostPropagator::priority_single), conflict(cfl) {}
+	bool propagate(Solver&) {
 		++props;
 		return !conflict;
 	}
 	void reset() {
 		++resets;
 	}
+	uint32 priority() const { return prio; }
 	int props;
 	int resets;
+	uint32 prio;
 	bool conflict;
 };
 
@@ -86,6 +88,7 @@ class SolverTest : public CppUnit::TestFixture {
 
 	CPPUNIT_TEST(testPropagateCallsPostProp);
 	CPPUNIT_TEST(testPropagateCallsResetOnConflict);
+	CPPUNIT_TEST(testPostpropPriority);
 
 	CPPUNIT_TEST(testSimplifyRemovesSatBinClauses);
 	CPPUNIT_TEST(testSimplifyRemovesSatTernClauses);
@@ -109,7 +112,6 @@ public:
 	void testDefaults() {
 		const SolverStrategies& x = s.strategies();
 		CPPUNIT_ASSERT(x.heuristic.get() != 0);
-		CPPUNIT_ASSERT(x.postProp.get() != 0);
 		CPPUNIT_ASSERT(x.strengthenRecursive == false);
 		CPPUNIT_ASSERT(x.cflMinAntes == SolverStrategies::all_antes);
 		CPPUNIT_ASSERT(x.search == SolverStrategies::use_learning);
@@ -205,20 +207,12 @@ public:
 	void testPreferredLitByType() {
 		Var v1 = s.addVar(Var_t::atom_var);
 		Var v2 = s.addVar(Var_t::body_var);
+		Var v3 = s.addVar(Var_t::atom_var, true);
+		Var v4 = s.addVar(Var_t::body_var, true);
 		CPPUNIT_ASSERT_EQUAL( negLit(v1), s.preferredLiteralByType(v1) );   
 		CPPUNIT_ASSERT_EQUAL( posLit(v2), s.preferredLiteralByType(v2) );
-
-		s.changeVarType(v1, Var_t::atom_body_var);
-		s.changeVarType(v2, Var_t::atom_body_var);
-
-		CPPUNIT_ASSERT_EQUAL( negLit(v1), s.preferredLiteralByType(v1) );   
-		CPPUNIT_ASSERT_EQUAL( posLit(v2), s.preferredLiteralByType(v2) );
-
-		s.changeVarType(v1, Var_t::body_var);
-		s.changeVarType(v2, Var_t::atom_var);
-
-		CPPUNIT_ASSERT_EQUAL( posLit(v1), s.preferredLiteralByType(v1) );   
-		CPPUNIT_ASSERT_EQUAL( negLit(v2), s.preferredLiteralByType(v2) );
+		CPPUNIT_ASSERT_EQUAL( negLit(v3), s.preferredLiteralByType(v3) );   
+		CPPUNIT_ASSERT_EQUAL( posLit(v4), s.preferredLiteralByType(v4) );
 	}
 
 	void testSetPreferredValue() {
@@ -569,19 +563,31 @@ public:
 
 	void testPropagateCallsPostProp() {
 		TestingPostProp* p = new TestingPostProp(false);
-		s.strategies().postProp.reset(p);
+		s.addPost(p);
 		s.propagate();
 		CPPUNIT_ASSERT_EQUAL(1, p->props);
 		CPPUNIT_ASSERT_EQUAL(0, p->resets);
 	}
 	void testPropagateCallsResetOnConflict() {
 		TestingPostProp* p = new TestingPostProp(true);
-		s.strategies().postProp.reset(p);
+		s.addPost(p);
 		s.propagate();
 		CPPUNIT_ASSERT_EQUAL(1, p->props);
 		CPPUNIT_ASSERT_EQUAL(1, p->resets);
 	}
 
+	void testPostpropPriority() {
+		TestingPostProp* p1 = new TestingPostProp(false);
+		p1->prio = PostPropagator::priority_single_high;
+		TestingPostProp* p2 = new TestingPostProp(false);
+		p2->prio = PostPropagator::priority_single_low;
+		TestingPostProp* p3 = new TestingPostProp(false);
+		s.addPost(p2);
+		s.addPost(p1);
+		s.addPost(p3);
+		CPPUNIT_ASSERT(p1->next == p3 && p3->next == p2);
+
+	}
 
 	void testSimplifyRemovesSatBinClauses() {
 		Literal a = posLit(s.addVar(Var_t::atom_var));

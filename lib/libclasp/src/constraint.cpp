@@ -40,6 +40,7 @@ void LearntConstraint::decreaseActivity() {}
 /////////////////////////////////////////////////////////////////////////////////////////
 PostPropagator::PostPropagator() : next(0)           {}
 PostPropagator::~PostPropagator()                    {}
+uint32 PostPropagator::priority() const              { return uint32(priority_single); }
 void PostPropagator::reset()                         {}
 bool PostPropagator::isModel(Solver&)                { return true; }
 bool PostPropagator::nextSymModel(Solver&, bool)     { return false; }

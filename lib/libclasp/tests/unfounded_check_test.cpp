@@ -55,7 +55,7 @@ public:
 			.startRule().addHead(1).addToBody(2, true).endRule()  // a :- b.
 			.startRule().addHead(3).addToBody(1, false).endRule() // x :- not a.
 		.endProgram(solver, true);
-		grabPostProp();
+		
 		CPPUNIT_ASSERT_EQUAL(true, builder.stats.sccs == 2);
 
 		// Test Pred-Order
@@ -92,7 +92,7 @@ public:
 		.startRule().addHead(6).addToBody(7, true).endRule()  // x :- y.
 		.startRule().addHead(5).addToBody(7, false).endRule() // g :- not y.
 		.endProgram(solver, true);
-		grabPostProp();
+		
 		
 		CPPUNIT_ASSERT_EQUAL(index[6].lit, index[7].lit);
 		CPPUNIT_ASSERT_EQUAL(~index[6].lit, index[5].lit);
@@ -125,25 +125,25 @@ public:
 	void testAllUncoloredNoUnfounded() {
 		setupSimpleProgram();
 		uint32 x = solver.numAssignedVars();
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(x, solver.numAssignedVars());
 	}
 	void testAlternativeSourceNotUnfounded() {
 		setupSimpleProgram();
 		solver.assume( index[6].lit );
-		solver.propagate();
+		solver.propagateUntil(ufc.get());
 		uint32 old = solver.numAssignedVars();
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(old, solver.numAssignedVars());
 	}
 	void testOnlyOneSourceUnfoundedIfMinus() {
 		setupSimpleProgram();
 		solver.assume( index[6].lit );
 		solver.assume( index[5].lit );
-		solver.propagate();
+		solver.propagateUntil(ufc.get());
 		uint32 old = solver.numAssignedVars();
 		uint32 oldC = solver.numConstraints();
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT(old < solver.numAssignedVars());
 		CPPUNIT_ASSERT(solver.isFalse(index[4].lit));
 		CPPUNIT_ASSERT(solver.isFalse(index[1].lit));
@@ -158,17 +158,17 @@ public:
 			.startRule(CONSTRAINTRULE, 1).addHead(1).addToBody(1, true).addToBody(2,true).endRule()
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
 		
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(2u, solver.numVars());
 		CPPUNIT_ASSERT_EQUAL(0u, solver.numAssignedVars());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(0u, solver.numAssignedVars());
 		CPPUNIT_ASSERT_EQUAL(true, solver.assume(~index[2].lit));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(1u, solver.numAssignedVars());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(2u, solver.numAssignedVars());
 		LitVec r;
 		solver.reason(~index[1].lit).reason(~index[1].lit, r);
@@ -183,24 +183,24 @@ public:
 			.startRule(WEIGHTRULE, 2).addHead(1).addToBody(1, true, 2).addToBody(2,true, 2).addToBody(3, true, 1).endRule()
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
+		
 
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(3u, solver.numVars());
 		CPPUNIT_ASSERT_EQUAL(0u, solver.numAssignedVars());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(0u, solver.numAssignedVars());
 		CPPUNIT_ASSERT_EQUAL(true, solver.assume(~index[3].lit));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(1u, solver.numAssignedVars());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(1u, solver.numAssignedVars());
 
 		CPPUNIT_ASSERT_EQUAL(true, solver.assume(~index[2].lit));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(2u, solver.numAssignedVars());
 
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(3u, solver.numAssignedVars());
 		
 		LitVec r;
@@ -211,9 +211,9 @@ public:
 
 		solver.undoUntil(0);
 		CPPUNIT_ASSERT_EQUAL(true, solver.assume(~index[2].lit));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		CPPUNIT_ASSERT_EQUAL(1u, solver.numAssignedVars());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate() );
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver) );
 		CPPUNIT_ASSERT_EQUAL(2u, solver.numAssignedVars());
 		r.clear();
 		solver.reason(~index[1].lit).reason(~index[1].lit, r);
@@ -230,29 +230,29 @@ public:
 			.startRule().addHead(5).addToBody(1,true).endRule()
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
+		
 		// T: {t,c}
 		solver.assume(Literal(6, false));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		solver.assume(~index[1].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(false, ufc->propagate());  // {x, t} are unfounded!
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(false, ufc->propagate(solver));  // {x, t} are unfounded!
 		
 		solver.undoUntil(0);
 		ufc->reset();
 
 		// F: {t,c}
 		solver.assume(Literal(6, true));
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		// F: a
 		solver.assume(~index[1].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		// x is false because both of its bodies are false
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[5].lit));
 	
 		// t is now unfounded but its defining body is not
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[4].lit));
 		LitVec r;
 		solver.reason(~index[4].lit).reason(~index[4].lit, r);
@@ -276,19 +276,19 @@ public:
 			.startRule().addHead(4).addToBody(5,true).addToBody(3,true).endRule()
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
+		
 		
 		
 		solver.assume(index[3].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT(solver.numVars() == solver.numAssignedVars());
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[4].lit));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[5].lit));
 
 		solver.backtrack();
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT(solver.numVars() == solver.numAssignedVars());
 		CPPUNIT_ASSERT_EQUAL(true, solver.isTrue(index[4].lit));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[5].lit));
@@ -309,14 +309,14 @@ public:
 			.startRule().addHead(2).addToBody(1,true).endRule()
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
+		
 		
 		// assume ~B1, where B1 = 2 {x, y, z}
 		DefaultUnfoundedCheck::UfsAtomNode* a = ufc->atomNode(index[1].lit);
 		Literal x = a->preds[1]->lit;
 
 		solver.assume(~x);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate() && ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()) && ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(value_free, solver.value(index[1].lit.var()));
 		CPPUNIT_ASSERT_EQUAL(value_free, solver.value(index[2].lit.var()));
 		// empty body + B1
@@ -324,12 +324,12 @@ public:
 		
 		// assume q
 		solver.assume(index[4].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 		// empty body + B1 + q + {not q}
 		CPPUNIT_ASSERT_EQUAL(4u, solver.numAssignedVars());
 
 		// U = {x, y}.
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[1].lit));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[2].lit));
 		Literal extBody = a->preds[0]->lit;
@@ -349,10 +349,10 @@ public:
 			.startRule().addHead(3).addToBody(2,true).addToBody(5,true).endRule()
 		.endProgram(solver, true);
 		CPPUNIT_ASSERT(builder.stats.sccs == 1);
-		grabPostProp();
+		
 		solver.assume(~index[1].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[2].lit));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[3].lit));
 	}
@@ -367,10 +367,10 @@ public:
 			.startRule(CHOICERULE).addHead(1).addToBody(3,true).endRule() // {a} :- c.
 		.endProgram(solver, true);
 		CPPUNIT_ASSERT(builder.stats.sccs == 1);
-		grabPostProp();
+		
 		solver.assume(~index[1].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
+		CPPUNIT_ASSERT_EQUAL(true, ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[2].lit));
 		CPPUNIT_ASSERT_EQUAL(true, solver.isFalse(index[3].lit));
 	}
@@ -386,16 +386,16 @@ public:
 			.startRule(BASICRULE).addHead(3).addToBody(2,true).addToBody(4,true).endRule()          // c :- b,d.      
 		.endProgram(solver, true);
 		CPPUNIT_ASSERT(builder.stats.sccs == 1);
-		grabPostProp();
+		
 		
 		solver.assume(~index[1].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate() && ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()) && ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(false, solver.isFalse(index[2].lit));
 		CPPUNIT_ASSERT_EQUAL(false, solver.isFalse(index[3].lit));
 		solver.undoUntil(0);
 		
 		solver.assume(~index[5].lit);
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate() && ufc->propagate());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()) && ufc->propagate(solver));
 		CPPUNIT_ASSERT_EQUAL(false, solver.isFalse(index[2].lit));
 		CPPUNIT_ASSERT_EQUAL(false, solver.isFalse(index[3].lit));
 	}
@@ -468,13 +468,9 @@ private:
 			.startRule().addHead(4).addToBody(6, false).endRule()                   // f :- not y.
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
-		grabPostProp();
+		
 		CPPUNIT_ASSERT_EQUAL(true, solver.endAddConstraints());
-		CPPUNIT_ASSERT_EQUAL(true, solver.propagate());
-	}
-	void grabPostProp() {
-		ufc = (DefaultUnfoundedCheck*)solver.strategies().postProp.release();
-		solver.strategies().postProp.reset(new NoPostPropagator());
+		CPPUNIT_ASSERT_EQUAL(true, solver.propagateUntil(ufc.get()));
 	}
 };
 CPPUNIT_TEST_SUITE_REGISTRATION(UnfoundedCheckTest);

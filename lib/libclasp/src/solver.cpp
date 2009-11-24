@@ -100,18 +100,23 @@ Solver::PPList::~PPList() {
 		t->destroy();
 	}
 }
-void Solver::PPList::add(PostPropagator* p, bool front) {
+void Solver::PPList::add(PostPropagator* p) {
 	assert(p && p->next == 0);
-	if (!head || front) {
+	uint32 prio = p->priority();
+	if (!head || prio == PostPropagator::priority_highest || prio < head->priority()) {
 		p->next = head;
 		head    = p;
 	}
 	else {
 		for (PostPropagator* r = head; ; r = r->next) {
 			if (r->next == 0) {
+				r->next = p; break;
+			}
+			else if (prio < r->next->priority()) {
+				p->next = r->next;
 				r->next = p;
 				break;
-			}
+			}				
 		}
 	}
 	saved = head;
@@ -148,9 +153,11 @@ bool Solver::PPList::propagate(Solver& s, PostPropagator* x) {
 	return true;
 }
 bool PostPropagator::propagateFixpoint(Solver& s) {
-	bool r;
-	while ((r=propagate(s)) && s.queueSize() > 0 && (r=s.propagateUntil(this))) { ; }
-	return r;
+	bool ok = propagate(s);
+	while (ok && s.queueSize() > 0) {
+		ok = s.propagateUntil(this) && propagate(s);
+	}
+	return ok;
 }
 void Solver::PPList::reset()            { for (PostPropagator* r = head; r; r = r->next) { r->reset(); } }
 bool Solver::PPList::isModel(Solver& s) {
@@ -188,6 +195,7 @@ Solver::Solver()
 	, levConflicts_(0)
 	, undoHead_(0)
 	, front_(0)
+	, units_(0)
 	, binCons_(0)
 	, ternCons_(0)
 	, lastSimplify_(0)
@@ -283,6 +291,12 @@ uint32 Solver::problemComplexity() const {
 	return r;
 }
 
+void Solver::reserveVars(uint32 numVars) {
+	vars_.reserve(numVars);
+	levelSeen_.reserve(numVars);
+	reason_.reserve(numVars);
+}
+
 Var Solver::addVar(VarType t, bool eq) {
 	Var v = vars_.numVars();
 	vars_.add(t == Var_t::body_var);
@@ -314,9 +328,6 @@ void Solver::eliminate(Var v, bool elim) {
 bool Solver::addUnary(Literal p) {
 	if (decisionLevel() != 0) {
 		impliedLits_.push_back(ImpliedLiteral(p, 0, posLit(0)));
-	}
-	else {
-		markSeen(p.var());
 	}
 	return force(p, posLit(0));
 }
@@ -438,9 +449,7 @@ bool Solver::simplify() {
 
 void Solver::simplifySAT() {
 	for (; lastSimplify_ < trail_.size(); ++lastSimplify_) {
-		Literal p = trail_[lastSimplify_];
-		markSeen(p.var());                    // ignore level 0 literals during conflict analysis
-		simplifyShort(p);                     // remove satisfied binary- and ternary clauses
+		simplifyShort(trail_[lastSimplify_] );// remove satisfied binary- and ternary clauses
 	}
 	if (shuffle_) {
 		std::random_shuffle(constraints_.begin(), constraints_.end(), irand);
@@ -506,8 +515,6 @@ void Solver::simplifyShort(Literal p) {
 		// else: clause is SAT and removed when the satisfied literal is processed
 	}
 	releaseVec(npList);
-	
-
 	releaseVec(pList.genW);     // updated during propagation. 
 	releaseVec(negPList.genW);  // ~p will never be true. List is no longer relevant.
 }
@@ -516,7 +523,7 @@ bool Solver::force(const Literal& p, const Antecedent& c) {
 	const Var var = p.var();
 	if (value(var) == value_free) {
 		vars_.assign(var, trueValue(p));
-		levelSeen_[var] = decisionLevel()<<2;
+		levelSeen_[var] = decisionLevel() << 2;
 		reason_[var]    = c;
 		trail_.push_back(p);
 	}
@@ -546,6 +553,12 @@ bool Solver::propagate() {
 	front_ = trail_.size();
 	post_.reset();
 	return false;
+}
+
+
+uint32 Solver::mark(uint32 s, uint32 e) {
+	while (s != e) { markSeen(trail_[s++].var()); }
+	return e;
 }
 
 bool Solver::unitPropagate() {
@@ -595,7 +608,7 @@ bool Solver::unitPropagate() {
 			shrinkVecTo(gWL, j);
 		}
 	}
-	return true;
+	return decisionLevel() > 0 || (units_=mark(units_, uint32(front_))) == front_;
 }
 
 bool Solver::failedLiteral(Var& var, VarScores& scores, VarType types, VarVec& deps) {
@@ -739,6 +752,27 @@ uint32 Solver::estimateBCP(const Literal& p, int rd) const {
 /////////////////////////////////////////////////////////////////////////////////////////
 // Solver: Private helper functions
 ////////////////////////////////////////////////////////////////////////////////////////
+Solver::ConstraintDB* Solver::allocUndo(Constraint* c) {
+	if (undoHead_ == 0) {
+		return new ConstraintDB(1, c);
+	}
+	assert(undoHead_->size() == 1);
+	ConstraintDB* r = undoHead_;
+	undoHead_ = (ConstraintDB*)undoHead_->front();
+	r->clear();
+	r->push_back(c);
+	return r;
+}
+void Solver::undoFree(ConstraintDB* x) {
+	// maintain a single-linked list of undo lists
+	x->clear();
+	x->push_back((Constraint*)undoHead_);
+	undoHead_ = x;
+}
+void Solver::saveValueAndUndo(Literal p) {
+	vars_.setPrefValue(p.var(), trueValue(p));
+	vars_.undo(p.var());
+}
 // removes the current decision level
 void Solver::undoLevel(bool sp) {
 	assert(decisionLevel() != 0);
@@ -785,7 +819,7 @@ uint32 Solver::analyzeConflict(uint32& secondWatch) {
 			if (!seen(q.var())) {
 				assert(isTrue(q) && "Invalid literal in reason set!");
 				uint32 cl = level(q.var());
-				assert(cl > 0 && "Simplify not called on Top-Level - seen-flag not set!");
+				assert(cl > 0 && "Unit literal not marked!");
 				markSeen(q.var());
 				if (cl == decisionLevel()) {
 					++onLevel;

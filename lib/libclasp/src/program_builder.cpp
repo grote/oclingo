@@ -1064,7 +1064,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool finalizeSolver, bool backpr
 		uint32 oldNodes = (uint32)ufs_->nodes();
 		if (ufs_.is_owner()) {
 			// Transfer ownership of ufs to solver...
-			solver.addPost(ufs_.release(), true);
+			solver.addPost(ufs_.release());
 		}
 		// and init the unfounded set checker with new SCCs.
 		ufs_->startInit(solver);
@@ -1177,7 +1177,6 @@ MinimizeConstraint* ProgramBuilder::createMinimize(Solver& solver, bool inHeu) {
 		m->minimize(solver, lits, inHeu);
 		lits.clear();
 	}
-	m->simplify(solver,false);
 	return m;
 }
 

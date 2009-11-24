@@ -83,9 +83,10 @@ public:
 	const Solver& solver() const { return *solver_; }
 	
 	// base interface
-	void reset();
-	bool propagateFixpoint(Solver& s);
-	bool propagate(Solver& s) { return DefaultUnfoundedCheck::propagateFixpoint(s); }
+	void   reset();
+	bool   propagateFixpoint(Solver& s);
+	bool   propagate(Solver& s) { return DefaultUnfoundedCheck::propagateFixpoint(s); }
+	uint32 priority() const     { return uint32(priority_single_high); }
 	
 	// public - so that tests can access the data-structures
 	struct UfsNode;

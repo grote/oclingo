@@ -299,6 +299,7 @@ void ClaspFacade::configureMinimize(MinimizeConstraint* min) const {
 			min->setOptimum(x, vals[x]);
 		}
 	}
+	min->simplify(*config_->solver, false);
 	config_->solve.enumerator()->setMinimize(min);
 	if (config_->enumerate.consequences()) {
 		warning("Minimize statements: Consequences may depend on enumeration order!");

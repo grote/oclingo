@@ -115,7 +115,8 @@ bool Preprocessor::applyCompute(LitVec& compute, uint32 start, bool strong) {
 					for (VarVec::size_type h = 0; h != b->heads.size(); ++h) {
 						if (b->heads[h] != atomId) {
 							PrgAtomNode* head = prg_->atoms_[b->heads[h]];
-							head->preds.erase(std::find(head->preds.begin(), head->preds.end(), *it));
+							VarVec::iterator body = std::find(head->preds.begin(), head->preds.end(), *it);
+							if (body != head->preds.end()) head->preds.erase(body);
 						}
 					}
 					b->heads.clear();
@@ -290,6 +291,9 @@ bool Preprocessor::classifyProgram(uint32 startAtom, uint32& stopAtom) {
 					// mark atom so that the link between atomEqId and bodyId can be replaced
 					// with a link to bodyEqId.
 					setSimplifyBodies(atomEqId);
+					if (atomId != atomEqId && !prg_->atoms_[atomEqId]->hasPred(bodyEqId)) {
+						prg_->atoms_[atomEqId]->preds.push_back(bodyEqId);
+					}
 				}
 			}
 			setHasBody(body->literal());

@@ -178,10 +178,25 @@ protected:
 
 //! Base class for all post propagators.
 /*!
- * Post propagators are called after a solver finished unit-propagation and once after 
- * a total assignment is found.
+ * Post propagators are called after a solver finished unit-propagation and 
+ * once after a total assignment is found.
  * They may add more elaborate propagation mechanisms.
  * The typical asp example would be an unfounded set check.
+ *
+ * \note Post propagators are called in priority order. For this,
+ *       the function PostPropagator::priority() is used. 
+ *       Currently, the solver distinguishes *three* classes of 
+ *       post propagators:
+ *       - det_single: deterministic post propagators that only work on 
+ *         the current decision level. During propagation, these post 
+ *         propagators must neither backtrack nor create new levels. 
+ *         They shall have a priority in the range: [priority_highest, priority_lookahead)
+ *       - det_multi: post propagators that use some form of lookahead. They are only
+ *         called once all det_single post propagators finished. Furthermore,
+ *         they are disabled during lookahead operations. They shall have
+ *         a priority in the range [priority_lookahead, priority_general).
+ *       - multi: post propagators that are non-deterministic or work on many
+ *         decision levels shall have a priority in the range [priority_general, priority_lowest).
  */
 class PostPropagator : public Constraint {
 public:
@@ -190,6 +205,26 @@ public:
 	using Constraint::propagate;  // Enable overloading!
 
 	PostPropagator* next; // for supporting lists of post propagators
+	//! Default priorities for post propagators
+	enum Priority {
+		priority_highest     = 0,   /**< highest possible priority  */
+		priority_single_high = 50,  /**< high det_single priority   */
+		priority_single      = 100, /**< default priority           */
+		priority_single_low  = 150, /**< low det_single priority    */
+		priority_lookahead   = 200, /**< default lookahead priority */
+		priority_general     = 300, /**< default general priority   */
+		priority_lowest      = 1024 /**< lowest possible priority   */
+		
+	};
+	//! returns a value representing the priority of this propagator
+	/*!
+	 * The priority is used to order sequences of post propagators and to
+	 * classify post propagators w.r.t the three classes: det_single, det_multi, and
+	 * multi.
+	 * \note The default implementation returns priority_single
+	 * \note See class description for an overview of the three priority classes.
+	 */
+	virtual uint32 priority() const;
 
 	//! propagates the current assignment until a fixpoint is reached w.r.t this post propagator
 	/*!

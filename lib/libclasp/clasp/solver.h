@@ -178,12 +178,8 @@ public:
 	 * \note if the number of variables is known upfront, calling this method
 	 * avoids repeated regrowing of the state data structures
 	 */
-	void reserveVars(uint32 numVars) {  
-		vars_.reserve(numVars);
-		levelSeen_.reserve(numVars);
-		reason_.reserve(numVars);
-	}
-	
+	void reserveVars(uint32 numVars);  
+
 	//! adds a new variable of type t to the solver.
 	/*!
 	 * \pre startAddConstraints was not yet called.
@@ -285,13 +281,12 @@ public:
 
 	//! adds p as post propagator to this solver
 	/*!
-	 * If front is true, p is added to the front
-	 * of the list of post propagators. Otherwise
-	 * it is appended.
 	 * \pre p was not added previously and is not part of any other solver
+	 * \note post propagators are stored in priority order
+	 * \see PostPropagator::priority()
 	 */
-	void addPost(PostPropagator* p, bool front = false) {
-		post_.add(p, front);
+	void addPost(PostPropagator* p) {
+		post_.add(p);
 	}
 	
 	//! removes p from the solver's list of post propagators
@@ -369,10 +364,12 @@ public:
 	 */
 	void addUndoWatch(uint32 dl, Constraint* c) {
 		assert(dl != 0 && dl <= decisionLevel() );
-		if (levels_[dl-1].second == 0) {
-			levels_[dl-1].second = allocUndo();
+		if (levels_[dl-1].second != 0) {
+			levels_[dl-1].second->push_back(c);
 		}
-		levels_[dl-1].second->push_back(c);
+		else {
+			levels_[dl-1].second = allocUndo(c);
+		}
 	}
 	
 	//! removes c from the watch-list of the decision level dl
@@ -778,7 +775,7 @@ private:
 	struct PPList {
 		PPList();
 		~PPList();
-		void add(PostPropagator* p, bool front);
+		void add(PostPropagator* p);
 		void remove(PostPropagator* p);
 		bool propagate(Solver& s, PostPropagator* p);
 		void reset();
@@ -787,9 +784,8 @@ private:
 		PostPropagator* head;
 		PostPropagator* saved;
 	};
-	inline bool validWatch(Literal p) const {
-		return p.index() < (uint32)watches_.size();
-	}
+	bool    validWatch(Literal p) const { return p.index() < (uint32)watches_.size(); }
+	uint32  mark(uint32 s, uint32 e);
 	void    initRandomHeuristic(double randFreq);
 	void    freeMem();
 	void    simplifySAT();
@@ -797,30 +793,12 @@ private:
 	void    simplifyDB(ConstraintDB& db);
 	bool    unitPropagate();
 	void    undoLevel(bool sp);
-	void    saveValueAndUndo(Literal p) {
-		vars_.setPrefValue(p.var(), trueValue(p));
-		vars_.undo(p.var());
-	}
+	void    saveValueAndUndo(Literal p);
 	uint32  analyzeConflict(uint32& sw);
 	void    minimizeConflictClause(uint32 abstr);
 	bool    minimizeLitRedundant(Literal p, uint32 abstr);
-	
-	ConstraintDB* allocUndo() {
-		if (undoHead_ == 0) {
-			return new ConstraintDB();
-		}
-		assert(undoHead_->size() == 1);
-		ConstraintDB* r = undoHead_;
-		undoHead_ = (ConstraintDB*)undoHead_->front();
-		r->clear();
-		return r;
-	}
-	void undoFree(ConstraintDB* x) {
-		// maintain a single-linked list of undo lists
-		x->clear();
-		x->push_back((Constraint*)undoHead_);
-		undoHead_ = x;
-	}
+	void    undoFree(ConstraintDB* x);
+	ConstraintDB* allocUndo(Constraint* c);
 	SolverStrategies  strategy_;    // Strategies used by this solver-object
 	VarInfo           vars_;        // vars_[v] stores info about variable v
 	VarVec            levelSeen_;   // Stores DLs and seen flags for assigned vars
@@ -838,6 +816,7 @@ private:
 	VarVec*           levConflicts_;// For a DL d, levConflicts_[d-1] stores num conflicts when d was started
 	ConstraintDB*     undoHead_;    // Free list of undo DBs
 	LitVec::size_type front_;       // "propagation queue"
+	uint32            units_;       // number of top-level assignments: always marked as seen
 	uint32            binCons_;     // number of binary constraints
 	uint32            ternCons_;    // number of ternary constraints
 	LitVec::size_type lastSimplify_;// number of top-level assignments on last call to simplify

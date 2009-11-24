@@ -822,6 +822,7 @@ public:
 	 */
 	typedef std::pair<bool, uint32> SimpRes;
 	SimpRes simplifyBodies(Var atomId, ProgramBuilder& prg, bool strong);
+	bool    hasPred(Var bodyId) const { return std::find(preds.begin(), preds.end(), bodyId) != preds.end(); }
 	VarVec    posDep;     // Bodies in which this atom occurs positively
 	VarVec    negDep;     // Bodies in which this atom occurs negatively
 	VarVec    preds;      // Bodies having this atom as head
