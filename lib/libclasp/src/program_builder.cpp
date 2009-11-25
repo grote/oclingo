@@ -56,6 +56,7 @@ bool PrgAtomNode::toConstraint(Solver& s, ClauseCreator& gc, ProgramBuilder& prg
 	gc.start().add(~a);
 	prg.vars_.mark( ~a );
 	bool sat = false;
+	bool nant= !negDep.empty();
 	// consider only bodies which are part of the simplified program, i.e.
 	// are associated with a variable in the solver.
 	VarVec::iterator j = preds.begin();
@@ -65,6 +66,7 @@ bool PrgAtomNode::toConstraint(Solver& s, ClauseCreator& gc, ProgramBuilder& prg
 		sat |= prg.vars_.marked( ~B );
 		if (bn->hasVar()) {
 			*j++ = *it;
+			nant = nant || bn->isChoice();
 			if (!prg.vars_.marked(B)) {
 				prg.vars_.mark( B );
 				gc.add(B);
@@ -82,6 +84,7 @@ bool PrgAtomNode::toConstraint(Solver& s, ClauseCreator& gc, ProgramBuilder& prg
 	for (VarVec::const_iterator it = preds.begin(); it != preds.end(); ++it) {
 		prg.vars_.unmark( prg.bodies_[*it]->var() );
 	}
+	if (nant) { s.setNant(var(), true); }
 	return sat || gc.end();
 }
 

@@ -64,7 +64,7 @@ class SolverTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testResurrectVar);
 
 	CPPUNIT_TEST(testPreferredLitByType);
-	CPPUNIT_TEST(testSetPreferredValue);
+	CPPUNIT_TEST(testInitSavedValue);
 	CPPUNIT_TEST(testReset);
 	CPPUNIT_TEST(testForce);
 	CPPUNIT_TEST(testNoUpdateOnConsistentAssign);
@@ -94,7 +94,7 @@ class SolverTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testSimplifyRemovesSatTernClauses);
 	CPPUNIT_TEST(testSimplifyRemovesSatConstraints);
 
-	CPPUNIT_TEST(testLookahead);
+
 	CPPUNIT_TEST(testResolveUnary);
 	CPPUNIT_TEST(testResolveConflict);
 	CPPUNIT_TEST(testResolveConflictBounded);
@@ -186,7 +186,8 @@ public:
 		Var v2 = s.addVar(Var_t::body_var);
 		struct Dummy : public SelectFirst {
 			Dummy() : res(0) {}
-			void resurrect(Var v) { res = v; }
+			void resurrect(const Solver&, Var v) { res = v; }
+
 			Var res;
 		}*h = new Dummy();
 		s.strategies().heuristic.reset(h);
@@ -215,17 +216,17 @@ public:
 		CPPUNIT_ASSERT_EQUAL( posLit(v4), s.preferredLiteralByType(v4) );
 	}
 
-	void testSetPreferredValue() {
+	void testInitSavedValue() {
 		Var v1 = s.addVar(Var_t::atom_var);
 		Var v2 = s.addVar(Var_t::body_var);
-		CPPUNIT_ASSERT_EQUAL( value_free, s.preferredValue(v1) );   
-		CPPUNIT_ASSERT_EQUAL( value_free, s.preferredValue(v2) );
+		CPPUNIT_ASSERT_EQUAL( value_free, s.savedValue(v1) );   
+		CPPUNIT_ASSERT_EQUAL( value_free, s.savedValue(v2) );
 
-		s.setPreferredValue(v1, value_true);
-		s.setPreferredValue(v2, value_false);
+		s.initSavedValue(v1, value_true);
+		s.initSavedValue(v2, value_false);
 
-		CPPUNIT_ASSERT_EQUAL( value_true, s.preferredValue(v1) );   
-		CPPUNIT_ASSERT_EQUAL( value_false, s.preferredValue(v2) );
+		CPPUNIT_ASSERT_EQUAL( value_true, s.savedValue(v1) );   
+		CPPUNIT_ASSERT_EQUAL( value_false, s.savedValue(v2) );
 	}
 
 	void testReset() {
@@ -648,29 +649,6 @@ public:
 		CPPUNIT_ASSERT_EQUAL(1u, s.numLearntConstraints());
 		CPPUNIT_ASSERT_EQUAL(true, t2Del);
 		CPPUNIT_ASSERT_EQUAL(true, t3Del);
-	}
-
-	void testLookahead() {
-		Literal a = posLit(s.addVar(Var_t::atom_var));
-		Literal b = posLit(s.addVar(Var_t::atom_var));
-		Literal c = posLit(s.addVar(Var_t::atom_var));
-		Literal d = posLit(s.addVar(Var_t::atom_var));
-		Literal e = posLit(s.addVar(Var_t::atom_var));
-		s.startAddConstraints();
-		s.addBinary(a, b, false);
-		s.addBinary(~b, c, false);
-		s.addBinary(~a, c, false);
-		s.addBinary(~d, e, false);
-		s.addTernary(e, ~c, d, false);
-		CPPUNIT_ASSERT_EQUAL(true, s.endAddConstraints());
-		CPPUNIT_ASSERT_EQUAL(0u, s.numAssignedVars());
-
-		Var v = 1;
-		VarScores sc;
-		VarVec deps;
-		while (s.failedLiteral(v, sc, Var_t::atom_var, deps) && s.simplify());
-	
-		CPPUNIT_ASSERT_EQUAL(2u, s.numAssignedVars());
 	}
 
 	void testResolveUnary() {

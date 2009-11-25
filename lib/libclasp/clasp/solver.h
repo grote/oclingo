@@ -42,7 +42,7 @@ public:
 	void setSolver(Solver& s) { solver_ = &s; }
 	virtual bool addClause(const LitVec& cl) = 0;
 	virtual bool preprocess() = 0;
-	virtual void extendModel(VarInfo& m) = 0;
+	virtual void extendModel(Assignment& m) = 0;
 	virtual void clearModel() = 0;
 	virtual bool hasSymModel() const = 0;
 	virtual void setEnumerate(bool b) = 0;
@@ -190,7 +190,7 @@ public:
 	 * \note The problem variables are numbered from 1 onwards!
 	 */
 	Var addVar(VarType t, bool eq = false);
-	
+
 	//! returns the type of variable v.
 	/*!
 	 * If v was added with parameter eq=true, the return value
@@ -198,9 +198,9 @@ public:
 	 */
 	VarType type(Var v) const {
 		assert(validVar(v));
-		return vars_.eq(v)
+		return info_.isSet(v, VarInfo::EQ)
 			? Var_t::atom_body_var
-			: VarType(Var_t::atom_var + vars_.body(v));
+			: VarType(Var_t::atom_var + info_.isSet(v, VarInfo::BODY));
 	}
 	
 	//! returns the preferred decision literal of variable v w.r.t its type
@@ -213,26 +213,14 @@ public:
 	 */
 	Literal preferredLiteralByType(Var v) const {
 		assert(validVar(v));
-		return Literal(v, !vars_.body(v));
-	}
-	//! sets the preferred value of variable v
-	/*!
-	 * \param v the variable for which a value should be set
-	 * \param value the preferred value
-	 */
-	void setPreferredValue(Var v, ValueRep val) {
-		assert(validVar(v));
-		vars_.setPrefValue(v, val);
-	}
-	//! returns the preferred value of variable v.
-	ValueRep preferredValue(Var v) const {
-		assert(validVar(v));
-		return vars_.prefValue(v);
+		return Literal(v, !info_.isSet(v, VarInfo::BODY));
 	}
 	//! returns true if v is currently eliminated, i.e. no longer part of the problem
-	bool eliminated(Var v)  const     { assert(validVar(v)); return vars_.eliminated(v); }
+	bool eliminated(Var v)  const     { assert(validVar(v)); return info_.isSet(v, VarInfo::ELIM); }
 	//! returns true if v is excluded from variable elimination
-	bool frozen(Var v)      const     { assert(validVar(v)); return vars_.frozen(v); }
+	bool frozen(Var v)      const     { assert(validVar(v)); return info_.isSet(v, VarInfo::FROZEN); }
+	bool project(Var v)     const     { assert(validVar(v)); return info_.isSet(v, VarInfo::PROJECT);}
+	bool nant(Var v)        const     { assert(validVar(v)); return info_.isSet(v, VarInfo::NANT);}
 	
 	//! eliminates/ressurrects the variable v
 	/*!
@@ -240,7 +228,9 @@ public:
 	 *  and frozen(v) == false and value(v) == value_free
 	 */
 	void eliminate(Var v, bool elim);
-	void setFrozen(Var v, bool b)     { assert(validVar(v)); vars_.setFrozen(v, b); }
+	void setFrozen(Var v, bool b)     { assert(validVar(v)); if (b != info_.isSet(v, VarInfo::FROZEN)) info_.toggle(v, VarInfo::FROZEN);   }
+	void setProject(Var v, bool b)    { assert(validVar(v)); if (b != info_.isSet(v, VarInfo::PROJECT)) info_.toggle(v, VarInfo::PROJECT); }
+	void setNant(Var v, bool b)       { assert(validVar(v)); if (b != info_.isSet(v, VarInfo::NANT)) info_.toggle(v, VarInfo::NANT);       }
 
 	//! returns true if var represents a valid variable in this solver.
 	/*!
@@ -285,9 +275,7 @@ public:
 	 * \note post propagators are stored in priority order
 	 * \see PostPropagator::priority()
 	 */
-	void addPost(PostPropagator* p) {
-		post_.add(p);
-	}
+	void addPost(PostPropagator* p)    { post_.add(p); }
 	
 	//! removes p from the solver's list of post propagators
 	/*!
@@ -375,6 +363,12 @@ public:
 	//! removes c from the watch-list of the decision level dl
 	void removeUndoWatch(uint32 dl, Constraint* c);
 
+	void initSavedValue(Var v, ValueRep val) {
+		assert(validVar(v));
+		if (assign_.saved(v) == value_free) {
+			assign_.setSavedValue(v, val);
+		}
+	}
 	//@}
 
 	/*!
@@ -393,19 +387,19 @@ public:
 	 * for (Var i = 1; i <= s.numVars(); ++i) {...}
 	 * \endcode
 	 */
-	uint32 numVars() const { return vars_.numVars() - 1; }
-	//! returns the number of variables in the current assignment.
+	uint32 numVars() const { return info_.numVars() - 1; }
+	//! returns the number of assigned variables.
 	/*!
 	 * \note The special sentinel-var 0 is not counted.
 	 */
-	uint32 numAssignedVars()  const { return (uint32)trail_.size(); }
+	uint32 numAssignedVars()  const { return assign_.assigned(); }
 	
 	//! returns the number of free variables.
 	/*!
 	 * The number of free variables is the number of vars that are neither
 	 * assigned nor eliminated.
 	 */
-	uint32 numFreeVars()      const { return numVars()-((uint32)trail_.size()+eliminated_); }
+	uint32 numFreeVars()      const { return numVars()-(assign_.assigned()+eliminated_); }
 
 	//! returns the number of eliminated vars
 	uint32 numEliminatedVars()const { return eliminated_; }
@@ -426,27 +420,30 @@ public:
 	//! returns the value of v w.r.t the current assignment
 	ValueRep value(Var v) const {
 		assert(validVar(v));
-		return vars_.value(v);
+		return assign_.value(v);
+	}
+	//! returns the previous value of v
+	ValueRep savedValue(Var v) const {
+		assert(validVar(v));
+		return assign_.saved(v);
 	}
 	//! returns true if p is true w.r.t the current assignment
 	bool isTrue(Literal p) const {
 		assert(validVar(p.var()));
-		return vars_.value(p.var()) == trueValue(p);
+		return assign_.value(p.var()) == trueValue(p);
 	}
-
 	//! returns true if p is false w.r.t the current assignment
 	bool isFalse(Literal p) const {
 		assert(validVar(p.var()));
-		return vars_.value(p.var()) == falseValue(p);
+		return assign_.value(p.var()) == falseValue(p);
 	}
-
 	//! returns the decision level on which v was assigned.
 	/*!
 	 * \note the returned value is only meaningful if value(v) != value_free
 	 */
 	uint32 level(Var v) const {
 		assert(validVar(v));
-		return levelSeen_[v] >> 2;
+		return assign_.level(v);
 	}
 
 	//! returns the reason for p being true
@@ -456,7 +453,7 @@ public:
 	 */
 	const Antecedent& reason(Literal p) const {
 		assert(isTrue(p));
-		return reason_[p.var()];
+		return assign_.reason(p.var());
 	}
 
 	//! returns the literal of v being true in the current assignment
@@ -474,16 +471,16 @@ public:
 	 */
 	bool seen(Var v) const {
 		assert(validVar(v));
-		return (levelSeen_[v] & 3u) != 0;
+		return assign_.seen(v, 3u);
 	}
 	//! returns true if the literal p is currently marked as seen
 	bool seen(Literal p) const {
 		assert(validVar(p.var()));
-		return (levelSeen_[p.var()] & (1+p.sign())) != 0;
+		return assign_.seen(p.var(), uint8(1+p.sign()));
 	}
-	void markSeen(Var v)    { assert(validVar(v)); levelSeen_[v] |= 3u; }
-	void markSeen(Literal p){ assert(validVar(p.var())); levelSeen_[p.var()] |= 1+p.sign(); }
-	void clearSeen(Var v)   { assert(validVar(v)); levelSeen_[v] &= ~3u;  }
+	void markSeen(Var v)    { assert(validVar(v)); assign_.setSeen(v, 3u); }
+	void markSeen(Literal p){ assert(validVar(p.var())); assign_.setSeen(p.var(), uint8(1+p.sign())); }
+	void clearSeen(Var v)   { assert(validVar(v)); assign_.clearSeen(v);  }
 
 	//! returns the current decision level.
 	uint32 decisionLevel() const { return (uint32)levels_.size(); }
@@ -503,7 +500,7 @@ public:
 	 */
 	Literal decision(uint32 dl) const {
 		assert(dl != 0 && dl <= decisionLevel() );
-		return trail_[ levels_[dl-1].first ];
+		return assign_.trail[ levels_[dl-1].first ];
 	}
 	
 	//! returns the current (partial) assignment as a set of true literals
@@ -511,7 +508,7 @@ public:
 	 * \note although the special var 0 always has a value it is not considered to be
 	 * part of the assignment.
 	 */
-	const LitVec& assignment() const { return trail_; }
+	const LitVec& assignment() const { return assign_.trail; }
 	
 	//! returns true, if the current assignment is conflicting
 	bool hasConflict() const { return !conflict_.empty(); }
@@ -629,32 +626,22 @@ public:
 	 */
 	bool propagateUntil(PostPropagator* p) { return unitPropagate() && (p == post_.head || post_.propagate(*this, p)); }
 
-	//! executes a one-step failed-literal test beginning at variable startVar.
-	/*!
-	 * Tests all currently unassigned variables (beginning at startVar). 
-	 * If a literal fails, the complementary literal is forced and the function returns
-	 * true.
-	 * \pre validVar(startVar)
-	 * \param startVar first variable to test.
-	 * \param[out] scores scores[v] contains the score computed when v was tested.
-	 * \param types var-types to consider during lookahead.
-	 * \param[out] deps For a variable v that was tested, deps contains v and all v' that were forced because of v.
-	 * \return
-	 *   - true if a failed-literal is detected
-	 *   - false otherwise.
-	 *   .
-	 * \note Dependent variables are not tested!
-	 */
-	bool failedLiteral(Var& startVar, VarScores& scores, VarType types, VarVec& deps);
-	
-	//! executes a one-step lookahead.
+	//! executes a one-step lookahead on p.
 	/*!
 	 * Assumes p and propagates this assumption. If propagations leads to
-	 * a conflict resolveConflict() is called and the functions returns false.
-	 * Otherwise the assumption is undone and the function returns true.
+	 * a conflict false is returned. Otherwise the assumption is undone and 
+	 * the function returns true.
+	 * \param p the literal to test
+	 * \param c the constraint that wants to test p (may be 0)
 	 * \pre p is free
+	 * \note If c is not null and testing p does not lead to a conflict, 
+	         c->undoLevel() is called *before* p is undone. Hence, the
+			 range [s.levelStart(s.decisionLevel()), s.assignment().size())
+			 contains p followed by all literals that were forced because of p.
+	 * \note During propagation of p, only post propagators with priority
+	 * in the range [priority_highest, priority_lookahead) are called.
 	 */
-	bool lookahead(Literal p, VarScores& scores, VarVec& deps, VarType types, bool addDeps);
+	bool test(Literal p, Constraint* c);
 
 	//! estimates the number of assignments following from setting p to true.
 	/*!
@@ -733,7 +720,8 @@ public:
 	ValueRep search(uint64 maxConflict, uint32 maxLearnts, double randProb = 0.0, bool localR = false);
 
 	//! number of (unprocessed) literals in the propagation queue
-	uint32 queueSize() const { return (uint32) trail_.size() - front_; }
+	uint32 queueSize()    const { return (uint32) assign_.qSize(); }
+	uint32 lastSimplify() const { return (uint32) lastSimplify_; }
 
 	//! checks whether there is a model that is symmetric to the current model
 	/*!
@@ -782,40 +770,37 @@ private:
 		bool isModel(Solver& s);
 		bool nextSymModel(Solver& s, bool expand);
 		PostPropagator* head;
+		PostPropagator* look;
 		PostPropagator* saved;
 	};
 	bool    validWatch(Literal p) const { return p.index() < (uint32)watches_.size(); }
 	uint32  mark(uint32 s, uint32 e);
 	void    initRandomHeuristic(double randFreq);
 	void    freeMem();
-	void    simplifySAT();
+	bool    simplifySAT();
 	void    simplifyShort(Literal p);
 	void    simplifyDB(ConstraintDB& db);
 	bool    unitPropagate();
 	void    undoLevel(bool sp);
-	void    saveValueAndUndo(Literal p);
 	uint32  analyzeConflict(uint32& sw);
 	void    minimizeConflictClause(uint32 abstr);
 	bool    minimizeLitRedundant(Literal p, uint32 abstr);
 	void    undoFree(ConstraintDB* x);
 	ConstraintDB* allocUndo(Constraint* c);
 	SolverStrategies  strategy_;    // Strategies used by this solver-object
-	VarInfo           vars_;        // vars_[v] stores info about variable v
-	VarVec            levelSeen_;   // Stores DLs and seen flags for assigned vars
-	ReasonVec         reason_;      // For a true literal p, reason_[p.var()] stores the antecedent of p
+	VarInfo           info_;        // info_[v] stores info about variable v
+	Assignment        assign_;      // three-valued assignment;
 	ConstraintDB      constraints_; // problem constraints
 	ConstraintDB      learnts_;     // learnt constraints
 	ImpliedLits       impliedLits_; // Lits that were asserted on current dl but are logically implied earlier
 	LitVec            conflict_;    // stores conflict-literals for later analysis
 	LitVec            cc_;          // temporary: stores conflict clause within analyzeConflict
-	LitVec            trail_;       // Assignment stack; stores assigments in the order they were made
 	TrailLevels       levels_;      // Stores start-position in trail of every decision level
 	Watches           watches_;     // watches_[p.index()] is a list of constraints watching p
 	PPList            post_;        // (possibly empty) list of post propagators
 	DecisionHeuristic*randHeuristic_;
 	VarVec*           levConflicts_;// For a DL d, levConflicts_[d-1] stores num conflicts when d was started
 	ConstraintDB*     undoHead_;    // Free list of undo DBs
-	LitVec::size_type front_;       // "propagation queue"
 	uint32            units_;       // number of top-level assignments: always marked as seen
 	uint32            binCons_;     // number of binary constraints
 	uint32            ternCons_;    // number of ternary constraints
@@ -826,7 +811,6 @@ private:
 	bool              shuffle_;     // shuffle program on next simplify?
 };
 //@}
-
 
 /**
  * \defgroup heuristic Decision Heuristics
@@ -870,9 +854,10 @@ public:
 	/*!
 	 * Called for each var that changes its state from eliminated back to normal.
 	 * The default-implementation is a noop.
+	 * \param s Solver in which v is resurrected
 	 * \param v The variable that is resurrected
 	 */
-	virtual void resurrect(Var /* v */) {}
+	virtual void resurrect(const Solver& /* s */, Var /* v */) {}
 	
 	/*!
 	 * Called on decision level 0. Variables that are assigned on this level
@@ -883,7 +868,7 @@ public:
 	 * \param s The solver that reached decision level 0.
 	 * \param st The position in the trail of the first new learnt fact.
 	 */
-	virtual void simplify(Solver& /* s */, LitVec::size_type /* st */) { }
+	virtual void simplify(const Solver& /* s */, LitVec::size_type /* st */) { }
 	
 	/*!
 	 * Called whenever the solver backracks.
@@ -927,13 +912,16 @@ public:
 	 * \post
 	 * if true is returned, the heuristic has asserted a literal.
 	 */
-	bool select(Solver& s) {
-		if (s.numFreeVars() != 0) {
-			Literal l = doSelect(s);
-			return isSentinel(l) || s.assume(l);
-		}
-		return false;
-	}
+	bool select(Solver& s) { return s.numFreeVars() != 0 && s.assume(doSelect(s)); }
+
+	//! implements the actual selection process
+	/*!
+	 * \pre s.numFreeVars() > 0, i.e. there is at least one variable to branch on.
+	 * \return 
+	 *  - a literal that is currently free or
+	 *  - a sentinel literal. In that case, the heuristic shall have asserted a literal!
+	 */ 
+	virtual Literal doSelect(Solver& /* s */) = 0;
 
 	/*! 
 	 * Shall select one of the literals in the range [first, last).
@@ -947,9 +935,9 @@ public:
 		return *first;
 	}
 protected:
-	Literal preferredLiteral(const Solver& s, Var var) const {
+	Literal savedLiteral(const Solver& s, Var var) const {
 		Literal r(0,false); ValueRep v;
-		if ((v = s.preferredValue(var)) != value_free) {
+		if ((v = s.savedValue(var)) != value_free) {
 			r = Literal(var, v == value_false);
 		}
 		return r;
@@ -957,14 +945,6 @@ protected:
 private:
 	DecisionHeuristic(const DecisionHeuristic&);
 	DecisionHeuristic& operator=(const DecisionHeuristic&);
-	//! implements the actual selection process
-	/*!
-	 * \pre s.numFreeVars() > 0, i.e. there is at least one variable to branch on.
-	 * \return 
-	 *  - a literal that is currently free or
-	 *  - a sentinel literal. In that case, the heuristic shall have asserted a literal!
-	 */ 
-	virtual Literal doSelect(Solver& /* s */) = 0;
 };
 
 //! selects the first free literal w.r.t to the initial variable order.

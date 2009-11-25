@@ -28,164 +28,6 @@ inline uint32 heuRand() {
 }
 }
 /////////////////////////////////////////////////////////////////////////////////////////
-// Lookahead selection strategies
-/////////////////////////////////////////////////////////////////////////////////////////
-Lookahead::Lookahead(Type t, DecisionHeuristic* h, int m) 
-	: select_(h)
-	, maxDecisions_(!h ? std::numeric_limits<int32>::max() : m)
-	, reinit_(0) {
-	switch(t) {
-		case atom_lookahead: varTypes_ = Var_t::atom_var; break;
-		case body_lookahead: varTypes_ = Var_t::body_var; break;
-		case hybrid_lookahead: varTypes_ = Var_t::atom_body_var; break;
-		default:
-			assert(false && "ups!");
-			break;
-	};
-}
-Lookahead::~Lookahead() {
-	delete select_;
-}
-
-void Lookahead::startInit(const Solver& s) {
-	deps_.clear();
-	scores_.clear();
-	var_ = 0;
-	top_ = posLit(0);
-	if (reinit_) {
-		maxDecisions_ = int32(reinit_-1);
-	}
-	if (select_) select_->startInit(s);
-}
-
-void Lookahead::endInit(Solver& s) {	
-	if (select_) select_->endInit(s);
-	if (maxDecisions_ == 0) {
-		// small hack so that we can reuse "suicide code"
-		++maxDecisions_;
-		countDecision(s, top_);
-	}
-}
-
-void Lookahead::reinit(bool b) {
-	if (b && maxDecisions_ >= 0) {
-		reinit_ = uint32(maxDecisions_)+1;
-	}
-	else {
-		reinit_ = 0;
-	}
-	if (select_) select_->reinit(b);
-}
-
-void Lookahead::simplify(Solver& s, LitVec::size_type st) {
-	top_ = posLit(0);
-	if (!s.failedLiteral(var_, scores_, varTypes_, deps_)) {
-		LitVec::size_type i = s.numAssignedVars();
-		if (select_) {
-			select_->simplify(s, st);
-		}
-		if (i == s.numAssignedVars() && maxDecisions_ != 0) {
-			top_ = heuristic(s);
-		}
-		clearDeps();
-	}
-}
-
-Literal Lookahead::doSelect(Solver& s) {
-	if (maxDecisions_ != 0) { // check if Lookahead is still active
-		if ((s.decisionLevel() > 0 || s.value(top_.var()) != value_free) 
-			&& s.failedLiteral(var_, scores_, varTypes_, deps_)) {
-			if (s.decisionLevel() > 0
-				  || !s.simplify()
-				  || s.numFreeVars() == 0) {
-					return Literal();
-			}
-		}
-		if (maxDecisions_ > 0) { return countDecision(s, heuristic(s)); }
-	}
-	// simply forward to decorated heuristic
-	clearDeps();
-	select_->select(s);
-	return Literal();
-}
-
-void Lookahead::checkScore(uint32& min, uint32& max, Var v, const VarScore& vs, Literal& r) {
-	uint32 vMin,vMax;
-	vs.score(vMax, vMin);
-	if (vMin > min || (vMin == min && vMax > max)) {
-		min = vMin;
-		max = vMax;
-		r = Literal(v, vs.prefSign());
-	}
-}
-Literal Lookahead::heuristic(Solver& s) {
-	Literal choice;
-	if (deps_.empty()) {
-		// No candidates - we are either at the top-level and
-		// simplify already stored the best choice in top_ or all 
-		// candidates are assigned. This can happen if the problem 
-		// contains choice rules and lookahead is not atom-based.
-		choice= top_;
-		Var i = top_.var();
-		do {
-			if (s.value(i) == value_free) return choice;
-			if (++i > s.numVars()) i = 0;
-			choice = s.preferredLiteralByType(i);
-		} while (i != top_.var());
-		return choice;
-	}
-	if (varTypes_ == Var_t::atom_body_var) {
-		LitVec::size_type i = 0;
-		uint32 max          = 0;
-		do {
-			uint32 vMin,vMax;
-			VarScore& vs = scores_[deps_[i]];
-			vs.score(vMax, vMin);
-			if (vMax > max) {
-				max = vMax;
-				choice = Literal(deps_[i], vs.prefSign());
-			}
-			vs.clear();
-		} while (++i != deps_.size());
-	}
-	else {
-		LitVec::size_type i = 0;
-		uint32 min = 0;
-		uint32 max = 0;
-		do {
-			Var v = deps_[i];
-			VarScore& vs = scores_[v];
-			if (!vs.tested()) {     // no literal of v tested
-				s.lookahead(negLit(v), scores_, deps_, varTypes_, false);
-				if (vs.score(negLit(v)) >= min) {
-					s.lookahead(posLit(v), scores_, deps_, varTypes_, false);
-					checkScore(min, max, v, vs, choice);
-				}
-			}
-			else if (!vs.testedBoth()) {  // one literal of v tested
-				if (vs.tested(posLit(v)) && vs.score(posLit(v)) >= min) {
-					assert(!vs.tested(negLit(v)));
-					s.lookahead(negLit(v), scores_, deps_, varTypes_, false);
-					checkScore(min, max, v, vs, choice);
-				}
-				else if (vs.tested(negLit(v)) && vs.score(negLit(v)) >= min) {
-					assert(!vs.tested(posLit(v)));
-					s.lookahead(posLit(v), scores_, deps_, varTypes_, false);
-					checkScore(min, max, v, vs, choice);
-				}
-			}
-			else {                            // both literals of v tested
-				checkScore(min, max, v, vs, choice);
-			}
-			vs.clear();
-		} while (++i != deps_.size()); 
-	}
-	deps_.clear();
-	assert(!isSentinel(choice));
-	return choice;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
 // Lookback selection strategies
 /////////////////////////////////////////////////////////////////////////////////////////
 uint32 momsScore(const Solver& s, Var v) {
@@ -307,8 +149,8 @@ void ClaspBerkmin::endInit(Solver& s) {
 		cache_.clear();
 		for (Var v = 1; v <= s.numVars(); ++v) {
 			order_.decayedScore(v);
-			if (order_.occ(v) != 0 && s.preferredValue(v) == value_free) {
-				s.setPreferredValue(v, order_.occ(v) > 0 ? value_true : value_false);
+			if (order_.occ(v) != 0) {
+				s.initSavedValue(v, order_.occ(v) > 0 ? value_true : value_false);
 			}
 			if   (clearScore) order_.score[v] = HScore(order_.decay);
 			else cache_.push_back(v);
@@ -442,7 +284,7 @@ Literal ClaspBerkmin::selectRange(Solver& s, const Literal* first, const Literal
 
 Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
 	Literal l;
-	if ( (l = preferredLiteral(s,var)) == posLit(0) ) {
+	if ( (l = savedLiteral(s,var)) == posLit(0) ) {
 		int32 w0 = vsids ? (int32)s.estimateBCP(posLit(var), 5) : order_.occ(var);
 		int32 w1 = vsids ? (int32)s.estimateBCP(negLit(var), 5) : 0;
 		if (w1 == 1 && w0 == w1) {
@@ -500,7 +342,7 @@ void ClaspVmtf::endInit(Solver& s) {
 	decay_ = 0;
 }
 
-void ClaspVmtf::simplify(Solver& s, LitVec::size_type i) {
+void ClaspVmtf::simplify(const Solver& s, LitVec::size_type i) {
 	for (; i < s.numAssignedVars(); ++i) {
 		if (score_[s.assignment()[i].var()].pos_ != vars_.end()) {
 			vars_.erase(score_[s.assignment()[i].var()].pos_);
@@ -544,7 +386,7 @@ void ClaspVmtf::newConstraint(const Solver& s, const Literal* first, LitVec::siz
 
 Literal ClaspVmtf::getLiteral(const Solver& s, Var v) const {
 	Literal r;
-	if ( (r = preferredLiteral(s, v)) == posLit(0) ) {
+	if ( (r = savedLiteral(s, v)) == posLit(0) ) {
 		r = score_[v].occ_== 0
 			? s.preferredLiteralByType(v)
 			: Literal(v, score_[v].occ_ < 0 );
@@ -630,7 +472,7 @@ void ClaspVsids::endInit(Solver& s) {
 	}
 }
 
-void ClaspVsids::simplify(Solver& s, LitVec::size_type i) {
+void ClaspVsids::simplify(const Solver& s, LitVec::size_type i) {
 	for (; i < s.numAssignedVars(); ++i) {
 		vars_.remove(s.assignment()[i].var());
 	}
@@ -670,7 +512,7 @@ Literal ClaspVsids::doSelect(Solver& s) {
 	}
 	var = vars_.top();
 	Literal r;
-	if ( (r = preferredLiteral(s, var)) == posLit(0) ) {
+	if ( (r = savedLiteral(s, var)) == posLit(0) ) {
 		r = score_[var].second == 0
 			? s.preferredLiteralByType(var)
 			: Literal( var, score_[var].second < 0 );
@@ -687,6 +529,4 @@ Literal ClaspVsids::selectRange(Solver&, const Literal* first, const Literal* la
 	}
 	return best;
 }
-
-
 }

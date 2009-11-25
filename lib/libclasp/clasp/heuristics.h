@@ -36,89 +36,6 @@
 #include <list>
 namespace Clasp { 
 
-//! Lookahead is both a heuristic as well as a propagation-mechanism.
-/*!
- * \ingroup heuristic
- * Lookahead extends propagation with failed-literal detection. If
- * used as heuristic it will select the literal with the highest score, 
- * where the score is determined by counting assignments made during
- * failed-literal detection. hybrid_lookahead simply selects the literal that
- * derived the most literals. uniform_lookahead behaves similar to the smodels
- * lookahead heuristic (the literal that maximizes the minimum is selected).
- *
- * Alternatively Lookahead can forward to a seperate decision heuristic. In that
- * case Lookahead only performs failed-literal detection. If no literal failed it
- * then calls the select-method of the installed decision heuristic. In this
- * mode Lookahead is a decorator of that other heuristic.
- * 
- * \see Patrik Simons: "Extending and Implementing the Stable Model Semantics" for a
- * detailed description of the lookahead heuristic.
- * 
- */
-class Lookahead : public DecisionHeuristic {
-public:
-	//! Defines the supported lookahead-types
-	enum Type { 
-		atom_lookahead,  /**< Test only atoms in both phases */
-		body_lookahead,  /**< Test only bodies in both phases */
-		hybrid_lookahead,/**< Test atoms and bodies but only their preferred decision literal */
-		no_lookahead
-	};
-	/*!
-	 * \param t Type of variables to consider during failed-literal detection.
-	 * \param heuristic Heuristic to use. If 0, use results of failed-literal-detection.
-	 * \param m Disable failed-literal detection after m choices (-1 always keep enabled)
-	 * \note If heuristic is 0, m is ignored.
-	 * \note If heuristic is != 0 and m is >= 0, the object is automatically destroyed
-	 * after m decisions unless reinit(true) is called *before* endInit() is called.
-	 * When the object is destroyed, the heuristic given as parameter is installed as
-	 * decision heuristic in the solver.
-	 */
-	Lookahead(Type t, DecisionHeuristic* heuristic = 0, int m = -1);
-	~Lookahead();
-	void startInit(const Solver& /* s */);
-	void endInit(Solver& s);
-	void reinit(bool b);
-	void simplify(Solver& s, LitVec::size_type st);
-	void undoUntil(const Solver& s, LitVec::size_type st) {
-		if (select_) select_->undoUntil(s, st);
-	}
-	void newConstraint(const Solver& s, const Literal* first, LitVec::size_type size, ConstraintType t) {
-		if (select_) select_->newConstraint(s, first, size, t);
-	}
-	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit) {
-		if (select_) select_->updateReason(s, lits, resolveLit);
-	}
-	void    clearDeps() {
-		for (VarVec::size_type i = 0, end = deps_.size(); i != end; ++i) {
-			scores_[deps_[i]].clear();
-		}
-		deps_.clear();
-	}
-private:
-	Literal doSelect(Solver& s);
-	Literal heuristic(Solver& s);
-	Literal countDecision(Solver& s, Literal l) {
-		if ( (maxDecisions_ -= (select_ != 0)) == 0 && !reinit_) {
-			// commit suicide
-			s.strategies().heuristic.release();
-			s.strategies().heuristic.reset(select_);
-			select_ = 0;
-			delete this;
-		}
-		return l;
-	}
-	void checkScore(uint32& min, uint32& max, Var v, const VarScore& vs, Literal& r);
-	VarScores           scores_;       // Lookahead scores for tested and dependent vars
-	VarVec              deps_;         // Vars that follow from tested vars
-	DecisionHeuristic*  select_;       // Heuristic to be used after failed-literal detection (0 = use unit)
-	Literal             top_;          // Top-Level choice
-	int32               maxDecisions_; // Number of choices based on unit heuristic
-	uint32              reinit_;       // Only used in incremental setting
-	VarType             varTypes_;     // Types considered during failed-literal detection
-	Var                 var_;          // Var on which failed-literal detection should start
-};
-
 // Some lookback heuristics to be used together with learning.
 
 //! computes a moms-like score for var v
@@ -179,13 +96,14 @@ public:
 	//! updates activity-counters
 	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit);
 	void undoUntil(const Solver&, LitVec::size_type);
-	void resurrect(Var) {
+	void resurrect(const Solver&, Var) {
 		front_ = 1;
 		cache_.clear();
 		cacheFront_ = cache_.end();
 	}
-private:
+protected:
 	Literal doSelect(Solver& s);
+private:
 	Literal selectLiteral(Solver& s, Var v, bool vsids);
 	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	bool    initHuang() const { return order_.score[0].occ == 1; }
@@ -298,14 +216,15 @@ public:
 	//! updates activity-counters
 	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit);
 	//! removes vars set were assigned on level 0 from the heuristic's var list
-	void simplify(Solver&, LitVec::size_type);
+	void simplify(const Solver&, LitVec::size_type);
 	void undoUntil(const Solver&, LitVec::size_type);
-	void resurrect(Var v) {
+	void resurrect(const Solver&, Var v) {
 		if (score_[v].pos_ == vars_.end()) { score_[v].pos_ = vars_.insert(vars_.end(), v); }
 		else { front_ = vars_.begin(); }
 	}
-private:
+protected:
 	Literal doSelect(Solver& s);
+private:
 	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	Literal getLiteral(const Solver& s, Var v) const;
 	typedef std::list<Var> VarList;
@@ -386,12 +305,13 @@ public:
 	void newConstraint(const Solver& s, const Literal* first, LitVec::size_type size, ConstraintType t);
 	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit);
 	void undoUntil(const Solver&, LitVec::size_type);
-	void simplify(Solver&, LitVec::size_type);
-	void resurrect(Var v) {
+	void simplify(const Solver&, LitVec::size_type);
+	void resurrect(const Solver&, Var v) {
 		vars_.update(v);  
 	}
-private:
+protected:
 	Literal doSelect(Solver& s);
+private:
 	Literal selectRange(Solver& s, const Literal* first, const Literal* last);
 	void updateVarActivity(Var v) {
 		if ( (score_[v].first += inc_) > 1e100 ) {

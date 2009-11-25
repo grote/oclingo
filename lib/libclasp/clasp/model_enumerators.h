@@ -78,14 +78,12 @@ public:
 private:
 	typedef std::pair<Constraint*, uint32>  NogoodPair;
 	typedef PodVector<NogoodPair>::type     Nogoods;
-	typedef PodVector<uint8>::type          Flags;
 	enum ProjectOptions {
 		ENABLE_HEURISTIC_SELECT = 1,
 		ENABLE_PROGRESS_SAVING  = 2,
 		MINIMIZE_BACKJUMPING    = 4
 	};
 	void   terminateSearch(Solver&) { clear(); }
-	void   doInit(Solver& s);
 	bool   doBacktrack(Solver& s, uint32 bl);
 	uint32 getProjectLevel(Solver& s);
 	void    undoLevel(Solver& s);
@@ -93,7 +91,6 @@ private:
 	uint32  getHighestBacktrackLevel(const Solver& s, uint32 bl) const;
 	LitVec  projAssign_;
 	Nogoods nogoods_;
-	Flags   isProjectVar_;
 	uint8   projectOpts_;
 };
 

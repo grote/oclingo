@@ -385,8 +385,8 @@ void MinimizeConstraint::minimize(Solver& s, const WeightLitVec& literals, bool 
 				s.addWatch(i->first, this, index_[idx]);
 				occurList_.push_back( LitOccurrence() );
 				s.setFrozen(i->first.var(), true);
-				if (heu && s.preferredValue(i->first.var()) == value_free) {
-					s.setPreferredValue(i->first.var(), falseValue(i->first));
+				if (heu) {
+					s.initSavedValue(i->first.var(), falseValue(i->first));
 				}
 			}
 			LitRef newOcc;

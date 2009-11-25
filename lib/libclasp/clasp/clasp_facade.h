@@ -28,6 +28,7 @@
 #include <clasp/solve_algorithms.h>
 #include <clasp/solver.h>
 #include <clasp/heuristics.h>
+#include <clasp/lookahead.h>
 #include <clasp/program_builder.h>
 #include <clasp/unfounded_check.h>
 #include <clasp/reader.h>
@@ -97,6 +98,7 @@ struct HeuristicOptions {
 	} extra;
 	bool     berkMoms;         /**< only for Berkmin */
 	bool     berkHuang;	       /**< only for Berkmin */
+	bool     nant;             /**< only for unit    */
 };
 
 struct IncrementalConfig {

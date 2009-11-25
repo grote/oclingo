@@ -78,7 +78,7 @@ HeuristicOptions::HeuristicOptions()
 }
 
 DecisionHeuristic* HeuristicOptions::createHeuristic() const {
-	DecisionHeuristic* heu = 0; 
+	DecisionHeuristic* heu = 0;
 	if (heuristic == "berkmin") {
 		bool   l = loops == -1 || loops == 1;
 		uint32 m = extra.berkMax < 0 ? 0 : extra.berkMax;
@@ -95,7 +95,7 @@ DecisionHeuristic* HeuristicOptions::createHeuristic() const {
 		heu = new SelectFirst();
 	}
 	if (lookahead != Lookahead::no_lookahead || lookaheadNum != -1) {
-		return new Lookahead(Lookahead::Type(lookahead), heu, lookaheadNum);
+		return new UnitHeuristic(lookahead, nant, heu, lookaheadNum);
 	}
 	return heu;
 }

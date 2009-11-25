@@ -191,117 +191,153 @@ inline ValueRep trueValue(const Literal& lit) { return 1 + lit.sign(); }
  */
 inline ValueRep falseValue(const Literal& lit) { return 1 + !lit.sign(); }
 
-//! Stores information about variables
+//! Stores static information about variables
 class VarInfo {
 public:
+	enum FLAGS {
+		CHOICE = 0x1u, // branch on this variable - current always 1?
+		NANT   = 0x2u, // if this var is an atom, is it in NAnt(P)
+		UNUSED = 0x4u, // currently not used
+		PROJECT= 0x8u, // do we project on this var?
+		BODY   = 0x10u,// is this var representing a body?
+		EQ     = 0x20u,// is the var representing both a body and an atom?
+		ELIM   = 0x40u,// was the variable eliminated?
+		FROZEN = 0x80  // is the variable frozen?
+	};
 	VarInfo() {}
 	void  reserve(uint32 maxSize) { info_.reserve(maxSize); }
 	void  add(bool body) {
-		info_.push_back( body ? BODY_FLAG : 0);
+		uint8 m = flag(CHOICE) + (!body?0:flag(BODY));
+		info_.push_back( m );
 	}
-	uint32    numVars() const { return (uint32)info_.size(); }
-	
-	// getters
-	ValueRep  value(Var v)      const { return info_[v] & VAL_MASK; }
-	ValueRep  prefValue(Var v)  const { return ValueRep((info_[v]>>2)&3u); }
-	bool      frozen(Var v)     const { return (info_[v] & FROZEN_FLAG) != 0; }
-	bool      eliminated(Var v) const { return (info_[v] & ELIM_FLAG) != 0;   }
-	bool      body(Var v)       const { return (info_[v] & BODY_FLAG) != 0; }
-	bool      eq(Var v)         const { return (info_[v] & EQ_FLAG) != 0; }
-	
-	// setters
-	void assign(Var v, ValueRep x)    { assert(x != value_free); info_[v] |= x; }
-	void undo(Var v)                  { info_[v] &= ~VAL_MASK; }
-	void setPrefValue(Var v, ValueRep val) {
-		info_[v] &= ~PFVAL_MASK;
-		info_[v] |= (val<<2);
-	}
-	void setFrozen(Var v, bool b)     { b ? info_[v] |= FROZEN_FLAG : info_[v] &= ~FROZEN_FLAG; }
-	void setEliminated(Var v, bool b) { b ? info_[v] |= ELIM_FLAG   : info_[v] &= ~ELIM_FLAG;   }
-	void setBody(Var v, bool b)       { b ? info_[v] |= BODY_FLAG   : info_[v] &= ~BODY_FLAG;   }
-	void setEq(Var v, bool b)         { b ? info_[v] |= EQ_FLAG     : info_[v] &= ~EQ_FLAG;     }
+	uint32    numVars()              const { return (uint32)info_.size(); }
+	bool      isSet(Var v, FLAGS f)  const { return (info_[v] & flag(f)) != 0; }
+	void      toggle(Var v, FLAGS f)       { info_[v] ^= flag(f); }
 private:
-	// Bit:   7     6   5   4   3   2  1  0
-	//      frozen elim eq body pfVal  value
+	// Bit:   7     6   5   4    3    2   1     0
+	//      frozen elim eq body proj    nant choice
 	typedef PodVector<uint8>::type InfoVec;
-	static const uint8 VAL_MASK   = 3u;
-	static const uint8 PFVAL_MASK = 12u;
-	static const uint8 BODY_FLAG  = 1u<<4;
-	static const uint8 EQ_FLAG    = 1u<<5;
-	static const uint8 ELIM_FLAG  = 1u<<6;
-	static const uint8 FROZEN_FLAG= 1u<<7;
+	static uint8 flag(FLAGS x) { return uint8(x); }
+	
 	VarInfo(const VarInfo&);
 	VarInfo& operator=(const VarInfo&);
 	InfoVec info_;
 };
 
-//! Type used to store lookahead-information for one variable.
-struct VarScore {
-	VarScore() { clear(); }
-	void clear() { std::memset(this, 0, sizeof(VarScore)); }
-	//! Mark literal p as dependent
-	void setSeen( Literal p ) {
-		seen_ |= uint32(p.sign()) + 1;
+//! Stores assignment related information.
+/*!
+ * For each variable v, the class stores 
+ *  - v's current value (value_free if unassigned)
+ *  - the decision level on which v was assign (only valid if value(v) != value_free)
+ *  - the reason why v is in the assignment (only valid if value(v) != value_free)
+ *  .
+ * Furthermore, the class stores the sequences of assignments as a set of
+ * true literals in its trail-member.
+ */
+class Assignment {
+public:
+	Assignment() : front(0) {}
+	//! number of variables in the three-valued assignment
+	uint32            numVars()    const { return (uint32)assign_.size(); }
+	//! number of assigned variables
+	uint32            assigned()   const { return (uint32)trail.size();   }
+	//! returns the largest possible decision level
+	uint32            maxLevel()   const { return (1u<<28)-1; }
+	//! returns v's value in the three-valued assignment
+	ValueRep          value(Var v) const { return ValueRep(assign_[v] & 3u); }
+	//! returns v's previously saved value in the three-valued assignment
+	ValueRep          saved(Var v) const { return v < saved_.size() ? saved_[v] : value_free; }
+	//! returns the decision level on which v was assigned if value(v) != value_free
+	uint32            level(Var v) const { return assign_[v] >> 4u; }
+	//! returns the reason for v being assigned if value(v) != value_free
+	const Antecedent& reason(Var v)const { return reason_[v]; }
+	LitVec            trail; // assignment sequence
+	LitVec::size_type front; // "propagation queue"
+	bool    qEmpty() const { return front == trail.size(); }
+	uint32  qSize()  const { return (uint32)trail.size() - front; }
+	Literal qPop()         { return trail[front++]; }
+	void    qReset()       { front  = trail.size(); }
+	//! reserves space for nv variables
+	void reserve(uint32 nv) {
+		assign_.resize(nv);
+		reason_.resize(nv);
 	}
-	//! Is literal p dependent?
-	bool seen(Literal p) const {
-		return (seen_ & (uint32(p.sign())+1)) != 0;
+	//! adds var to assignment - initially the new var is unassigned
+	Var addVar() {
+		assign_.push_back(0);
+		reason_.push_back(0);
+		return numVars()-1;
 	}
-	//! Is this var dependent?
-	bool seen() const { return seen_ != 0; }
-	//! Mark literal p as tested during lookahead.
-	void setTested( Literal p ) {
-		tested_ |= uint32(p.sign()) + 1;
-	}
-	//! Was literal p tested during lookahead?
-	bool tested(Literal p) const {
-		return (tested_ & (uint32(p.sign())+1)) != 0;
-	}
-	//! Was some literal of this var tested?
-	bool tested() const { return tested_ != 0; }
-	//! Were both literals of this var tested?
-	bool testedBoth() const { return tested_  == 3; }
-
-	//! Sets the score for literal p to value
-	void setScore(Literal p, LitVec::size_type value) {
-		if (value > (1U<<14)-1) value = (1U<<14)-1;
-		if (p.sign()) nVal_ = uint32(value);
-		else          pVal_ = uint32(value);
-		setTested(p);
-	}
-	
-	//! Returns the score for literal p.
-	uint32 score(Literal p) const {
-		return p.sign() ? nVal_ : pVal_;
-	}
-	
-	//! Returns the scores of the two literals of a variable.
+	//! assigns p.var() on level lev to the value that makes p true and store x as reason for the assignment
 	/*!
-	 * \param[out] mx the maximum score
-	 * \param[out] mn the minimum score
+	 * \return true if the assignment is consistent. False, otherwise.
+	 * \post if true is returned, p is in trail. Otherwise, ~p is.
 	 */
-	void score(uint32& mx, uint32& mn) const {
-		if (nVal_ > pVal_) {
-			mx = nVal_;
-			mn = pVal_;
+	bool assign(Literal p, uint32 lev, const Antecedent& x) {
+		const Var      v   = p.var();
+		const ValueRep val = value(v);
+		if (val == value_free) {
+			assign_[v] = (lev<<4) + trueValue(p);
+			reason_[v] = x;
+			trail.push_back(p);
+			return true;
 		}
-		else {
-			mx = pVal_;
-			mn = nVal_;
-		}
+		return val == trueValue(p);
 	}
-	//! returns the sign of the literal that has the higher score.
-	bool prefSign() const {
-		return nVal_ > pVal_;
+	//! undos all assignments in the range trail[first, last).
+	/*!
+	 * \param first first assignment to be undone
+	 * \param save  if true, previous assignment of a var is saved before it is undone
+	 */
+	void undoTrail(LitVec::size_type first, bool save) {
+		if (!save) { popUntil<&Assignment::clearValue>(trail[first]); }
+		else       { saved_.resize(numVars(), 0); popUntil<&Assignment::saveAndClear>(trail[first]); }
+		front  = trail.size();
 	}
+	//! undos the last assignment
+	void undoLast() { clearValue(trail.back().var()); trail.pop_back(); }
+	//! returns the last assignment as a true literal
+	Literal last() const { return trail.back(); }
+	Literal&last()       { return trail.back(); }
+	//! sets val as "previous value" of v
+	void setSavedValue(Var v, ValueRep val) {
+		if (saved_.size() <= v) saved_.resize(v+1, 0);
+		saved_[v] = val;
+	}
+	/*!
+	 * \name implementation functions
+	 * Low-level implementation functions. Use with care and only if you
+	 * know what you are doing!
+	 */
+	//@{
+	bool seen(Var v, uint8 m) const { return (assign_[v] & (m<<2)) != 0; }
+	void setSeen(Var v, uint8 m)    { assign_[v] |= (m<<2); }
+	void clearSeen(Var v)           { assign_[v] &= ~(12u); }
+	void clearValue(Var v)          { assign_[v] = 0; }
+	void setValue(Var v, ValueRep val) {
+		assert(value(v) == value_free && (val == value_true || val == value_false));
+		assign_[v] = val;
+	}
+	//@}
 private:
-	uint32 pVal_  : 14;
-	uint32 nVal_  : 14;
-	uint32 seen_  : 2;
-	uint32 tested_: 2;
+	Assignment(const Assignment&);
+	Assignment& operator=(const Assignment&);
+	typedef PodVector<Antecedent>::type ReasonVec;
+	typedef PodVector<uint32>::type     AssignVec;
+	typedef PodVector<uint8>::type      SavedVec;
+	void    saveAndClear(Var v) { saved_[v] = value(v); clearValue(v); }
+	template <void (Assignment::*op)(Var v)>
+	void popUntil(Literal stop) {
+		Literal p;
+		do {
+			p = trail.back(); trail.pop_back();
+			(this->*op)(p.var());
+		} while (p != stop);
+	}
+	AssignVec assign_;
+	ReasonVec reason_;
+	SavedVec  saved_;
 };
-
-typedef PodVector<VarScore>::type VarScores; /**< A vector of variable-scores */
 
 //! Stores information about a literal that is implied on an earlier level than the current decision level.
 struct ImpliedLiteral {

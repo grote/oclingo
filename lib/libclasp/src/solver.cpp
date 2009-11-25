@@ -75,7 +75,7 @@ private:
 		LitVec::size_type old = pos_;
 		do {
 			if (s.value(vars_[pos_]) == value_free) {
-				Literal l = preferredLiteral(s, vars_[pos_]);
+				Literal l = savedLiteral(s, vars_[pos_]);
 				return l != posLit(0)
 					? l
 					: s.preferredLiteralByType(vars_[pos_]);
@@ -92,7 +92,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////
 // Post propagator list
 /////////////////////////////////////////////////////////////////////////////////////////
-Solver::PPList::PPList() : head(0), saved(0) { }
+Solver::PPList::PPList() : head(0), look(0), saved(0) { }
 Solver::PPList::~PPList() {
 	for (PostPropagator* r = head; r;) {
 		PostPropagator* t = r;
@@ -119,6 +119,9 @@ void Solver::PPList::add(PostPropagator* p) {
 			}				
 		}
 	}
+	if (prio >= PostPropagator::priority_lookahead && (!look || prio < look->priority())) {
+		look = p;
+	}
 	saved = head;
 }
 void Solver::PPList::remove(PostPropagator* p) {
@@ -137,6 +140,7 @@ void Solver::PPList::remove(PostPropagator* p) {
 			}
 		}
 	}
+	if (p == look) { look = look->next; }
 	saved = head;
 }
 bool Solver::PPList::propagate(Solver& s, PostPropagator* x) {
@@ -194,7 +198,6 @@ Solver::Solver()
 	, randHeuristic_(0)
 	, levConflicts_(0)
 	, undoHead_(0)
-	, front_(0)
 	, units_(0)
 	, binCons_(0)
 	, ternCons_(0)
@@ -205,7 +208,7 @@ Solver::Solver()
 	, shuffle_(false) {
 	// every solver contains a special sentinel var that is always true
 	Var sentVar = addVar( Var_t::atom_body_var );
-	vars_.assign(sentVar, value_true);
+	assign_.setValue(sentVar, value_true);
 	markSeen(sentVar);
 }
 
@@ -243,16 +246,15 @@ void Solver::reset() {
 // Solver: Problem specification
 ////////////////////////////////////////////////////////////////////////////////////////
 void Solver::startAddConstraints() {
-	watches_.resize(vars_.numVars()<<1);
+	watches_.resize(info_.numVars()<<1);
 	// pre-allocate some memory
-	trail_.reserve(numVars());
+	assign_.trail.reserve(numVars());
 	levels_.reserve(25);
 	for (uint32 i = 0; i != 25; ++i) { undoFree(new ConstraintDB(10)); }
 	strategy_.heuristic->startInit(*this);
 	if (strategies().satPrePro.get()) {
 		strategies().satPrePro->setSolver(*this);
 	}
-
 	stats.problem.reset();
 	stats.problem.vars = numVars();
 }
@@ -266,16 +268,13 @@ bool Solver::endAddConstraints() {
 		stats.problem.eliminated = numEliminatedVars();
 		if (!r) return false;
 	}
-	if (lastSimplify_ == trail_.size()) {
-		// since there may be new constraints (e.g. added by the SAT preprocessor)
-		// we force simplification (e.g. failed-literal detection if enabled) even
-		// if there are no new unit literals
-		strategy_.heuristic->simplify(*this, 0);
-	}
-	if (!simplify()) {
+	if (!propagate()) { return false; }
+	strategy_.heuristic->endInit(*this);
+	// Force propagation again - just in case
+	// heuristic->endInit() added new information
+	if (!propagate() || !simplify()) {
 		return false;
 	}
-	strategy_.heuristic->endInit(*this);
 	stats.problem.constraints[0] = numConstraints();
 	stats.problem.constraints[1] = numBinaryConstraints();
 	stats.problem.constraints[2] = numTernaryConstraints();
@@ -292,17 +291,15 @@ uint32 Solver::problemComplexity() const {
 }
 
 void Solver::reserveVars(uint32 numVars) {
-	vars_.reserve(numVars);
-	levelSeen_.reserve(numVars);
-	reason_.reserve(numVars);
+	info_.reserve(numVars);
+	assign_.reserve(numVars);
 }
 
 Var Solver::addVar(VarType t, bool eq) {
-	Var v = vars_.numVars();
-	vars_.add(t == Var_t::body_var);
-	if (eq) vars_.setEq(v, true);
-	levelSeen_.push_back(0);
-	reason_.push_back(Antecedent());
+	Var v = info_.numVars();
+	info_.add(t == Var_t::body_var);
+	if (eq) info_.toggle(v, VarInfo::EQ);
+	assign_.addVar();
 	return v;
 }
 
@@ -310,18 +307,18 @@ void Solver::eliminate(Var v, bool elim) {
 	assert(validVar(v)); 
 	if (elim && !eliminated(v)) {
 		assert(value(v) == value_free && "Can not eliminate assigned var!\n");
-		vars_.setEliminated(v, true);
+		info_.toggle(v, VarInfo::ELIM);
 		markSeen(v);
 		// so that the var is ignored by heuristics
-		vars_.assign(v, value_true);
+		assign_.setValue(v, value_true);
 		++eliminated_;
 	}
 	else if (!elim && eliminated(v)) {
-		vars_.setEliminated(v, false);
+		info_.toggle(v, VarInfo::ELIM);
 		clearSeen(v);
-		vars_.undo(v);
+		assign_.clearValue(v);
 		--eliminated_;
-		strategy_.heuristic->resurrect(v);
+		strategy_.heuristic->resurrect(*this, v);
 	}
 }
 
@@ -432,25 +429,26 @@ void Solver::initRandomHeuristic(double randFreq) {
 bool Solver::simplify() {
 	if (decisionLevel() != 0) return true;
 	if (hasConflict())        return false;
-	// loop because DecisionHeuristic::simplify() may apply failed-literal
-	// detection and hence may derive new unit literals
-	while (lastSimplify_ != trail_.size()) {
+	if (lastSimplify_ != assign_.trail.size()) {
 		LitVec::size_type old = lastSimplify_;
-		if (!propagate()) return false;   // Top-Level-conflict
-		simplifySAT();                    // removes SAT-Constraints
-		assert(lastSimplify_ == trail_.size());
+		if (!simplifySAT()) { return false; }
+		assert(lastSimplify_ == assign_.trail.size());
 		strategy_.heuristic->simplify(*this, old);
 	}
-	if (shuffle_) {
-		simplifySAT();
-	}
+	if (shuffle_) { simplifySAT(); }
 	return true;
 }
 
-void Solver::simplifySAT() {
-	for (; lastSimplify_ < trail_.size(); ++lastSimplify_) {
-		simplifyShort(trail_[lastSimplify_] );// remove satisfied binary- and ternary clauses
+bool Solver::simplifySAT() {
+	if (queueSize() > 0 && !propagate()) {
+		return false;
 	}
+	assert(assign_.qEmpty());
+	assign_.front = lastSimplify_;
+	while (!assign_.qEmpty()) {
+		simplifyShort(assign_.qPop()); // remove satisfied binary- and ternary clauses
+	}
+	lastSimplify_ = assign_.front;
 	if (shuffle_) {
 		std::random_shuffle(constraints_.begin(), constraints_.end(), irand);
 		std::random_shuffle(learnts_.begin(), learnts_.end(), irand);
@@ -458,6 +456,7 @@ void Solver::simplifySAT() {
 	simplifyDB(constraints_);
 	simplifyDB(learnts_);
 	shuffle_ = false;
+	return true;
 }
 
 void Solver::simplifyDB(ConstraintDB& db) {
@@ -518,29 +517,23 @@ void Solver::simplifyShort(Literal p) {
 	releaseVec(pList.genW);     // updated during propagation. 
 	releaseVec(negPList.genW);  // ~p will never be true. List is no longer relevant.
 }
+
 bool Solver::force(const Literal& p, const Antecedent& c) {
 	assert((!hasConflict() || isTrue(p)) && !eliminated(p.var()));
-	const Var var = p.var();
-	if (value(var) == value_free) {
-		vars_.assign(var, trueValue(p));
-		levelSeen_[var] = decisionLevel() << 2;
-		reason_[var]    = c;
-		trail_.push_back(p);
+	if (assign_.assign(p, decisionLevel(), c)) {
+		return true;
 	}
-	else if (value(var) == falseValue(p)) {   // conflict
-		if (strategy_.search != SolverStrategies::no_learning && !c.isNull()) {
-			c.reason(p, conflict_);
-		}
-		conflict_.push_back(~p);
-		return false;
+	else if (strategy_.search != SolverStrategies::no_learning && !c.isNull()) {
+		c.reason(p, conflict_);
 	}
-	return true;
+	conflict_.push_back(~p);
+	return false;
 }
 
 bool Solver::assume(const Literal& p) {
-	assert( value(p.var()) == value_free );
+	assert( value(p.var()) == value_free && decisionLevel() != assign_.maxLevel());
 	++stats.solve.choices;
-	levels_.push_back(LevelInfo((uint32)trail_.size(), 0));
+	levels_.push_back(LevelInfo(numAssignedVars(), 0));
 	if (levConflicts_) levConflicts_->push_back( (uint32)stats.solve.conflicts );
 	return force(p, Antecedent());  // always true
 }
@@ -550,23 +543,24 @@ bool Solver::propagate() {
 		assert(queueSize() == 0);
 		return true;
 	}
-	front_ = trail_.size();
+	assign_.qReset();
 	post_.reset();
 	return false;
 }
 
-
 uint32 Solver::mark(uint32 s, uint32 e) {
-	while (s != e) { markSeen(trail_[s++].var()); }
+	while (s != e) { markSeen(assign_.trail[s++].var()); }
 	return e;
 }
 
 bool Solver::unitPropagate() {
 	assert(!hasConflict());
-	while (front_ < trail_.size()) {
-		const Literal& p = trail_[front_++];
-		uint32 idx = p.index();
-		WL& wl = watches_[idx];
+	Literal p;
+	uint32 idx;
+	while ( !assign_.qEmpty() ) {
+		p       = assign_.qPop();
+		idx     = p.index();
+		WL& wl  = watches_[idx];
 		LitVec::size_type i, bEnd = wl.binW.size(), tEnd = wl.ternW.size(), gEnd = wl.genW.size();
 		// first, do binary BCP...    
 		for (i = 0; i != bEnd; ++i) {
@@ -608,39 +602,22 @@ bool Solver::unitPropagate() {
 			shrinkVecTo(gWL, j);
 		}
 	}
-	return decisionLevel() > 0 || (units_=mark(units_, uint32(front_))) == front_;
+	return decisionLevel() > 0 || (units_=mark(units_, uint32(assign_.front))) == assign_.front;
 }
 
-bool Solver::failedLiteral(Var& var, VarScores& scores, VarType types, VarVec& deps) {
-	assert(validVar(var));
-	scores.resize( vars_.numVars() );
-	deps.clear();
-	Var oldVar   = var;
-	bool uniform = (types !=  Var_t::atom_body_var);
-	bool cfl     = false;
-	do {
-		if ( (type(var) & types) != 0 && value(var) == value_free ) {
-			Literal p = preferredLiteralByType(var);
-			bool testBoth = uniform || type(var) == Var_t::atom_body_var;
-			if (!scores[var].seen(p) && !lookahead(p, scores,deps, types, true)) {
-				cfl = true;
-				break;
-			}
-			if (testBoth && !scores[var].seen(~p) && !lookahead(~p, scores,deps, types, true)) {
-				cfl = true;
-				break;
-			}
-		}
-		if (++var > numVars()) var = 0;
-	} while (!cfl && var != oldVar);
-	if (cfl) {
-		scores[var].clear();
-		for (VarVec::size_type i = 0; i < deps.size(); ++i) {
-			scores[deps[i]].clear();
-		}
-		deps.clear();
-	}   
-	return cfl;
+bool Solver::test(Literal p, Constraint* c) {
+	assert(value(p.var()) == value_free && !hasConflict());
+	assume(p); --stats.solve.choices;
+	if (unitPropagate() && post_.propagate(*this, post_.look)) {
+		assert(decision(decisionLevel()) == p);
+		if (c) c->undoLevel(*this);
+		undoUntil(decisionLevel()-1);
+		return true;
+	}
+	assert(decision(decisionLevel()) == p);
+	assign_.qReset();
+	post_.reset();
+	return false;
 }
 
 bool Solver::resolveConflict() {
@@ -658,7 +635,7 @@ bool Solver::resolveConflict() {
 				// logically the asserting clause is unit on uipLevel but the backjumping
 				// is bounded by btLevel_ thus the uip is asserted on that level. 
 				// We store enough information so that the uip can be re-asserted once we backtrack below jLevel.
-				impliedLits_.push_back( ImpliedLiteral( trail_.back(), uipLevel, reason(trail_.back()) ));
+				impliedLits_.push_back( ImpliedLiteral( assign_.last(), uipLevel, reason(assign_.last()) ));
 			}
 			assert(ret);
 			return ret;
@@ -700,55 +677,30 @@ void Solver::undoUntil(uint32 level) {
 	}
 }
 
-bool Solver::lookahead(Literal p, VarScores& scores, VarVec& deps, VarType types, bool addDeps) {
-	LitVec::size_type old = trail_.size();
-	bool ok = assume(p) && propagate();
-	if (ok) {
-		scores[p.var()].setScore(p, trail_.size() - old);
-		if (addDeps) {
-			for (; old < trail_.size(); ++old) {
-				Var v = trail_[old].var();
-				if ( (type(v) & types) != 0) {
-					if (!scores[v].seen()) { deps.push_back(v); }
-					scores[v].setSeen(trail_[old]);
-				}
-			}
-		}
-		undoUntil(decisionLevel()-1);
-	}
-	else {
-		resolveConflict();
-	}
-	--stats.solve.choices;
-	return ok;
-}
-
 uint32 Solver::estimateBCP(const Literal& p, int rd) const {
-	assert(front_ == trail_.size());
 	if (value(p.var()) != value_free) return 0;
-	LitVec::size_type i = front_;
-	Solver& self = const_cast<Solver&>(*this);
-	self.vars_.assign(p.var(), trueValue(p));
-	self.trail_.push_back(p);
+	LitVec::size_type first = assign_.assigned();
+	LitVec::size_type i     = first;
+	Solver& self            = const_cast<Solver&>(*this);
+	self.assign_.setValue(p.var(), trueValue(p));
+	self.assign_.trail.push_back(p);
 	do {
-		Literal x = trail_[i++];  
+		Literal x = assign_.trail[i++];  
 		const BWL& xList = watches_[x.index()].binW;
 		for (LitVec::size_type k = 0; k < xList.size(); ++k) {
 			Literal y = xList[k];
 			if (value(y.var()) == value_free) {
-				self.vars_.assign(y.var(), trueValue(y));
-				self.trail_.push_back(y);
+				self.assign_.setValue(y.var(), trueValue(y));
+				self.assign_.trail.push_back(y);
 			}
 		}
-	} while (i < trail_.size() && rd-- != 0);
-	i = trail_.size() - front_;
-	while (trail_.size() != front_) {
-		self.vars_.undo(self.trail_.back().var());
-		self.trail_.pop_back();
+	} while (i < assign_.assigned() && rd-- != 0);
+	i = assign_.assigned()-first;
+	while (self.assign_.assigned() != first) {
+		self.assign_.undoLast();
 	}
 	return (uint32)i;
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // Solver: Private helper functions
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -769,27 +721,10 @@ void Solver::undoFree(ConstraintDB* x) {
 	x->push_back((Constraint*)undoHead_);
 	undoHead_ = x;
 }
-void Solver::saveValueAndUndo(Literal p) {
-	vars_.setPrefValue(p.var(), trueValue(p));
-	vars_.undo(p.var());
-}
 // removes the current decision level
 void Solver::undoLevel(bool sp) {
-	assert(decisionLevel() != 0);
-	LitVec::size_type numUndo = trail_.size() - levels_.back().first;
-	assert(numUndo > 0 && "Decision level must not be empty!");
-	if (!sp) {
-		while (numUndo-- != 0) {
-			vars_.undo(trail_.back().var());
-			trail_.pop_back();
-		}
-	}
-	else {
-		while (numUndo-- != 0) {
-			saveValueAndUndo(trail_.back());
-			trail_.pop_back();
-		}
-	}
+	assert(decisionLevel() != 0 && levels_.back().first != assign_.trail.size() && "Decision Level must not be empty");
+	assign_.undoTrail(levels_.back().first, sp);
 	if (levels_.back().second) {
 		const ConstraintDB& undoList = *levels_.back().second;
 		for (ConstraintDB::size_type i = 0, end = undoList.size(); i != end; ++i) {
@@ -799,7 +734,6 @@ void Solver::undoLevel(bool sp) {
 	}
 	levels_.pop_back();
 	if (levConflicts_) levConflicts_->pop_back();
-	front_ = trail_.size();
 }
 
 // Computes the First-UIP clause and stores it in cc_, where cc_[0] is the asserting literal (inverted UIP).
@@ -819,7 +753,7 @@ uint32 Solver::analyzeConflict(uint32& secondWatch) {
 			if (!seen(q.var())) {
 				assert(isTrue(q) && "Invalid literal in reason set!");
 				uint32 cl = level(q.var());
-				assert(cl > 0 && "Unit literal not marked!");
+				assert(cl > 0 && "Top-Level implication not marked!");
 				markSeen(q.var());
 				if (cl == decisionLevel()) {
 					++onLevel;
@@ -831,11 +765,10 @@ uint32 Solver::analyzeConflict(uint32& secondWatch) {
 			}
 		}
 		// search for the last assigned literal that needs to be analyzed...
-		while (!seen(trail_.back().var())) {
-			vars_.undo(trail_.back().var());
-			trail_.pop_back();
+		while (!seen(assign_.last().var())) {
+			assign_.undoLast();
 		}
-		p = trail_.back();
+		p = assign_.last();
 		clearSeen(p.var());
 		conflict_.clear();
 		if (--onLevel == 0) {
@@ -864,7 +797,7 @@ uint32 Solver::analyzeConflict(uint32& secondWatch) {
 
 void Solver::minimizeConflictClause(uint32 abstr) {
 	uint32 m = strategy_.cflMinAntes;
-	LitVec::size_type t = trail_.size();
+	LitVec::size_type t = assign_.trail.size();
 	// skip the asserting literal
 	LitVec::size_type j = 1;
 	for (LitVec::size_type i = 1; i != cc_.size(); ++i) { 
@@ -876,9 +809,9 @@ void Solver::minimizeConflictClause(uint32 abstr) {
 		// it was added to trail_ so that we can clear its seen flag
 	}
 	cc_.erase(cc_.begin()+j, cc_.end());
-	while (trail_.size() != t) {
-		clearSeen(trail_.back().var());
-		trail_.pop_back();
+	while (assign_.trail.size() != t) {
+		clearSeen(assign_.trail.back().var());
+		assign_.trail.pop_back();
 	}
 }
 
@@ -890,12 +823,12 @@ bool Solver::minimizeLitRedundant(Literal p, uint32 abstr) {
 				return false;
 			}
 		}
-		trail_.push_back(p);
+		assign_.trail.push_back(p);
 		return true;
 	}
 	// else: een_minimization
-	trail_.push_back(p);  // assume p is redundant
-	LitVec::size_type start = trail_.size();
+	assign_.trail.push_back(p);  // assume p is redundant
+	LitVec::size_type start = assign_.trail.size();
 	for (LitVec::size_type f = start;;) {
 		conflict_.clear();
 		reason(p).reason(p, conflict_);
@@ -904,20 +837,20 @@ bool Solver::minimizeLitRedundant(Literal p, uint32 abstr) {
 			if (!seen(p.var())) {
 				if (!reason(p).isNull() && ((1<<(level(p.var())&31)) & abstr) != 0) {
 					markSeen(p.var());
-					trail_.push_back(p);
+					assign_.trail.push_back(p);
 				}
 				else {
-					while (trail_.size() != start) {
-						clearSeen(trail_.back().var());
-						trail_.pop_back();
+					while (assign_.trail.size() != start) {
+						clearSeen(assign_.trail.back().var());
+						assign_.trail.pop_back();
 					}
-					trail_.pop_back(); // undo initial assumption
+					assign_.trail.pop_back(); // undo initial assumption
 					return false;
 				}
 			}
 		}
-		if (f == trail_.size()) break;
-		p = trail_[f++];
+		if (f == assign_.trail.size()) break;
+		p = assign_.trail[f++];
 	}
 	return true;
 }
@@ -1009,7 +942,7 @@ ValueRep Solver::search(uint64 maxConflicts, uint32 maxLearnts, double randProp,
 	++stats.solve.models;
 	stats.solve.updateModels(decisionLevel());
 	if (strategy_.satPrePro.get()) {
-		strategy_.satPrePro->extendModel(vars_);
+		strategy_.satPrePro->extendModel(assign_);
 	}
 	return value_true;
 }
@@ -1020,7 +953,7 @@ bool Solver::nextSymModel(bool expand) {
 		if (strategy_.satPrePro.get() != 0 && strategy_.satPrePro->hasSymModel()) {
 			++stats.solve.models;
 			stats.solve.updateModels(decisionLevel());
-			strategy_.satPrePro->extendModel(vars_);
+			strategy_.satPrePro->extendModel(assign_);
 			return true;
 		}
 		else if (post_.nextSymModel(*this, true)) {

@@ -647,20 +647,20 @@ uint32 SatElite::freeClauseId() {
 }
 
 // extends the model given in vars by the vars that were eliminated
-void SatElite::extendModel(VarInfo& vars) {
+void SatElite::extendModel(Assignment& assign) {
 	if (!elimList_) return;
 	// 1. solver set all eliminated vars to true, thus before we can compute the
 	// implied values we first need to set them back to free
 	for (ElimList::const_iterator it = elimList_->begin(); it != elimList_->end(); ++it) {
-		vars.undo(it->var);
+		assign.clearValue(it->var);
 	}
-	// 2. some of the eliminazed vars are unconstraint w.r.t the current model, i.e.
+	// 2. some of the eliminated vars are unconstraint w.r.t the current model, i.e.
 	// they can be either true or false. Since we may be interested in all models
 	// we "enumerate" the unconstraint vars
 	if (!unconstr_.empty()) {
 		unconstr_.back() = ~unconstr_.back();
 		for (VarVec::size_type i = 0; i != unconstr_.size(); ++i) {
-			vars.assign(unconstr_[i].var(), trueValue(unconstr_[i]));
+			assign.setValue(unconstr_[i].var(), trueValue(unconstr_[i]));
 		}
 	}
 	// 3. for each eliminated var, compute its implied value by "unit propagating" its
@@ -677,14 +677,14 @@ void SatElite::extendModel(VarInfo& vars) {
 				else if (!solver_->isFalse(c[k])) { goto nextClause; }
 			}
 			assert(x != Literal() && !solver_->isFalse(x));
-			vars.assign(v, trueValue(x));
+			assign.setValue(v, trueValue(x));
 			break;
 nextClause:;
 		}
 		if (solver_->value(v) == value_free) {  
 			// v is unconstraint w.r.t the model. Assume v to true; remember it
 			// so that we can also enumerate the model containing ~v.
-			vars.assign(v, value_true);
+			assign.setValue(v, value_true);
 			unconstr_.push_back(posLit(v));
 		}
 	}

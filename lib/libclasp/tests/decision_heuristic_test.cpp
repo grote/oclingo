@@ -3,6 +3,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 #include "common.h"
 #include <clasp/heuristics.h>
+#include <clasp/lookahead.h>
 #include <clasp/program_builder.h>
 #include <clasp/clause.h>
 #include <clasp/solver.h>
@@ -25,15 +26,15 @@ class DecisionHeuristicTest : public CppUnit::TestFixture {
 public:
 	void testTrivial() {
 		Solver s;
-		s.strategies().heuristic.reset(new Lookahead(Lookahead::hybrid_lookahead));
+		s.strategies().heuristic.reset(new UnitHeuristic(Lookahead::hybrid_lookahead));
 		s.startAddConstraints();
 		CPPUNIT_ASSERT_EQUAL(true, s.endAddConstraints());
 	}
 	void testBodyLookahead() {
 		Solver s1, s2, s3;
-		Lookahead* lookBody = new Lookahead(Lookahead::body_lookahead);
-		Lookahead* lookAtom = new Lookahead(Lookahead::atom_lookahead);
-		Lookahead* lookHybrid = new Lookahead(Lookahead::hybrid_lookahead);
+		DecisionHeuristic* lookBody   = new UnitHeuristic(Lookahead::body_lookahead);
+		DecisionHeuristic* lookAtom   = new UnitHeuristic(Lookahead::atom_lookahead);
+		DecisionHeuristic* lookHybrid = new UnitHeuristic(Lookahead::hybrid_lookahead);
 		s1.strategies().heuristic.reset(lookBody);
 		s2.strategies().heuristic.reset(lookAtom);
 		s3.strategies().heuristic.reset(lookHybrid);
@@ -59,9 +60,9 @@ public:
 	}
 	void testAtomLookahead() {
 		Solver s1, s2, s3;
-		Lookahead* lookBody = new Lookahead(Lookahead::body_lookahead);
-		Lookahead* lookAtom = new Lookahead(Lookahead::atom_lookahead);
-		Lookahead* lookHybrid = new Lookahead(Lookahead::hybrid_lookahead);
+		DecisionHeuristic* lookBody   = new UnitHeuristic(Lookahead::body_lookahead);
+		DecisionHeuristic* lookAtom   = new UnitHeuristic(Lookahead::atom_lookahead);
+		DecisionHeuristic* lookHybrid = new UnitHeuristic(Lookahead::hybrid_lookahead);
 		s1.strategies().heuristic.reset(lookBody);
 		s2.strategies().heuristic.reset(lookAtom);
 		s3.strategies().heuristic.reset(lookHybrid);
@@ -91,7 +92,7 @@ public:
 	}
 
 	void testLookaheadBugNoSimplify() {
-		Lookahead* lookAtom = new Lookahead(Lookahead::atom_lookahead);
+		DecisionHeuristic* lookAtom = new UnitHeuristic(Lookahead::atom_lookahead);
 		Solver s;
 		s.strategies().heuristic.reset(lookAtom);
 		Literal a = posLit(s.addVar(Var_t::atom_var));
@@ -101,7 +102,6 @@ public:
 		s.addBinary(a,  b, false);
 		s.endAddConstraints();
 		s.addBinary(a, ~b, false);
-		lookAtom->clearDeps();
 		s.assume(e) && s.propagate();
 		CPPUNIT_ASSERT(lookAtom->select(s));
 		CPPUNIT_ASSERT(s.isTrue(a));	
@@ -109,7 +109,7 @@ public:
 		CPPUNIT_ASSERT(s.decisionLevel() == 1);
 	}
 	void testLookaheadBugDepsNotCleared() {
-		Lookahead* lookAtom = new Lookahead(Lookahead::atom_lookahead);
+		DecisionHeuristic* lookAtom = new UnitHeuristic(Lookahead::atom_lookahead);
 		Solver s;
 		s.strategies().heuristic.reset(lookAtom);
 		Literal a = posLit(s.addVar(Var_t::atom_var));
@@ -129,10 +129,10 @@ public:
 		s.propagate();
 		// Deps not cleared
 		CPPUNIT_ASSERT(lookAtom->select(s));
-		CPPUNIT_ASSERT(s.isFalse(c));
+		CPPUNIT_ASSERT(s.isFalse(c) || s.isFalse(f));
 	}
 	void testLookaheadBugNoDeps() {
-		Lookahead* lookAtom = new Lookahead(Lookahead::atom_lookahead);
+		DecisionHeuristic* lookAtom = new UnitHeuristic(Lookahead::atom_lookahead);
 		Solver s;
 		s.strategies().heuristic.reset(lookAtom);
 		Literal a = posLit(s.addVar(Var_t::atom_var));

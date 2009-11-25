@@ -47,6 +47,7 @@ void ModelEnumerator::doInit(Solver& s) {
 				s.setFrozen(v, true);
 				if (it->second.name[0] != '_' && s.value(v) == value_free) {
 					project_->push_back(v);
+					s.setProject(v, true);
 				}
 			}
 		}
@@ -94,18 +95,6 @@ void BacktrackEnumerator::clear() {
 	}
 }
 
-void BacktrackEnumerator::doInit(Solver& s) {
-	ModelEnumerator::doInit(s);
-	if (projectionEnabled()) {
-		if ((projectOpts_ & MINIMIZE_BACKJUMPING) != 0) {
-			isProjectVar_.assign(s.numVars()+1, 0);
-			for (uint32 i = 0; i != numProjectionVars(); ++i) {
-				isProjectVar_[projectVar(i)] = 1;
-			}	
-		}
-	}
-}
-
 uint32 BacktrackEnumerator::getProjectLevel(Solver& s) {
 	uint32 maxL = 0;
 	for (uint32 i = 0; i != numProjectionVars() && maxL != s.decisionLevel(); ++i) {
@@ -132,7 +121,7 @@ uint32 BacktrackEnumerator::getHighestBacktrackLevel(const Solver& s, uint32 bl)
 	}
 	uint32 res = s.backtrackLevel();
 	for (uint32 r = res+1; r <= bl; ++r) {
-		if (isProjectVar_[s.decision(r).var()] == 0) {
+		if (!s.project(s.decision(r).var())) {
 			return res;
 		}
 		++res;

@@ -59,7 +59,7 @@ public:
 	} options;
 
 	bool preprocess();
-	void extendModel( VarInfo& m );
+	void extendModel( Assignment& m );
 	void clearModel() { unconstr_.clear(); }
 	bool hasSymModel() const { return !unconstr_.empty(); }
 	void setEnumerate(bool b){ options.elimPure = !b; }
