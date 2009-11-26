@@ -13,6 +13,7 @@ namespace Clasp { namespace Test {
 	CPPUNIT_TEST(testTightProgram);
 	CPPUNIT_TEST(testInitOrder);
 	CPPUNIT_TEST(testProgramWithLoops);
+	CPPUNIT_TEST(testCloneProgramWithLoops);
 	
 	CPPUNIT_TEST(testAllUncoloredNoUnfounded);
 	
@@ -122,6 +123,33 @@ public:
 		CPPUNIT_ASSERT(bd->succs[1] == 0);
 	}
 	
+	void testCloneProgramWithLoops() {
+		builder.startProgram(index, ufc.release())
+		.setAtomName(1, "a").setAtomName(2, "b").setAtomName(3, "c")
+		.setAtomName(4, "d").setAtomName(5, "g").setAtomName(6, "x").setAtomName(7, "y")
+		.startRule().addHead(1).addToBody(6, false).endRule() // a :- not x.
+		.startRule().addHead(2).addToBody(1, true).endRule()  // b :- a.
+		.startRule().addHead(1).addToBody(2, true).addToBody(4, true).endRule() // a :- b, d.
+		.startRule().addHead(2).addToBody(5, false).endRule() // b :- not g.
+		.startRule().addHead(3).addToBody(6, true).endRule()  // c :- x.
+		.startRule().addHead(4).addToBody(3, true).endRule()  // d :- c.
+		.startRule().addHead(3).addToBody(4, true).endRule()  // c :- d.
+		.startRule().addHead(4).addToBody(5, false).endRule() // d :- not g.
+		.startRule().addHead(7).addToBody(5, false).endRule() // y :- not g.
+		.startRule().addHead(6).addToBody(7, true).endRule()  // x :- y.
+		.startRule().addHead(5).addToBody(7, false).endRule() // g :- not y.
+		.endProgram(solver, true);
+
+		uint32 sccs = builder.stats.sccs;
+		uint32 ufs  = builder.stats.ufsNodes;
+
+		Solver clone;
+		builder.endProgram(clone, true);
+
+		CPPUNIT_ASSERT_EQUAL(sccs, builder.stats.sccs);
+		CPPUNIT_ASSERT_EQUAL(ufs, builder.stats.ufsNodes);
+	}
+
 	void testAllUncoloredNoUnfounded() {
 		setupSimpleProgram();
 		uint32 x = solver.numAssignedVars();

@@ -568,7 +568,8 @@ public:
 	void      setScc(uint32 scc) { assert(scc <= noScc); scc_ = scc; }
 	void      setDfsIdx(uint32 r){ assert(!eq() && !ignore()); assert(r < (1U << 30)); root_ = r; }
 	void      resetSccFlags()    {
-		if (!ignore()) {
+		if (!eq()) {
+			ignore_ = ignore_ && scc_ == noScc;
 			scc_    = noScc;
 			root_   = 0;
 			seen_   = 0;
