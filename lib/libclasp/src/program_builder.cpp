@@ -727,7 +727,11 @@ void PreproStats::accu(const PreproStats& o) {
 /////////////////////////////////////////////////////////////////////////////////////////
 ProgramBuilder::ProgramBuilder() : minimize_(0), incData_(0), ufs_(0), erMode_(mode_native) { }
 ProgramBuilder::~ProgramBuilder() { disposeProgram(true); }
-ProgramBuilder::Incremental::Incremental() : startAtom_(1), startVar_(1) {}
+ProgramBuilder::Incremental::Incremental() : startAtom_(1), startVar_(1), startAux_(1) {}
+bool ProgramBuilder::Incremental::frozen(Var atom) const {
+	return std::find(freeze_.begin(), freeze_.end(), atom) != freeze_.end();
+}
+
 void ProgramBuilder::disposeProgram(bool force) {
 	std::for_each( bodies_.begin(), bodies_.end(), DestroyObject() );
 	BodyList().swap(bodies_);
@@ -808,7 +812,6 @@ ProgramBuilder& ProgramBuilder::startProgram(AtomIndex& index, DefaultUnfoundedC
 ProgramBuilder& ProgramBuilder::updateProgram() {
 	if (!incData_)  { incData_ = new Incremental(); }
 	else            {
-		incData_->startAtom_  = (uint32)atoms_.size();
 		incData_->startVar_   = (uint32)vars_.size();
 		incData_->unfreeze_.clear();
 		for (VarVec::iterator it = incData_->freeze_.begin(), end = incData_->freeze_.end(); it != end; ++it) {
@@ -818,11 +821,26 @@ ProgramBuilder& ProgramBuilder::updateProgram() {
 	// delete bodies...
 	disposeProgram(false);
 	// clean up atoms
-	for (VarVec::size_type i = 0; i != atoms_.size(); ++i) {
+	assert(incData_->startAux_ <= atoms_.size());
+	for (VarVec::size_type i = 0; i != incData_->startAux_; ++i) {
+		if (atoms_[i]->eq() && atoms_[i]->eqNode() >= incData_->startAux_) {
+			// atom i is equivalent to some aux atom 
+			std::swap(atoms_[i], atoms_[atoms_[i]->eqNode()]);
+		}
 		VarVec().swap(atoms_[i]->posDep);
 		VarVec().swap(atoms_[i]->negDep);
 		VarVec().swap(atoms_[i]->preds);
 	}
+	// delete any introduced aux atoms
+	// this is safe because aux atoms are never part of the input program
+	// it is necessary in order to free their ids, i.e. the id of an aux atom
+	// from step I might be needed for a program atom in step I+1
+	for (VarVec::size_type i = incData_->startAux_; i != atoms_.size(); ++i) {
+		delete atoms_[i];
+	}
+	atoms_.erase(atoms_.begin()+incData_->startAux_, atoms_.end());
+	incData_->startAtom_  = (uint32)atoms_.size();
+	incData_->startAux_   = (uint32)atoms_.size();
 	frozen_   = false;
 	atomIndex_->startInit();
 	return *this;
@@ -898,6 +916,7 @@ void ProgramBuilder::addRuleImpl(const PrgRule& r, const PrgRule::RData& rd) {
 		for (VarVec::const_iterator it = r.heads.begin(), end = r.heads.end(); it != end; ++it) {
 			if (b.first->value() != value_false) {
 				PrgAtomNode* a = resize(*it);
+				assert(!a->hasVar() || (incData_ && incData_->frozen(*it)) && "Cannot extend definition of atom!");
 				if (r.body.empty()) a->setIgnore(true);
 				// Note: b->heads may now contain duplicates. They are removed in PrgBodyNode::buildHeadSet.
 				b.first->heads.push_back((*it));
@@ -978,6 +997,11 @@ bool ProgramBuilder::transformNoAux(const PrgRule& r, const PrgRule::RData&) con
 
 void ProgramBuilder::transformExtended() {
 	uint32 a   = numAtoms();
+	if (incData_) {
+		// remember starting position of aux atoms so
+		// that we can remove them on next incremental step
+		incData_->startAux_ = (uint32)atoms_.size();
+	}
 	PrgRuleTransform tm;
 	for (RuleList::size_type i = 0; i != extended_.size(); ++i) {
 		incTr(extended_[i]->type(), tm.transform(*this, *extended_[i]));

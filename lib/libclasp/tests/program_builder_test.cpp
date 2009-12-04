@@ -98,6 +98,7 @@ class ProgramBuilderTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testIncrementalCompute);
 	CPPUNIT_TEST(testComputeTrueBug);
 	CPPUNIT_TEST(testIncrementalStats);
+	CPPUNIT_TEST(testIncrementalTransform);
 
 	CPPUNIT_TEST(testBackprop);
 
@@ -1254,6 +1255,36 @@ public:
 		CPPUNIT_ASSERT_EQUAL(uint32(10), incStats.rules[0]);
 		CPPUNIT_ASSERT_EQUAL(uint32(2), incStats.sccs);
 	}
+
+	void testIncrementalTransform() {
+		builder.setExtendedRuleMode(ProgramBuilder::mode_transform);
+		builder.startProgram(index, ufs, 0);
+		// I1:
+		// {a}.
+		// --> 
+		// a :- not a'
+		// a':- not a.
+		builder.updateProgram()
+			.setAtomName(1, "a")
+			.startRule(CHOICERULE).addHead(1).endRule()
+		;
+		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
+		CPPUNIT_ASSERT(ufs->nodes() == 0);
+		// I2:
+		// b :- a.
+		// b :- c.
+		// c :- b.
+		// NOTE: b must not have the same id as a'
+		builder.updateProgram()
+			.setAtomName(2, "b").setAtomName(3, "c")
+			.startRule().addHead(2).addToBody(1, true).endRule()
+			.startRule().addHead(2).addToBody(3, true).endRule()
+			.startRule().addHead(3).addToBody(2, true).endRule()
+		;
+		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
+		CPPUNIT_ASSERT(ufs->nodes() != 0);
+	}
+
 	void testBackprop() {
 		builder.startProgram(index, ufs, -1)
 			.setAtomName(1, "a").setAtomName(2, "b").setAtomName(3, "c").setAtomName(4, "d")

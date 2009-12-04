@@ -444,8 +444,10 @@ private:
 	} *minimize_;               // list of minimize-rules
 	struct Incremental  {
 		Incremental();
+		bool frozen(Var atom) const;
 		uint32  startAtom_;       // first atom of current iteration
 		uint32  startVar_;        // first var of the current iteration
+		uint32  startAux_;        // first aux atom of current iteration
 		VarVec  freeze_;          // list of frozen atoms
 		VarVec  unfreeze_;        // list of atom that are unfreezed in this iteration
 	}* incData_;                // additional state to handle incrementally defined programs 
