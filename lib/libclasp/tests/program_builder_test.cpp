@@ -69,6 +69,7 @@ class ProgramBuilderTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testCrEqBug);
 	CPPUNIT_TEST(testEqOverChoiceRule);
 	CPPUNIT_TEST(testEqOverBodiesOfDiffType);
+	CPPUNIT_TEST(testEqOverComp);
 	CPPUNIT_TEST(testNoBodyUnification);
 	CPPUNIT_TEST(testNoEqAtomReplacement);
 	CPPUNIT_TEST(testAllBodiesSameLit);
@@ -83,6 +84,7 @@ class ProgramBuilderTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testBothLitsInWeightRule);
 	CPPUNIT_TEST(testWeightlessAtomsInWeightRule);
 	CPPUNIT_TEST(testSimplifyToNormal);
+	CPPUNIT_TEST(testSimplifyToCardBug);
 
 	CPPUNIT_TEST(testBPWeight);
 
@@ -101,6 +103,7 @@ class ProgramBuilderTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testIncrementalTransform);
 
 	CPPUNIT_TEST(testBackprop);
+	CPPUNIT_TEST(testMergeValue);
 
 	CPPUNIT_TEST_SUITE_END();	
 public:
@@ -681,6 +684,23 @@ public:
 		CPPUNIT_ASSERT_EQUAL(exp.str(), str.str());
 	}
 
+	void testEqOverComp() {
+		// x1 :- not x2.
+		// x1 :- x2.
+		// x2 :- not x3.
+		// x3 :- not x1.
+		builder.startProgram(index, ufs)
+			.setAtomName(1, "x1").setAtomName(2, "x2").setAtomName(3, "x3")
+			.startRule().addHead(1).addToBody(2, false).endRule()
+			.startRule().addHead(1).addToBody(2, true).endRule()
+			.startRule().addHead(2).addToBody(3, false).endRule()
+			.startRule().addHead(3).addToBody(1, false).endRule()
+		;
+		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, false));
+		CPPUNIT_ASSERT_EQUAL(index[1].lit, index[2].lit);
+		CPPUNIT_ASSERT(solver.numFreeVars() == 0 && solver.isTrue(index[1].lit));
+	}
+
 	void testEqOverBodiesOfDiffType() {
 		builder.startProgram(index, ufs)
 			.setAtomName(1, "z").setAtomName(2, "y").setAtomName(3, "x").setAtomName(4, "t")
@@ -765,7 +785,11 @@ public:
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
 		CPPUNIT_ASSERT_EQUAL(index[2].lit, index[4].lit);
-		CPPUNIT_ASSERT_EQUAL(index[1].lit, index[3].lit);
+		CPPUNIT_ASSERT(index[1].lit != index[3].lit);
+		solver.assume(index[1].lit) && solver.propagate();
+		CPPUNIT_ASSERT(solver.value(index[3].lit.var()) == value_free);
+		solver.assume(~index[3].lit) && solver.propagate();
+		CPPUNIT_ASSERT(solver.numFreeVars() == 0 && solver.isTrue(index[2].lit));
 	}
 	
 	void testCompLit() {
@@ -945,6 +969,21 @@ public:
 		std::string x = str.str();
 		// b :-  a.
 		CPPUNIT_ASSERT(x.find("1 2 1 0 1 ") != std::string::npos);
+	}
+
+	void testSimplifyToCardBug() {
+		// x1.
+		// x2.
+		// t :- 168 [not x1 = 576, not x2=381].
+		// compute { not t }.
+		builder.startProgram(index, ufs)
+			.setAtomName(1, "x1").setAtomName(2, "x2").setAtomName(3, "t")
+			.startRule().addHead(1).addHead(2).endRule()
+			.startRule(WEIGHTRULE).addHead(3).setBound(168).addToBody(1,false,576).addToBody(2,false,381).endRule()
+			.setCompute(3, false)
+		;
+		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, false));
+		CPPUNIT_ASSERT(solver.numFreeVars() == 0);
 	}
 
 	void testBPWeight() {
@@ -1301,6 +1340,37 @@ public:
 		;
 		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true, true));
 		CPPUNIT_ASSERT(solver.numVars() == 0);
+	}
+
+	void testMergeValue() {
+		PrgNode lhs, rhs;
+		ValueRep ok[15] = {
+			value_free, value_free, value_free,
+			value_free, value_true, value_true,
+			value_free, value_false, value_false,
+			value_free, value_weak_true, value_weak_true,
+			value_true, value_weak_true, value_true
+		};
+		ValueRep fail[4] = { value_true, value_false, value_weak_true, value_false };
+		for (uint32 x = 0; x != 2; ++x) {
+			for (uint32 i = 0; i != 15; i += 3) {
+				lhs.clearLiteral(true);
+				rhs.clearLiteral(true);
+				CPPUNIT_ASSERT(lhs.setValue(ok[i+x]));
+				CPPUNIT_ASSERT(rhs.setValue(ok[i+(!x)]));
+				CPPUNIT_ASSERT(lhs.mergeValue(&rhs));
+				CPPUNIT_ASSERT(lhs.value() == ok[i+2] && rhs.value() == ok[i+2]);
+			}
+		}
+		for (uint32 x = 0; x != 2; ++x) {
+			for (uint32 i = 0; i != 4; i+=2) {
+				lhs.clearLiteral(true);
+				rhs.clearLiteral(true);
+				CPPUNIT_ASSERT(lhs.setValue(fail[i+x]));
+				CPPUNIT_ASSERT(rhs.setValue(fail[i+(!x)]));
+				CPPUNIT_ASSERT(!lhs.mergeValue(&rhs));
+			}
+		}
 	}
 private:
 	Solver solver;

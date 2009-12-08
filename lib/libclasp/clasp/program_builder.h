@@ -380,9 +380,10 @@ private:
 	friend class Preprocessor;
 	class CycleChecker;
 	typedef PodVector<PrgRule*>::type RuleList;
-	typedef std::multimap<uint32, uint32> BodyIndex; // hash -> bodies[offset]
-	typedef std::pair<BodyIndex::iterator, BodyIndex::iterator> BodyRange;
-	typedef std::map<uint32, uint32> EqNodes;
+	typedef std::multimap<uint32, uint32>   BodyIndex; // hash -> bodies[offset]
+	typedef BodyIndex::iterator             IndexIter;
+	typedef std::pair<IndexIter, IndexIter> BodyRange;
+	typedef std::map<uint32, uint32>        EqNodes;
 	typedef std::pair<PrgBodyNode*, uint32> Body;
 	// ------------------------------------------------------------------------
 	// Program definition
@@ -546,6 +547,17 @@ public:
 			return true;
 		}
 		return v == value_weak_true && value_ == value_true; 
+	}
+	bool    mergeValue(PrgNode* rhs){
+		if (value_ != rhs->value()) {
+			if (value() == value_false || value() == value_true) {
+				return rhs->setValue(value());
+			}
+			return rhs->value() != value_free 
+				? setValue(rhs->value())
+				: rhs->setValue(value());
+		}
+		return true;
 	}
 	void    setIgnore(bool b)       { ignore_ = (uint32)b; }
 	void    setEq(uint32 oId)       {

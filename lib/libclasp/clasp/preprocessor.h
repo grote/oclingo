@@ -86,6 +86,8 @@ public:
 	void    setSimplifyHeads(uint32 bodyId)   { 
 		if (bodyId < nodes_.size()) nodes_[bodyId].sHead = 1; 
 	}
+
+	uint32 replaceComp(uint32 id) const;
 private:
 	Preprocessor(const Preprocessor&);
 	Preprocessor& operator=(const Preprocessor&);
@@ -136,10 +138,13 @@ private:
 		if (p.index() >= litToNode_.size()) litToNode_.resize(p.index()+1, (varMax<<1));
 		litToNode_[p.index()] |= 1;
 	}
+	bool    allowMerge(PrgBodyNode* body, PrgBodyNode* root, uint32 rootId);
 	bool    mergeBodies(PrgBodyNode* body, Var bodyRoot);
-	bool    reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const;
+	bool    reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits);
 	bool    newFactBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
 	void    newFalseBody(PrgBodyNode* b, uint32 oldHash);
+	void    removeFromIndex(PrgBodyNode* b, uint32 oldHash);
+	uint32  findEqBody(PrgBodyNode* b, uint32 hash);
 	// ------------------------------------------------------------------------
 	ProgramBuilder*           prg_;       // program to preprocess
 	VarVec                    follow_;    // bodies yet to classify

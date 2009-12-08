@@ -85,6 +85,13 @@ public:
 		CPPUNIT_ASSERT(rule.type() == CONSTRAINTRULE);
 		CPPUNIT_ASSERT(res.value == value_free);
 
+		// a :- 4 {not b, b, b, c, d}.
+		rule.clear(), rs.clear();
+		rule.setType(CONSTRAINTRULE).setBound(4).addHead(1).addToBody(2, false).addToBody(2, true).addToBody(2, true).addToBody(3, true).addToBody(4, true);
+		res = rule.simplify(rs);
+		CPPUNIT_ASSERT(rule.type() == WEIGHTRULE);
+		CPPUNIT_ASSERT(res.value == value_free);
+
 		rule.clear(), rs.clear();
 		// a :- 4 [b=2, c=1, not b=1, not c=2].
 		rule.setType(WEIGHTRULE).setBound(4).addHead(1).addToBody(2, true, 2).addToBody(3, true).addToBody(2, false).addToBody(3, false, 2);

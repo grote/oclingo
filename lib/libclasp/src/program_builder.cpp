@@ -145,25 +145,30 @@ PrgBodyNode::PrgBodyNode(uint32 id, const PrgRule& rule, const PrgRule::RData& r
 	uint32 p = 0, n = 0;
 	// store B+ followed by B-
 	for (LitVec::size_type i = 0, end = rule.body.size(); i != end; ++i) {
-		WeightLiteral g = rule.body[i];
-		PrgAtomNode* a  = prg.resize(g.first.var());
-		prg.ruleState_.popFromRule(g.first.var()); // clear flags that were set in PrgRule during rule simplification
-		if (!g.first.sign()) {  // B+ atom
-			goals_[p] =   g.first;
-			spw       +=  g.second;
+		Literal      x = rule.body[i].first;	
+		PrgAtomNode* a = prg.resize(x.var());
+		prg.ruleState_.popFromRule(x.var()); // clear flags that were set in PrgRule during rule simplification
+		if (!x.sign()) {  // B+ atom
+			goals_[p] = x;
 			a->posDep.push_back(id);
-			if (w) { assert(g.second>0);extra_.ext->weights[p] = g.second; }
+			if (w) { 
+				assert(rule.body[i].second>0);
+				spw += (extra_.ext->weights[p] = rule.body[i].second);
+			}
 			++p;
 		}
 		else {                  // B- atom
-			goals_[posSize_+n]  = g.first;
-			snw += g.second;
+			goals_[posSize_+n]  = x;
 			if (prg.eqIters_ != 0) { a->negDep.push_back(id); }
-			if (w) { assert(g.second>0);extra_.ext->weights[posSize_+n] = g.second; }
+			if (w) { 
+				assert(rule.body[i].second>0);
+				snw += (extra_.ext->weights[posSize_+n] = rule.body[i].second);
+			}
 			++n;
 		}
 	}
 	if (extended()) { 
+		if (!w)       { spw = posSize(); snw = negSize(); }
 		extra_.ext->sumWeights  = spw + snw; 
 		extra_.ext->unsupp      = static_cast<weight_t>(this->bound() - snw);
 	}
@@ -347,17 +352,31 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 	hashes.first = hashes.second = 0;
 	bool ok = sumWeights() >= bound();
 	uint32 j = 0;
-	Var eq;
+	Var eq, comp;
 	bool rem;
+	bool dirty = false;
 	for (uint32 i = 0, end = size_; i != end && ok; ++i) {
 		rem = true;
-		Var a = goals_[i].var();
+		Var      a = goals_[i].var();
+		ValueRep v = prg.atoms_[a]->value();
 		hashes.first += hashId(goals_[i].sign()?-a:a);
 		if ((eq = prg.getEqAtom(a)) != a) {
-			a         = eq;
-			goals_[i] = Literal(a, goals_[i].sign());
+			v           = prg.atoms_[eq]->value();
+			if (goals_[i].sign() || (comp = pre.replaceComp(a)) == varMax) {
+				a         = eq;
+				goals_[i] = Literal(a, goals_[i].sign());	
+			}
+			else {
+				a         = comp;
+				goals_[i] = Literal(comp, true);
+				dirty     = true;
+				prg.atoms_[comp]->negDep.push_back(bodyId);
+				VarVec& eqPos = prg.atoms_[eq]->posDep;
+				VarVec::iterator it = std::find(eqPos.begin(), eqPos.end(), bodyId);
+				if (it != eqPos.end()) eqPos.erase(it);
+			}
 		}
-		Literal p; ValueRep v = prg.atoms_[a]->value();
+		Literal p; 
 		bool mark = false;
 		if (prg.atoms_[a]->hasVar() || strong) {
 			p = goals_[i].sign() ? ~prg.atoms_[a]->literal() : prg.atoms_[a]->literal();
@@ -419,7 +438,7 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 			}
 		}
 	}
-	size_ = j;
+	size_       = j;
 	uint32 posS = 0;
 	for (uint32 i = 0, end = (uint32)size_; i != end; ++i) {
 		prg.vars_.unmark( prg.atoms_[goals_[i].var()]->var() );
@@ -427,6 +446,15 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 		posS          += goals_[i].sign() == false;
 	}
 	posSize_ = posS;
+	if (dirty) {
+		uint32 j;
+		for (uint32 i = 0; i != posSize_; ++i) {
+			if (goals_[i].sign()) {
+				for (j = i+1; goals_[j].sign(); ++j) { ; }
+				std::swap(goals_[i], goals_[j]);
+			}
+		}
+	}
 	assert(sumWeights() >= bound() || !ok);
 	if (!ok) {          // body is false...
 		setIgnore(true);  // ...and therefore can be ignored
@@ -1154,10 +1182,11 @@ bool ProgramBuilder::mergeEqAtoms(Var a, Var root) {
 	if (at->ignore()) {
 		r->setIgnore(true);
 	}
-	if (at->value() != r->value() && !r->setValue(at->value())) {
+	if (!at->mergeValue(r)) {
 		setConflict();
 		return false;
 	}
+	assert(at->value() == r->value());
 	at->setEq(root);
 	incEqs(Var_t::atom_var);
 	return true;

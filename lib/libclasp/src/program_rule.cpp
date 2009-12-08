@@ -141,12 +141,12 @@ bool PrgRule::simplifyWeight(RData& rd, RuleState& rs) {
 	if (bodyHasBound() && bound_ <= 0) {
 		body.clear();
 	}
-	weight_t realSum = 0;
 	weight_t minW    = std::numeric_limits<weight_t>::max();
 	weight_t maxW    = 0;
 	weight_t oldW    = 0;
 	weight_t w       = 0;
 	weight_t BOUND   = bodyHasBound() ? bound() : std::numeric_limits<weight_t>::max();
+	weight_t realSum = 0;
 	WeightLitVec::iterator j = body.begin();
 	for (WeightLitVec::iterator it = body.begin(), bEnd = body.end(); it != bEnd; ++it) {
 		if (it->second == 0) continue;            // skip irrelevant lits
@@ -169,21 +169,28 @@ bool PrgRule::simplifyWeight(RData& rd, RuleState& rs) {
 			oldW         = lit->second;
 			assert((INT_MAX-oldW) >= it->second && "Integer overflow!");
 			lit->second  = std::min(it->second + lit->second, BOUND);
-			w            = lit->second-oldW;
+			it->second   = lit->second;     // store merged weight
+			w            = lit->second-oldW;// and "new" part
 			if (lit->second > maxW) { maxW = lit->second; }
 			if (oldW == minW && bodyHasBound()) {
 				// we changed the weight of a literal that previously had the minimal weight
 				minW    = lit->second;
-				for (WeightLitVec::iterator t = body.begin(); t != j; ++t) {
+				for (WeightLitVec::iterator t = body.begin(); t != j && minW > 1; ++t) {
 					if (t->second < minW) { minW = t->second; }
 				}
 			}
 		}
 		rd.sumWeight += w;
-		realSum      += w;
-		if (rs.inBody(~it->first) && bodyHasBound()) {
-			// cannot have both lits at the same time
-			realSum -= std::min(w, weight(it->first.var(), it->first.sign()));
+		if (!rs.inBody(~it->first)) {
+			realSum    += w;
+		}
+		else {
+			// body contains x and ~x: we can achieve at most max(weight(x), weight(~x))
+			// it->second is the weight of the current (potentially merged) literal,
+			// the weight of ~it was already added. Increase realSum only if
+			// it->second > ~it.second
+			weight_t diff = it->second - weight(it->first.var(), it->first.sign());
+			if (diff > 0) realSum += diff;
 		}
 	}
 	body.erase(j, body.end());
