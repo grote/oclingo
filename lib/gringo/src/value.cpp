@@ -42,13 +42,11 @@ bool Value::equal(const Value &b) const
 int Value::compare(const GlobalStorage *g, const Value &b) const
 {
 	assert(type_ != UNDEF && b.type_ != UNDEF);
-	if(type_ != b.type_)
-		throw GrinGoException("error: comparing different types");
+	if(type_ != b.type_) return int(type_) - b.type_;
 	
 	switch(type_)
 	{
 		case FUNCSYMBOL:
-			throw GrinGoException("error: comparing function symbols");
 		case INT:
 			return uid_ - b.uid_;
 		case STRING:
