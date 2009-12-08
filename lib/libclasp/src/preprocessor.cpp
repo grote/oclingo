@@ -459,7 +459,6 @@ bool Preprocessor::reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) {
 		// a is equivalent to eq
 		Literal x       = prg_->bodies_[a->preds[0]]->literal();
 		PrgAtomNode* eq = prg_->atoms_[getRootAtom(x)];
-		bool comp       = getRootAtom(~x) != varMax;
 		bool stableTruth= eq->value() == value_true || eq->value() == value_false;
 		a->setLiteral(x);
 		if (!prg_->mergeEqAtoms(atomId, getRootAtom(x))) {
