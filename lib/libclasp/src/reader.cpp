@@ -327,9 +327,10 @@ bool parseDimacsImpl(std::istream& prg, Solver& s, bool assertPure) {
 				for (int v = 1; v <= numVars; ++v) {
 					s.addVar(Var_t::atom_var);
 				}
+				// prepare solver/preprocessor for adding constraints
+				s.startAddConstraints();
 				// HACK: Don't waste time preprocessing a gigantic problem
 				if (numClauses > 4000000) { p = s.strategies().satPrePro.release(); }
-				s.startAddConstraints();
 			}
 			else {
 				throw ReadError(in.line(), "'cnf'-format expected!");
