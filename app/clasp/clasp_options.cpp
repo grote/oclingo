@@ -388,8 +388,8 @@ void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	hidden.addOptions()
 		("loops-in-heu", storeTo(config->heuristic.loops), "Consider loop nogoods in heuristic")
 		("berk-max", storeTo(config->heuristic.extra.berkMax), "Consider at most <n> nogoods in Berkmin")
-		("berk-moms", storeTo(config->heuristic.berkMoms), "Enable/Disable MOMs in Berkmin")
-		("berk-huang",storeTo(config->heuristic.berkHuang), "Enable/Disable Huang-scoring in Berkmin")
+		("berk-moms", bool_switch(&config->heuristic.berkMoms), "Enable/Disable MOMs in Berkmin")
+		("berk-huang",bool_switch(&config->heuristic.berkHuang), "Enable/Disable Huang-scoring in Berkmin")
 		("vmtf-mtf",storeTo(config->heuristic.extra.vmtfMtf), "In Vmtf move up to <n> conflict-literals to the front")
 		("nant",bool_switch(&config->heuristic.nant), "In Unit count only atoms in NAnt(P)")
 	;

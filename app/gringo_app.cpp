@@ -473,8 +473,9 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 		if (config_.onlyPre) {
 			if (f.api()) f.releaseApi(); // keep api so that we can later print the program
 			else         STATUS(0, cout << "Vars: " << solver_.numVars() << " Constraints: " <<  solver_.numConstraints()<<endl);
-			solver_.strategies().satPrePro.reset(0);
-			solver_.reset();
+			AtomIndex* x = solver_.strategies().symTab.release();
+			solver_.reset(); // release constraints and strategies - no longer needed
+			solver_.strategies().symTab.reset(x);
 		}
 		else { out_->initSolve(solver_, f.api()); }
 	}
