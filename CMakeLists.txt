@@ -39,7 +39,10 @@ IF(MSVC)
 	ADD_DEFINITIONS(/D \"HAS_TR1_UNORDERED=1\" /D \"NS_TR1=std::tr1\")
 ENDIF(MSVC)
 
-
+# workaround (a possible bug in gcc 4.2) on mac os snowleopard
+if(CMAKE_SYSTEM MATCHES "Darwin")
+	set(CMAKE_CXX_FLAGS "-arch i386" CACHE STRING "Flags used by the compiler during all builds." FORCE)
+endif(CMAKE_SYSTEM MATCHES "Darwin")
 
 if(NOT CMAKE_VERBOSE_MAKEFILE)
 	set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "If this value is on, makefiles will be generated without the .SILENT directive, and all commands will be echoed to the console during the make.  This is useful for debugging only. With Visual Studio IDE projects all commands are done without /nologo" FORCE)
