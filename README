@@ -27,6 +27,6 @@ Known issues with Mac OS X 10.6
 -------------------------------
 clasp currently does not work when compiled with the pre-installed 
 gcc (version 4.2.1). This affects clingo and iclingo builds because they
-integerate with clasp. To workaround this problem, a 32-bit version will
-be build on all darwin platforms.
+integerate with clasp. To workaround this problem, the project will be 
+compiled using the additional gcc option: -arch i386
 

@@ -41,7 +41,7 @@ ENDIF(MSVC)
 
 # workaround (a possible bug in gcc 4.2) on mac os snowleopard
 if(CMAKE_SYSTEM MATCHES "Darwin")
-	set(CMAKE_CXX_FLAGS "-m32" CACHE STRING "Flags used by the compiler during all builds." FORCE)
+	set(CMAKE_CXX_FLAGS "-arch i386" CACHE STRING "Flags used by the compiler during all builds." FORCE)
 endif(CMAKE_SYSTEM MATCHES "Darwin")
 
 if(NOT CMAKE_VERBOSE_MAKEFILE)
