@@ -153,10 +153,10 @@ private:
 		uint32 k = idx_+1;
 		while (k) {
 			uint32 nk = static_cast<uint32>(log((double)k) / log(2.0)) + 1;
-			if (k == ((1u << nk) - 1)) {
-				return base_ * (1u << (nk-1));
+			if (k == ((uint32(1) << nk) - 1)) {
+				return base_ * (uint32(1) << (nk-1));
 			}
-			k -= 1u << (nk-1);
+			k -= uint32(1) << (nk-1);
 			++k;
 		}
 		return base_;

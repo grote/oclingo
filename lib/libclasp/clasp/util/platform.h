@@ -37,6 +37,9 @@ typedef UINT_PTR	uintp;
 #define PRIu64 "llu"
 #define PRId64 "lld"
 #elif defined(__GNUC__) && __GNUC__ >= 3
+#if !defined(__STDC_FORMAT_MACROS)
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 typedef uint8_t		uint8;
 typedef uint16_t	uint16;
@@ -45,17 +48,15 @@ typedef uint32_t	uint32;
 typedef uint64_t	uint64;
 typedef int64_t		int64;
 typedef uintptr_t uintp;
-#if !defined(PRIu64)
-#if __WORDSIZE == 64
-#define PRIu64 "lu"
-#define PRId64 "ld"
-#else
-#define PRIu64 "llu"
-#define PRId64 "lld"
-#endif
-#endif
 #else 
 #error unknown compiler or platform. Please add typedefs manually.
 #endif
+
+
+template <class T> inline T set_bit_0(T x)              { return x |  T(1); }
+template <class T> inline T clear_bit_0(T x)            { return x & ~T(1); }
+template <class T> inline bool has_bit_0(T x)           { return (x & T(1)) != 0; }
+template <class T> inline void assign_set_bit_0(T& x)   { x |=  T(1); }
+template <class T> inline void assign_clear_bit_0(T& x) { x &= ~T(1); }
 
 #endif

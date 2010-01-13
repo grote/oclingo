@@ -641,7 +641,7 @@ private:
 void ProgramBuilder::CycleChecker::visitDfs(PrgNode* node, bool body) {
 	if (!node->hasVar() || node->ignore() || node->visited()) return;
 	callStack_.push_back( Call(node, body, 0) );
-	const uint32 maxVertex  = (1U<<30)-1;
+	const uint32 maxVertex  = (uint32(1)<<30)-1;
 START:
 	while (!callStack_.empty()) {
 		Call c = callStack_.back();

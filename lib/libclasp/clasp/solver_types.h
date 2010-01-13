@@ -312,7 +312,7 @@ public:
 	//@{
 	bool seen(Var v, uint8 m) const { return (assign_[v] & (m<<2)) != 0; }
 	void setSeen(Var v, uint8 m)    { assign_[v] |= (m<<2); }
-	void clearSeen(Var v)           { assign_[v] &= ~(12u); }
+	void clearSeen(Var v)           { assign_[v] &= ~uint32(12); }
 	void clearValue(Var v)          { assign_[v] = 0; }
 	void setValue(Var v, ValueRep val) {
 		assert(value(v) == value_free && (val == value_true || val == value_false));

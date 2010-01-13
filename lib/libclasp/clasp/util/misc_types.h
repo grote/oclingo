@@ -261,7 +261,7 @@ inline compose_2_2<OP1, OP2,OP3> compose22(const OP1& op1, const OP2& op2, const
 template <class T>
 class SingleOwnerPtr {
 public:
-	explicit SingleOwnerPtr(T* ptr) : ptr_( ((uintp)ptr) | 1 ) {}
+	explicit SingleOwnerPtr(T* ptr) : ptr_( set_bit_0(uintp(ptr)) ) {}
 	~SingleOwnerPtr() {
 		if (is_owner()) { 
 			delete release();
@@ -274,12 +274,12 @@ public:
 	}
 	T& operator*()  const { return *get(); }
 	T* operator->() const { return  get(); }
-	T*    release()   { ptr_ &= ~1u; return get();  }
-	T*    get() const { return (T*)(ptr_&~1u); }
+	T*    release()   { assign_clear_bit_0(ptr_); return get();  }
+	T*    get() const { return (T*)clear_bit_0(ptr_); }
 	void swap(SingleOwnerPtr& o) {
 		std::swap(ptr_, o.ptr_);
 	}
-	bool is_owner() const { return (ptr_&1) != 0; }
+	bool is_owner() const { return has_bit_0(ptr_); }
 private:
 	SingleOwnerPtr(const SingleOwnerPtr&);
 	SingleOwnerPtr& operator=(const SingleOwnerPtr&);

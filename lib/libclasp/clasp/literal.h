@@ -43,7 +43,7 @@ namespace Clasp {
 typedef uint32 Var;
 
 //! varMax is not a valid variale, i.e. currently Clasp supports at most 2^30 variables.
-const Var varMax = (1U << 30);
+const Var varMax = (Var(1) << 30);
 
 //! The variable 0 has a special meaning in the solver.
 const Var sentVar = 0;
@@ -87,7 +87,7 @@ public:
 	 * \pre idx < 2^31
 	 */
 	static Literal fromIndex(uint32 idx) {
-		assert( idx < (1U<<31) );
+		assert( idx < (uint32(1)<<31) );
 		return Literal(idx<<1);
 	}
 
@@ -109,10 +109,10 @@ public:
 	void swap(Literal& other) { std::swap(rep_, other.rep_); }
 	
 	//! sets the watched-flag of this literal
-	void watch() { rep_ |= 1; }
+	void watch() { assign_set_bit_0(rep_); }
 	
 	//! clears the watched-flag of this literal
-	void clearWatch() { rep_ &= ~static_cast<uint32>(1u); }
+	void clearWatch() { assign_clear_bit_0(rep_); }
 	
 	//! returns true if the watched-flag of this literal is set
 	bool watched() const { return (rep_ & 1) != 0; }
