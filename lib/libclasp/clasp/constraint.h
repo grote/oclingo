@@ -424,11 +424,17 @@ public:
 
 	//! checks whether the imlementation-assumptions hold on this platform
 	/*! 
-	 * throws std::runtime_error on error
+	 * throws PlatformError on error
 	 */
 	static bool checkPlatformAssumptions(); 
 private:
 	uint64 data_;
 };
+
+class PlatformError : public ClaspError {
+public:
+	explicit PlatformError(const char* msg);
+};
+
 }
 #endif

@@ -77,8 +77,8 @@ int Application::run(int argc, char** argv) {
 		return S_MEMORY;
 	}
 #if defined(WITH_CLASP)
-	catch (const Clasp::ReadError& e) {
-		cerr << "\nClasp Read ERROR(" << e.line_ << "): " << e.what() << endl;
+	catch (const Clasp::ClaspError& e) {
+		cerr << "\nclasp " << e.what() << endl;
 		return S_ERROR;
 	}
 #endif

@@ -19,8 +19,7 @@
 //
 
 #include <clasp/constraint.h>
-#include <stdexcept>
-
+#include <string>
 namespace Clasp {
 /////////////////////////////////////////////////////////////////////////////////////////
 // (Learnt)Constraint
@@ -52,6 +51,7 @@ Constraint::PropResult PostPropagator::propagate(const Literal&, uint32&, Solver
 /////////////////////////////////////////////////////////////////////////////////////////
 // Antecedent
 /////////////////////////////////////////////////////////////////////////////////////////
+PlatformError::PlatformError(const char* msg) : ClaspError(std::string("Platform Error: ")+msg) {}
 bool Antecedent::checkPlatformAssumptions() {
 	int32* i = new int32(22);
 	uint64 p = (uint64)(uintp)i;
@@ -59,19 +59,28 @@ bool Antecedent::checkPlatformAssumptions() {
 	bool alignmentOk = (p & 3) == 0;
 	delete i;
 	if ( !alignmentOk ) {
-		throw std::runtime_error("Unsupported Pointer-Alignment!");
+		throw PlatformError("Unsupported Pointer-Alignment!");
 	}
 	if ( !convOk ) {
-		throw std::runtime_error("Unsupported Platform: Can't convert between Pointer and Integer!");
+		throw PlatformError("Can't convert between Pointer and Integer!");
+	}
+	p = ~uintp(1);
+	store_set_bit(p, 0);
+	if (!test_bit(p, 0)) {
+		throw PlatformError("Can't set LSB in pointer!");
+	}
+	store_clear_bit(p, 0);
+	if (p != (~uintp(1))) {
+		throw PlatformError("Can't restore LSB in pointer!");
 	}
 	Literal max = posLit(varMax-1);
 	Antecedent a(max);
 	if (a.type() != Antecedent::binary_constraint || a.firstLiteral() != max) {
-		throw std::runtime_error("Unsupported Platform: Cast between 64- and 32-bit integer does not work as expected!");
+		throw PlatformError("Cast between 64- and 32-bit integer does not work as expected!");
 	}
 	Antecedent b(max, ~max);
 	if (b.type() != Antecedent::ternary_constraint || b.firstLiteral() != max || b.secondLiteral() != ~max) {
-		throw std::runtime_error("Unsupported Platform: Cast between 64- and 32-bit integer does not work as expected!");
+		throw PlatformError("Cast between 64- and 32-bit integer does not work as expected!");
 	}
 	return true;
 }

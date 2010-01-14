@@ -24,7 +24,19 @@
 #include <clasp/smodels_constraints.h>
 #include <limits.h>
 #include <cassert>
+#include <stdio.h>
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#pragma warning (disable : 4996)
+#endif
 namespace Clasp {
+ReadError::ReadError(unsigned line, const char* msg) : ClaspError(format(line, msg)), line_(line) {}
+std::string ReadError::format(unsigned line, const char* msg) {
+	char buffer[1024];
+	snprintf(buffer, 1023, "Read Error: Line %u, %s", line, msg);
+	buffer[1023] = 0;
+	return buffer;
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 // StreamSource
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -543,7 +555,7 @@ Input::Format detectFormat(std::istream& in) {
 		if (c == 'c' || c == 'p') return Input::DIMACS;
 		if (c == '*')             return Input::OPB;
 	}
-	throw std::runtime_error("Unrecognized input format!\n");
+	throw ReadError(1, "Unrecognized input format!\n");
 }
 
 StreamInput::StreamInput(std::istream& in, Format f)

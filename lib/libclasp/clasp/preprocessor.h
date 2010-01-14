@@ -136,7 +136,7 @@ private:
 	}
 	void    setHasBody(Literal p) {
 		if (p.index() >= litToNode_.size()) litToNode_.resize(p.index()+1, (varMax<<1));
-		assign_set_bit_0(litToNode_[p.index()]);
+		store_set_bit(litToNode_[p.index()], 0);
 	}
 	bool    allowMerge(PrgBodyNode* body, PrgBodyNode* root, uint32 rootId);
 	bool    mergeBodies(PrgBodyNode* body, Var bodyRoot);

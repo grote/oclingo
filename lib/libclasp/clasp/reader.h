@@ -103,8 +103,9 @@ bool parseOPB(std::istream& prg, Solver& s, ObjectiveFunction& objective);
 
 
 //! Instances of this class are thrown if a problem occurs during reading the input
-struct ReadError : public std::runtime_error {
-	ReadError(unsigned line, const char* msg) : std::runtime_error(msg), line_(line) {}
+struct ReadError : public ClaspError {
+	ReadError(unsigned line, const char* msg);
+	static std::string format(unsigned line, const char* msg);
 	unsigned line_;
 };
 

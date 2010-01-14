@@ -27,8 +27,6 @@
 #include <clasp/pod_vector.h>
 #include <algorithm>  // std::swap
 #include <limits>
-
-
 /*!
  * \file 
  * Contains the definition of the class Literal.
@@ -104,18 +102,18 @@ public:
 	/*!
 	 * \return true if the literal is negative. Otherwise false.
 	 */
-	bool sign() const { return (rep_ & 2) != 0; }
+	bool sign() const { return test_bit(rep_, 1); }
 
 	void swap(Literal& other) { std::swap(rep_, other.rep_); }
 	
 	//! sets the watched-flag of this literal
-	void watch() { assign_set_bit_0(rep_); }
+	void watch() { store_set_bit(rep_, 0); }
 	
 	//! clears the watched-flag of this literal
-	void clearWatch() { assign_clear_bit_0(rep_); }
+	void clearWatch() { store_clear_bit(rep_, 0); }
 	
 	//! returns true if the watched-flag of this literal is set
-	bool watched() const { return (rep_ & 1) != 0; }
+	bool watched() const { return test_bit(rep_, 0); }
 
 	//! returns the complimentary literal of this literal.
 	/*!
@@ -296,6 +294,12 @@ private:
 	vec_type            atoms_;
 	vec_type::size_type lastSort_;
 	vec_type::size_type lastStart_;
+};
+
+class ClaspError : public std::runtime_error {
+public:
+	explicit ClaspError(const std::string& msg) 
+		: std::runtime_error(msg){}
 };
 
 }

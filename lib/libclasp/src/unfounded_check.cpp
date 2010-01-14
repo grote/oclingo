@@ -155,8 +155,8 @@ private:
 		External(uint32 size, bool weights) : size_(size), weights_(weights) {}
 		Literal  lit(uint32 idx)    const { return Literal::fromRep(data_[idx<<weights_]); }
 		// External literals in WS have their watch flag set.
-		void     watchLiteral(uint32 idx) { assign_set_bit_0(data_[idx<<weights_]); }
-		void     clearWatch(uint32 idx)   { assign_clear_bit_0(data_[idx<<weights_]);  }
+		void     watchLiteral(uint32 idx) { store_set_bit(data_[idx<<weights_], 0); }
+		void     clearWatch(uint32 idx)   { store_clear_bit(data_[idx<<weights_], 0);  }
 		weight_t weight(uint32 idx) const {   // returns the weight of external literal idx
 			return weights_ != 0 
 				? weight_t(data_[(idx<<1)+1])
@@ -207,9 +207,9 @@ private:
 		while (unmarkPred(preds[idx]) != &a) { ++idx; }
 		return idx;
 	}
-	bool         predMarked(UfsAtomNode* p) const { return has_bit_0(uintp(p)); }
-	UfsAtomNode* markPred(UfsAtomNode* p)   const { return (UfsAtomNode*)set_bit_0(uintp(p)); }
-	UfsAtomNode* unmarkPred(UfsAtomNode* p) const { return (UfsAtomNode*)clear_bit_0(uintp(p));} 
+	bool         predMarked(UfsAtomNode* p) const { return test_bit(uintp(p), 0); }
+	UfsAtomNode* markPred(UfsAtomNode* p)   const { return (UfsAtomNode*)set_bit(uintp(p), 0); }
+	UfsAtomNode* unmarkPred(UfsAtomNode* p) const { return (UfsAtomNode*)clear_bit(uintp(p), 0);} 
 	weight_t  lower_; // Stores bound - W(WS); if <= 0, body can source its heads
 	External* ext_;   // external literals and (optionally) weights
 };
@@ -382,7 +382,7 @@ void UfsAggregate::doAddIfReason(DefaultUnfoundedCheck& ufs) {
 void UfsAggregate::onWatch(DefaultUnfoundedCheck& ufs, Literal l, uint32 idx) {
 	assert((idx&1) == 0 || ~l == ext_->lit(idx>>1)); (void)l;
 	// If l is external and false...
-	if (has_bit_0(idx) && ext_->lit(idx=(idx>>1)).watched()) {
+	if (test_bit(idx, 0) && ext_->lit(idx=(idx>>1)).watched()) {
 		// ...and currently part of our watch set: remove it.
 		removeFromWS(idx, ext_->weight(idx), true);
 		// If the set can no longer source our heads: try to extend it.

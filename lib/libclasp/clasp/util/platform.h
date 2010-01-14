@@ -36,6 +36,12 @@ typedef INT64		  int64;
 typedef UINT_PTR	uintp;
 #define PRIu64 "llu"
 #define PRId64 "lld"
+template <unsigned> struct Uint_t;
+template <> struct Uint_t<sizeof(uint8)>  { typedef uint8  type; };
+template <> struct Uint_t<sizeof(uint16)> { typedef uint16 type; };
+template <> struct Uint_t<sizeof(uint32)> { typedef uint32 type; };
+template <> struct Uint_t<sizeof(uint64)> { typedef uint64 type; };
+#define BIT_MASK(x,n) ( static_cast<Uint_t<sizeof((x))>::type>(1) << (n) )
 #elif defined(__GNUC__) && __GNUC__ >= 3
 #if !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS
@@ -48,15 +54,22 @@ typedef uint32_t	uint32;
 typedef uint64_t	uint64;
 typedef int64_t		int64;
 typedef uintptr_t uintp;
+#define BIT_MASK(x,n) ( static_cast<__typeof((x))>(1)<<(n) )
 #else 
 #error unknown compiler or platform. Please add typedefs manually.
 #endif
 
+// set, clear, toggle bit n of x and return new value
+#define set_bit(x,n)   ( (x) |  BIT_MASK((x),(n)) )
+#define clear_bit(x,n) ( (x) & ~BIT_MASK((x),(n)) )
+#define toggle_bit(x,n)( (x) ^  BIT_MASK((x),(n)) )
 
-template <class T> inline T set_bit_0(T x)              { return x |  T(1); }
-template <class T> inline T clear_bit_0(T x)            { return x & ~T(1); }
-template <class T> inline bool has_bit_0(T x)           { return (x & T(1)) != 0; }
-template <class T> inline void assign_set_bit_0(T& x)   { x |=  T(1); }
-template <class T> inline void assign_clear_bit_0(T& x) { x &= ~T(1); }
+// set, clear, toggle bit n of x and store new value in x
+#define store_set_bit(x,n)   ( (x) |=  BIT_MASK((x),(n)) )
+#define store_clear_bit(x,n) ( (x) &= ~BIT_MASK((x),(n)) )
+#define store_toggle_bit(x,n)( (x) ^=  BIT_MASK((x),(n)) )
+
+// return true if bit n in x is set
+#define test_bit(x,n)  ( ((x) & BIT_MASK((x),(n))) != 0 )
 
 #endif

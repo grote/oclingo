@@ -118,9 +118,9 @@ public:
 		/*!
 		 * \note The returned body is only valid source if hasSource() returns true.
 		 */
-		UfsBodyNode*  watch()     const { return (UfsBodyNode*)clear_bit_0(source_); }
+		UfsBodyNode*  watch()     const { return (UfsBodyNode*)clear_bit(source_, 0); }
 		//! returns true if atom has currently a source, i.e. a body that can still define it
-		bool          hasSource() const { return (source_ & 1) != 1; }  
+		bool          hasSource() const { return !test_bit(source_, 0); }  
 		//! sets b as source for this atom
 		void          updateSource(UfsBodyNode* b)  {
 			assert(b);
@@ -128,8 +128,8 @@ public:
 			if (source_ != 1) --watch()->watches;
 			source_ = (uintp)b;
 		}
-		void          markSourceInvalid() { assign_set_bit_0(source_); }
-		void          resurrectSource()   { assign_clear_bit_0(source_); }
+		void          markSourceInvalid() { store_set_bit(source_, 0); }
+		void          resurrectSource()   { store_clear_bit(source_, 0); }
 		UfsBodyNode** preds;  /*!< predecessors: [other scc, same scc] */
 		UfsBodyNode** succs;  /*!< successors from same scc */
 		//! returns true if atom is currently in todo-Queue
