@@ -129,7 +129,7 @@ bool SolveOptionsWrapper::mapRestarts(const std::string& s, SolveOptionsWrapper&
 bool SolveOptionsWrapper::mapReduce(const std::string& s, SolveOptionsWrapper& i) {
 	bool b; std::vector<double> v;
 	if (ProgramOptions::parseValue(s, b, 1)) {
-		if (!b) i.opts->reduce.setStrategy(-1.0, 0.0, 0.0);
+		i.opts->reduce.disable = !b;
 		return true;
 	}
 	if (ProgramOptions::parseValue(s, v, 1) && v.size() <= 3) {

@@ -115,10 +115,11 @@ SolveParams::SolveParams()
 }
 
 double SolveParams::computeReduceBase(const Solver& s) const {
-	double r = reduce.base() != 0 
-		       ? reduce.base()
-					 : std::min(s.numVars(), s.numConstraints()) / 3.0;
-	if (r < s.numLearntConstraints()) {
+	double r = !reduce.disable ? (double)reduce.base() : (double)std::numeric_limits<uint32>::max();
+	if (r == 0) {
+		r = std::min(s.numVars(), s.numConstraints()) / 3.0;
+	}
+	if (r < s.numLearntConstraints()) { 
 		r = std::min(r + s.numLearntConstraints(), (double)std::numeric_limits<uint32>::max());
 	}
 	return r;

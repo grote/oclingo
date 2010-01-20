@@ -184,7 +184,7 @@ private:
 	double max_;
 	uint32 base_;
 public:
-	ReduceParams() : frac_(3.0), inc_(1.1), max_(3.0), base_(5000), reduceOnRestart(false), estimate(false) {}
+	ReduceParams() : frac_(3.0), inc_(1.1), max_(3.0), base_(5000), reduceOnRestart(false), estimate(false), disable(false) {}
 	
 	//! sets the initial problem size used to compute initial db size
 	void setProblemSize(uint32 base) { base_ = base; }
@@ -197,18 +197,18 @@ public:
 	
 	bool reduceOnRestart; /**< delete some nogoods on each restart */
 	bool estimate;        /**< use estimate of problem complexity to init problem size */
+	bool disable;         /**< do not delete any nogoods */
 	
 	//! configure reduce strategy
 	/*!
 	 * \param frac     init db size to problemSize/frac
 	 * \param inc      grow factor applied after each restart
 	 * \param maxF     stop growth once db size is > problemSize*maxF
-	 * \note to disable nogood deletion, set frac to -1
 	 */
 	void setStrategy(double frac, double inc, double maxF) {
-		frac_ = std::max(0.01, frac);
-		inc_  = std::max(1.0,  inc);
-		max_  = std::max(0.01, maxF);
+		frac_ = std::max(0.0001, frac);
+		inc_  = std::max(1.0   , inc);
+		max_  = std::max(0.0001, maxF);
 	}
 };
 
