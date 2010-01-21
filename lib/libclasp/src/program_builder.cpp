@@ -944,7 +944,7 @@ void ProgramBuilder::addRuleImpl(const PrgRule& r, const PrgRule::RData& rd) {
 		for (VarVec::const_iterator it = r.heads.begin(), end = r.heads.end(); it != end; ++it) {
 			if (b.first->value() != value_false) {
 				PrgAtomNode* a = resize(*it);
-				assert(!a->hasVar() || (incData_ && incData_->frozen(*it)) && "Cannot extend definition of atom!");
+				assert((!a->hasVar() || (incData_ && incData_->frozen(*it))) && "Cannot extend definition of atom!");
 				if (r.body.empty()) a->setIgnore(true);
 				// Note: b->heads may now contain duplicates. They are removed in PrgBodyNode::buildHeadSet.
 				b.first->heads.push_back((*it));

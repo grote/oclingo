@@ -42,7 +42,7 @@
 
 #define FAIL_CONCAT2(x,y) x "( " #y "): Assertion failed!"
 #define FAIL_CONCAT(x, y) FAIL_CONCAT2(x, y)
-#define FAIL(x) !(x) || (throw std::logic_error(FAIL_CONCAT(__FILE__,__LINE__)),true)
+#define FAIL(x) (void)(!(x) || (throw std::logic_error(FAIL_CONCAT(__FILE__,__LINE__)),true))
 
 #if !defined(HAS_TR1_UNORDERED) || HAS_TR1_UNORDERED == 0
 #include <ext/hash_set>
