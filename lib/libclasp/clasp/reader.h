@@ -47,8 +47,7 @@ public:
 	virtual ~Input() {}
 	virtual Format format() const = 0;
 	virtual bool   read(Solver& s, ProgramBuilder* api, int numModels) = 0;
-	virtual bool   hasMinimize() const = 0;
-	virtual MinimizeConstraint* createMinimize(Solver& s, bool heu) = 0;
+	virtual MinimizeConstraint* getMinimize(Solver& s, ProgramBuilder* api, bool heu) = 0;
 	virtual void   getAssumptions(LitVec& a) = 0;
 private:
 	Input(const Input&);
@@ -60,13 +59,11 @@ public:
 	explicit StreamInput(std::istream& in, Format f);
 	Format format() const { return format_; }
 	bool   read(Solver& s, ProgramBuilder* api, int numModels);
-	bool   hasMinimize() const;
-	MinimizeConstraint* createMinimize(Solver& s, bool heu);
+	MinimizeConstraint* getMinimize(Solver& s, ProgramBuilder* api, bool heu);
 	void   getAssumptions(LitVec&) {}
 private:
 	ObjectiveFunction func_;
 	std::istream&     prg_;
-	ProgramBuilder*   api_;
 	Format            format_;
 };
 

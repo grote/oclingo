@@ -113,7 +113,7 @@ struct IncrementalConfig {
 //! Parameter-object that groups & validates options
 class ClaspConfig {
 public:
-	explicit ClaspConfig(Solver* s = 0) : solver(s) {}
+	explicit ClaspConfig(Solver* s = 0) : solver(s), onlyPre(false) {}
 	bool validate(std::string& err);
 	ApiOptions       api;
 	EnumerateOptions enumerate;
@@ -163,9 +163,9 @@ public:
 		/*!
 		 * \param e an event that is neither event_state_enter nor event_state_exit 
 		 */
-		virtual void event(Event e, ClaspFacade& f)          = 0;
+		virtual void event(Event e, ClaspFacade& f) = 0;
 		//! Some configuration option is unsafe/unreasonable w.r.t the current problem
-		virtual void warning(const char* msg)                = 0;
+		virtual void warning(const char* msg)       = 0;
 	};
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	struct SearchLimits {
@@ -204,6 +204,9 @@ public:
 	int    step()   const { return step_; }
 	//! returns the current input problem
 	Input* input() const { return input_; }
+	
+	const ClaspConfig* config() const { return config_; }
+
 	//! returns the ProgramBuilder-object that was used to transform a logic program into nogoods
 	/*!
 	 * \note A ProgramBuilder-object is only created if input()->format() == Input::SMODELS
@@ -213,7 +216,6 @@ public:
 	 */
 	ProgramBuilder* api() const  { return api_.get();     }
 	ProgramBuilder* releaseApi() { return api_.release(); }
-
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	const SearchLimits& limits() const { return limits_; }
 #endif

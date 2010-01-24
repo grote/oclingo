@@ -276,7 +276,7 @@ struct FromGringo : public Clasp::Input {
 	typedef std::auto_ptr<NS_GRINGO::LparseParser> ParserPtr;
 	typedef std::auto_ptr<NS_OUTPUT::Output> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
-	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode) : api(0), clingo(clingoMode) {
+	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode) : clingo(clingoMode) {
 		grounder.reset(new NS_GRINGO::Grounder(opts.grounderOptions));
 		parser.reset(new NS_GRINGO::LparseParser(grounder.get(), str.streams));
 		if (clingo) {
@@ -289,8 +289,9 @@ struct FromGringo : public Clasp::Input {
 #endif
 	}
 	Format    format()      const { return Clasp::Input::SMODELS; }
-	bool      hasMinimize() const { return api->hasMinimize(); }
-	MinConPtr createMinimize(Clasp::Solver& s, bool heu) { return api->createMinimize(s, heu); }
+	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { 
+		return api ? api->createMinimize(s, heu) : 0;
+	}
 	void      getAssumptions(Clasp::LitVec& a) {
 		(void)a;
 #if defined(WITH_ICLASP)
@@ -300,8 +301,8 @@ struct FromGringo : public Clasp::Input {
 		}
 #endif
 	}
-	bool      read(Clasp::Solver& s, Clasp::ProgramBuilder* p, int) {
-		static_cast<NS_OUTPUT::ClaspOutput*>(out.get())->setProgramBuilder(api = p);
+	bool      read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int) {
+		static_cast<NS_OUTPUT::ClaspOutput*>(out.get())->setProgramBuilder(api);
 		solver = &s;
 		if (parser.get()) {
 			if (!parser->parse(out.get())) throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
@@ -321,7 +322,6 @@ struct FromGringo : public Clasp::Input {
 	GrounderPtr            grounder;
 	ParserPtr              parser;
 	OutputPtr              out;
-	Clasp::ProgramBuilder* api;
 	Clasp::Solver*         solver;
 	bool                   clingo;
 };

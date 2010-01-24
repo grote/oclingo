@@ -916,8 +916,7 @@ public:
 		struct IncInput : Input {
 			IncInput() : step(0) {}
 			Format format()      const { return Input::SMODELS; }
-			bool   hasMinimize() const { return false; }
-			MinimizeConstraint* createMinimize(Solver&, bool) { return 0; }
+			MinimizeConstraint* getMinimize(Solver&, ProgramBuilder*, bool) { return 0; }
 			void   getAssumptions(LitVec& a) {
 				if (assume[step-1] != 0) {
 					a.push_back( ~index->find(assume[step-1])->lit );

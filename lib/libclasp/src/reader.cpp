@@ -559,15 +559,13 @@ Input::Format detectFormat(std::istream& in) {
 }
 
 StreamInput::StreamInput(std::istream& in, Format f)
-	: prg_(in), api_(0), format_(f) 
+	: prg_(in), format_(f) 
 { }
 
 bool StreamInput::read(Solver& s, ProgramBuilder* api, int numModels) {
-	api_ = 0;
 	if (format_ == Input::SMODELS) {
 		assert(api);
-		api_ = api;
-		return parseLparse(prg_, *api_);
+		return parseLparse(prg_, *api);
 	}
 	else if (format_ == Input::DIMACS) {
 		return parseDimacs(prg_, s, numModels == 1);
@@ -576,16 +574,13 @@ bool StreamInput::read(Solver& s, ProgramBuilder* api, int numModels) {
 		return parseOPB(prg_, s, func_);
 	}
 }
-bool StreamInput::hasMinimize() const {
-	return (api_ && api_->hasMinimize()) || !func_.lits.empty();
-}
 
-MinimizeConstraint* StreamInput::createMinimize(Solver& s, bool heu) {
-	assert(StreamInput::hasMinimize());
-	if (api_) {
-		return api_->createMinimize(s, heu);
+MinimizeConstraint* StreamInput::getMinimize(Solver& s, ProgramBuilder* api, bool heu) {
+	if (format_ == Input::SMODELS) {
+		assert(api);
+		return api->createMinimize(s, heu);
 	}
-	else {
+	else if (!func_.lits.empty()) {
 		MinimizeConstraint* min = new MinimizeConstraint();
 		min->minimize(s, func_.lits, heu);
 		assert(func_.adjust >= 0);
@@ -594,5 +589,6 @@ MinimizeConstraint* StreamInput::createMinimize(Solver& s, bool heu) {
 		}
 		return min;
 	}
+	return 0;
 }
 }

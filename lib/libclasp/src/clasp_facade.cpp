@@ -273,8 +273,9 @@ bool ClaspFacade::preprocess() {
 			return false;
 		}
 	}
-	if (!config_->enumerate.opt.no && step_ == 0 && input_->hasMinimize()) {
-		configureMinimize(input_->createMinimize(*config_->solver, config_->enumerate.opt.heu));
+	if (!config_->enumerate.opt.no && step_ == 0) {
+		MinimizeConstraint* m = input_->getMinimize(*config_->solver, api_.get(), config_->enumerate.opt.heu);
+		if (m) configureMinimize(m);
 	}
 	fireEvent(event_p_prepared);
 	if (!inc_ && api_.is_owner()) {
