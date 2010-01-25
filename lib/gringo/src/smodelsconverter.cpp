@@ -785,15 +785,16 @@ void SmodelsConverter::print(Optimize *r)
 		Atom *a = static_cast<Atom*>(*it);
 		addAtom(a);
 		int uid = inv * a->getUid();
+		if(*wIt < 0) uid = uid * -1;
 		if(uid > 0)
 		{
 			pos_.push_back(uid);
-			wPos_.push_back(*wIt);
+			wPos_.push_back(abs(*wIt));
 		}
 		else
 		{
 			neg_.push_back(-uid);
-			wNeg_.push_back(*wIt);
+			wNeg_.push_back(abs(*wIt));
 		}
 	}
 	printMinimizeRule(pos_, neg_, wPos_, wNeg_);
