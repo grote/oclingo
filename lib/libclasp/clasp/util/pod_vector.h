@@ -507,7 +507,7 @@ private:
 	void grow(size_type minCap) {
 		if (capacity() > minCap) return;
 		minCap = minCap < 4 ? 4 : minCap;
-		size_type cap = static_cast<size_type>(capacity() * 1.5);
+		size_type cap = (capacity()*3)>>1;
 		reserve(cap < minCap ? minCap : cap);
 	}
 

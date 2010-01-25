@@ -540,7 +540,8 @@ weight_t PrgBodyNode::findWeight(Literal p, const AtomList& prgAtoms) const {
 }
 
 bool PrgBodyNode::backpropagate(ProgramBuilder& prg, LitVec& comp) {
-	assert(value() != value_free && !ignore());
+	assert(value() != value_free);
+	if (ignore()) return true;
 	if (!extended() && size() > 0) {
 		if (size() == 1 || value() != value_false) {
 			ValueRep v = value();
