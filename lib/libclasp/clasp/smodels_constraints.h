@@ -206,11 +206,12 @@ public:
 	/*!
 	 * \param level priority level of the minimize statement for which the optimum should be set
 	 * \param opt the new optimum
+	 * \return true if the new optimum does not violate the constraint. Otherwise, false.
+	 * \note If false is returned, the new optimum is not set
 	 */
-	void setOptimum(uint32 level, uint32 opt) {
-		assert(level < minRules_.size());
-		minRules_[level]->opt_ = opt;
-	}
+	bool setOptimum(uint32 level, uint32 opt);
+	
+	//! returns the current optimum of a minimize statement
 	WeightSum getOptimum(uint32 level) const {
 		assert(level < minRules_.size());
 		if (minRules_[level]->opt_ != std::numeric_limits<WeightSum>::max() && level == minRules_.size()-1 && mode_ == compare_less) {

@@ -268,21 +268,20 @@ bool ClaspFacade::read() {
 // Returns false, if the problem is trivially UNSAT.
 bool ClaspFacade::preprocess() {
 	setState(state_preprocess, event_state_enter);
+	MinimizeConstraint* m = 0;
 	if (api_.get()) {
 		if (!api_->endProgram(*config_->solver, false, config_->api.backprop)) {
 			return false;
 		}
 	}
 	if (!config_->enumerate.opt.no && step_ == 0) {
-		MinimizeConstraint* m = input_->getMinimize(*config_->solver, api_.get(), config_->enumerate.opt.heu);
-		if (m) configureMinimize(m);
+		m = input_->getMinimize(*config_->solver, api_.get(), config_->enumerate.opt.heu);
 	}
 	fireEvent(event_p_prepared);
 	if (!inc_ && api_.is_owner()) {
 		api_ = 0;
 	}
-	initEnumerator();
-	if (!config_->solver->endAddConstraints()) {
+	if (!initEnumerator(m) || !config_->solver->endAddConstraints()) {
 		return false;
 	}
 	setState(state_preprocess, event_state_exit);
@@ -291,13 +290,13 @@ bool ClaspFacade::preprocess() {
 
 // Configures the given minimize constraint and adds it to the enumerator.
 // Optimize values that are given in config are added to min.
-void ClaspFacade::configureMinimize(MinimizeConstraint* min) const {
+bool ClaspFacade::configureMinimize(MinimizeConstraint* min) const {
 	min->setMode( config_->enumerate.opt.all ? MinimizeConstraint::compare_less_equal : MinimizeConstraint::compare_less );
 	if (!config_->enumerate.opt.vals.empty()) {
 		WeightVec& vals = config_->enumerate.opt.vals;
 		uint32 m = std::min((uint32)vals.size(), min->numRules());
 		for (uint32 x = 0; x != m; ++x) {
-			min->setOptimum(x, vals[x]);
+			if (!min->setOptimum(x, vals[x])) return false;
 		}
 	}
 	min->simplify(*config_->solver, false);
@@ -308,14 +307,18 @@ void ClaspFacade::configureMinimize(MinimizeConstraint* min) const {
 	if (config_->enumerate.project) {
 		warning("Projection: Optimization values may depend on enumeration order!");
 	}
+	return true;
 }
 
 // Finalizes the initialization of the enumerator.
 // Sets the number of models to compute and adds warnings
 // if this number violates the preferred number of the enumerator.
-void ClaspFacade::initEnumerator() const {
+bool ClaspFacade::initEnumerator(MinimizeConstraint* min) const {
 	Enumerator* e = config_->solve.enumerator();
 	if (step_ == 0) {
+		if (min && !configureMinimize(min)) {
+			return false;
+		}
 		uint32 defM = !e->minimize() && !config_->enumerate.consequences();
 		if (config_->enumerate.numModels == -1) { 
 			config_->enumerate.numModels = defM; 
@@ -330,6 +333,7 @@ void ClaspFacade::initEnumerator() const {
 		}
 	}
 	e->init(*config_->solver, config_->enumerate.numModels);
+	return true;
 }
 
 // Computes a value that represents the problem size.

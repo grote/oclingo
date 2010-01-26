@@ -256,8 +256,8 @@ private:
 	bool   read();
 	bool   preprocess();
 	uint32 computeProblemSize() const;
-	void   configureMinimize(MinimizeConstraint* min)  const;
-	void   initEnumerator()     const;
+	bool   configureMinimize(MinimizeConstraint* min) const;
+	bool   initEnumerator(MinimizeConstraint* min)    const;
 	// -------------------------------------------------------------------------------------------
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	SearchLimits  limits_;

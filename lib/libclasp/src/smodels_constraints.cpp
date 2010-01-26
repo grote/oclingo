@@ -361,6 +361,15 @@ MinimizeConstraint::~MinimizeConstraint() {
 	}
 }
 
+bool MinimizeConstraint::setOptimum(uint32 level, uint32 opt) {
+	assert(level < minRules_.size());
+	if (level > activePL_ || opt >= minRules_[level]->sum_) {
+		minRules_[level]->opt_ = opt;
+		return true;
+	}
+	return false;
+}
+
 void MinimizeConstraint::minimize(Solver& s, const WeightLitVec& literals, bool heu) {
 	assert(s.decisionLevel() == 0 && "can't add minimize rules after init!");
 	index_.resize( (s.numVars()+1) << 1, varMax );
