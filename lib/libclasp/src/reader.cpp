@@ -390,10 +390,12 @@ bool parseDimacsImpl(std::istream& prg, Solver& s, bool assertPure) {
 		}
 	}
 	if (p) s.strategies().satPrePro.reset(p);
-	for (Var i = 1; ret && i <= s.numVars(); ++i) {
-		uint8 d = (flags[i]>>2);
-		if      (d == 0)                { ret = s.force(negLit(i), 0); }
-		else if (d != 3 && assertPure)  { ret = s.force(Literal(i, d != 1), 0); }
+	if (assertPure) {
+		for (Var i = 1; ret && i <= s.numVars(); ++i) {
+			uint8 d = (flags[i]>>2);
+			if      (d == 0)  { ret = s.force(negLit(i), 0); }
+			else if (d != 3)  { ret = s.force(Literal(i, d != 1), 0); }
+		}
 	}
 	return ret;
 }
