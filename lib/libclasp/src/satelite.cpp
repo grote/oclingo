@@ -29,7 +29,7 @@ namespace Clasp { namespace SatElite {
 inline uint64 abstractLit(Literal p) {
 	assert(p.var() > 0); 
 	return uint64(1) << ((p.var()-1) & 63); 
-};
+}
 
 // A clause class optimized for the SatElite preprocessor.
 // Uses 1-literal watching to implement forward-subsumption

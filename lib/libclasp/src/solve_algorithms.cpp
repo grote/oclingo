@@ -240,7 +240,7 @@ bool solve(Solver& s, const SolveParams& p) {
 	return more;
 }
 
-bool solve(Solver& s, const LitVec& assumptions, const SolveParams& p) {
+bool solve(Solver& s, const LitVec& assumptions, const SolveParams& params) {
 	// Remove any existing assumptions and simplify problem.
 	// If this fails, the problem is unsat, even under no assumptions.
 	if (!s.clearAssumptions()) return false;
@@ -258,7 +258,7 @@ bool solve(Solver& s, const LitVec& assumptions, const SolveParams& p) {
 		} 
 		else if (s.isFalse(p)) break;
 	}
-	bool ret = i == assumptions.size() && solve(s, p);
+	bool ret = i == assumptions.size() && solve(s, params);
 	// Finally, remove the assumptions again and restore
 	// the solver to a usable state if possible.
 	s.clearAssumptions();

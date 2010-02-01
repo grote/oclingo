@@ -114,8 +114,8 @@ void ClauseCreator::simplify() {
 		}
 	}
 	literals_.erase(literals_.begin()+j, literals_.end());
-	for (LitVec::iterator i = literals_.begin(), end = literals_.end(); i != end; ++i) {
-		solver_->clearSeen(i->var());
+	for (LitVec::iterator it = literals_.begin(), end = literals_.end(); it != end; ++it) {
+		solver_->clearSeen(it->var());
 	}
 }
 

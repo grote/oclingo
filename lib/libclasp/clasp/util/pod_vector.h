@@ -1,5 +1,5 @@
 // 
-// Copyright (c) 2006-2007, Benjamin Kaufmann
+// Copyright (c) 2006-2010, Benjamin Kaufmann
 // 
 // This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
 // 
@@ -26,16 +26,6 @@
 #include <cassert>
 #include <stdexcept>
 namespace bk_lib { namespace detail {
-	
-	struct MemCpyRange {
-		MemCpyRange(const void* start, std::size_t size) : start_(start), size_(size) {}
-		void operator()(void* dest) const {
-			std::memcpy(dest, start_, size_);
-		}
-		const void* start_;
-		std::size_t size_;
-	};
-	
 	template <class T>
 	void fill(T* first, T* last, const T& x) {
 		assert(first <= last);
@@ -44,19 +34,18 @@ namespace bk_lib { namespace detail {
 		case 0:
 				while (first != last)
 				{
-						new(first) T(x); ++first;
-		case 7: new(first) T(x); ++first;
-		case 6: new(first) T(x); ++first;
-		case 5: new(first) T(x); ++first;
-		case 4: new(first) T(x); ++first;
-		case 3: new(first) T(x); ++first;
-		case 2: new(first) T(x); ++first;
-		case 1: new(first) T(x); ++first;
-						assert(first <= last);
+				new(first++) T(x);
+		case 7: new(first++) T(x);
+		case 6: new(first++) T(x);
+		case 5: new(first++) T(x);
+		case 4: new(first++) T(x);
+		case 3: new(first++) T(x);
+		case 2: new(first++) T(x);
+		case 1: new(first++) T(x);
+				assert(first <= last);
 				}
 		}
 	}
-
 	template <class Iter, class T>
 	void copy(Iter first, Iter last, std::size_t s, T* out) {
 		switch (s & 7u)
@@ -64,38 +53,38 @@ namespace bk_lib { namespace detail {
 		case 0:
 				while (first != last)
 				{
-						new(out++) T(*first); ++first;
-		case 7: new(out++) T(*first); ++first;
-		case 6: new(out++) T(*first); ++first;
-		case 5: new(out++) T(*first); ++first;
-		case 4: new(out++) T(*first); ++first;
-		case 3: new(out++) T(*first); ++first;
-		case 2: new(out++) T(*first); ++first;
-		case 1: new(out++) T(*first); ++first;
+				new(out++) T(*first++);
+		case 7: new(out++) T(*first++);
+		case 6: new(out++) T(*first++);
+		case 5: new(out++) T(*first++);
+		case 4: new(out++) T(*first++);
+		case 3: new(out++) T(*first++);
+		case 2: new(out++) T(*first++);
+		case 1: new(out++) T(*first++);
 				}
 		}
 	}
-
 	template <class T>
 	struct Fill {
-		Fill(const T& val, std::size_t n) : val_(val), n_(n) {}
-		void operator()(T* first) const {
-			detail::fill(first, first + n_, val_);
-		}
+		Fill(const T& val) : val_(val) {}
+		void operator()(T* first, std::size_t n) const { detail::fill(first, first + n, val_); }
 		const T& val_;
-		std::size_t n_;
 	};
-
 	template <class Iter>
 	struct Copy {
-		Copy(Iter first, Iter last, std::size_t n) : first_(first), last_(last), n_(n) {}
+		Copy(Iter first, Iter last) : first_(first), last_(last) {}
 		template <class T>
-		void operator()(T* out) const {
-			detail::copy(first_, last_, n_, out);
-		}
+		void operator()(T* out, std::size_t n) const { detail::copy(first_, last_, n, out); }
 		Iter first_;
 		Iter last_;
-		std::size_t n_;
+	};
+	template <class T>
+	struct Memcpy {
+		Memcpy(const T* first) : first_(first) {}
+		void operator()(T* out, std::size_t n) const { 
+			std::memcpy(out, first_, n*sizeof(T));
+		}
+		const T* first_;
 	};
 	
 	template <int i> struct Int2Type {};
@@ -112,6 +101,13 @@ namespace bk_lib { namespace detail {
 		enum { num = sizeof(isLong(makeT())) == sizeof(yes_type) }; 
 		enum { value = ptr ? 1 : num ? 2 : 0 };
 	};
+	template <class T, class U>  struct SameType        { enum { value = 0 }; };
+	template <class T>           struct SameType<T,T>   { enum { value = 1 }; };
+	template <bool>              struct DisableIf       { typedef bool type; };
+	template <>                  struct DisableIf<true> {  };
+
+	template <bool, class T, class U> struct Select            { typedef T type; };
+	template <class T, class U>       struct Select<false,T,U> { typedef U type; };
 
 } // end namespace bk_lib::detail
 
@@ -119,49 +115,53 @@ namespace bk_lib { namespace detail {
 /*!
  * \pre T is a POD-Type 
  * \see http://www.comeaucomputing.com/techtalk/#pod for a description of POD-Types.
+ * \note Does not call any destructors and uses std::memcpy to copy/move elements
+ * \note On LP64-machines size and capacity are represented as unsigned integers (instead of e.g. std::size_t)
  */
 template <class T, class Allocator = std::allocator<T> >
 class pod_vector {
 public:
 	// types:
-	typedef          pod_vector<T, Allocator>         this_type;//not standard
+	typedef          pod_vector<T,Allocator>          this_type;//not standard
+	typedef          Allocator                        allocator_type;
 	typedef typename Allocator::reference             reference;
 	typedef typename Allocator::const_reference       const_reference;
 	typedef typename Allocator::pointer               iterator;
 	typedef typename Allocator::const_pointer         const_iterator;
-	typedef typename Allocator::size_type             size_type;
-	typedef typename Allocator::difference_type       difference_type;
-	typedef          T                                value_type;
-	typedef          Allocator                        allocator_type;
 	typedef typename Allocator::pointer               pointer;
 	typedef typename Allocator::const_pointer         const_pointer;
 	typedef std::reverse_iterator<iterator>           reverse_iterator;
 	typedef std::reverse_iterator<const_iterator>     const_reverse_iterator;
-
+	typedef          T                                value_type;	
+	typedef typename detail::Select<
+		sizeof(typename Allocator::size_type)<=sizeof(unsigned int), 
+		typename Allocator::size_type, 
+		unsigned int>::type                           size_type;
+	typedef typename detail::Select<
+		sizeof(typename Allocator::difference_type)<=sizeof(int), 
+		typename Allocator::difference_type, 
+		int>::type                                    difference_type;
 	// ctors
 	//! constructs an empty pod_vector.
 	/*! 
 	 * \post size() == capacity() == 0
 	 */
-	pod_vector() {
-		init_empty();
-	}
+	pod_vector() : ebo_(0, allocator_type()) { }
 	
 	//! constructs an empty pod_vector that uses a copy of a for memory allocations.
 	/*!
 	 * \post size() == capacity() == 0
 	 */
-	explicit pod_vector(const allocator_type& a) : ebo_(a) {
-		init_empty();
-	}
+	explicit pod_vector(const allocator_type& a) : ebo_(0, a) { }
 
 	//! constructs a pod_vector containing n copies of value.
 	/*!
 	 * \post size() == n
 	 */
-	explicit pod_vector(size_type n, const T& value = T(), const Allocator& a = Allocator()) 
-		: ebo_(a) {
-		n != 0 ? init(n, value) : init_empty();
+	explicit pod_vector(size_type n, const T& value = T(), const allocator_type& a = allocator_type()) 
+		: ebo_(n, a) {
+		detail::fill(ebo_.buf, ebo_.buf + n, value);	
+		ebo_.size = n;
 	}
 
 	//! constructs a pod_vector equal to the range [first, last).
@@ -169,24 +169,24 @@ public:
 	 * \post size() = distance between first and last.
 	 */
 	template <class Iter>
-	pod_vector(Iter first, Iter last, const Allocator& a = Allocator()) 
-		: ebo_(a) {                
-		init_empty();
-		insert(end(), first, last);
+	pod_vector(Iter first, Iter last, const allocator_type& a = allocator_type(), typename detail::DisableIf<detail::IterType<Iter>::num>::type* = 0) 
+		: ebo_(0, a) {
+		insert_range(end(), first, last, typename std::iterator_traits<Iter>::iterator_category());
 	}
 	
 	//! creates a copy of other
 	/*!
-	 * \post size() == other.size() && capacity() >= other.capacity()
+	 * \post size() == other.size() && capacity() == other.size()
 	 */
-	pod_vector(const pod_vector& other) {
-		init_empty();
-		append(other.begin(), other.end());
+	pod_vector(const pod_vector& other) : ebo_(other.size(), other.get_allocator()) {
+		std::memcpy(ebo_.buf, other.begin(), other.size()*sizeof(T));
+		ebo_.size = other.size();
 	}
 
-	
-	pod_vector& operator=(pod_vector other) {
-		other.swap(*this);
+	pod_vector& operator=(const pod_vector& other) {
+		if (this != &other) {
+			assign(other.begin(), other.end());
+		}
 		return *this;
 	}
 
@@ -194,11 +194,7 @@ public:
 	/*!
 	 * \note Won't call any destructors, because PODs don't have those.
 	 */
-	~pod_vector() {
-		if (capacity() != 0) {
-			ebo_.deallocate(ebo_.first_, capacity());
-		}
-	}
+	~pod_vector() { }
 
 	/** @name inspectors
 	 * inspector-functions
@@ -206,29 +202,28 @@ public:
 	//@{
 	
 	//! returns the number of elements currently stored in this pod_vector.
-	size_type size() const    { return last_ - ebo_.first_; }
-	
+	size_type size()     const { return ebo_.size; }
 	//! size of the largest possible pod_vector
-	size_type max_size() const { return ebo_.max_size(); }
-	
+	size_type max_size() const { 
+		typename allocator_type::size_type x = get_allocator().max_size();
+		std::size_t                        y = size_type(-1)/sizeof(T);
+		return static_cast<size_type>(std::min(std::size_t(x), y));
+	}
 	//! returns the total number of elements this pod_vector can hold without requiring reallocation.
-	size_type capacity() const  { return eos_ - ebo_.first_; }
-	
+	size_type capacity() const  { return ebo_.cap; }
 	//! returns size() == 0
-	bool empty() const { return ebo_.first_ == last_;  }
+	bool empty() const { return ebo_.size == 0;  }
 
-	
-	iterator begin() { return ebo_.first_; }
-	const_iterator begin() const { return ebo_.first_;}
-
-	iterator end() { return last_; }
-	const_iterator end() const { return last_;}
-
-	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	const_iterator begin() const { return ebo_.buf; }
+	const_iterator end()   const { return ebo_.buf+ebo_.size;}
 	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
-	reverse_iterator rend() { return reverse_iterator(begin()); }
-	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+	const_reverse_iterator rend()   const { return const_reverse_iterator(begin()); }
 
+	iterator       begin()  { return ebo_.buf; }
+	iterator       end()    { return ebo_.buf+ebo_.size; }
+	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	reverse_iterator rend()   { return reverse_iterator(begin()); }
+	
 	//! returns a copy of the allocator used by this pod_vector
 	allocator_type get_allocator() const { return ebo_; }
 	
@@ -244,7 +239,7 @@ public:
 	 */
 	reference operator[](size_type n) {
 		assert(n < size());
-		return ebo_.first_[n];
+		return ebo_.buf[n];
 	}
 	
 	//! returns a reference-to-const to the element at position n
@@ -253,43 +248,30 @@ public:
 	 */
 	const_reference operator[](size_type n) const {
 		assert(n < size());
-		return ebo_.first_[n];
+		return ebo_.buf[n];
 	}
 	
 	//! same as operator[] but throws std::range_error if pre-condition is not met.
 	const_reference at(size_type n) const {
-		if (n >= size()) throw std::range_error("pod_vector::at");
-		return ebo_.first_[n];
+		if (n < size()) return ebo_.buf[n];
+		throw std::range_error("pod_vector::at");
 	}
 	//! same as operator[] but throws std::range_error if pre-condition is not met.
 	reference at(size_type n) {
-		if (n >= size()) throw std::range_error("pod_vector::at");
-		return ebo_.first_[n];
+		if (n < size()) return ebo_.buf[n];
+		throw std::range_error("pod_vector::at");
 	}
 	
 	//! equivalent to *begin()
-	reference front() {
-		assert(!empty());
-		return *ebo_.first_;
-	}
-	
+	reference front() { assert(!empty()); return *ebo_.buf; }
 	//! equivalent to *begin()
-	const_reference front() const {
-		assert(!empty());
-		return *ebo_.first_;
-	}
+	const_reference front() const { assert(!empty()); return *ebo_.buf; }
 	
 	//! equivalent to *--end()
-	reference back() {
-		assert(!empty());
-		return last_[-1];
-	}
+	reference back() { assert(!empty()); return ebo_.buf[ebo_.size-1]; }
 	
 	//! equivalent to *--end()
-	const_reference back() const {
-		assert(!empty());
-		return last_[-1];
-	}
+	const_reference back() const { assert(!empty()); return ebo_.buf[ebo_.size-1]; }
 	
 	//@}
 	/** @name mutators
@@ -300,19 +282,14 @@ public:
 	//! erases all elements in the range [begin(), end)
 	/*!
 	 * \post size() == 0
-	 * \note clearing is a constant-time operation because no destructors have to be called
-	 * for POD-Types.
 	 */
-	void clear() {
-		last_ = ebo_.first_;
-	}
+	void clear() { ebo_.size = 0; }
 
-	
 	void assign(size_type n, const T& val) {
 		clear();
 		insert(end(), n, val);
 	}
-
+	
 	template <class Iter>
 	void assign(Iter first, Iter last) {
 		clear();
@@ -325,9 +302,6 @@ public:
 	 * \return an iterator pointing to the element following pos (before that element was erased)
 	 * of end() if no such element exists.
 	 *
-	 * \note since POD-Types don't have destructors erasing an element is a noop. 
-	 *  Elements after pos are moved using memmove instead of copied by calling an 
-	 *  assignment-operator.
 	 * \note invalidates all iterators and references referring to elements after pos.
 	 */
 	iterator erase(iterator pos) {
@@ -336,7 +310,7 @@ public:
 		return pos;
 	}
 
-	//! erases the elements in the raneg [first, last)
+	//! erases the elements in the range [first, last)
 	/*!
 	 * \pre [first, last) must be a valid range.
 	 */
@@ -344,7 +318,7 @@ public:
 		if (end() - last > 0) {
 			std::memmove(first, last, (end() - last) * sizeof(T));
 		}
-		last_ -= last - first;
+		ebo_.size -= static_cast<size_type>(last - first);
 		return first;
 	}
 
@@ -357,16 +331,10 @@ public:
 	 * \post size() == ns
 	 */
 	void resize(size_type ns, const T& val = T()) {
-		const size_type old = size();
-		if (old >= ns) {
-			last_ = ebo_.first_ + ns;
+		if (ns > size()) {
+			ns <= capacity() ? detail::fill(end(), end()+(ns-size()), val) : append_realloc(ns-size(), val);
 		}
-		else {
-			grow(ns);
-			detail::fill(last_, last_ + (ns - old), val);
-			last_ = ebo_.first_ + ns;
-		}
-		assert(size() == ns);
+		ebo_.size = ns;
 	}
 
 	//! reallocates storage if necessary but never changes the size() of this pod_vector.
@@ -377,41 +345,31 @@ public:
 	 * elements in this pod_vectror.
 	 *
 	 * \note when reallocation occurs elements are copied from the old storage using memcpy.
-	 * This is safe since POD-Types don't have copy-ctors.
 	 */
 	void reserve(size_type n) {
-		const size_type s = size(), c = capacity();
-		if (c >= n) return;
-		T* temp = ebo_.first_;
-		ebo_.first_ = ebo_.allocate(n);
-		if (c) {
-			std::memcpy(ebo_.first_, temp, s * sizeof(T));
-			ebo_.deallocate(temp, c);
+		if (n > capacity()) {
+			T* temp = ebo_.allocate(n);
+			std::memcpy(temp, ebo_.buf, size()*sizeof(T));
+			ebo_.release();
+			ebo_.buf = temp;
+			ebo_.cap = n;
 		}
-		last_ = ebo_.first_ + s;
-		eos_ = ebo_.first_ + n;
-		assert(capacity() == n);
-		assert(size() == s);
 	}
 
 	void swap(pod_vector& other) {
-		std::swap(ebo_.first_, other.ebo_.first_);
-		std::swap(last_, other.last_);
-		std::swap(eos_, other.eos_);
+		std::swap(ebo_.buf, other.ebo_.buf);
+		std::swap(ebo_.size, other.ebo_.size);
+		std::swap(ebo_.cap, other.ebo_.cap);
 	}
 
 	//! equivalent to insert(end(), x);
 	void push_back(const T& x) {
-		if (size() == capacity())  {
-			// x may be in sequence - copy it
-			T temp(x);
-			grow(size()+1);
-			new (last_) T(temp);
+		if (size() < capacity()) {
+			new ((ebo_.buf+ebo_.size++)) T(x);
 		}
 		else {
-			new(last_) T(x);
+			append_realloc(1, x);
 		}
-		++last_;
 	}
 	
 	//! equivalent to erase(--end());
@@ -420,7 +378,7 @@ public:
 	 */
 	void pop_back() {
 		assert(!empty());
-		--last_;
+		--ebo_.size;
 	}
 
 	//! inserts a copy of val before pos.
@@ -440,7 +398,9 @@ public:
 	 * \pre pos is a valid iterator.
 	 */
 	iterator insert(iterator pos, size_type n, const T& val) {
-		return insert_impl(pos, n, detail::Fill<T>(val, n));
+		size_type off = static_cast<size_type>(pos-begin());
+		insert_impl(pos, n, detail::Fill<T>(val));
+		return ebo_.buf + off;
 	}
 
 	//! inserts copies of elements in the range [first, last) before pos.
@@ -452,8 +412,8 @@ public:
 	 * 
 	 */
 	template <class Iter>
-	void insert(iterator pos, Iter first, Iter last) {
-		insert_select(pos, first, last, detail::Int2Type<detail::IterType<Iter>::value>());
+	void insert(iterator pos, Iter first, Iter last, typename detail::DisableIf<detail::IterType<Iter>::num>::type* = 0) {
+		insert_range(pos, first, last, typename std::iterator_traits<Iter>::iterator_category());
 	}
 
 	
@@ -461,15 +421,7 @@ public:
 	 * Non-standard interface 
 	 */
 	//@{
-	//! optimized version of insert(end(), first, last)
-	void append(const_iterator first, const_iterator last) {
-		assert(first <= last);
-		size_type dist = (last - first);
-		reserve( size() +  dist );
-		std::memcpy(end(), first, dist * sizeof(T));
-		last_ += dist;
-	}
-
+	
 	//! adjusts the size of this pod_vector to ns.
 	/*!
 	 * In contrast to pod_vector::resize this function does not
@@ -480,106 +432,92 @@ public:
 	 *  in order to assign a new value.
 	 */
 	void resize_no_init(size_type ns) {
-		const size_type old = size();
-		if (old >= ns) {
-			last_ = ebo_.first_ + ns;
-		}
-		else {
-			reserve(ns);
-			last_ = ebo_.first_ + ns;
-		}
-		assert(size() == ns);
+		reserve(ns);
+		ebo_.size = ns;
 	}
 	//@}
 private:
-	void init_empty() {
-		ebo_.first_ = 0;
-		last_ = 0;
-		eos_ = 0;
+	size_type grow_size(size_type n) {
+		size_type new_cap = size() + n;
+		assert(new_cap > size() && "pod_vector: max size exceeded!");
+		assert(new_cap > capacity());
+		if (new_cap < 4) new_cap = 1 << (new_cap+1);
+		size_type x = (capacity()*3)>>1;
+		if (new_cap < x) new_cap = x;
+		return new_cap;
 	}
-	void init(size_type s, const T& value) {
-		ebo_.first_ = ebo_.allocate(s);
-		detail::fill(ebo_.first_, ebo_.first_ + s, value);
-		last_ = ebo_.first_ + s;
-		eos_ = last_;
+	void append_realloc(size_type n, const T& x) {
+		size_type new_cap = grow_size(n);
+		pointer temp      = ebo_.allocate(new_cap);
+		std::memcpy(temp, ebo_.buf, size()*sizeof(T));
+		detail::fill(temp+size(), temp+size()+n, x);
+		ebo_.release();
+		ebo_.buf  = temp;
+		ebo_.cap  = new_cap;
+		ebo_.size+= n;
 	}
-	
-	void grow(size_type minCap) {
-		if (capacity() > minCap) return;
-		minCap = minCap < 4 ? 4 : minCap;
-		size_type cap = (capacity()*3)>>1;
-		reserve(cap < minCap ? minCap : cap);
-	}
-
-	template <class Iter>
-	void insert_impl(iterator pos, Iter first, Iter last, std::forward_iterator_tag) {
-		size_type n = std::distance(first, last);
-		insert_impl(pos, n, detail::Copy<Iter>(first, last, n));
-	}
-	template <class Iter>
-	void insert_impl(iterator pos, Iter first, Iter last, std::input_iterator_tag) {
-		for (; first != last; ++first, ++pos)
-			pos = insert(pos, *first);
-	}
-	
-	template <class Iter>
-	void insert_select(iterator pos, Iter first, Iter last, detail::Int2Type<0>) {
-		insert_impl(pos, first, last, typename std::iterator_traits<Iter>::iterator_category());
-	}
-	
-	// ptr
-	template <class Iter>
-	void insert_select(iterator pos, Iter first, Iter last, detail::Int2Type<1>) {
-		insert_impl(pos, last - first, detail::MemCpyRange(first, (last - first)*sizeof(T)));
-	}
-	// num
-	template <class Iter>
-	void insert_select(iterator pos, Iter first, Iter last, detail::Int2Type<2>) {
-		insert(pos, (size_type)first, last);
-	}
-
-
 	void move_right(iterator pos, size_type n) {
-		assert( (pos || n == 0) && (eos_ - pos) >= (int)n);
+		assert( (pos || n == 0) && (ebo_.eos() - pos) >= (int)n);
 		std::memmove(pos + n, pos, (end() - pos) * sizeof(T));
 	}
-
+	template <class It>
+	void insert_range(iterator pos, It first, It last,  std::random_access_iterator_tag, 
+		typename detail::DisableIf<detail::SameType<pointer, It>::value == 0 && detail::SameType<const_pointer, It>::value == 0>::type* = 0) {
+		assert( (first < begin() || first >= end()) && "pod_vec::insert(): Precondition violated!");
+		typename allocator_type::difference_type diff = std::distance(first, last);
+		assert(diff == 0 || (static_cast<size_type>(size()+diff) > size() && "pod_vector: max size exceeded!"));
+		insert_impl(pos, static_cast<size_type>(diff), detail::Memcpy<T>(first));
+	}
+	template <class It>
+	void insert_range(iterator pos, It first, It last,  std::forward_iterator_tag) {
+		typename allocator_type::difference_type diff = std::distance(first, last);
+		assert(diff == 0 || (static_cast<size_type>(size()+diff) > size() && "pod_vector: max size exceeded!"));
+		insert_impl(pos, static_cast<size_type>(diff), detail::Copy<It>(first, last));
+	}
+	template <class Iter>
+	void insert_range(iterator pos, Iter first, Iter last, std::input_iterator_tag) {
+		pod_vector<T> temp;
+		while (first != last) temp.push_back(*first++);
+		insert(pos, temp.begin(), temp.end());
+	}
+	
 	template <class P>
-	iterator insert_impl(iterator pos, size_type n, P pred) {
-		if (size() + n <= capacity()) {
+	void insert_impl(iterator pos, size_type n, const P& pred) {
+		assert(n == 0 || (size()+n) > size() );
+		if (size()+n <= capacity()) {
 			move_right(pos, n);
-			pred(pos);
-		}
-		else if (capacity() == 0) {
-			assert(pos == 0);
-			reserve(n);
-			pred(ebo_.first_);
-			pos = ebo_.first_;
+			pred(pos, n);
+			ebo_.size += n;
 		}
 		else {
-			const size_type off = pos == 0 ? 0 : pos - begin();
-			this_type temp;
-			temp.reserve(size() + n);
-			std::memcpy(temp.ebo_.first_, ebo_.first_, off * sizeof(T));
-			temp.last_ += off;
-			pos = temp.ebo_.first_ + off;
-			pred(pos);
-			iterator remStart = ebo_.first_ + off;
-			size_type copyRem = (end() - remStart);
-			temp.last_ += copyRem;
-			std::memcpy(pos + n, remStart, copyRem * sizeof(T));  
-			swap(temp);
+			size_type new_cap = grow_size(n);
+			pointer temp      = ebo_.allocate(new_cap);
+			size_type prefix  = static_cast<size_type>(pos-begin());
+			// copy prefix
+			std::memcpy(temp, begin(), prefix*sizeof(T));
+			// insert new stuff
+			pred(temp+prefix, n);
+			// copy suffix
+			std::memcpy(temp+prefix+n, pos, (end()-pos)*sizeof(T));
+			ebo_.release();
+			ebo_.buf  = temp;
+			ebo_.size+= n;
+			ebo_.cap  = new_cap;
 		}
-		last_ += n;
-		return pos;
 	}
-	struct ebo : public Allocator {
-		T* first_;
-		ebo() {}
-		ebo(const Allocator& a) : Allocator(a) {}
-	} ebo_;
-	T* last_;
-	T* eos_; 
+	struct ebo : public Allocator { // empty-base-optimization
+		typedef typename this_type::size_type size_type;
+		typedef typename this_type::allocator_type A;
+		pointer    buf;  // pointer to array
+		size_type  size; // current size (used elements)
+		size_type  cap;  // max size before regrow
+		ebo(size_type n, const Allocator& a) : Allocator(a), buf(0), size(0), cap(n) {
+			if (n > 0) {  buf = A::allocate(n); }
+		}
+		~ebo()            { release(); }
+		void release()    { if (buf) A::deallocate(buf, cap); }
+		T*   eos() const  { return buf + cap; }
+	}      ebo_;
 };
 
 template <class T, class A>
@@ -593,27 +531,27 @@ inline bool operator!=(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs)
 	return ! (lhs == rhs);
 }
 
-template <class T, class A> 
+template <class T, class A>
 inline bool operator<(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {
 	return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
-template <class T, class A> 
+template <class T, class A>
 inline bool operator>(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {
 	return rhs < lhs;
 }
 
-template<class T, class A> 
+template <class T, class A>
 inline bool operator<=(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {  
 	return !(rhs < lhs);
 }
 
-template<class T, class A> 
+template <class T, class A>
 inline bool operator>=(const pod_vector<T, A>& lhs, const pod_vector<T, A>& rhs) {
 	return !(lhs < rhs);
 }
 
-template<class T, class A> 
+template <class T, class A>
 inline void swap(pod_vector<T, A>& lhs, pod_vector<T, A>& rhs) { 
 	lhs.swap(rhs);
 }
@@ -621,3 +559,4 @@ inline void swap(pod_vector<T, A>& lhs, pod_vector<T, A>& rhs) {
 }
 
 #endif 
+
