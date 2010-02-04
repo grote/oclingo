@@ -250,7 +250,11 @@ void Solver::startAddConstraints() {
 	// pre-allocate some memory
 	assign_.trail.reserve(numVars());
 	levels_.reserve(25);
-	for (uint32 i = 0; i != 25; ++i) { undoFree(new ConstraintDB(10)); }
+	if (undoHead_ == 0) {
+		for (uint32 i = 0; i != 25; ++i) { 
+			undoFree(new ConstraintDB(10)); 
+		}
+	}
 	strategy_.heuristic->startInit(*this);
 	if (strategies().satPrePro.get()) {
 		strategies().satPrePro->setSolver(*this);
