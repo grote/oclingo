@@ -880,7 +880,7 @@ void DefaultUnfoundedCheck::createLoopFormula() {
 	}
 	else {
 		LoopFormula* lf = LoopFormula::newLoopFormula(*solver_, &(*activeClause_)[1], (uint32)activeClause_->size() - 1, (uint32)activeClause_->secondWatch()-1, (uint32)loopAtoms_.size()); 
-		solver_->addLearnt(lf);
+		solver_->addLearnt(lf, lf->size());
 		for (VarVec::size_type i = 0; i < loopAtoms_.size(); ++i) {
 			assert(solver_->isTrue(loopAtoms_[i]) && solver_->reason(loopAtoms_[i]).isNull());
 			const_cast<Antecedent&>(solver_->reason(loopAtoms_[i])) = lf;

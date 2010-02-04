@@ -113,10 +113,10 @@ struct SolveStats {
 	void updateModels(uint32) {}
   void updateJumps(uint32, uint32, uint32) {}
 #endif
-	void updateLearnt(LitVec::size_type n, ConstraintType t) {
+	void updateLearnt(uint32 n, ConstraintType t) {
 		assert(t != Constraint_t::native_constraint);
 		++learnt[0];  
-		lits[t-1] += n;
+		lits[t-1]  += n;
 		loops += t == Constraint_t::learnt_loop;
 		if (n > 1 && n < 4) {
 			++learnt[n-1];

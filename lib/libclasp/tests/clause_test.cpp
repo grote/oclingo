@@ -192,7 +192,7 @@ public:
 		clLits.push_back(posLit(4));
 		solver.endAddConstraints();
 		LearntConstraint* cl1 = Clause::newLearntClause(solver, clLits, Constraint_t::learnt_conflict,1);
-		solver.addLearnt(cl1);
+		solver.addLearnt(cl1, (uint32)clLits.size());
 		solver.assume(~clLits[0]);
 		solver.propagate();
 		solver.assume(~clLits[1]);
@@ -670,7 +670,7 @@ public:
 		solver.propagate();
 		Literal bodies[3] = {body1, body2, body3 };
 		LoopFormula* lf = LoopFormula::newLoopFormula(solver, &bodies[0], 3, 2, 1);
-		solver.addLearnt(lf);
+		solver.addLearnt(lf, lf->size());
 		solver.force(~a1, lf);
 		lf->addAtom(~a1, solver);
 		solver.propagate();
@@ -767,7 +767,7 @@ private:
 		solver.propagate();
 		Literal bodies[3] = {b1, b2, b3 };
 		LoopFormula* lf = LoopFormula::newLoopFormula(solver, &bodies[0], 3, 2, 3);
-		solver.addLearnt(lf);
+		solver.addLearnt(lf, lf->size());
 		solver.force(~a1, lf);
 		solver.force(~a2, lf);
 		solver.force(~a3, lf);

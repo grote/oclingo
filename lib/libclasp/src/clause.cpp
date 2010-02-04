@@ -150,8 +150,8 @@ bool ClauseCreator::createClause(Solver& s, ConstraintType type, const LitVec& l
 		}
 		else {
 			assert(sw != 0);
-			LearntConstraint* c = Clause::newLearntClause(s, lits, type, sw);
-			s.addLearnt(c);
+			Clause* c = (Clause*)Clause::newLearntClause(s, lits, type, sw);
+			s.addLearnt(c, (uint32)lits.size());
 			newCon = c;
 		}
 		if (out) *out = newCon;
@@ -596,7 +596,7 @@ void LoopFormula::reason(const Literal& p, LitVec& lits) {
 	++activity_;
 }
 
-LitVec::size_type LoopFormula::size() const {
+uint32 LoopFormula::size() const {
 	return size_ - 3;
 }
 

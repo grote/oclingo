@@ -307,9 +307,9 @@ public:
 	/*!
 	 * \pre endAddConstraints was called.
 	 */
-	void addLearnt(LearntConstraint* c) {
+	void addLearnt(LearntConstraint* c, uint32 size) {
 		learnts_.push_back(c);
-		stats.solve.updateLearnt(c->size(), c->type()); 
+		stats.solve.updateLearnt(size, c->type()); 
 	}
 	//@}
 	/*!

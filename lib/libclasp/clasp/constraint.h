@@ -170,8 +170,6 @@ public:
 	 * unassigned literals of this constraint.
 	 */
 	virtual bool isSatisfied(const Solver& s, LitVec& freeLits) const = 0;
-
-	virtual LitVec::size_type size() const = 0;
 protected:
 	~LearntConstraint();
 };

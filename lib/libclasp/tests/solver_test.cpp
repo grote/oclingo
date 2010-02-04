@@ -144,7 +144,7 @@ public:
 			s.startAddConstraints();
 			s.add( new TestingConstraint(&conDel) );
 			s.endAddConstraints();
-			s.addLearnt( new TestingConstraint(&lconDel, Constraint_t::learnt_conflict) );
+			s.addLearnt( new TestingConstraint(&lconDel, Constraint_t::learnt_conflict), 10 );
 			CPPUNIT_ASSERT_EQUAL(1u, s.numConstraints());
 			CPPUNIT_ASSERT_EQUAL(1u, s.numLearntConstraints());
 		}
@@ -235,7 +235,7 @@ public:
 		s.startAddConstraints();
 		s.add( new TestingConstraint(0) );
 		s.endAddConstraints();
-		s.addLearnt( new TestingConstraint(0, Constraint_t::learnt_conflict) );
+		s.addLearnt( new TestingConstraint(0, Constraint_t::learnt_conflict),10 );
 		s.assume( posLit(1) );
 		s.reset();
 		testDefaults();
@@ -635,8 +635,8 @@ public:
 		s.add( t1 = new TestingConstraint );
 		s.add( t2 = new TestingConstraint(&t2Del) );
 		s.endAddConstraints();
-		s.addLearnt( t3 = new TestingConstraint(&t3Del, Constraint_t::learnt_conflict) );
-		s.addLearnt( t4 = new TestingConstraint(0, Constraint_t::learnt_conflict) );
+		s.addLearnt( t3 = new TestingConstraint(&t3Del, Constraint_t::learnt_conflict),10 );
+		s.addLearnt( t4 = new TestingConstraint(0, Constraint_t::learnt_conflict),10 );
 		t1->sat = false;
 		t2->sat = true;
 		t3->sat = true;

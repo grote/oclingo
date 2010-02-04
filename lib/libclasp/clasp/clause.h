@@ -258,7 +258,7 @@ public:
 	/*
 	 * \note if the clause is currently contracted, only the literals in the "active" range are counted.
 	 */
-	LitVec::size_type size() const { return size_; }
+	uint32 size() const { return size_; }
 	
 	//! returns a pointer to the clause's first literal
 	const Literal* begin()  const { return const_cast<Clause*>(this)->begin(); }
@@ -380,7 +380,7 @@ public:
 	void updateHeuristic(Solver& s);
 	
 	//! returns the size of the loop-formula.
-	LitVec::size_type size() const;
+	uint32 size() const;
 	
 	// Constraint interface
 	
