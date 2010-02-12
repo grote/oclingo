@@ -1,9 +1,9 @@
 if(WITH_CLASP)
 	file(GLOB GRINGO_SRC *.cpp clasp/*.cpp)
-        include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/libprogram_opts ${GrinGo_SOURCE_DIR}/lib/libclasp)
+        include_directories (${GrinGo_SOURCE_DIR}/libgringo/gringo ${GrinGo_SOURCE_DIR}/libprogram_opts ${GrinGo_SOURCE_DIR}/libclasp)
 else(WITH_CLASP)
 	set (GRINGO_SRC main.cpp gringo_app.cpp gringo_options.cpp)
-        include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/libprogram_opts)
+        include_directories (${GrinGo_SOURCE_DIR}/libgringo/gringo ${GrinGo_SOURCE_DIR}/libprogram_opts)
 endif(WITH_CLASP)
 
 file(GLOB GRINGO_INC *.h)

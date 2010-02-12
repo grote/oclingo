@@ -59,7 +59,7 @@ else()
 endif()
 
 add_subdirectory (app)
-add_subdirectory (lib)
+add_subdirectory (libgringo)
 add_subdirectory (libprogram_opts)
 if(WITH_CLASP)
 	add_subdirectory (libclasp)

@@ -21,8 +21,8 @@ MACRO(LEMON NAME SRC DST VAR)
 	IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.cpp" OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/generated/${NAME}.h")
 		ADD_CUSTOM_COMMAND(
 		        OUTPUT ${DST}/lempar.c
-			COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lib/gringo/src/lempar.c ${DST}/lempar.c
-			MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/lib/gringo/src/lempar.c
+			COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/libgringo/src/lempar.c ${DST}/lempar.c
+			MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/libgringo/src/lempar.c
 		)
 		ADD_CUSTOM_COMMAND(
 			OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
