@@ -39,21 +39,7 @@ IF(MSVC)
 	ADD_DEFINITIONS(/D \"HAS_TR1_UNORDERED=1\" /D \"NS_TR1=std::tr1\")
 ENDIF(MSVC)
 
-# workaround (a possible bug in gcc 4.2) on mac os snowleopard
-if(CMAKE_SYSTEM MATCHES "Darwin")
-	set(CMAKE_CXX_FLAGS "-arch i386" CACHE STRING "Flags used by the compiler during all builds." FORCE)
-endif(CMAKE_SYSTEM MATCHES "Darwin")
-
-if(NOT CMAKE_VERBOSE_MAKEFILE)
-	set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "If this value is on, makefiles will be generated without the .SILENT directive, and all commands will be echoed to the console during the make.  This is useful for debugging only. With Visual Studio IDE projects all commands are done without /nologo" FORCE)
-endif(NOT CMAKE_VERBOSE_MAKEFILE)
-
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
 set(WITH_CLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an internal clasp version.")
-
 set(WITH_ICLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an incremental clasp interface.")
 if(WITH_ICLASP)
 	set(WITH_CLASP ON CACHE BOOL "Enable this flag to build GrinGo with an internal clasp version.")
@@ -65,22 +51,23 @@ ADD_DEFINITIONS(-DGRINGO_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
 ADD_DEFINITIONS(-DCLASP_VERSION="\\"1.3.1\\"")
 if(WITH_CLASP)
 	ADD_DEFINITIONS(-DWITH_CLASP)
-endif(WITH_CLASP)
+endif()
 
 if(WITH_ICLASP)
 	ADD_DEFINITIONS(-DWITH_ICLASP)
-endif(WITH_ICLASP)
+endif()
 
 if(WITH_ICLASP)
 	ADD_DEFINITIONS(-DEXECUTABLE="\\"iclingo\\"")
-else(WITH_ICLASP)
+else()
 	if(WITH_CLASP)
 		ADD_DEFINITIONS(-DEXECUTABLE="\\"clingo\\"")
-	else(WITH_CLASP)
+	else()
 		ADD_DEFINITIONS(-DEXECUTABLE="\\"gringo\\"")
-	endif(WITH_CLASP)
-endif(WITH_ICLASP)
+	endif()
+endif()
 
 add_subdirectory (app)
 add_subdirectory (lib)
+add_subdirectory (libprogram_opts)
 

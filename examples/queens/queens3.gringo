@@ -1,7 +1,7 @@
 #hide.
 #show q/2. 
 
-queens(10).
+queens(50).
 diags(Q * 2 - 1) :- queens(Q).
 
 d(1..Q) :- queens(Q).

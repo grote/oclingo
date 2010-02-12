@@ -1,3 +1,4 @@
+file(GLOB LIBGRINGO_INC include/*.h)
 file(GLOB LIBGRINGO_SRC src/*.cpp)
  
 if (WITH_CLASP)
@@ -21,12 +22,7 @@ LEMON(lparseparser_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_D
 RE2C(plainlparselexer ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} LIBGRINGO_SRC)
 LEMON(lparseconverter_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR} LIBGRINGO_SRC)
 
-if (MSVC)
-file(GLOB LIBGRINGO_HEAD include/*.h)
-add_library(gringo-lib STATIC ${LIBGRINGO_SRC} ${LIBGRINGO_HEAD})
-else (MSVC)
-add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
-endif (MSVC)
+add_library(gringo-lib STATIC ${LIBGRINGO_SRC} ${LIBGRINGO_INC})
 
 target_link_libraries (gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)

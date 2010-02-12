@@ -10,13 +10,13 @@
 q(X,Y) :- d(X), d(Y), not negq(X,Y).
 negq(X,Y) :- d(X), d(Y), not q(X,Y).
 
-:- q(X,Y), q(X1,Y),  X1 != X.
+:- q(X,Y), q(X1,Y),  X1 < X.
 :- q(X,Y), q(X,Y1), Y1 != Y.
 :- q(X,Y), q(X1,Y1), X != X1,  Y != Y1, abs(X - X1) == abs(Y - Y1).
 :- d(X), not hasq(X). 
 hasq(X) :-  q(X,Y). 
 
-d(1..10).
+d(1..20).
 
 % Typical command line 
 % lparse -1 -d none -c queens=8 queens.lp  | smodels

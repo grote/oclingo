@@ -1,16 +1,14 @@
 if(WITH_CLASP)
 	file(GLOB GRINGO_SRC *.cpp clasp/*.cpp)
-	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/lib/libprogram_opts ${GrinGo_SOURCE_DIR}/lib/libclasp)
+        include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/libprogram_opts ${GrinGo_SOURCE_DIR}/lib/libclasp)
 else(WITH_CLASP)
 	set (GRINGO_SRC main.cpp gringo_app.cpp gringo_options.cpp)
-	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/lib/libprogram_opts)
+        include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config ${GrinGo_SOURCE_DIR}/libprogram_opts)
 endif(WITH_CLASP)
-if (MSVC)
-file(GLOB GRINGO_HEAD *.h)
-add_executable (gringo-app ${GRINGO_SRC} ${GRINGO_HEAD})
-else (MSVC)
-add_executable (gringo-app ${GRINGO_SRC})
-endif (MSVC)
+
+file(GLOB GRINGO_INC *.h)
+
+add_executable (gringo-app ${GRINGO_SRC} ${GRINGO_INC})
 
 if (WITH_ICLASP)
 	target_link_libraries (gringo-app gringo-lib clasp-lib program_opts-lib)
