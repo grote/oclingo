@@ -1,61 +1,58 @@
 #!/bin/bash
 
-VERSION="2.0.3"
+VERSION="2.0.4"
 
-# completely rebuild everything
-make clean
-rm -rf build
+make all_static32 all_mingw32
 
-./init.sh --mingw32 --x86-pc-linux-gnu --clingo --iclingo --debug
-rm -rf build/gringo/debug
-rm -rf build/clingo/debug
+cd doc/guide
+pdflatex guide
+bibtex   guide
+pdflatex guide
+pdflatex guide
+cd ../..
 
+rm -rf   build/release
 mkdir -p build/release
-mkdir -p build/release/all-${VERSION}-win32
-mkdir -p build/release/all-${VERSION}-x86-linux
-
-./build.sh
+cd       build/release
 
 # create the windows binary release
-cp build/gringo/mingw32/bin/gringo.exe build/release/all-${VERSION}-win32/gringo-${VERSION}-win32.exe
-cp build/clingo/mingw32/bin/clingo.exe build/release/all-${VERSION}-win32/clingo-${VERSION}-win32.exe
-cp build/iclingo/mingw32/bin/iclingo.exe build/release/all-${VERSION}-win32/iclingo-${VERSION}-win32.exe
-zip -r build/release/all-${VERSION}-win32.zip build/release/all-${VERSION}-win32/
-zip -j build/release/gringo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/gringo-${VERSION}-win32.exe
-zip -j build/release/clingo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/clingo-${VERSION}-win32.exe
-zip -j build/release/iclingo-${VERSION}-win32.exe.zip build/release/all-${VERSION}-win32/iclingo-${VERSION}-win32.exe
-rm -rf build/release/all-${VERSION}-win32/
+WIN32_PATH=binaries-${VERSION}-win32
+mkdir -p                              ${WIN32_PATH}
+cp ../gringo/mingw32/bin/gringo.exe   ${WIN32_PATH}/
+cp ../clingo/mingw32/bin/clingo.exe   ${WIN32_PATH}/
+cp ../iclingo/mingw32/bin/iclingo.exe ${WIN32_PATH}/
+cp ../../COPYING                      ${WIN32_PATH}/
+cp ../../CHANGES                      ${WIN32_PATH}/
+cp ../../doc/guide/guide.pdf          ${WIN32_PATH}/
+zip -r ${WIN32_PATH}.zip              ${WIN32_PATH}/
+rm -rf                                ${WIN32_PATH}/
 
 # create the linux binary release
-cp build/gringo/x86-pc-linux-gnu/bin/gringo build/release/all-${VERSION}-x86-linux/gringo-${VERSION}-x86-linux
-cp build/clingo/x86-pc-linux-gnu/bin/clingo build/release/all-${VERSION}-x86-linux/clingo-${VERSION}-x86-linux
-cp build/iclingo/x86-pc-linux-gnu/bin/iclingo build/release/all-${VERSION}-x86-linux/iclingo-${VERSION}-x86-linux
-tar -czf build/release/all-${VERSION}-x86-linux.tar.gz build/release/all-${VERSION}-x86-linux/
-gzip -c > build/release/gringo-${VERSION}-x86-linux.gz build/release/all-${VERSION}-x86-linux/gringo-${VERSION}-x86-linux
-gzip -c > build/release/clingo-${VERSION}-x86-linux.gz build/release/all-${VERSION}-x86-linux/clingo-${VERSION}-x86-linux
-gzip -c > build/release/iclingo-${VERSION}-x86-linux.gz build/release/all-${VERSION}-x86-linux/iclingo-${VERSION}-x86-linux
-rm -rf build/release/all-${VERSION}-x86-linux/
+LINUX_PATH=binaries-${VERSION}-x86-linux
+mkdir -p                              ${LINUX_PATH}
+cp ../gringo/mingw32/bin/gringo.exe   ${LINUX_PATH}/
+cp ../clingo/mingw32/bin/clingo.exe   ${LINUX_PATH}/
+cp ../iclingo/mingw32/bin/iclingo.exe ${LINUX_PATH}/
+cp ../../COPYING                      ${LINUX_PATH}/
+cp ../../CHANGES                      ${LINUX_PATH}/
+cp ../../doc/guide/guide.pdf          ${LINUX_PATH}/
+tar -czf ${LINUX_PATH}.tar.gz         ${LINUX_PATH}/
+rm -rf                                ${LINUX_PATH}/
 
 # create the source release
-cd build/gringo/release/
+cd ../gringo/static32
 make package_source
-cd ../../..
+cd ../../release
 
-# this must be possible with cmake too
-cp build/gringo/release/GrinGo-${VERSION}-Source.tar.gz build/release/
-tar -xf build/release/GrinGo-${VERSION}-Source.tar.gz -C build/release
-rm build/release/GrinGo-${VERSION}-Source.tar.gz
-mv build/release/GrinGo-${VERSION}-Source build/release/gringo-${VERSION}-source
+tar -xf ../gringo/static32/gringo-${VERSION}-source.tar.gz
 # copy the generated files into the source release
-mkdir build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/lparselexer.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/plainlparselexer.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/lparseconverter_impl.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/lparseconverter_impl.h build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/lparseparser_impl.cpp build/release/gringo-${VERSION}-source/lib/gringo/generated
-cp build/gringo/release/lib/gringo/lparseparser_impl.h build/release/gringo-${VERSION}-source/lib/gringo/generated
-cd build/release
-tar -czf gringo-${VERSION}-source.tar.gz gringo-${VERSION}-source
-rm -rf gringo-${VERSION}-source
+cp ../gringo/static32/libgringo/lparselexer.cpp          gringo-${VERSION}-source/libgringo/src
+cp ../gringo/static32/libgringo/plainlparselexer.cpp     gringo-${VERSION}-source/libgringo/src
+cp ../gringo/static32/libgringo/lparseconverter_impl.cpp gringo-${VERSION}-source/libgringo/src
+cp ../gringo/static32/libgringo/lparseconverter_impl.h   gringo-${VERSION}-source/libgringo/src
+cp ../gringo/static32/libgringo/lparseparser_impl.cpp    gringo-${VERSION}-source/libgringo/src
+cp ../gringo/static32/libgringo/lparseparser_impl.h      gringo-${VERSION}-source/libgringo/src
+tar -czf gringo-${VERSION}-source.tar.gz                 gringo-${VERSION}-source
+rm -rf                                                   gringo-${VERSION}-source
 
 #svn copy https://potassco.svn.sourceforge.net/svnroot/potassco/trunk/gringo https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-${VERSION}

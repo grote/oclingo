@@ -15,8 +15,8 @@ SET(CPACK_PACKAGE_VERSION "2.0.4")
 SET(CPACK_PACKAGE_VERSION_MAJOR "2")
 SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "4")
-# that sucks this is nowhere documented!!!
-SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/" "release.sh" "build.sh" "TODO")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${CPACK_PACKAGE_VERSION}-source")
+SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/" "release.sh" "TODO" "CMakeLists.txt.user")
 SET(CPACK_SOURCE_GENERATOR "TGZ")
 include (CPack)
 
