@@ -18,7 +18,7 @@
 #ifndef DEPENDENCYRELATION_H
 #define DEPENDENCYRELATION_H
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class DependencyRelation
 	{

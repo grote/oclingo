@@ -20,7 +20,7 @@
 #include <gringo/lparselexer.h>
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 void *lparseparserAlloc(void *(*mallocProc)(size_t));
 void lparseparserFree(void *p, void (*freeProc)(void*));

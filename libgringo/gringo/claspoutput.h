@@ -28,7 +28,7 @@ namespace Clasp
 	class ProgramBuilder;
 }
 
-namespace NS_GRINGO
+namespace gringo
 {
 	namespace NS_OUTPUT
 	{
@@ -58,7 +58,7 @@ namespace NS_GRINGO
 #endif
 
 #ifdef WITH_ICLASP
-namespace NS_GRINGO
+namespace gringo
 {
 	namespace NS_OUTPUT
 	{

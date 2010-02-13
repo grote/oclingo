@@ -23,7 +23,7 @@
 #include <gringo/value.h>
 #include <gringo/literaldependencygraph.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant) :
 	g_(g), r_(r), lit_(*lits), dom_(lits->size()), var_(lits->size()), dep_(lits->size()), 

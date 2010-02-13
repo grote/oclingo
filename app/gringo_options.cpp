@@ -19,7 +19,7 @@
 //
 #include "gringo_options.h"
 #include <program_opts/value.h>
-namespace NS_GRINGO {
+namespace gringo {
 	
 GringoOptions::GringoOptions() 
 	: aspilsOut(-1)

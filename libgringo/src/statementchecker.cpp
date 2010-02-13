@@ -18,7 +18,7 @@
 #include <gringo/statementchecker.h>
 #include <gringo/literal.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 StatementChecker::StatementChecker(StatementChecker *parent) : parent_(parent)
 {

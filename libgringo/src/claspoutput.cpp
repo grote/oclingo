@@ -31,7 +31,7 @@ std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
 #include <gringo/grounder.h>
 #include <clasp/program_builder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 
 ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, bool shift) : SmodelsConverter(&std::cout, shift), b_(b)

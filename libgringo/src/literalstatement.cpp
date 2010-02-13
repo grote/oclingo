@@ -25,7 +25,7 @@
 #include <gringo/evaluator.h>
 #include <gringo/gringoexception.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 LiteralStatement::LiteralStatement(Literal *lit, bool preserveOrder) : lit_(lit), preserveOrder_(preserveOrder)
 {

@@ -22,7 +22,7 @@
 #include <gringo/output.h>
 
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 namespace
 {

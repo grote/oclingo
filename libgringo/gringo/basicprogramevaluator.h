@@ -22,7 +22,7 @@
 #include <gringo/evaluator.h>
 #include <gringo/output.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/**
 	 * \brief Evaluator backend which calculates the single answer set for a basic program

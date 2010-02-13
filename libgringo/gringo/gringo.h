@@ -75,7 +75,7 @@ inline size_t hashString(const std::string& str) {
 #endif
 
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class GlobalStorage;
 

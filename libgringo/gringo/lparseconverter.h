@@ -22,7 +22,7 @@
 #include <gringo/gringoparser.h>
 #include <gringo/globalstorage.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class LparseConverter : public GrinGoParser, public GlobalStorage
 	{

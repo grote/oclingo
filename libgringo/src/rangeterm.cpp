@@ -22,7 +22,7 @@
 #include <gringo/variable.h>
 #include <gringo/rangeliteral.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 RangeTerm::RangeTerm(Term *lower, Term *upper) : Term(), lower_(lower), upper_(upper)
 {

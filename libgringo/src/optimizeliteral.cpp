@@ -24,7 +24,7 @@
 #include <gringo/literaldependencygraph.h>
 #include <gringo/output.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 OptimizeLiteral::OptimizeLiteral(Type type, ConditionalLiteralVector *literals, bool setSemantic) : Literal(), type_(type), setSemantic_(setSemantic), literals_(literals)
 {

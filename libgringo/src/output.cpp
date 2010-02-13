@@ -21,7 +21,7 @@
 #include <gringo/pilsoutput.h>
 #include <gringo/gringoexception.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 
 const char* END_ENTRY = " 0";

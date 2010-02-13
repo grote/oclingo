@@ -21,7 +21,7 @@
 #include <gringo/value.h>
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 MultipleArgsTerm::MultipleArgsTerm(Term *a, Term *b) : a_(a), b_(b)
 {

@@ -34,7 +34,7 @@
 #define EOI -1
 #define ERR 0
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 void LparseLexer::backwardWarning()
 {

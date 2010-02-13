@@ -19,7 +19,7 @@
 #include <gringo/grounder.h>
 #include <gringo/output.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 Evaluator::Evaluator() : g_(0), o_(0)
 {

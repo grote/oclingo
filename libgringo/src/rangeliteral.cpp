@@ -23,7 +23,7 @@
 #include <gringo/literaldependencygraph.h>
 #include <gringo/statementchecker.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 RangeLiteral::RangeLiteral(Variable *var, Term *lower, Term *upper) : Literal(), var_(var), lower_(lower), upper_(upper)
 {

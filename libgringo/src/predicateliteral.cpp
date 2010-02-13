@@ -35,7 +35,7 @@
 #include <gringo/evaluator.h>
 #include <gringo/bindersplitter.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 PredicateLiteral::PredicateLiteral(Grounder *g, int id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), aid_(uid_), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
 {

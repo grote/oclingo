@@ -22,7 +22,7 @@
 #include <gringo/term.h>
 #include <gringo/value.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class Constant : public Term
 	{

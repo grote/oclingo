@@ -18,7 +18,7 @@
 #include <gringo/lparseoutput.h>
 #include <gringo/globalstorage.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 		
 LparseOutput::LparseOutput(std::ostream *out) : Output(out)

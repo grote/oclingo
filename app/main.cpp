@@ -25,7 +25,7 @@
 // #define CHECK_HEAP
 int main(int argc, char** argv) {
 	try {
-		return NS_GRINGO::Application::instance().run(argc, argv);
+		return gringo::Application::instance().run(argc, argv);
 	} 
 	catch (...) {
 		std::cerr << "\n*** INTERNAL ERROR: please contact the authors of gringo" << std::endl;

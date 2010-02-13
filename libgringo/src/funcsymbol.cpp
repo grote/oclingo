@@ -19,7 +19,7 @@
 #include <gringo/value.h>
 #include <gringo/globalstorage.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 FuncSymbol::FuncSymbol(int s, const ValueVector& args) : name_(s), args_(args)
 {

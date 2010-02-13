@@ -30,7 +30,7 @@
 #include <gringo/indexeddomain.h>
 #include <gringo/variable.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), grounder_(0), ground_(1), base_(0), last_(0), lambda_(0), delta_(0), isGround_(0)
 {

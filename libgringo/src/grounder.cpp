@@ -27,7 +27,7 @@
 #include <gringo/domain.h>
 #include <gringo/gringoexception.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Grounder::Grounder(const Options &opts) : opts_(opts), incremental_(false), incStep_(0), internalVars_(0), output_(0), eval_(0)
 {

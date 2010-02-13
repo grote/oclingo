@@ -17,7 +17,7 @@
 
 #include <gringo/gringolexer.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 GrinGoLexer::GrinGoLexer(std::istream *in) : in(in), bufmin(8192), bufsize(0), buffer(0), start(0), offset(0), cursor(0), limit(0), marker(0), eof(0), line(1)
 {

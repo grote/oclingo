@@ -19,7 +19,7 @@
 #include <gringo/gringoexception.h>
 #include <gringo/globalstorage.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Value::Value(Type type, int uid) : type_(type), uid_(uid)
 {

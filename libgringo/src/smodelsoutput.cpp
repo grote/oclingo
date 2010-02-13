@@ -19,7 +19,7 @@
 #include <gringo/grounder.h>
 #include <gringo/gringoexception.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 
 SmodelsOutput::SmodelsOutput(std::ostream *out, bool shift) : SmodelsConverter(out, shift)

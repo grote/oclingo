@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/funcsymbol.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class GlobalStorage
 	{

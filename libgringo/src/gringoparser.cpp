@@ -19,7 +19,7 @@
 #include <gringo/gringoparser.h>
 #include <gringo/gringolexer.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 void GrinGoParser::handleError()
 {

@@ -18,7 +18,7 @@
 #include <gringo/variable.h>
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 Variable::Variable(Grounder *g, int id) : id_(id), uid_(g->registerVar(id))
 {

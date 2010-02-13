@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/smodelsconverter.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	namespace NS_OUTPUT
 	{

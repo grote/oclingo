@@ -25,7 +25,7 @@
 #include <gringo/value.h>
 #include <gringo/funcsymbol.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 
 typedef std::pair<ObjectVector, IntVector> WeightList;

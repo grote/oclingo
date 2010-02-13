@@ -20,7 +20,7 @@
 
 #include <gringo/gringo.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class StatementChecker
 	{

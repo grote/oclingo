@@ -17,7 +17,7 @@
 
 #include <gringo/statement.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Statement::Statement()
 {

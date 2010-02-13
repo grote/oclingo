@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/gringolexer.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class PlainLparseLexer : public GrinGoLexer
 	{

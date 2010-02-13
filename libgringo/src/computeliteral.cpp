@@ -24,7 +24,7 @@
 #include <gringo/statementchecker.h>
 #include <gringo/output.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 ComputeLiteral::ComputeLiteral(ConditionalLiteralVector *literals, int number) : Literal(), number_(number), literals_(literals)
 {

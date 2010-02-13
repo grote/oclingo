@@ -22,7 +22,7 @@
 #include <gringo/printable.h>
 #include <gringo/groundable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/**
 	 * \brief Base class for every construct in a logic program that has to be grounded

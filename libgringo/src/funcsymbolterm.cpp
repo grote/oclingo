@@ -23,7 +23,7 @@
 #include <gringo/variable.h>
 #include <gringo/expandable.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 FuncSymbolTerm::FuncSymbolTerm(Grounder* g, int s, TermVector* tl) : Term(), name_(s), termList_(tl)
 {

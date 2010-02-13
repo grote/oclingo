@@ -18,7 +18,7 @@
 #include <gringo/literaldependencygraph.h>
 #include <gringo/literal.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 ///////////////////////////////////// LiteralNode ///////////////////////////////////////////
 

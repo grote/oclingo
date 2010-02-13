@@ -27,7 +27,7 @@
 #include <gringo/aggregateliteral.h>
 #include <gringo/domain.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0), clone_(0)
 {

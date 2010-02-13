@@ -23,7 +23,7 @@
 #include <gringo/statementchecker.h>
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 RelationLiteral::RelationLiteral(RelationType type, Term *a, Term *b) : Literal(), type_(type), a_(a), b_(b)
 {

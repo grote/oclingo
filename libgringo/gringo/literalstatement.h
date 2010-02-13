@@ -22,7 +22,7 @@
 #include <gringo/statement.h>
 #include <gringo/expandable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/**
 	 * \brief A statement that contains exactly one literal

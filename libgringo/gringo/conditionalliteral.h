@@ -23,7 +23,7 @@
 #include <gringo/groundable.h>
 #include <gringo/expandable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class ConditionalLiteral : public Literal, public Groundable, public Expandable
 	{

@@ -18,7 +18,7 @@
 #include <gringo/domain.h>
 #include <gringo/value.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Domain::Domain() : type_(UNDEFINED), defines_(0), solved_(false)
 {

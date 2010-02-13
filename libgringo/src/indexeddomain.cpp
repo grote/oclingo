@@ -22,7 +22,7 @@
 #include <gringo/literal.h>
 #include <gringo/constant.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 //////////////////////////////// IndexedDomain ///////////////////////////////////////
 

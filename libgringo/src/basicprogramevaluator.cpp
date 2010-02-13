@@ -20,7 +20,7 @@
 #include <gringo/domain.h>
 #include <gringo/output.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 BasicProgramEvaluator::AtomNode::AtomNode(Domain *node) : status_(NONE), node_(node)
 {

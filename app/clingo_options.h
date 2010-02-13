@@ -30,7 +30,7 @@
 #include <program_opts/app_options.h>
 #include <gringo/grounder.h>
 #include <clasp/clasp_facade.h>
-namespace NS_GRINGO {
+namespace gringo {
 struct GringoOptions;
 
 /////////////////////////////////////////////////////////////////////////////////////////

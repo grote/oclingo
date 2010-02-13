@@ -18,7 +18,7 @@
 #include <gringo/globalstorage.h>
 #include <gringo/domain.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 GlobalStorage::GlobalStorage()
 {

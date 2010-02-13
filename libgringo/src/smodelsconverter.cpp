@@ -20,7 +20,7 @@
 #include <gringo/grounder.h>
 #include <cstdarg>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 
 SmodelsConverter::SmodelsConverter(std::ostream *out, bool shift) : Output(out), negBoundsWarning_(true), shift_(shift)

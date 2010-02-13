@@ -24,7 +24,7 @@
 #include <gringo/grounder.h>
 #include <gringo/statementdependencygraph.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 ConjunctionAggregate::ConjunctionAggregate(ConditionalLiteralVector *literals) : AggregateLiteral(literals)
 {

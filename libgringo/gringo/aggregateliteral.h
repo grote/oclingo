@@ -22,7 +22,7 @@
 #include <gringo/literal.h>
 #include <gringo/expandable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class AggregateLiteral : public Literal, public Expandable
 	{

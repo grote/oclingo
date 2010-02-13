@@ -20,7 +20,7 @@
 
 #include <gringo/gringo.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/// Interface which allows to expand objects by literals
 	class Expandable

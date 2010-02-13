@@ -18,7 +18,7 @@
 #include <gringo/functionterm.h>
 #include <gringo/value.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 FunctionTerm::FunctionTerm(FunctionType type, Term *a, Term *b) : Term(), type_(type), a_(a), b_(b)
 {

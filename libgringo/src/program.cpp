@@ -22,7 +22,7 @@
 #include <gringo/evaluator.h>
 #include <gringo/basicprogramevaluator.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Program::Program(Type type, StatementVector &rules) : type_(type), eval_(0)
 {

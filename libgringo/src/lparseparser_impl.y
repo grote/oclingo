@@ -60,7 +60,7 @@
 // misc
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 #define OUTPUT (pParser->getGrounder()->getOutput())
 #define GROUNDER (pParser->getGrounder())

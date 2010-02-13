@@ -30,7 +30,7 @@
 #include <gringo/variable.h>
 #include <gringo/dlvgrounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 AggregateLiteral::AggregateLiteral(ConditionalLiteralVector *literals) : Literal(), literals_(literals), lower_(0), upper_(0), equal_(0)
 {

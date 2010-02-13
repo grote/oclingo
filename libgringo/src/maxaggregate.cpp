@@ -25,7 +25,7 @@
 #include <gringo/indexeddomain.h>
 #include <gringo/variable.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 MaxAggregate::MaxAggregate(ConditionalLiteralVector *literals) : AggregateLiteral(literals)
 {

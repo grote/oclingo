@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/printable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/**
 	 * \brief Class to store values of terms

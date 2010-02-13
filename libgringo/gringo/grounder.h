@@ -22,7 +22,7 @@
 #include <gringo/output.h>
 #include <gringo/globalstorage.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class Grounder : public GlobalStorage
 	{

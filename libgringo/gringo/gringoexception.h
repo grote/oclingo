@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <exception>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class GrinGoException : public std::exception
 	{

@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/value.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class IndexedDomain
 	{

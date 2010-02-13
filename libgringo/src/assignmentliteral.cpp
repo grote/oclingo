@@ -25,7 +25,7 @@
 #include <gringo/literaldependencygraph.h>
 #include <gringo/statementchecker.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 AssignmentLiteral::AssignmentLiteral(Variable *c, Term *t) : Literal(), c_(c), t_(t)
 {

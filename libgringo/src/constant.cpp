@@ -18,7 +18,7 @@
 #include <gringo/constant.h>
 #include <gringo/grounder.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 Constant::Constant(const Value &v) : value_(v)
 {

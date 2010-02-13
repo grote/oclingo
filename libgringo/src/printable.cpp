@@ -17,7 +17,7 @@
 
 #include <gringo/printable.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Printable::Printable()
 {

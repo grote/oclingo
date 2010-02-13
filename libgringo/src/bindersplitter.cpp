@@ -25,7 +25,7 @@
 #include <gringo/term.h>
 #include <gringo/domain.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 BinderSplitter::BinderSplitter(Domain *domain, TermVector *param, const VarVector &relevant) : domain_(domain), param_(param), relevant_(relevant)
 {
@@ -93,7 +93,7 @@ NS_OUTPUT::Object *BinderSplitter::convert()
 	FAIL(true);
 }
 
-namespace NS_GRINGO
+namespace gringo
 {
 	namespace
 	{

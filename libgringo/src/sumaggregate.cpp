@@ -25,7 +25,7 @@
 #include <gringo/grounder.h>
 #include <gringo/variable.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 SumAggregate::SumAggregate(ConditionalLiteralVector *literals) : AggregateLiteral(literals)
 {

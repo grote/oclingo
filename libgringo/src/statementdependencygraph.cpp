@@ -21,7 +21,7 @@
 #include <gringo/grounder.h>
 #include <gringo/program.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 		
 // ==================== SDG::SCC ============================
 SDG::SCC::SCC() : type_(FACT), edges_(0)

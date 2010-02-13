@@ -21,7 +21,7 @@
 #include <gringo/grounder.h>
 #include <gringo/funcsymbol.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 void *lparseconverterAlloc(void *(*mallocProc)(size_t));
 void lparseconverterFree(void *p, void (*freeProc)(void*));

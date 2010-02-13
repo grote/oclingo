@@ -29,7 +29,7 @@
 #include <utility>
 #include <program_opts/app_options.h>
 #include <gringo/grounder.h>
-namespace NS_GRINGO {
+namespace gringo {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Option groups - Mapping between command-line options and gringo options
@@ -45,7 +45,7 @@ struct GringoOptions {
 	// ifixed      => Default: -1
 	// verbose     => Default: false
 	// binderSplit => Default: true
-	NS_GRINGO::Grounder::Options grounderOptions;
+	gringo::Grounder::Options grounderOptions;
 	int              aspilsOut;
 	bool             syntax;           // Default: false
 	bool             convert;          // Default: false

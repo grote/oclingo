@@ -22,7 +22,7 @@
 #include <gringo/literal.h>
 #include <gringo/expandable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class OptimizeLiteral : public Literal, public Expandable
 	{

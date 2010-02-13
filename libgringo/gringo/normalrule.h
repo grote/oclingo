@@ -22,7 +22,7 @@
 #include <gringo/statement.h>
 #include <gringo/expandable.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	/// This class is used to represent normal rules including integrity constraints and facts
 	class NormalRule : public Statement, public Expandable

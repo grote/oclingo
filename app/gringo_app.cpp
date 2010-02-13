@@ -37,7 +37,7 @@
 #include <sstream>
 #include <signal.h>
 using namespace std;
-namespace NS_GRINGO {
+namespace gringo {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Application - common stuff
@@ -82,7 +82,7 @@ int Application::run(int argc, char** argv) {
 		return S_ERROR;
 	}
 #endif
-	catch (const NS_GRINGO::GrinGoException& e) {
+	catch (const gringo::GrinGoException& e) {
 		cerr << "\nGringo ERROR: " << e.what() << endl;
 		return S_ERROR;
 	}
@@ -144,7 +144,7 @@ void Streams::open(const std::vector<std::string>& fileList) {
 /////////////////////////////////////////////////////////////////////////////////////////
 std::string GringoApp::getVersion() const { return GRINGO_VERSION; }
 std::string GringoApp::getUsage()   const { return "[options] [files]"; }
-ProgramOptions::PosOption GringoApp::getPositionalParser() const { return &NS_GRINGO::parsePositional; }
+ProgramOptions::PosOption GringoApp::getPositionalParser() const { return &gringo::parsePositional; }
 void GringoApp::handleSignal(int) {
 	printf("\n*** INTERRUPTED! ***\n");
 	_exit(S_UNKNOWN);
@@ -207,7 +207,7 @@ void GringoApp::ground(NS_OUTPUT::Output& output) const {
 	if(opts.convert) {
 		LparseConverter parser(s.streams);
 		if(!parser.parse(&output))
-			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+			throw gringo::GrinGoException("Error: Parsing failed.");
 		// just an approximation
 		if (opts.textOut) {
 			output.stats_.atoms = 0;
@@ -221,7 +221,7 @@ void GringoApp::ground(NS_OUTPUT::Output& output) const {
 		Grounder grounder(opts.grounderOptions);
 		LparseParser parser(&grounder, s.streams);
 		if(!parser.parse(&output))
-			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+			throw gringo::GrinGoException("Error: Parsing failed.");
 		grounder.prepare(false);
 		if(generic.verbose > 1)
 			cerr << "Grounding..." << endl;
@@ -272,13 +272,13 @@ void GringoApp::addConstStream(Streams& s) const {
 namespace {
 // class for using gringos output as clasps input
 struct FromGringo : public Clasp::Input {
-	typedef std::auto_ptr<NS_GRINGO::Grounder> GrounderPtr;
-	typedef std::auto_ptr<NS_GRINGO::LparseParser> ParserPtr;
+	typedef std::auto_ptr<gringo::Grounder> GrounderPtr;
+	typedef std::auto_ptr<gringo::LparseParser> ParserPtr;
 	typedef std::auto_ptr<NS_OUTPUT::Output> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode) : clingo(clingoMode) {
-		grounder.reset(new NS_GRINGO::Grounder(opts.grounderOptions));
-		parser.reset(new NS_GRINGO::LparseParser(grounder.get(), str.streams));
+		grounder.reset(new gringo::Grounder(opts.grounderOptions));
+		parser.reset(new gringo::LparseParser(grounder.get(), str.streams));
 		if (clingo) {
 			out.reset(new NS_OUTPUT::ClaspOutput(0, opts.shift));
 		}
@@ -305,7 +305,7 @@ struct FromGringo : public Clasp::Input {
 		static_cast<NS_OUTPUT::ClaspOutput*>(out.get())->setProgramBuilder(api);
 		solver = &s;
 		if (parser.get()) {
-			if (!parser->parse(out.get())) throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+			if (!parser->parse(out.get())) throw gringo::GrinGoException("Error: Parsing failed.");
 			grounder->prepare(!clingo);
 			parser.reset(0);
 		}

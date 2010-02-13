@@ -17,7 +17,7 @@
 
 #include <gringo/literal.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 Literal::Literal() : neg_(false)
 {

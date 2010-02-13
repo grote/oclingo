@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/literal.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class RangeLiteral : public Literal
 	{

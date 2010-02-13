@@ -21,7 +21,7 @@
 #include <gringo/gringo.h>
 #include <gringo/term.h>
 
-namespace NS_GRINGO
+namespace gringo
 {
 	class FuncSymbolTerm : public Term
 	{

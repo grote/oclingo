@@ -20,7 +20,7 @@
 #include "clingo_options.h"
 #include "gringo_options.h"
 #include <program_opts/value.h>
-namespace NS_GRINGO {
+namespace gringo {
 	
 ClingoOptions::ClingoOptions() 
 	: claspMode(false)

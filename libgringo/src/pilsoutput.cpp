@@ -17,7 +17,7 @@
 
 #include <gringo/pilsoutput.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 using namespace NS_OUTPUT;
 		
 PilsOutput::PilsOutput(std::ostream *out, unsigned int normalForm) : Output(out), normalForm_(normalForm)

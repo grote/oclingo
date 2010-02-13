@@ -22,7 +22,7 @@
 #include <gringo/value.h>
 #include <gringo/output.h>
 
-using namespace NS_GRINGO;
+using namespace gringo;
 
 DisjunctionAggregate::DisjunctionAggregate(ConditionalLiteralVector *literals) : AggregateLiteral(literals)
 {
