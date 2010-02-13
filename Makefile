@@ -1,5 +1,5 @@
 DEBUG_FLAGS=-W -Wall -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
-RELEASE_FLAGS=-W -Wall
+RELEASE_FLAGS=-Wall
 
 gringo_release:
 	mkdir -p build/gringo/release
@@ -75,4 +75,7 @@ all_static32: gringo_static32 clingo_static32 iclingo_static32
 all_mingw32: gringo_mingw32 clingo_mingw32 iclingo_mingw32
 
 all: all_release all_debug all_static all_static32 all_mingw32
+
+clean: 
+	rm -rf build
 
