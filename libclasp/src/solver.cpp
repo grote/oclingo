@@ -174,6 +174,7 @@ bool Solver::PPList::nextSymModel(Solver& s, bool expand) {
 	for (; saved; saved = saved->next) {
 		if (saved->nextSymModel(s, expand)) return true;
 	}
+	saved = head;
 	return false;
 }
 /////////////////////////////////////////////////////////////////////////////////////////

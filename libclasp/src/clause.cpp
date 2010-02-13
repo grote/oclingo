@@ -132,7 +132,7 @@ bool ClauseCreator::createClause(Solver& s, ConstraintType type, const LitVec& l
 	s.strategies().heuristic->newConstraint(s, &lits[0], lits.size(), type);
 	bool asserting = lits.size() == 1 || s.isFalse(lits[sw]);
 	if (lits.size() < 4) {
-		if (type != Constraint_t::native_constraint) s.stats.solve.updateLearnt(lits.size(), type);
+		if (type != Constraint_t::native_constraint) s.stats.solve.updateLearnt((uint32)lits.size(), type);
 		if (lits.size() == 1) {
 			return s.addUnary(lits[0]);
 		}

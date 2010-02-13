@@ -38,7 +38,7 @@ struct TestingConstraint : public LearntConstraint {
 	bool* deleted;
 };
 struct TestingPostProp : public PostPropagator {
-	TestingPostProp(bool cfl) : props(0), resets(0), prio(PostPropagator::priority_single), conflict(cfl) {}
+	explicit TestingPostProp(bool cfl) : props(0), resets(0), symMods(0), prio(PostPropagator::priority_single), conflict(cfl), symModel(false) {}
 	bool propagate(Solver&) {
 		++props;
 		return !conflict;
@@ -47,10 +47,16 @@ struct TestingPostProp : public PostPropagator {
 		++resets;
 	}
 	uint32 priority() const { return prio; }
+	bool nextSymModel(Solver& s, bool expand) {
+		++symMods;
+		return expand && symModel; 
+	}
 	int props;
 	int resets;
+	int symMods;
 	uint32 prio;
 	bool conflict;
+	bool symModel; 
 };
 
 class SolverTest : public CppUnit::TestFixture {
@@ -89,6 +95,7 @@ class SolverTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testPropagateCallsPostProp);
 	CPPUNIT_TEST(testPropagateCallsResetOnConflict);
 	CPPUNIT_TEST(testPostpropPriority);
+	CPPUNIT_TEST(testPostpropSymModel);
 
 	CPPUNIT_TEST(testSimplifyRemovesSatBinClauses);
 	CPPUNIT_TEST(testSimplifyRemovesSatTernClauses);
@@ -576,7 +583,7 @@ public:
 		CPPUNIT_ASSERT_EQUAL(1, p->props);
 		CPPUNIT_ASSERT_EQUAL(1, p->resets);
 	}
-
+	
 	void testPostpropPriority() {
 		TestingPostProp* p1 = new TestingPostProp(false);
 		p1->prio = PostPropagator::priority_single_high;
@@ -587,7 +594,40 @@ public:
 		s.addPost(p1);
 		s.addPost(p3);
 		CPPUNIT_ASSERT(p1->next == p3 && p3->next == p2);
+	}
 
+	void testPostpropSymModel() {
+		Literal a = posLit(s.addVar(Var_t::atom_var));
+		Literal b = posLit(s.addVar(Var_t::atom_var));
+		s.startAddConstraints();
+		TestingPostProp* p1 = new TestingPostProp(false);
+		TestingPostProp* p2 = new TestingPostProp(false);
+		s.addPost(p1);
+		s.addPost(p2);
+		s.endAddConstraints();
+		p1->symModel = false;
+		p2->symModel = true;
+		ValueRep v = s.search(1, 1);
+		CPPUNIT_ASSERT_EQUAL(true, s.nextSymModel(true));
+		CPPUNIT_ASSERT_EQUAL(1, p1->symMods);
+		CPPUNIT_ASSERT_EQUAL(1, p2->symMods);
+		p2->symModel = false;
+		CPPUNIT_ASSERT_EQUAL(false, s.nextSymModel(true));
+		CPPUNIT_ASSERT_EQUAL(1, p1->symMods);
+		CPPUNIT_ASSERT_EQUAL(2, p2->symMods);
+		s.undoUntil(0);
+		v = s.search(1, 1);
+		p1->symModel = true;
+		CPPUNIT_ASSERT_EQUAL(true, s.nextSymModel(true));
+		CPPUNIT_ASSERT_EQUAL(2, p1->symMods);
+		CPPUNIT_ASSERT_EQUAL(2, p2->symMods);
+		CPPUNIT_ASSERT_EQUAL(true, s.nextSymModel(true));
+		CPPUNIT_ASSERT_EQUAL(3, p1->symMods);
+		CPPUNIT_ASSERT_EQUAL(2, p2->symMods);
+		p1->symModel = false;
+		CPPUNIT_ASSERT_EQUAL(false, s.nextSymModel(true));
+		CPPUNIT_ASSERT_EQUAL(4, p1->symMods);
+		CPPUNIT_ASSERT_EQUAL(3, p2->symMods);
 	}
 
 	void testSimplifyRemovesSatBinClauses() {
