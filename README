@@ -10,23 +10,13 @@ Distribution contents:
    README         - This file
    INSTALL        - Installation instructions
    CMakeLists.txt - Used to build project using cmake
-   init.sh        - Helper script to initialize out-of-source builds
+   Makefile       - Contains preset configurations for common builds
    app/           - Source code directory of the command-line interface
-   bin/           - Directory for binaries
-   lib/           - Sourcecode + includes for both gringo and clasp library
+   lib*/          - Sourcecode + includes for all required libraries
    doc/           - Documentation directory (doxygen is required to build the
                     api documentation and latex to build the guide)
-   *.cmake        - Auxiliary files for cmake
+   cmake/         - Contains auxiliary files for cmake
 
 gringo is written in mostly Standard-C++ and was successfully built and run 
 under Linux (x86-32, x86-64) using gcc and Windows (x86-32) using MinGW. 
-Currently, it cannot be compiled using Microsoft Visual Studio because it
-uses some gnu extensions. Further notes can be found in the INSTALL file.
-
-Known issues with Mac OS X 10.6
--------------------------------
-clasp currently does not work when compiled with the pre-installed 
-gcc (version 4.2.1). This affects clingo and iclingo builds because they
-integerate with clasp. To workaround this problem, the project will be 
-compiled using the additional gcc option: -arch i386
 

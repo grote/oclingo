@@ -26,12 +26,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(_PCH_include_prefix "-I")
 	
 ELSE(CMAKE_COMPILER_IS_GNUCXX)
-IF(WIN32)	
-	SET(PCHSupport_FOUND TRUE) # for experimental msvc support
-	SET(_PCH_include_prefix "/I")
-ELSE(WIN32)
 	SET(PCHSupport_FOUND FALSE)
-ENDIF(WIN32)	
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 
