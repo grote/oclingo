@@ -1,3 +1,13 @@
+gringo 2.0.4
+	* correctly handle negative weights in optimize statements
+	* added clasp-1.3.1 to the clingo/iclingo variants
+	* allow for comparing all values with each other 
+	  (strings, numbers, function symbols)
+	* added experimental ishift directives
+	* dropped support for plain Makefiles
+	* corrected the power operator
+	* fixed some serious bugs in the instantiator
+	* various other bugfixes
 gringo 2.0.3
 	* added option --shift to remove disjunctions in the head of rules
 	* added support for #times aggregates
