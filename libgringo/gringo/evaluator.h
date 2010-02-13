@@ -18,7 +18,7 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

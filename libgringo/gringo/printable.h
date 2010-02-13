@@ -18,7 +18,7 @@
 #ifndef PRINTABLE_H
 #define PRINTABLE_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

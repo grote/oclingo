@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "maxaggregate.h"
-#include "conditionalliteral.h"
-#include "term.h"
-#include "value.h"
-#include "output.h"
-#include "dlvgrounder.h"
-#include "grounder.h"
-#include "indexeddomain.h"
-#include "variable.h"
+#include <gringo/maxaggregate.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/term.h>
+#include <gringo/value.h>
+#include <gringo/output.h>
+#include <gringo/dlvgrounder.h>
+#include <gringo/grounder.h>
+#include <gringo/indexeddomain.h>
+#include <gringo/variable.h>
 
 using namespace NS_GRINGO;
 

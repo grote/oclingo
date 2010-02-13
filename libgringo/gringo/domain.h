@@ -18,8 +18,8 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
-#include <gringo.h>
-#include <value.h>
+#include <gringo/gringo.h>
+#include <gringo/value.h>
 
 namespace NS_GRINGO
 {

@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "lparseconverter.h"
+#include <gringo/lparseconverter.h>
 #include "lparseconverter_impl.h"
-#include "plainlparselexer.h"
-#include "grounder.h"
-#include "funcsymbol.h"
+#include <gringo/plainlparselexer.h>
+#include <gringo/grounder.h>
+#include <gringo/funcsymbol.h>
 
 using namespace NS_GRINGO;
 

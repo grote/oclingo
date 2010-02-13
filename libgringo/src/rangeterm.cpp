@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "rangeterm.h"
-#include "value.h"
-#include "grounder.h"
-#include "expandable.h"
-#include "variable.h"
-#include "rangeliteral.h"
+#include <gringo/rangeterm.h>
+#include <gringo/value.h>
+#include <gringo/grounder.h>
+#include <gringo/expandable.h>
+#include <gringo/variable.h>
+#include <gringo/rangeliteral.h>
 
 using namespace NS_GRINGO;
 

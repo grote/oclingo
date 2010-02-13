@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "literalstatement.h"
-#include "statementdependencygraph.h"
-#include "literaldependencygraph.h"
-#include "statementchecker.h"
-#include "conditionalliteral.h"
-#include "output.h"
-#include "grounder.h"
-#include "evaluator.h"
-#include "gringoexception.h"
+#include <gringo/literalstatement.h>
+#include <gringo/statementdependencygraph.h>
+#include <gringo/literaldependencygraph.h>
+#include <gringo/statementchecker.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/output.h>
+#include <gringo/grounder.h>
+#include <gringo/evaluator.h>
+#include <gringo/gringoexception.h>
 
 using namespace NS_GRINGO;
 		

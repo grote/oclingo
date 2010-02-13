@@ -2,9 +2,9 @@ file(GLOB LIBGRINGO_INC gringo/*.h)
 file(GLOB LIBGRINGO_SRC src/*.cpp)
  
 if(${GRINGO_TYPE} STREQUAL "gringo")
-	include_directories(${CMAKE_CURRENT_BINARY_DIR}	${CMAKE_CURRENT_BINARY_DIR}/config gringo generated)
+	include_directories(${CMAKE_CURRENT_BINARY_DIR}	src .)
 else()
-	include_directories(${CMAKE_CURRENT_BINARY_DIR}	${CMAKE_CURRENT_BINARY_DIR}/config gringo generated  ../libclasp)
+	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/libclasp src .)
 endif()
 
 RE2C(src/lparselexer lparselexer LIBGRINGO_SRC)

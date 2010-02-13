@@ -18,7 +18,7 @@
 #ifndef GRINGOEXCEPTION
 #define GRINGOEXCEPTION
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 #include <exception>
 
 namespace NS_GRINGO

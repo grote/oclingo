@@ -18,8 +18,8 @@
 #ifndef PLAINLPARSELEXER_H
 #define PLAINLPARSELEXER_H
 
-#include <gringo.h>
-#include <gringolexer.h>
+#include <gringo/gringo.h>
+#include <gringo/gringolexer.h>
 
 namespace NS_GRINGO
 {

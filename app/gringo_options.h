@@ -28,7 +28,7 @@
 #include <string>
 #include <utility>
 #include <program_opts/app_options.h>
-#include <grounder.h>
+#include <gringo/grounder.h>
 namespace NS_GRINGO {
 
 /////////////////////////////////////////////////////////////////////////////////////////

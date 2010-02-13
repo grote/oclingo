@@ -18,9 +18,9 @@
 #ifndef GROUNDER_H
 #define GROUNDER_H
 
-#include <gringo.h>
-#include <output.h>
-#include <globalstorage.h>
+#include <gringo/gringo.h>
+#include <gringo/output.h>
+#include <gringo/globalstorage.h>
 
 namespace NS_GRINGO
 {

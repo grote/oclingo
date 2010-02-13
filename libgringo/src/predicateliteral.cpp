@@ -15,25 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "statementdependencygraph.h"
-#include "literaldependencygraph.h"
-#include "statementchecker.h"
-#include "predicateliteral.h"
-#include "assignmentliteral.h"
-#include "relationliteral.h"
-#include "grounder.h"
-#include "variable.h"
-#include "term.h"
-#include "domain.h"
-#include "rangeterm.h"
-#include "rangeliteral.h"
-#include "indexeddomain.h"
-#include "dlvgrounder.h"
-#include "value.h"
-#include "multipleargsterm.h"
-#include "output.h"
-#include "evaluator.h"
-#include "bindersplitter.h"
+#include <gringo/statementdependencygraph.h>
+#include <gringo/literaldependencygraph.h>
+#include <gringo/statementchecker.h>
+#include <gringo/predicateliteral.h>
+#include <gringo/assignmentliteral.h>
+#include <gringo/relationliteral.h>
+#include <gringo/grounder.h>
+#include <gringo/variable.h>
+#include <gringo/term.h>
+#include <gringo/domain.h>
+#include <gringo/rangeterm.h>
+#include <gringo/rangeliteral.h>
+#include <gringo/indexeddomain.h>
+#include <gringo/dlvgrounder.h>
+#include <gringo/value.h>
+#include <gringo/multipleargsterm.h>
+#include <gringo/output.h>
+#include <gringo/evaluator.h>
+#include <gringo/bindersplitter.h>
 
 using namespace NS_GRINGO;
 		

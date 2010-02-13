@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "statementdependencygraph.h"
-#include "predicateliteral.h"
-#include "domain.h"
-#include "grounder.h"
-#include "program.h"
+#include <gringo/statementdependencygraph.h>
+#include <gringo/predicateliteral.h>
+#include <gringo/domain.h>
+#include <gringo/grounder.h>
+#include <gringo/program.h>
 
 using namespace NS_GRINGO;
 		

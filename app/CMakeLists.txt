@@ -1,11 +1,11 @@
 if(${GRINGO_TYPE} STREQUAL "gringo")
 	file(GLOB GRINGO_INC *.h)
 	set (GRINGO_SRC main.cpp gringo_app.cpp gringo_options.cpp)
-        include_directories (${CMAKE_SOURCE_DIR}/libgringo/gringo ${CMAKE_SOURCE_DIR}/libprogram_opts)
+        include_directories (${CMAKE_SOURCE_DIR}/libgringo ${CMAKE_SOURCE_DIR}/libprogram_opts)
 else()
 	file(GLOB GRINGO_INC *.h clasp/*.h)
 	file(GLOB GRINGO_SRC *.cpp clasp/*.cpp)
-        include_directories (${CMAKE_SOURCE_DIR}/libgringo/gringo ${CMAKE_SOURCE_DIR}/libprogram_opts ${CMAKE_SOURCE_DIR}/libclasp)
+        include_directories (${CMAKE_SOURCE_DIR}/libgringo ${CMAKE_SOURCE_DIR}/libprogram_opts ${CMAKE_SOURCE_DIR}/libclasp)
 endif()
 
 add_executable (gringo-app ${GRINGO_SRC} ${GRINGO_INC})

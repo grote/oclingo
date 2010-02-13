@@ -18,8 +18,8 @@
 #ifndef DEPENDENCYGRAPH_H
 #define DEPENDENCYGRAPH_H
 
-#include <gringo.h>
-#include <printable.h>
+#include <gringo/gringo.h>
+#include <gringo/printable.h>
 
 namespace NS_GRINGO
 {

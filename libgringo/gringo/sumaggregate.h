@@ -18,8 +18,8 @@
 #ifndef SUMAGGREGATE_H
 #define SUMAGGREGATE_H
 
-#include <gringo.h>
-#include <aggregateliteral.h>
+#include <gringo/gringo.h>
+#include <gringo/aggregateliteral.h>
 
 namespace NS_GRINGO
 {

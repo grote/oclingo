@@ -18,8 +18,8 @@
 #ifndef LPARSEOUTPUT_H
 #define LPARSEOUTPUT_H
 
-#include <gringo.h>
-#include <output.h>
+#include <gringo/gringo.h>
+#include <gringo/output.h>
 
 namespace NS_GRINGO
 {

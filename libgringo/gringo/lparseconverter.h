@@ -18,9 +18,9 @@
 #ifndef LPARSECONVERTER_H
 #define LPARSECONVERTER_H
 
-#include <gringo.h>
-#include <gringoparser.h>
-#include <globalstorage.h>
+#include <gringo/gringo.h>
+#include <gringo/gringoparser.h>
+#include <gringo/globalstorage.h>
 
 namespace NS_GRINGO
 {

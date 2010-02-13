@@ -15,14 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "optimizeliteral.h"
-#include "conditionalliteral.h"
-#include "value.h"
-#include "grounder.h"
-#include "statementdependencygraph.h"
-#include "statementchecker.h"
-#include "literaldependencygraph.h"
-#include "output.h"
+#include <gringo/optimizeliteral.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/value.h>
+#include <gringo/grounder.h>
+#include <gringo/statementdependencygraph.h>
+#include <gringo/statementchecker.h>
+#include <gringo/literaldependencygraph.h>
+#include <gringo/output.h>
 
 using namespace NS_GRINGO;
 

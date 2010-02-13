@@ -18,7 +18,7 @@
 #ifndef GROUNDABLE_H
 #define GROUNDABLE_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

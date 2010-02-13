@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "lparseoutput.h"
-#include "globalstorage.h"
+#include <gringo/lparseoutput.h>
+#include <gringo/globalstorage.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;

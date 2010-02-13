@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "variable.h"
-#include "grounder.h"
+#include <gringo/variable.h>
+#include <gringo/grounder.h>
 
 using namespace NS_GRINGO;
 		

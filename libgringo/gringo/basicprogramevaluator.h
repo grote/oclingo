@@ -18,9 +18,9 @@
 #ifndef BASICPROGRAMEVALUATOR_H
 #define BASICPROGRAMEVALUATOR_H
 
-#include <gringo.h>
-#include <evaluator.h>
-#include <output.h>
+#include <gringo/gringo.h>
+#include <gringo/evaluator.h>
+#include <gringo/output.h>
 
 namespace NS_GRINGO
 {

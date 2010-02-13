@@ -16,8 +16,8 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
-#include <gringoparser.h>
-#include <gringolexer.h>
+#include <gringo/gringoparser.h>
+#include <gringo/gringolexer.h>
 
 using namespace NS_GRINGO;
 

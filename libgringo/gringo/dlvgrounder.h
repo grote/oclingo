@@ -18,7 +18,7 @@
 #ifndef DLVGROUNDER_H
 #define DLVGROUNDER_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

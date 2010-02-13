@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <globalstorage.h>
-#include <domain.h>
+#include <gringo/globalstorage.h>
+#include <gringo/domain.h>
 
 using namespace NS_GRINGO;
 

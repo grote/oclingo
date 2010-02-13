@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "parityaggregate.h"
-#include "conditionalliteral.h"
-#include "term.h"
-#include "value.h"
-#include "output.h"
-#include "constant.h"
+#include <gringo/parityaggregate.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/term.h>
+#include <gringo/value.h>
+#include <gringo/output.h>
+#include <gringo/constant.h>
 
 using namespace NS_GRINGO;
 

@@ -17,13 +17,13 @@
 
 %include {
 
-#include "gringo.h"
+#include <gringo/gringo.h>
 
-#include "lparseconverter.h"
+#include <gringo/lparseconverter.h>
 
-#include "output.h"
-#include "value.h"
-#include "funcsymbol.h"
+#include <gringo/output.h>
+#include <gringo/value.h>
+#include <gringo/funcsymbol.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;

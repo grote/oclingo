@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "multipleargsterm.h"
-#include "literal.h"
-#include "expandable.h"
-#include "value.h"
-#include "grounder.h"
+#include <gringo/multipleargsterm.h>
+#include <gringo/literal.h>
+#include <gringo/expandable.h>
+#include <gringo/value.h>
+#include <gringo/grounder.h>
 
 using namespace NS_GRINGO;
 

@@ -18,8 +18,8 @@
 #ifndef FUNCTIONTERM_H
 #define FUNCTIONTERM_H
 
-#include <gringo.h>
-#include <term.h>
+#include <gringo/gringo.h>
+#include <gringo/term.h>
 
 namespace NS_GRINGO
 {

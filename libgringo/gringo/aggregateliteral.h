@@ -18,9 +18,9 @@
 #ifndef AGGREGATELITERAL_H
 #define AGGREGATELITERAL_H
 
-#include <gringo.h>
-#include <literal.h>
-#include <expandable.h>
+#include <gringo/gringo.h>
+#include <gringo/literal.h>
+#include <gringo/expandable.h>
 
 namespace NS_GRINGO
 {

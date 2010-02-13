@@ -18,10 +18,10 @@
 #ifndef CONDITIONALLITERAL_H
 #define CONDITIONALLITERAL_H
 
-#include <gringo.h>
-#include <literal.h>
-#include <groundable.h>
-#include <expandable.h>
+#include <gringo/gringo.h>
+#include <gringo/literal.h>
+#include <gringo/groundable.h>
+#include <gringo/expandable.h>
 
 namespace NS_GRINGO
 {

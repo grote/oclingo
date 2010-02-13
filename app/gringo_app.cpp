@@ -18,18 +18,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "gringo_app.h"
-#include <grounder.h>
-#include <gringoexception.h>
-#include <smodelsoutput.h>
-#include <lparseoutput.h>
-#include <pilsoutput.h>
-#include <lparseconverter.h>
-#include <lparseparser.h>
-#include <domain.h>
+#include <gringo/grounder.h>
+#include <gringo/gringoexception.h>
+#include <gringo/smodelsoutput.h>
+#include <gringo/lparseoutput.h>
+#include <gringo/pilsoutput.h>
+#include <gringo/lparseconverter.h>
+#include <gringo/lparseparser.h>
+#include <gringo/domain.h>
 #if defined(WITH_CLASP)
 #include <clasp/reader.h>
 #include <clasp/smodels_constraints.h>
-#include <claspoutput.h>
+#include <gringo/claspoutput.h>
 #include <iomanip>
 #endif
 #include <iostream>

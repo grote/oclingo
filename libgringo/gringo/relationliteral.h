@@ -18,8 +18,8 @@
 #ifndef RELATIONLITERAL_H
 #define RELATIONLITERAL_H
 
-#include <gringo.h>
-#include <literal.h>
+#include <gringo/gringo.h>
+#include <gringo/literal.h>
 
 namespace NS_GRINGO
 {

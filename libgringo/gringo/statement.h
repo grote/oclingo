@@ -18,9 +18,9 @@
 #ifndef STATEMENT_H
 #define STATEMENT_H
 
-#include <gringo.h>
-#include <printable.h>
-#include <groundable.h>
+#include <gringo/gringo.h>
+#include <gringo/printable.h>
+#include <gringo/groundable.h>
 
 namespace NS_GRINGO
 {

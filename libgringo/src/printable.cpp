@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "printable.h"
+#include <gringo/printable.h>
 
 using namespace NS_GRINGO;
 

@@ -17,48 +17,48 @@
 
 %include {
 
-#include "gringo.h"
+#include <gringo/gringo.h>
 
-#include "lparseparser.h"
+#include <gringo/lparseparser.h>
 
 // literals
-#include "literal.h"
-#include "aggregateliteral.h"  
-#include "predicateliteral.h"
-#include "conditionalliteral.h"
-#include "relationliteral.h"
-#include "assignmentliteral.h"
+#include <gringo/literal.h>
+#include <gringo/aggregateliteral.h>  
+#include <gringo/predicateliteral.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/relationliteral.h>
+#include <gringo/assignmentliteral.h>
 
 // miscellaneous literal
-#include "computeliteral.h"
-#include "optimizeliteral.h"
+#include <gringo/computeliteral.h>
+#include <gringo/optimizeliteral.h>
 
 // aggregates
-#include "sumaggregate.h"  
-#include "minaggregate.h"  
-#include "maxaggregate.h"  
-#include "countaggregate.h"  
-#include "avgaggregate.h"
-#include "timesaggregate.h"
-#include "disjunctionaggregate.h"
-#include "conjunctionaggregate.h"
-#include "parityaggregate.h"
+#include <gringo/sumaggregate.h>  
+#include <gringo/minaggregate.h>  
+#include <gringo/maxaggregate.h>  
+#include <gringo/countaggregate.h>  
+#include <gringo/avgaggregate.h>
+#include <gringo/timesaggregate.h>
+#include <gringo/disjunctionaggregate.h>
+#include <gringo/conjunctionaggregate.h>
+#include <gringo/parityaggregate.h>
 
 // terms
-#include "term.h"
-#include "constant.h"
-#include "variable.h"
-#include "functionterm.h"
-#include "funcsymbolterm.h"
-#include "rangeterm.h"
-#include "multipleargsterm.h"
+#include <gringo/term.h>
+#include <gringo/constant.h>
+#include <gringo/variable.h>
+#include <gringo/functionterm.h>
+#include <gringo/funcsymbolterm.h>
+#include <gringo/rangeterm.h>
+#include <gringo/multipleargsterm.h>
 
 // statements
-#include "normalrule.h"
-#include "literalstatement.h"
+#include <gringo/normalrule.h>
+#include <gringo/literalstatement.h>
 
 // misc
-#include "grounder.h"
+#include <gringo/grounder.h>
 
 using namespace NS_GRINGO;
 

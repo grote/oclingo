@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "pilsoutput.h"
+#include <gringo/pilsoutput.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;

@@ -18,8 +18,8 @@
 #ifndef GLOBALSTORAGE
 #define GLOBALSTORAGE
 
-#include <gringo.h>
-#include <funcsymbol.h>
+#include <gringo/gringo.h>
+#include <gringo/funcsymbol.h>
 
 namespace NS_GRINGO
 {

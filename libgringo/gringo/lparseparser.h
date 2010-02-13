@@ -18,8 +18,8 @@
 #ifndef LPARSEPARSER_H
 #define LPARSEPARSER_H
 
-#include <gringo.h>
-#include <gringoparser.h>
+#include <gringo/gringo.h>
+#include <gringo/gringoparser.h>
 
 namespace NS_GRINGO
 {

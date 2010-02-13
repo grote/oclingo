@@ -18,7 +18,7 @@
 #ifndef FUNCSYMBOL_H
 #define FUNCSYMBOL_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

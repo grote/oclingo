@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "basicprogramevaluator.h"
-#include "grounder.h"
-#include "domain.h"
-#include "output.h"
+#include <gringo/basicprogramevaluator.h>
+#include <gringo/grounder.h>
+#include <gringo/domain.h>
+#include <gringo/output.h>
 
 using namespace NS_GRINGO;
 

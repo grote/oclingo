@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "dlvgrounder.h"
-#include "grounder.h"
-#include "groundable.h"
-#include "literal.h"
-#include "indexeddomain.h"
-#include "value.h"
-#include "literaldependencygraph.h"
+#include <gringo/dlvgrounder.h>
+#include <gringo/grounder.h>
+#include <gringo/groundable.h>
+#include <gringo/literal.h>
+#include <gringo/indexeddomain.h>
+#include <gringo/value.h>
+#include <gringo/literaldependencygraph.h>
 
 using namespace NS_GRINGO;
 

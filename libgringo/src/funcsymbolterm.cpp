@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "funcsymbolterm.h"
-#include "value.h"
-#include "grounder.h"
-#include "funcsymbol.h"
-#include "assignmentliteral.h"
-#include "variable.h"
-#include "expandable.h"
+#include <gringo/funcsymbolterm.h>
+#include <gringo/value.h>
+#include <gringo/grounder.h>
+#include <gringo/funcsymbol.h>
+#include <gringo/assignmentliteral.h>
+#include <gringo/variable.h>
+#include <gringo/expandable.h>
 
 using namespace NS_GRINGO;
 

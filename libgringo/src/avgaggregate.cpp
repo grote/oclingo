@@ -1,5 +1,5 @@
 
-#include "aggregateliteral.h"
+#include <gringo/aggregateliteral.h>
 
 // Copyright (c) 2008, Roland Kaminski
 //
@@ -18,11 +18,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "avgaggregate.h"
-#include "conditionalliteral.h"
-#include "term.h"
-#include "value.h"
-#include "output.h"
+#include <gringo/avgaggregate.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/term.h>
+#include <gringo/value.h>
+#include <gringo/output.h>
 
 using namespace NS_GRINGO;
 

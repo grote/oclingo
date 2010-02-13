@@ -25,7 +25,7 @@
 #endif
 #include <program_opts/app_options.h>
 #include "gringo_options.h"
-#include <output.h>
+#include <gringo/output.h>
 #if defined(WITH_CLASP)
 #include "clasp/clasp_options.h"
 #include "clasp/clasp_output.h"

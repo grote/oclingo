@@ -18,8 +18,8 @@
 #ifndef MULTIPLEARGSTERM_H
 #define MULTIPLEARGSTERM_H
 
-#include <gringo.h>
-#include <term.h>
+#include <gringo/gringo.h>
+#include <gringo/term.h>
 
 namespace NS_GRINGO
 {

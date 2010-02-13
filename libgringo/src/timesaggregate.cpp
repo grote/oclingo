@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "timesaggregate.h"
-#include "conditionalliteral.h"
-#include "term.h"
-#include "value.h"
-#include "output.h"
+#include <gringo/timesaggregate.h>
+#include <gringo/conditionalliteral.h>
+#include <gringo/term.h>
+#include <gringo/value.h>
+#include <gringo/output.h>
 
 
 using namespace NS_GRINGO;

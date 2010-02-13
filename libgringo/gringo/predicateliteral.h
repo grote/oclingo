@@ -18,11 +18,11 @@
 #ifndef PREDICATELITERAL_H
 #define PREDICATELITERAL_H
 
-#include <gringo.h>
-#include <literal.h>
-#include <groundable.h>
-#include <expandable.h>
-#include <value.h>
+#include <gringo/gringo.h>
+#include <gringo/literal.h>
+#include <gringo/groundable.h>
+#include <gringo/expandable.h>
+#include <gringo/value.h>
 
 namespace NS_GRINGO
 {

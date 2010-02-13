@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "output.h"
-#include "domain.h"
-#include "grounder.h"
-#include "pilsoutput.h"
-#include "gringoexception.h"
+#include <gringo/output.h>
+#include <gringo/domain.h>
+#include <gringo/grounder.h>
+#include <gringo/pilsoutput.h>
+#include <gringo/gringoexception.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;

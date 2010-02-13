@@ -18,8 +18,8 @@
 #ifndef PILSOUTPUT_H
 #define PILSOUTPUT_H
 
-#include <gringo.h>
-#include <output.h>
+#include <gringo/gringo.h>
+#include <gringo/output.h>
 
 namespace NS_GRINGO
 {

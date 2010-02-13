@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "bindersplitter.h"
-#include "literaldependencygraph.h"
-#include "grounder.h"
-#include "indexeddomain.h"
-#include "dlvgrounder.h"
-#include "value.h"
-#include "output.h"
-#include "term.h"
-#include "domain.h"
+#include <gringo/bindersplitter.h>
+#include <gringo/literaldependencygraph.h>
+#include <gringo/grounder.h>
+#include <gringo/indexeddomain.h>
+#include <gringo/dlvgrounder.h>
+#include <gringo/value.h>
+#include <gringo/output.h>
+#include <gringo/term.h>
+#include <gringo/domain.h>
 
 using namespace NS_GRINGO;
 		

@@ -18,7 +18,7 @@
 #ifndef STATEMENTCHECKER_H
 #define STATEMENTCHECKER_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

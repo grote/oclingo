@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "claspoutput.h"
+#include <gringo/claspoutput.h>
 
 //#define DEBUG_ICLASP
 
@@ -27,8 +27,8 @@ std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
 #ifdef WITH_CLASP
 
 
-#include "gringoexception.h"
-#include "grounder.h"
+#include <gringo/gringoexception.h>
+#include <gringo/grounder.h>
 #include <clasp/program_builder.h>
 
 using namespace NS_GRINGO;

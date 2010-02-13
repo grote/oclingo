@@ -18,10 +18,10 @@
 #ifndef CLASPOUTPUT_H
 #define CLASPOUTPUT_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 #ifdef WITH_CLASP
-#include <smodelsconverter.h>
+#include <gringo/smodelsconverter.h>
 
 namespace Clasp
 {

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "literaldependencygraph.h"
-#include "literal.h"
+#include <gringo/literaldependencygraph.h>
+#include <gringo/literal.h>
 
 using namespace NS_GRINGO;
 

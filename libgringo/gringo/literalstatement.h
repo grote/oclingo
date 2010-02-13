@@ -18,9 +18,9 @@
 #ifndef LITERALSTATEMENT_H
 #define LITERALSTATEMENT_H
 
-#include <gringo.h>
-#include <statement.h>
-#include <expandable.h>
+#include <gringo/gringo.h>
+#include <gringo/statement.h>
+#include <gringo/expandable.h>
 
 namespace NS_GRINGO
 {

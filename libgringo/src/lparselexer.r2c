@@ -20,9 +20,9 @@
 #include <sstream>
 #include <cassert>
 
-#include "lparselexer.h"
-#include "lparseparser.h"
-#include "gringoexception.h"
+#include <gringo/lparselexer.h>
+#include <gringo/lparseparser.h>
+#include <gringo/gringoexception.h>
 #include "lparseparser_impl.h"
 
 #define YYCTYPE         char

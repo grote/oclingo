@@ -18,7 +18,7 @@
 #ifndef EXPANDABLE_H
 #define EXPANDABLE_H
 
-#include <gringo.h>
+#include <gringo/gringo.h>
 
 namespace NS_GRINGO
 {

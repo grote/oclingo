@@ -18,8 +18,8 @@
 #ifndef SMODELSOUTPUT_H
 #define SMODELSOUTPUT_H
 
-#include <gringo.h>
-#include <smodelsconverter.h>
+#include <gringo/gringo.h>
+#include <gringo/smodelsconverter.h>
 
 namespace NS_GRINGO
 {
