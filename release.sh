@@ -29,15 +29,15 @@ rm -rf                                ${WIN32_PATH}/
 
 # create the linux binary release
 LINUX_PATH=binaries-${VERSION}-x86-linux
-mkdir -p                              ${LINUX_PATH}
-cp ../gringo/mingw32/bin/gringo.exe   ${LINUX_PATH}/
-cp ../clingo/mingw32/bin/clingo.exe   ${LINUX_PATH}/
-cp ../iclingo/mingw32/bin/iclingo.exe ${LINUX_PATH}/
-cp ../../COPYING                      ${LINUX_PATH}/
-cp ../../CHANGES                      ${LINUX_PATH}/
-cp ../../doc/guide/guide.pdf          ${LINUX_PATH}/
-tar -czf ${LINUX_PATH}.tar.gz         ${LINUX_PATH}/
-rm -rf                                ${LINUX_PATH}/
+mkdir -p                           ${LINUX_PATH}
+cp ../gringo/static32/bin/gringo   ${LINUX_PATH}/
+cp ../clingo/static32/bin/clingo   ${LINUX_PATH}/
+cp ../iclingo/static32/bin/iclingo ${LINUX_PATH}/
+cp ../../COPYING                   ${LINUX_PATH}/
+cp ../../CHANGES                   ${LINUX_PATH}/
+cp ../../doc/guide/guide.pdf       ${LINUX_PATH}/
+tar -czf ${LINUX_PATH}.tar.gz      ${LINUX_PATH}/
+rm -rf                             ${LINUX_PATH}/
 
 # create the source release
 cd ../gringo/static32
