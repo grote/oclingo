@@ -1,18 +1,18 @@
-// 
+//
 // Copyright (c) 2009, Benjamin Kaufmann
-// 
+//
 // This file is part of gringo. See http://www.cs.uni-potsdam.de/gringo/
-// 
+//
 // gringo is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
-// 
+//
 // gringo is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with gringo; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,11 +21,11 @@
 #include "gringo_options.h"
 #include <program_opts/value.h>
 namespace gringo {
-	
-ClingoOptions::ClingoOptions() 
+
+ClingoOptions::ClingoOptions()
 	: claspMode(false)
-	, clingoMode(true) 
-	, iStats(false) { 
+	, clingoMode(true)
+	, iStats(false) {
 	inc.keepHeuristic = false;
 	inc.keepLearnt    = true;
 	inc.minSteps      = 1;
@@ -95,7 +95,7 @@ bool ClingoOptions::validateOptions(ProgramOptions::OptionValues& values, Gringo
 	if (opts.grounderOptions.iquery < 0) {
 		opts.grounderOptions.iquery = 0;
 	}
-	if(opts.grounderOptions.ifixed >= 0 && !clingoMode) {
+	if(opts.grounderOptions.ifixed >= 0 && !clingoMode && !claspMode && !opts.onlyGround) {
 		opts.grounderOptions.ifixed = -1;
 		m.warning.push_back("Option ifixed will be ignored!");
 	}
