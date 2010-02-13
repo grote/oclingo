@@ -165,6 +165,7 @@ bool PostPropagator::propagateFixpoint(Solver& s) {
 }
 void Solver::PPList::reset()            { for (PostPropagator* r = head; r; r = r->next) { r->reset(); } }
 bool Solver::PPList::isModel(Solver& s) {
+	saved = head;
 	for (PostPropagator* r = head; r; r = r->next) {
 		if (!r->isModel(s)) return false;
 	}
