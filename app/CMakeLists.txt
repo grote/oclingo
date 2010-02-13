@@ -25,3 +25,4 @@ if(${GRINGO_TYPE} STREQUAL "gringo")
 	set_target_properties(gringo-app PROPERTIES OUTPUT_NAME gringo)
 endif()
 
+install(TARGETS gringo-app RUNTIME DESTINATION bin)

@@ -22,3 +22,6 @@ if(PCHSupport_FOUND)
 	add_precompiled_header(gringo-lib ${CMAKE_CURRENT_SOURCE_DIR}/gringo/gringo.h)
 endif()
 
+#install(FILES ${LIBGRINGO_INC} DESTINATION include/gringo)
+#install(TARGETS gringo-lib ARCHIVE DESTINATION lib)
+
