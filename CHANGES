@@ -7,6 +7,8 @@ gringo 2.0.4
 	* dropped support for plain Makefiles
 	* corrected the power operator
 	* fixed some serious bugs in the instantiator
+	* the project should be compilable using msvc now
+	  (use cmake-gui to generate the project files)
 	* various other bugfixes
 gringo 2.0.3
 	* added option --shift to remove disjunctions in the head of rules
