@@ -1,6 +1,5 @@
 MACRO(LEMON SRC DST VAR)
     IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.cpp" AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.h")
-	MESSAGE("***********cmake -E create_symlink ${CMAKE_CURRENT_BINARY_DIR}/${DST}.c ${CMAKE_CURRENT_BINARY_DIR}/${DST}.cpp")
         ADD_CUSTOM_COMMAND(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lempar.c
             COMMAND cmake -E create_symlink ${CMAKE_SOURCE_DIR}/lemon/lempar.c ${CMAKE_CURRENT_BINARY_DIR}/lempar.c

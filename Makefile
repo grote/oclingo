@@ -1,18 +1,6 @@
 DEBUG_FLAGS=-W -Wall -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
 RELEASE_FLAGS=-W -Wall
 
-all_release: gringo_release clingo_release iclingo_release
-
-all_debug: gringo_debug clingo_debug iclingo_debug
-
-all_static: gringo_static clingo_static iclingo_static
-
-all_static32: gringo_static32 clingo_static32 iclingo_static32
-
-all_mingw32: gringo_mingw32 clingo_mingw32 iclingo_mingw32
-
-all: all_release all_debug all_static all_static32 all_mingw32
-
 gringo_release:
 	mkdir -p build/gringo/release
 	cd build/gringo/release && cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS)" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=gringo ../../.. && $(MAKE)
@@ -75,4 +63,16 @@ iclingo_mingw32: gringo_release
 	mkdir -p build/iclingo/mingw32/bin
 	cd build/iclingo/mingw32/bin && cp -sf ../../release/bin/lemon lemon
 	cd build/iclingo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=iclingo ../../.. && $(MAKE)
+
+all_release: gringo_release clingo_release iclingo_release
+
+all_debug: gringo_debug clingo_debug iclingo_debug
+
+all_static: gringo_static clingo_static iclingo_static
+
+all_static32: gringo_static32 clingo_static32 iclingo_static32
+
+all_mingw32: gringo_mingw32 clingo_mingw32 iclingo_mingw32
+
+all: all_release all_debug all_static all_static32 all_mingw32
 
