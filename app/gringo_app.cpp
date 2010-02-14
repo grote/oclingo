@@ -175,7 +175,7 @@ void GringoApp::printVersion() const {
 		   << "\n\n";
 	cout << "Copyright (C) Roland Kaminski" << "\n";
 	cout << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
-	cout << "GrinGo is free software: you are free to change and redistribute it.\n";
+	cout << "Gringo is free software: you are free to change and redistribute it.\n";
 	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
 }
 
