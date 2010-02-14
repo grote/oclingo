@@ -19,7 +19,7 @@ gringo_static32:
 
 gringo_mingw32: gringo_release
 	mkdir -p build/gringo/mingw32/bin
-	cd build/gringo/mingw32/bin && cp -sf ../../release/bin/lemon lemon
+	cd build/gringo/mingw32/bin && cp -sf ../../../gringo/release/bin/lemon lemon
 	cd build/gringo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=gringo ../../.. && $(MAKE)
 
 clingo_release:
@@ -40,7 +40,7 @@ clingo_static32:
 
 clingo_mingw32: gringo_release
 	mkdir -p build/clingo/mingw32/bin
-	cd build/clingo/mingw32/bin && cp -sf ../../release/bin/lemon lemon
+	cd build/clingo/mingw32/bin && cp -sf ../../../gringo/release/bin/lemon lemon
 	cd build/clingo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=clingo ../../.. && $(MAKE)
 
 iclingo_release:
@@ -61,7 +61,7 @@ iclingo_static:
 
 iclingo_mingw32: gringo_release
 	mkdir -p build/iclingo/mingw32/bin
-	cd build/iclingo/mingw32/bin && cp -sf ../../release/bin/lemon lemon
+	cd build/iclingo/mingw32/bin && cp -sf ../../../gringo/release/bin/lemon lemon
 	cd build/iclingo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=iclingo ../../.. && $(MAKE)
 
 all_release: gringo_release clingo_release iclingo_release
