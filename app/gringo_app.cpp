@@ -489,7 +489,7 @@ void ClingoApp::printResult(ReasonEnd end) {
 			facade_->result() == ClaspFacade::result_unsat
 				? (void)(std::cout << "0\n0\nB+\n1\n0\nB-\n1\n0\n0\n")
 				: facade_->api()->writeProgram(std::cout);
-			delete facade_->api();
+			delete facade_->releaseApi();
 		}
 		else {
 			if (facade_->result() != ClaspFacade::result_unsat) {
