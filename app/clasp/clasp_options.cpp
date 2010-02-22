@@ -57,7 +57,9 @@ bool parseValue(const std::string&s , ApiOptions::ExtRuleMode& i, int){
 		return true;
 	}
 	else if (temp == "choice")  { i = ProgramBuilder::mode_transform_choice; return true; }
+	else if (temp == "card")    { i = ProgramBuilder::mode_transform_card; return true; }
 	else if (temp == "weight")  { i = ProgramBuilder::mode_transform_weight; return true; }
+	else if (temp == "integ")   { i = ProgramBuilder::mode_transform_integ; return true; }
 	else if (temp == "dynamic") { i = ProgramBuilder::mode_transform_dynamic; return true; }
 	return false;
 }
@@ -237,10 +239,12 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 		("trans-ext", storeTo(config->api.transExt),
 			"Configure handling of Lparse-like extended rules\n"
 			"      Default: no\n"
-			"      Valid:   all, choice, weight, dynamic, no\n"
+			"      Valid:   all, choice, card, weight, integ, dynamic, no\n"
 			"        all    : Transform all extended rules to basic rules\n"
 			"        choice : Transform choice rules, but keep cardinality and weight rules\n"
+			"        card   : Transform cardinality rules, but keep choice and weight rules\n"
 			"        weight : Transform cardinality and weight rules, but keep choice rules\n"
+			"        integ  : Transform cardinality integrity constraints\n"
 			"        dynamic: Transform \"simple\" extended rules, but keep more complex ones\n"
 			"        no     : Do not transform extended rules\n")
 

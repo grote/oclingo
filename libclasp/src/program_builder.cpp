@@ -907,18 +907,21 @@ ProgramBuilder& ProgramBuilder::addRule(PrgRule& r) {
 }
 
 bool ProgramBuilder::handleNatively(const PrgRule& r, const PrgRule::RData& rd) const {
-	if (erMode_ == mode_native) {
+	if (erMode_ == mode_native || erMode_ == mode_transform_integ || r.type() == BASICRULE || r.type() == OPTIMIZERULE) {
 		return true;
+	}
+	else if (erMode_ == mode_transform) {
+		return false;
 	}
 	else if (erMode_ == mode_transform_dynamic) {
 		return (r.type() != CONSTRAINTRULE && r.type() != WEIGHTRULE)
 			|| transformNoAux(r, rd) == false;
 	}
-	else if (erMode_ == mode_transform) {
-		return r.type() == BASICRULE || r.type() == OPTIMIZERULE;
-	}
 	else if (erMode_ == mode_transform_choice) {
 		return r.type() != CHOICERULE;
+	}
+	else if (erMode_ == mode_transform_card)   {
+		return r.type() != CONSTRAINTRULE;
 	}
 	else if (erMode_ == mode_transform_weight) {
 		return r.type() != CONSTRAINTRULE && r.type() != WEIGHTRULE;
@@ -1040,6 +1043,79 @@ void ProgramBuilder::transformExtended() {
 	incTrAux(numAtoms() - a);
 }
 
+void ProgramBuilder::transformIntegrity(Solver& s, uint32 maxAux) {
+	if (stats.rules[CONSTRAINTRULE] == 0) {
+		return;
+	}
+	BodyList integrity;
+	uint32 A = atoms_.size();
+	uint32 B = bodies_.size();
+	for (uint32 i = 0, end = B; i != end; ++i) {
+		PrgBodyNode* b = bodies_[i];
+		if (!b->ignore() && b->rtype() == CONSTRAINTRULE && b->value() == value_false) {
+			integrity.push_back(b);
+		}
+	}
+	if (!integrity.empty() && (integrity.size() == 1 || (atoms_.size()/double(bodies_.size()) > 0.5 && integrity.size() / double(bodies_.size()) < 0.01))) {
+		bodyIndex_.clear();
+		frozen_ = false;
+		assert(atoms_[1]->value() == value_false);
+		for (BodyList::size_type i = 0; i != integrity.size(); ++i) {
+			PrgBodyNode* b = integrity[i];
+			assert(b->heads.empty());
+			uint32 est = b->bound()*( b->sumWeights()-b->bound() );
+			if (est > maxAux) {
+				break;
+			} 
+			maxAux -= est;
+			startRule(b->rtype(), b->bound());
+			addHead(1);
+			for (uint32 g = 0; g != b->size(); ++g) {
+				addToBody(b->goal(g).var(), !b->goal(g).sign());
+			}
+			extended_.push_back(new PrgRule());
+			extended_.back()->swap(rule_);
+			transformExtended();
+			for (; B != bodies_.size(); ++B) {
+				PrgBodyNode* nb = bodies_[B];
+				assert(!nb->hasVar());
+				if (nb->heads[0] == 1) {
+					nb->setValue(value_false);
+					nb->setLiteral(b->literal());
+				}
+				else {
+					PrgAtomNode* a = nb->size() == 1 ? atoms_[nb->goal(0).var()] : 0;
+					if (!a || !a->hasVar()) {
+						nb->setLiteral(posLit(vars_.add(Var_t::body_var)));
+					}
+					else {
+						nb->setLiteral(nb->posSize() ? a->literal() : ~a->literal());
+					}
+					a = atoms_[nb->heads[0]];
+					if (!a->hasVar()) {
+						if (a->preds.size() == 1) {
+							a->setLiteral(nb->literal());
+							vars_.setAtomBody(nb->var());
+						}
+						else { a->setLiteral(posLit(vars_.add(Var_t::atom_var))); }
+					}
+				}
+			}
+			b->setIgnore(true);
+		}
+		for (uint32 i = A; i != atoms_.size(); ++i) {
+			PrgAtomNode* a = atoms_[i];
+			if (!a->hasVar()) {
+				uint32 numB = a->preds.size();
+				if      (numB == 0) { a->setValue(value_false); }
+				else if (numB == 1) { a->setLiteral(bodies_[a->preds[0]]->literal()); vars_.setAtomBody(a->var()); }
+				else /*  numB > 1 */{ a->setLiteral(posLit(vars_.add(Var_t::atom_var))); }
+			}
+		}
+		frozen_ = true;
+	}
+}
+
 namespace {
 	struct LessBody {
 		bool operator()(PrgBodyNode* lhs, PrgBodyNode* rhs) const {
@@ -1098,8 +1174,13 @@ bool ProgramBuilder::endProgram(Solver& solver, bool finalizeSolver, bool backpr
 		if (!p.preprocess(*this, eqIters_ != 0 ? Preprocessor::full_eq : Preprocessor::no_eq, eqIters_, solver.strategies().satPrePro.get() == 0)) {
 			return false;
 		}
+		if (erMode_ == mode_transform_integ || erMode_ == mode_transform_dynamic) {
+			transformIntegrity(solver, std::min(uint32(15000), uint32(numAtoms())<<1));
+		}
 		vars_.addTo(solver, incData_ ? incData_->startVar_ : 1);
 		atomIndex_->endInit();
+		bodyIndex_.clear();
+		stats.atoms = numAtoms() - (startAtom()-1);
 	}
 	else {
 		if (ufs_.get()) {

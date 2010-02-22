@@ -183,8 +183,10 @@ public:
 		mode_native           = 0, /**< Handle extended rules natively                          */
 		mode_transform        = 1, /**< Transform extended rules to normal rules                */
 		mode_transform_choice = 2, /**< Transform only choice rules to normal rules             */
-		mode_transform_weight = 3, /**< Transform only cardinality/weight rules to normal rules */
-		mode_transform_dynamic= 4, /**< Decide heuristically whether to transform or not a particular extended rule */
+		mode_transform_card   = 3, /**< Transform only cardinality rules to normal rules        */
+		mode_transform_weight = 4, /**< Transform cardinality- and weight rules to normal rules */
+		mode_transform_integ  = 5, /**< Transform cardinality-based integrity constraints       */
+		mode_transform_dynamic= 6  /**< Heuristically decide whether or not to transform a particular extended rule */
 	};
 
 	//! Sets the mode for handling extended rules.
@@ -392,6 +394,7 @@ private:
 	bool          handleNatively(const PrgRule& r, const PrgRule::RData& rd) const;
 	bool          transformNoAux(const PrgRule& r, const PrgRule::RData& rd) const;
 	void          transformExtended();
+	void          transformIntegrity(Solver&, uint32 maxAux);
 	void          clearRuleState(const PrgRule& r);
 	Body          findOrCreateBody(const PrgRule& r, const PrgRule::RData& rd);
 	bool          mergeEqAtoms(Var a, Var root);
@@ -710,6 +713,8 @@ public:
 	 */
 	weight_t bound() const;
 
+	weight_t sumWeights() const;
+
 	//! returns the number of atoms in the body
 	uint32 size()    const { return size_; }
 	//! returns the number of positive atoms in the body
@@ -799,7 +804,6 @@ private:
 	weight_t  weight(uint32 idx) const { return !hasWeights() ? 1 : extra_.ext->weights[idx]; }
 	weight_t  findWeight(Literal p, const AtomList& progAtoms) const;
 	uint32    findLit(Literal p, const AtomList& progAtoms) const;
-	weight_t  sumWeights() const;
 	
 	uint32    size_;          // |B|
 	uint32    posSize_  : 30; // |B+|
