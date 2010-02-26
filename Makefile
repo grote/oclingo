@@ -1,5 +1,5 @@
 DEBUG_FLAGS=-W -Wall -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC
-RELEASE_FLAGS=-Wall
+RELEASE_FLAGS=-Wall -DNDEBUG
 
 gringo_release:
 	mkdir -p build/gringo/release
