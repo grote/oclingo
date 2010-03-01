@@ -48,7 +48,7 @@ CountAggregate::CountAggregate(ConditionalLiteralVector *literals) : AggregateLi
 {
 }
 
-bool CountAggregate::match(Grounder *g)
+void CountAggregate::doMatch(Grounder *g)
 {
 	UidValueSet set;
 	fact_ = true;
@@ -78,7 +78,6 @@ bool CountAggregate::match(Grounder *g)
 	}
 	maxUpperBound_+= fixedValue_;
 	minLowerBound_+= fixedValue_;
-	return checkBounds(g);
 }
 
 void CountAggregate::print(const GlobalStorage *g, std::ostream &out) const

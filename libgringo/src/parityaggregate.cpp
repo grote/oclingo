@@ -53,7 +53,7 @@ ParityAggregate::ParityAggregate(bool even, ConditionalLiteralVector *literals) 
 	setBounds(new Constant(Value(Value::INT, bound)), new Constant(Value(Value::INT, bound)));
 }
 
-bool ParityAggregate::match(Grounder *g)
+void ParityAggregate::doMatch(Grounder *g)
 {
 	UidValueSet set;
 	fact_      = true;
@@ -85,7 +85,6 @@ bool ParityAggregate::match(Grounder *g)
 		minLowerBound_ = 0;
 		maxUpperBound_ = 1;
 	}
-	return checkBounds(g);
 }
 
 void ParityAggregate::print(const GlobalStorage *g, std::ostream &out) const

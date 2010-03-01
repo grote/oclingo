@@ -32,7 +32,7 @@ namespace gringo
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual Literal *clone() const;
 		virtual bool match(Grounder *g);
-		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
+		virtual void doMatch(Grounder *g);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void preprocess(Grounder *g, Expandable *e, bool head);
 		virtual NS_OUTPUT::Object *convert();

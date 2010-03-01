@@ -30,7 +30,7 @@ AvgAggregate::AvgAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-bool AvgAggregate::match(Grounder *g)
+void AvgAggregate::doMatch(Grounder *g)
 {
 	// avg aggregates may only be used lower and upper bounds
 	assert(equal_ == 0);
@@ -74,7 +74,6 @@ bool AvgAggregate::match(Grounder *g)
 		minLowerBound_ = INT_MIN;
 	if(!upper_)
 		maxUpperBound_ = INT_MAX;
-	return checkBounds(g);
 }
 
 bool AvgAggregate::checkBounds(Grounder *g)

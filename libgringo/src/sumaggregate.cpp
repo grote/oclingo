@@ -31,7 +31,7 @@ SumAggregate::SumAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-bool SumAggregate::match(Grounder *g)
+void SumAggregate::doMatch(Grounder *g)
 {
 	fact_ = true;
 	fixedValue_    = 0;
@@ -63,7 +63,6 @@ bool SumAggregate::match(Grounder *g)
 	}
 	maxUpperBound_+= fixedValue_;
 	minLowerBound_+= fixedValue_;
-	return checkBounds(g);
 }
 
 namespace
@@ -91,7 +90,7 @@ namespace
 
 	void IndexedDomainSumAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_);
+		l_->doMatch(g->g_);
 		set_.clear();
 
 		set_.insert(l_->fixedValue_);

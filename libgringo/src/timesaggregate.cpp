@@ -70,7 +70,7 @@ TimesAggregate::TimesAggregate(ConditionalLiteralVector *literals) : AggregateLi
 {
 }
 
-bool TimesAggregate::match(Grounder *g)
+void TimesAggregate::doMatch(Grounder *g)
 {
 	// NOTE: fixedvalue may not be used
 	fact_        = true;
@@ -109,7 +109,6 @@ bool TimesAggregate::match(Grounder *g)
 	maxUpperBound_ = upper * fixed;
 	if(fixed < 0)
 		std::swap(minLowerBound_, maxUpperBound_);
-	return checkBounds(g);
 }
 
 void TimesAggregate::print(const GlobalStorage *g, std::ostream &out) const

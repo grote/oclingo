@@ -485,7 +485,7 @@ void ConditionalLiteral::preprocess(Grounder *g, Expandable *e, bool head)
 			(*conditionals_)[i]->preprocess(g, this, false);
 	}
 	if(weight_)
-		weight_->preprocess(this, weight_, g, e);
+		weight_->preprocess(this, weight_, g, &cle);
 }
 
 void ConditionalLiteral::addIncParam(Grounder *g, const Value &v)

@@ -29,7 +29,7 @@ namespace gringo
 		MaxAggregate(ConditionalLiteralVector *literals);
 		MaxAggregate(const MaxAggregate &a);
 		virtual Literal *clone() const;
-		virtual bool match(Grounder *g);
+		virtual void doMatch(Grounder *g);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();

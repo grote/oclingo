@@ -44,6 +44,8 @@ namespace gringo
 		virtual void setBounds(Term *lower, Term *upper);
 		virtual void setEqual(Variable *equal);
 		virtual void setEqual(int bound);
+		virtual bool match(Grounder *g);
+		virtual void doMatch(Grounder *g) = 0;
 		virtual bool checkBounds(Grounder *g);
 		/**
 		 * \brief This function returns if the aggregate is a fact

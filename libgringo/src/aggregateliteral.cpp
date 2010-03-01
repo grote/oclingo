@@ -97,6 +97,12 @@ bool AggregateLiteral::checkBounds(Grounder *g)
 	return true;
 }
 
+bool AggregateLiteral::match(Grounder *g)
+{
+	doMatch(g);
+	return checkBounds(g);
+}
+
 void AggregateLiteral::getVars(VarSet &vars) const
 {
 	if(equal_)
@@ -222,7 +228,7 @@ namespace
 
 	void IndexedDomainAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_);
+		l_->doMatch(g->g_);
 		current_ = l_->minLowerBound_;
 		upper_   = l_->maxUpperBound_;
 		if(current_ <= upper_)

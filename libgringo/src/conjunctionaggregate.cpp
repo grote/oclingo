@@ -37,6 +37,11 @@ void ConjunctionAggregate::setNeg(bool neg)
 		(*it)->setNeg(neg);
 }
 
+void ConjunctionAggregate::doMatch(Grounder *g)
+{
+	FAIL(true);
+}
+
 bool ConjunctionAggregate::match(Grounder *g)
 {
 	fact_ = true;
@@ -55,11 +60,6 @@ bool ConjunctionAggregate::match(Grounder *g)
 		}
 	}
 	return true;
-}
-
-void ConjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
-{
-	FAIL(true);
 }
 
 void ConjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) const

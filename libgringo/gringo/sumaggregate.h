@@ -30,7 +30,7 @@ namespace gringo
 		SumAggregate(const SumAggregate &a);
 		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual Literal *clone() const;
-		virtual bool match(Grounder *g);
+		void doMatch(Grounder *g);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~SumAggregate();

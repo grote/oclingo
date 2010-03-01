@@ -29,7 +29,7 @@ namespace gringo
 		TimesAggregate(ConditionalLiteralVector *literals);
 		TimesAggregate(const TimesAggregate &a);
 		virtual Literal *clone() const;
-		virtual bool match(Grounder *g);
+		virtual void doMatch(Grounder *g);
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~TimesAggregate();

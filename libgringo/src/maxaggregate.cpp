@@ -31,7 +31,7 @@ MaxAggregate::MaxAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-bool MaxAggregate::match(Grounder *g)
+void MaxAggregate::doMatch(Grounder *g)
 {
 	fact_ = true;
 	maxUpperBound_ = INT_MIN;
@@ -56,7 +56,6 @@ bool MaxAggregate::match(Grounder *g)
 		}
 	}
 	minLowerBound_ = fixedValue_;
-	return checkBounds(g);
 }
 
 void MaxAggregate::print(const GlobalStorage *g, std::ostream &out) const
@@ -103,7 +102,7 @@ namespace
 
 	void IndexedDomainMaxAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_);
+		l_->doMatch(g->g_);
 		set_.clear();
 		ConditionalLiteralVector *l = l_->getLiterals();
 		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)

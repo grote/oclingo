@@ -31,7 +31,7 @@ MinAggregate::MinAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-bool MinAggregate::match(Grounder *g)
+void MinAggregate::doMatch(Grounder *g)
 {
 	fact_          = true;
 	minLowerBound_ = INT_MAX;
@@ -56,7 +56,6 @@ bool MinAggregate::match(Grounder *g)
 		}
 	}
 	maxUpperBound_ = fixedValue_;
-	return checkBounds(g);
 }
 
 namespace
@@ -84,7 +83,7 @@ namespace
 
 	void IndexedDomainMinAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_);
+		l_->doMatch(g->g_);
 		set_.clear();
 		ConditionalLiteralVector *l = l_->getLiterals();
 		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)
