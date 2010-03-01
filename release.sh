@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="2.0.4"
+VERSION=$(grep '^SET(CPACK_PACKAGE_VERSION ".\..\..")$' CMakeLists.txt | sed "s/[^0-9.]//g")
 
 make all_static32 all_mingw32
 
