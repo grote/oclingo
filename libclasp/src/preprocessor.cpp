@@ -291,9 +291,6 @@ bool Preprocessor::classifyProgram(uint32 startAtom, uint32& stopAtom) {
 					// mark atom so that the link between atomEqId and bodyId can be replaced
 					// with a link to bodyEqId.
 					setSimplifyBodies(atomEqId);
-					if (atomId != atomEqId && !prg_->atoms_[atomEqId]->hasPred(bodyEqId)) {
-						prg_->atoms_[atomEqId]->preds.push_back(bodyEqId);
-					}
 				}
 			}
 			setHasBody(body->literal());
@@ -807,7 +804,13 @@ uint32 Preprocessor::replaceComp(uint32 id) const {
 		PrgAtomNode* eq  = prg_->atoms_[eqId];
 		if (eq->hasVar() && getRootAtom(~eq->literal()) != varMax) {
 			for (VarVec::size_type i = 0; i != a->preds.size(); ++i) {
-				PrgBodyNode* bn = prg_->bodies_[a->preds[i]];
+				PrgBodyNode* bn  = prg_->bodies_[a->preds[i]];
+				if (bn->eq()) {
+					// predecessor is actually equivalent to some other body 
+					// but the link was not yet replaced - do so now
+					a->preds[i] = bn->eqNode();
+					bn = prg_->bodies_[bn->eqNode()];
+				}
 				if (bn->literal() == eq->literal() && bn->size() == 1 && bn->negSize() == 1) {
 					return getRootAtom(~eq->literal());
 				}

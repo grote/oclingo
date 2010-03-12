@@ -906,7 +906,7 @@ public:
 	void testBothLitsInConstraintRule() {
 		// {a}.
 		// b :- a.
-		// c :- a.
+		// c :- b.
 		// x :-  1 {a, b, not b, not c}.
 		builder.startProgram(index, ufs)
 			.setAtomName(1, "a").setAtomName(2, "b").setAtomName(3, "c").setAtomName(4, "x")
@@ -925,7 +925,7 @@ public:
 	void testBothLitsInWeightRule() {
 		// {a, d}.
 		// b :- a.
-		// c :- a.
+		// c :- b.
 		// x :-  3 [a=3, not b=1, not c=3, d=2].
 		builder.startProgram(index, ufs)
 			.setAtomName(1, "a").setAtomName(2, "b").setAtomName(3, "c").setAtomName(4, "x").setAtomName(5, "d")
