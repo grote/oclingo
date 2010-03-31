@@ -218,6 +218,7 @@ UfsAggregate::UfsAggregate(PrgBodyNode* b)
 	: UfsBodyNode(b->literal(), b->scc())
 	, lower_(b->bound())
 	, ext_(0) {
+	typeOrUnfounded = 1;
 }
 UfsAggregate::~UfsAggregate() {
 	if (ext_) { 
@@ -736,20 +737,23 @@ void DefaultUnfoundedCheck::propagateSource(bool forceTodo) {
 		}
 		else {
 			// propagate the removal of a source-pointer within this scc
-			bool predFalse = solver_->isFalse(head->lit);
 			for (; *it; ++it) {
+				// For a normal body there are two cases whenever it ceases to be valid:
+				// a) all predecessor have their source restored and the body becomes a valid source again
+				// b) at least one predecessor is unfounded, hence false. In that case, the body
+				// becomes false, too and all its successors having the body as source are enqueued.
+				// Alas, case b) does not necessarily hold for extended rules. I.e. a false predecessor
+				// does not automatically make the body false. Hence, we eagerly enqueue all successors.
+                bool addTodo = forceTodo || ((*it)->typeOrUnfounded == 1 && !solver_->isFalse((*it)->lit));
+
 				if ((*it)->atomUnsourced(*head)) {
 					for (UfsAtomNode** aIt = (*it)->succs; *aIt && (*aIt)->scc == (*it)->scc; ++aIt) {
 						if ((*aIt)->hasSource() && (*aIt)->watch() == *it) {
 							(*aIt)->markSourceInvalid();
 							sourceQueue_.push_back(*aIt);
-							// Second condition is only needed for weight/card cons.
-							// From predFalse does not automatically follow that the body is false. Hence,
-							// the successors of the body are not always added in removeSource() and
-							// since no search is started for the false predecessor, we must start one
-							// for the body's heads.
-							bool addTodo = forceTodo || (predFalse && !solver_->isFalse((*it)->lit));
-							if (addTodo) { enqueueTodo(*aIt); }
+						}
+						if ( addTodo && (*aIt)->watch() == *it) {
+							enqueueTodo(*aIt);
 						}
 					}
 				}

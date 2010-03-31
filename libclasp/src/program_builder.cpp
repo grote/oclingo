@@ -1043,7 +1043,7 @@ void ProgramBuilder::transformExtended() {
 	incTrAux(numAtoms() - a);
 }
 
-void ProgramBuilder::transformIntegrity(Solver& s, uint32 maxAux) {
+void ProgramBuilder::transformIntegrity(uint32 maxAux) {
 	if (stats.rules[CONSTRAINTRULE] == 0) {
 		return;
 	}
@@ -1056,7 +1056,7 @@ void ProgramBuilder::transformIntegrity(Solver& s, uint32 maxAux) {
 			integrity.push_back(b);
 		}
 	}
-	if (!integrity.empty() && (integrity.size() == 1 || (atoms_.size()/double(bodies_.size()) > 0.5 && integrity.size() / double(bodies_.size()) < 0.01))) {
+	if (!integrity.empty() && (integrity.size() == 1 || (atoms_.size()/double(bodies_.size()) > 0.59 && integrity.size() / double(bodies_.size()) < 0.01))) {
 		bodyIndex_.clear();
 		frozen_ = false;
 		assert(atoms_[1]->value() == value_false);
@@ -1175,7 +1175,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool finalizeSolver, bool backpr
 			return false;
 		}
 		if (erMode_ == mode_transform_integ || erMode_ == mode_transform_dynamic) {
-			transformIntegrity(solver, std::min(uint32(15000), uint32(numAtoms())<<1));
+			transformIntegrity(std::min(uint32(15000), uint32(numAtoms())<<1));
 		}
 		vars_.addTo(solver, incData_ ? incData_->startVar_ : 1);
 		atomIndex_->endInit();

@@ -394,7 +394,7 @@ private:
 	bool          handleNatively(const PrgRule& r, const PrgRule::RData& rd) const;
 	bool          transformNoAux(const PrgRule& r, const PrgRule::RData& rd) const;
 	void          transformExtended();
-	void          transformIntegrity(Solver&, uint32 maxAux);
+	void          transformIntegrity(uint32 maxAux);
 	void          clearRuleState(const PrgRule& r);
 	Body          findOrCreateBody(const PrgRule& r, const PrgRule::RData& rd);
 	bool          mergeEqAtoms(Var a, Var root);
