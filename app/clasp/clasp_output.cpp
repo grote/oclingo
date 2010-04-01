@@ -226,10 +226,11 @@ void SatOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // PB output
 /////////////////////////////////////////////////////////////////////////////////////////
-PbOutput::PbOutput() : lastModel_(0) {}
+PbOutput::PbOutput(bool printSuboptModels) : lastModel_(0), printSuboptModels_(printSuboptModels) {}
 PbOutput::~PbOutput() { delete [] lastModel_; }
 void PbOutput::printModel(const Solver& s, const Enumerator& en) {
-	if (!en.minimize()) {
+	if (!en.minimize() || printSuboptModels_) {
+		printf("v ");
 		for (Var v = 1; v <= s.numVars(); ++v) {
 			printf("%sx%u ", s.value(v) == value_false ? "-":"", v);
 		}

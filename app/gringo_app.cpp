@@ -381,7 +381,7 @@ void ClingoApp::configureInOut(Streams& s) {
 		if (cmdOpts_.basic.asp09){ generic.verbose = 0; }
 	}
 	else if (in_->format() == Input::DIMACS) { out_.reset(new SatOutput()); }
-	else if (in_->format() == Input::OPB)    { out_.reset(new PbOutput());  }
+	else if (in_->format() == Input::OPB)    { out_.reset(new PbOutput(generic.verbose > 1));  }
 }
 
 int ClingoApp::doRun() {

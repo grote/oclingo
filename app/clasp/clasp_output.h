@@ -153,12 +153,13 @@ public:
  */
 class PbOutput : public SatOutput {
 public: 
-	PbOutput();
+	explicit PbOutput(bool printSuboptimalModels);
 	~PbOutput();
 	void printModel(const Solver& s, const Enumerator& en);
 	void printSolution(const Solver& s, const Enumerator& en, bool complete);
 private:
 	uint8* lastModel_;
+	bool   printSuboptModels_;
 };
 
 }
