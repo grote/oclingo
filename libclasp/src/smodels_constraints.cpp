@@ -361,7 +361,7 @@ MinimizeConstraint::~MinimizeConstraint() {
 	}
 }
 
-bool MinimizeConstraint::setOptimum(uint32 level, uint32 opt) {
+bool MinimizeConstraint::setOptimum(uint32 level, WeightSum opt) {
 	assert(level < minRules_.size());
 	if (level > activePL_ || opt >= minRules_[level]->sum_) {
 		minRules_[level]->opt_ = opt;

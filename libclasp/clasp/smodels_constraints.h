@@ -209,7 +209,7 @@ public:
 	 * \return true if the new optimum does not violate the constraint. Otherwise, false.
 	 * \note If false is returned, the new optimum is not set
 	 */
-	bool setOptimum(uint32 level, uint32 opt);
+	bool setOptimum(uint32 level, WeightSum opt);
 	
 	//! returns the current optimum of a minimize statement
 	WeightSum getOptimum(uint32 level) const {
