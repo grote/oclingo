@@ -952,7 +952,17 @@ public:
 	void testIncrementalSolve() {
 		ClaspConfig config;
 		config.solver = &s;
-		IncrementalConfig inc;
+		struct IncrementalConfig : public IncrementalControl {
+			IncrementalConfig() : maxSteps(static_cast<uint32>(-1)), minSteps(1), stopUnsat(false)  {}
+			uint32  maxSteps;
+			uint32  minSteps; 
+			bool    stopUnsat; 
+			void initStep(ClaspFacade&) {}
+			bool nextStep(ClaspFacade& f) {
+				ClaspFacade::Result stopRes = stopUnsat ? ClaspFacade::result_unsat : ClaspFacade::result_sat;
+				return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
+			}
+		} inc;
 		struct IncInput : Input {
 			IncInput() : step(0) {}
 			Format format()      const { return Input::SMODELS; }

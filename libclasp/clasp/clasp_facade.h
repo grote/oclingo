@@ -101,13 +101,25 @@ struct HeuristicOptions {
 	bool     nant;             /**< only for unit    */
 };
 
-struct IncrementalConfig {
-	IncrementalConfig() : minSteps(1), maxSteps(uint32(-1)), stopUnsat(false), keepLearnt(true), keepHeuristic(false) {}
-	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
-	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
-	bool   stopUnsat;     /**< Stop on first unsat problem? */
-	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
-	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */
+class ClaspFacade;
+
+//! Interface for controling incremental solving
+class IncrementalControl {
+public:
+	IncrementalControl();
+	virtual ~IncrementalControl(); 
+	//! Called before an incremental step is started
+	virtual void initStep(ClaspFacade& f)  = 0;
+	//! Called after an incremental step finished
+	/*!
+	 * \return
+	 *  - true to signal that solving should continue with next step
+	 *  - false to terminate the incremental solving loop
+	 */
+	virtual bool nextStep(ClaspFacade& f)  = 0;
+private:
+	IncrementalControl(const IncrementalControl&);
+	IncrementalControl& operator=(const IncrementalControl&);
 };
 
 //! Parameter-object that groups & validates options
@@ -188,11 +200,22 @@ public:
 	/*!
 	 * Incrementally solves the problem given in problem using the given configuration.
 	 * \pre config is valid, i.e. config.valid() returned true
-	 * \note Once solve() returned, the result of the computation can be
-	 * queried via the function result().
+	 * \note Call result() to get the result of the computation
 	 * \note config.onlyPre is ignored in incremental setting!
+	 *
+	 * solveIncremental() runs a simple loop that is controlled by the
+	 * given IncrementalControl object inc.
+	 * \code
+	 * do {
+	 *   inc.initStep(*this);
+	 *   read();
+	 *   preprocess();
+	 *   solve();
+	 * } while (inc.nextStep(*this));
+	 * \endcode
+	 * 
 	 */
-	void solveIncremental(Input& problem, ClaspConfig& config, IncrementalConfig& inc, Callback* c);
+	void solveIncremental(Input& problem, ClaspConfig& config, IncrementalControl& inc, Callback* c);
 
 	//! returns the result of a computation
 	Result result() const { return result_; }
@@ -219,6 +242,8 @@ public:
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	const SearchLimits& limits() const { return limits_; }
 #endif
+
+	void warning(const char* w) const { if (cb_) cb_->warning(w); }
 private:
 	ClaspFacade(const ClaspFacade&);
 	ClaspFacade& operator=(const ClaspFacade&);
@@ -227,7 +252,6 @@ private:
 	// Status information
 	void setState(State s, Event e)   { state_ = s; if (cb_) cb_->state(e, *this); }
 	void fireEvent(Event e)           { if (cb_) cb_->event(e, *this); }
-	void warning(const char* w) const { if (cb_) cb_->warning(w); }
 	// -------------------------------------------------------------------------------------------
 	// Enumerator::Report interface
 	void reportModel(const Solver&, const Enumerator&) {
@@ -252,7 +276,7 @@ private:
 	// -------------------------------------------------------------------------------------------
 	// Internal setup functions
 	void   validateWeak();
-	void   init(Input&, ClaspConfig&, IncrementalConfig*, Callback* c);
+	void   init(Input&, ClaspConfig&, IncrementalControl*, Callback* c);
 	bool   read();
 	bool   preprocess();
 	uint32 computeProblemSize() const;
@@ -262,15 +286,15 @@ private:
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 	SearchLimits  limits_;
 #endif
-	ClaspConfig*       config_;
-	IncrementalConfig* inc_;
-	Callback*          cb_;
-	Input*             input_;
-	Api                api_;
-	Result             result_;
-	State              state_;
-	int                step_;
-	bool               more_;
+	ClaspConfig*        config_;
+	IncrementalControl* inc_;
+	Callback*           cb_;
+	Input*              input_;
+	Api                 api_;
+	Result              result_;
+	State               state_;
+	int                 step_;
+	bool                more_;
 };
 
 }

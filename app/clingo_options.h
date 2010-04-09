@@ -36,6 +36,17 @@ struct GringoOptions;
 /////////////////////////////////////////////////////////////////////////////////////////
 // Option groups - Mapping between command-line options and gringo options
 /////////////////////////////////////////////////////////////////////////////////////////
+struct iClingoConfig : public Clasp::IncrementalControl {
+	iClingoConfig() : minSteps(1), maxSteps(uint32(-1)), stopUnsat(false), keepLearnt(true), keepHeuristic(false) {}
+	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
+	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
+	bool   stopUnsat;     /**< Stop on first unsat problem? */
+	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
+	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */
+	void initStep(Clasp::ClaspFacade& f);
+	bool nextStep(Clasp::ClaspFacade& f);
+};
+
 bool mapStop(const std::string& s, bool&);
 bool mapKeepForget(const std::string& s, bool&);
 struct ClingoOptions {
@@ -46,7 +57,7 @@ struct ClingoOptions {
 	bool claspMode; // default: false
 	bool clingoMode;// default: true for clingo, false for iclingo
 	bool iStats;
-	Clasp::IncrementalConfig inc;
+	iClingoConfig inc;
 };
 
 }

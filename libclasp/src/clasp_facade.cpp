@@ -127,6 +127,9 @@ bool ClaspConfig::validate(std::string& err) {
 	}
 	return true;
 }
+
+IncrementalControl::IncrementalControl() {}
+IncrementalControl::~IncrementalControl(){}
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClaspFacade
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -142,7 +145,7 @@ ClaspFacade::ClaspFacade()
 	, more_(true) {
 }
 
-void ClaspFacade::init(Input& problem, ClaspConfig& config, IncrementalConfig* inc, Callback* c) {
+void ClaspFacade::init(Input& problem, ClaspConfig& config, IncrementalControl* inc, Callback* c) {
 	assert(config.solver && "ClaspFacade: solver not set!\n");
 	config_ = &config;
 	inc_    = inc;
@@ -160,10 +163,6 @@ void ClaspFacade::init(Input& problem, ClaspConfig& config, IncrementalConfig* i
 
 void ClaspFacade::validateWeak() {
 	if (inc_) {
-		if (inc_->maxSteps == 0) {
-			warning("Max incremental steps must be > 0!"); 
-			inc_->maxSteps = 1;
-		}
 		if (config_->onlyPre) {
 			warning("Option 'onlyPre' is ignored in incremental setting!"); 
 			config_->onlyPre = false;
@@ -204,15 +203,11 @@ void ClaspFacade::solve(Input& problem, ClaspConfig& config, Callback* c) {
 }
 
 // Incremental solving...
-void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, IncrementalConfig& inc, Callback* c) {
+void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, IncrementalControl& inc, Callback* c) {
 	init(problem, config, &inc, c);
-	Result stopRes = inc.stopUnsat ? result_unsat : result_sat;
 	LitVec assume;
-	config.solver->strategies().heuristic->reinit(!inc.keepHeuristic);
 	do {
-		if (!inc.keepLearnt) {
-			config.solver->reduceLearnts(1.0f);
-		}
+		inc.initStep(*this);
 		result_   = result_unknown;
 		more_     = true;
 		if (!read() || !preprocess()) {
@@ -233,7 +228,7 @@ void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, Incremen
 				setState(state_solve, event_state_exit);
 			}
 		}
-	} while (--inc_->maxSteps && ((inc_->minSteps > 0 && --inc_->minSteps) || result_ != stopRes) && ++step_);
+	} while (inc.nextStep(*this) && ++step_);
 }
 
 // Creates a ProgramBuilder-object if necessary and reads

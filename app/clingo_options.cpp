@@ -119,4 +119,24 @@ bool mapKeepForget(const std::string& s, bool& b) {
 	return (b=true,(temp == "keep")) || (b=false,(temp == "forget"));
 }
 
+void iClingoConfig::initStep(Clasp::ClaspFacade& f) {
+	if (f.step() == 0) {
+		if (maxSteps == 0) {
+			f.warning("Max incremental steps must be > 0!"); 
+			maxSteps = 1;
+		}
+		f.config()->solver->strategies().heuristic->reinit(!keepHeuristic);
+	}
+	else if (!keepLearnt) {
+		f.config()->solver->reduceLearnts(1.0f);
+	}
+}
+
+bool iClingoConfig::nextStep(Clasp::ClaspFacade& f) {
+	using Clasp::ClaspFacade;
+	ClaspFacade::Result stopRes = stopUnsat ? ClaspFacade::result_unsat : ClaspFacade::result_sat;
+	return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
+}
+
+
 }
