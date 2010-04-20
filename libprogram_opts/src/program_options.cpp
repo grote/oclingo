@@ -546,7 +546,7 @@ namespace ProgramOptions {
 						string value = "";
 						if (!o->getValue()->isImplicit())
 						{
-							if (next() && getOptionType() == no_opt)
+							if (next())
 							{
 								value = currentArg_;
 								addOptionValue(o->longName(), value);
@@ -615,7 +615,7 @@ namespace ProgramOptions {
 				{
 					if (!o->getValue()->isImplicit() && value.empty())
 					{
-						if (next() && getOptionType() == no_opt)
+						if (next())
 						{
 							value = currentArg_;
 							addOptionValue(o->longName(), value);
