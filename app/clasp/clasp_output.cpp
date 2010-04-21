@@ -202,7 +202,7 @@ void SatOutput::printModel(const Solver& s, const Enumerator&) {
 		if (++cnt == numVarPerLine && v+1 <= s.numVars()) { cnt = 0; printf("\nv"); }
 		printf(" ");
 	}
-	printf("\n");
+	printf("0\n");
 	fflush(stdout);
 }
 
