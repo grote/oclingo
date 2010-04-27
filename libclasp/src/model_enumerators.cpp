@@ -85,11 +85,12 @@ BacktrackEnumerator::BacktrackEnumerator(uint32 opts, Report* p)
 }
 
 BacktrackEnumerator::~BacktrackEnumerator() {
-	clear();
+	assert(nogoods_.empty() && "Enumerator::endSearch() not called!");
 }
 
-void BacktrackEnumerator::clear() {
+void BacktrackEnumerator::terminateSearch(Solver& s) {
 	while (!nogoods_.empty()) {
+		static_cast<Clause*>(nogoods_.back().first)->removeWatches(s);
 		nogoods_.back().first->destroy();
 		nogoods_.pop_back();
 	}
@@ -220,11 +221,12 @@ RecordEnumerator::RecordEnumerator(Report* p)
 }
 
 RecordEnumerator::~RecordEnumerator() {
-	clear();
+	assert(nogoods_.empty() && "Enumerator::endSearch() not called!");
 }
 
-void RecordEnumerator::clear() {
+void RecordEnumerator::terminateSearch(Solver& s) {
 	while (!nogoods_.empty()) {
+		static_cast<LearntConstraint*>(nogoods_.back())->removeWatches(s);
 		nogoods_.back()->destroy();
 		nogoods_.pop_back();
 	}

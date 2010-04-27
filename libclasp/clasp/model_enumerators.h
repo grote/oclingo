@@ -83,11 +83,10 @@ private:
 		ENABLE_PROGRESS_SAVING  = 2,
 		MINIMIZE_BACKJUMPING    = 4
 	};
-	void   terminateSearch(Solver&) { clear(); }
+	void   terminateSearch(Solver& s);
 	bool   doBacktrack(Solver& s, uint32 bl);
 	uint32 getProjectLevel(Solver& s);
 	void    undoLevel(Solver& s);
-	void    clear();
 	uint32  getHighestBacktrackLevel(const Solver& s, uint32 bl) const;
 	LitVec  projAssign_;
 	Nogoods nogoods_;
@@ -114,13 +113,12 @@ public:
 	~RecordEnumerator();
 private:
 	typedef PodVector<Constraint*>::type ConstraintDB;
-	void   terminateSearch(Solver&) { clear(); }
+	void   terminateSearch(Solver& s);
 	bool   doBacktrack(Solver& s, uint32 bl);
 	uint32 getProjectLevel(Solver& s);
 	void   addSolution(Solver& s);
 	uint32 assertionLevel(const Solver& s);
 	bool   simplify(Solver& s, bool);
-	void   clear();
 	ClauseCreator       solution_;
 	ConstraintDB        nogoods_;
 };

@@ -15,6 +15,7 @@ class EnumeratorTest : public CppUnit::TestFixture {
   CPPUNIT_TEST_SUITE(EnumeratorTest);
 	CPPUNIT_TEST(testMiniProject);
 	CPPUNIT_TEST(testProjectBug);
+	CPPUNIT_TEST(testTerminateRemovesWatches);
 	CPPUNIT_TEST_SUITE_END();	
 public:
 	void testMiniProject() {
@@ -91,6 +92,31 @@ public:
 			++numT;
 		}
 		CPPUNIT_ASSERT(numT < 3);
+		enumerator.endSearch(solver, false);
+	}
+
+	void testTerminateRemovesWatches() {
+		solver.strategies().symTab.reset(new AtomIndex);
+		builder.startProgram(*solver.strategies().symTab, 0, 0)
+			.setAtomName(1, "a").setAtomName(2, "b").setAtomName(3, "c").setAtomName(4, "d")
+			.startRule(CHOICERULE).addHead(1).addHead(2).addHead(3).addHead(4).endRule()
+		;
+		CPPUNIT_ASSERT_EQUAL(true, builder.endProgram(solver, true));
+		RecordEnumerator enumerator(0);
+		enumerator.init(solver, 0);
+		AtomIndex& index = *solver.strategies().symTab;
+		solver.assume(index[1].lit) && solver.propagate();
+		solver.assume(index[2].lit) && solver.propagate();
+		solver.assume(index[3].lit) && solver.propagate();
+		solver.assume(index[4].lit) && solver.propagate();
+		++solver.stats.solve.models;
+		CPPUNIT_ASSERT_EQUAL(uint32(0), solver.numFreeVars());
+		CPPUNIT_ASSERT_EQUAL(true, enumerator.backtrackFromModel(solver));
+		uint32 numW = solver.numWatches(index[1].lit) + solver.numWatches(index[2].lit) + solver.numWatches(index[3].lit) + solver.numWatches(index[4].lit);
+		CPPUNIT_ASSERT(numW > 0);
+		enumerator.endSearch(solver, false);
+		numW = solver.numWatches(index[1].lit) + solver.numWatches(index[2].lit) + solver.numWatches(index[3].lit) + solver.numWatches(index[4].lit);
+		CPPUNIT_ASSERT(numW == 0);
 	}
 private:
 	Solver solver;
