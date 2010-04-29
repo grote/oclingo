@@ -104,7 +104,7 @@ bool SolveOptionsWrapper::mapRandFreq(const std::string& s, SolveOptionsWrapper&
 	return false;
 }
 bool SolveOptionsWrapper::mapRandProb(const std::string &s, SolveOptionsWrapper& i) {
-	bool b;
+	bool b = false;
 	std::pair<int, int> r(0, 0);
 	if (ProgramOptions::parseValue(s, b, 1) || ProgramOptions::parseValue(s, r, 1)) {
 		if (b) { r.first = 50; r.second = 20; }
