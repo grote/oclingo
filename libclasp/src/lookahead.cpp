@@ -182,7 +182,6 @@ bool Lookahead::propagateFixpoint(Solver& s) {
 		// on level 0 unless we learn a new implication
 		assert(s.queueSize() == 0);
 		top_    = uint32(s.assignment().size());
-		s.simplify();
 	}
 	return ok;
 }
@@ -231,6 +230,12 @@ UnitHeuristic::~UnitHeuristic() {
 void UnitHeuristic::startInit(const Solver& s) {
 	if (reinit_) { maxLook_ = int32(reinit_-1); }
 	if (heu_)    { heu_->startInit(s); }
+	if (look_) {
+		// disable lookahead during setup - 
+		// we re-enable it once all variables and
+		// constraints are known
+		look_->disable(const_cast<Solver&>(s));
+	}
 }
 
 void UnitHeuristic::endInit(Solver& s) { 
