@@ -69,6 +69,16 @@ public:
 	 */
 	virtual void printStats(const SolverStatistics& st, const Enumerator& en) = 0;
 	/*!
+	 * Called before each individual search operation
+	 * \param s    The solver that is about to start a new search
+	 * \param maxC Conflict limit of the new search
+	 * \param maxL Learnt limit of the new search
+	 * \note 
+	 *    This function is only called if clasp was compiled with PRINT_SEARCH_PROGRESS
+	 */
+	virtual void printProgress(const Solver& s, uint64 maxC, uint32 maxL);
+	
+	/*!
 	 * Prints the current consequences (marked atoms) in the format 
 	 * format[model] (<atom>format[atom_sep] )*
 	 */
@@ -87,9 +97,18 @@ public:
 	 *  - unknwon.
 	 */ 
 	virtual void printSolution(const Solver& s, const Enumerator& en, bool complete);
+	
 	void         printOptimizeValues(const MinimizeConstraint& m);
 protected:
 	void printJumpStats(const SolverStatistics& st);
+	inline double percent(uint64 r, uint64 b) { 
+		if (b == 0) return 0;
+		return (static_cast<double>(r)/b)*100.0;
+	}
+	inline double average(uint64 x, uint64 y) {
+		if (!x || !y) return 0.0;
+		return static_cast<double>(x) / static_cast<double>(y);
+	}
 private:
 	OutputFormat(const OutputFormat&);
 	OutputFormat& operator=(const OutputFormat&);
@@ -124,6 +143,8 @@ public:
 	void printOptimize(const MinimizeConstraint& min) {
 		if (!asp09_) { OutputFormat::printOptimize(min); }
 	}
+
+	const PreproStats& programStats() const { return stats_; }
 private:
 	// Hook for derived classes
 	virtual void printExtendedModel(const Solver&) {}

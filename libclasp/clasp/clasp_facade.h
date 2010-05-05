@@ -179,13 +179,6 @@ public:
 		//! Some configuration option is unsafe/unreasonable w.r.t the current problem
 		virtual void warning(const char* msg)       = 0;
 	};
-#if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
-	struct SearchLimits {
-		SearchLimits() : conflicts(0), learnts(0) {}
-		uint64 conflicts;
-		uint32 learnts;
-	};
-#endif
 	ClaspFacade();
 	/*!
 	 * Solves the problem given in problem using the given configuration.
@@ -227,7 +220,11 @@ public:
 	int    step()   const { return step_; }
 	//! returns the current input problem
 	Input* input() const { return input_; }
-	
+	//! returns the maximal number of conflicts before search stops
+	uint64 maxConflicts() const { return maxConflicts_; }
+	//! returns the maximal number of learnt nogoods before search stops
+	uint32 maxLearnts()   const { return maxLearnts_; }
+
 	const ClaspConfig* config() const { return config_; }
 
 	//! returns the ProgramBuilder-object that was used to transform a logic program into nogoods
@@ -239,9 +236,6 @@ public:
 	 */
 	ProgramBuilder* api() const  { return api_.get();     }
 	ProgramBuilder* releaseApi() { return api_.release(); }
-#if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
-	const SearchLimits& limits() const { return limits_; }
-#endif
 
 	void warning(const char* w) const { if (cb_) cb_->warning(w); }
 private:
@@ -266,12 +260,9 @@ private:
 		setState(state_, event_state_exit);
 	}
 	void reportStatus(const Solver&, uint64 maxCfl, uint32 maxL) {
-		(void)maxCfl; (void)maxL;
-#if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
-		limits_.conflicts = maxCfl;
-		limits_.learnts   = maxL;
+		maxConflicts_ = maxCfl;
+		maxLearnts_   = maxL;
 		fireEvent(event_restart);
-#endif
 	}
 	// -------------------------------------------------------------------------------------------
 	// Internal setup functions
@@ -283,14 +274,13 @@ private:
 	bool   configureMinimize(MinimizeConstraint* min) const;
 	bool   initEnumerator(MinimizeConstraint* min)    const;
 	// -------------------------------------------------------------------------------------------
-#if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
-	SearchLimits  limits_;
-#endif
+	uint64              maxConflicts_;
 	ClaspConfig*        config_;
 	IncrementalControl* inc_;
 	Callback*           cb_;
 	Input*              input_;
 	Api                 api_;
+	uint32              maxLearnts_;
 	Result              result_;
 	State               state_;
 	int                 step_;

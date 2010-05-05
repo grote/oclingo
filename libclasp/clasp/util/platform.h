@@ -27,13 +27,13 @@
 
 #if defined(_MSC_VER) && _MSC_VER >= 1200
 #include <basetsd.h>
-typedef UINT8			uint8;
-typedef UINT16		uint16;
-typedef INT32			int32;
-typedef UINT32		uint32;
-typedef UINT64		uint64;
-typedef INT64		  int64;
-typedef UINT_PTR	uintp;
+typedef UINT8     uint8;
+typedef UINT16    uint16;
+typedef INT32     int32;
+typedef UINT32    uint32;
+typedef UINT64    uint64;
+typedef INT64     int64;
+typedef UINT_PTR  uintp;
 #define PRIu64 "llu"
 #define PRId64 "lld"
 template <unsigned> struct Uint_t;
@@ -47,16 +47,22 @@ template <> struct Uint_t<sizeof(uint64)> { typedef uint64 type; };
 #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
-typedef uint8_t		uint8;
-typedef uint16_t	uint16;
-typedef int32_t		int32;
-typedef uint32_t	uint32;
-typedef uint64_t	uint64;
-typedef int64_t		int64;
-typedef uintptr_t uintp;
+typedef uint8_t	    uint8;
+typedef uint16_t    uint16;
+typedef int32_t	    int32;
+typedef uint32_t    uint32;
+typedef uint64_t    uint64;
+typedef int64_t     int64;
+typedef uintptr_t   uintp;
 #define BIT_MASK(x,n) ( static_cast<__typeof((x))>(1)<<(n) )
 #else 
 #error unknown compiler or platform. Please add typedefs manually.
+#endif
+#ifndef UINT32_MAX
+#define UINT32_MAX (~uint32(0))
+#endif
+#ifndef UINT64_MAX
+#define UINT64_MAX (~uint64(0))
 #endif
 
 // set, clear, toggle bit n of x and return new value
@@ -71,5 +77,14 @@ typedef uintptr_t uintp;
 
 // return true if bit n in x is set
 #define test_bit(x,n)  ( ((x) & BIT_MASK((x),(n))) != 0 )
+
+#if !defined(MAINTAIN_JUMP_STATS)
+#define MAINTAIN_JUMP_STATS 0
+#endif
+
+#if !defined(PRINT_SEARCH_PROGRESS)
+// If set to 1, Enumerator::Report::reportStatus() is called on each restart.
+#define PRINT_SEARCH_PROGRESS 0
+#endif
 
 #endif

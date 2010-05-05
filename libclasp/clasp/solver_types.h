@@ -26,10 +26,6 @@
 #include <clasp/literal.h>
 #include <clasp/constraint.h>
 
-#if !defined(MAINTAIN_JUMP_STATS)
-#define MAINTAIN_JUMP_STATS 0           // alternative: 1
-#endif
-
 /*!
  * \file 
  * Contains some types used by a Solver
@@ -67,7 +63,6 @@ struct ProblemStats {
 		}		
 	} 
 };
-
 
 //! A struct for aggregating statistics for one solve operation
 struct SolveStats {

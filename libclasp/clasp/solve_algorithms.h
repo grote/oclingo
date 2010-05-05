@@ -28,12 +28,6 @@
 #include <clasp/literal.h>
 #include <clasp/constraint.h>
 
-#if !defined(PRINT_SEARCH_PROGRESS)
-// If set to 1, Enumerator::Report::reportStatus() is called
-// on each restart.
-#define PRINT_SEARCH_PROGRESS 0
-#endif
-
 /*!
  * \file 
  * Defines top-level functions for solving csp-problems.
@@ -212,6 +206,14 @@ public:
 	}
 };
 
+//! Aggregates search limit parameters
+struct SearchLimits {
+	SearchLimits() : conflicts(UINT64_MAX), restarts(UINT32_MAX), learnts(UINT32_MAX) {}
+	uint64 conflicts; /**< current conflict limit */
+	uint32 restarts;  /**< current restart limit */
+	uint32 learnts;   /**< current limit for learnt nogoods */
+};
+
 //! Parameter-Object for configuring search-parameters
 /*!
  * \ingroup solver
@@ -231,6 +233,9 @@ struct SolveParams {
 	
 	RestartParams restart;
 	ReduceParams  reduce;
+	
+	typedef std::auto_ptr<SearchLimits> LimitsPtr;
+	LimitsPtr     limits;
 	
 	//! Enumerator to use during search
 	/*!

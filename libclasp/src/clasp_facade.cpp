@@ -134,11 +134,13 @@ IncrementalControl::~IncrementalControl(){}
 // ClaspFacade
 /////////////////////////////////////////////////////////////////////////////////////////
 ClaspFacade::ClaspFacade() 
-	: config_(0)
+	: maxConflicts_(UINT64_MAX)
+	, config_(0)
 	, inc_(0)
 	, cb_(0)
 	, input_(0)
 	, api_(0)
+	, maxLearnts_(UINT32_MAX)
 	, result_(result_unknown)
 	, state_(state_not_started)
 	, step_(0)
@@ -147,14 +149,22 @@ ClaspFacade::ClaspFacade()
 
 void ClaspFacade::init(Input& problem, ClaspConfig& config, IncrementalControl* inc, Callback* c) {
 	assert(config.solver && "ClaspFacade: solver not set!\n");
-	config_ = &config;
-	inc_    = inc;
-	cb_     = c;
-	input_  = &problem;
-	result_ = result_unknown;
-	state_  = state_not_started;
-	step_   = 0;
-	more_   = true;
+	config_       = &config;
+	inc_          = inc;
+	cb_           = c;
+	input_        = &problem;
+	result_       = result_unknown;
+	state_        = state_not_started;
+	step_         = 0;
+	more_         = true;
+	if (config.solve.limits.get()) {
+		maxConflicts_ = config.solve.limits->conflicts;
+		maxLearnts_   = config.solve.limits->learnts;
+	}
+	else {
+		maxConflicts_ = UINT64_MAX;
+		maxLearnts_   = UINT32_MAX;
+	}
 	validateWeak();
 	config.solve.setEnumerator( config.enumerate.createEnumerator() );
 	config.solve.enumerator()->setReport(this);
@@ -206,6 +216,8 @@ void ClaspFacade::solve(Input& problem, ClaspConfig& config, Callback* c) {
 void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, IncrementalControl& inc, Callback* c) {
 	init(problem, config, &inc, c);
 	LitVec assume;
+	SearchLimits* temp = config_->solve.limits.release();
+	if (temp) { warning("Option 'search-limit' is ignored in incremental setting!");  }
 	do {
 		inc.initStep(*this);
 		result_   = result_unknown;
@@ -229,6 +241,7 @@ void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, Incremen
 			}
 		}
 	} while (inc.nextStep(*this) && ++step_);
+	config_->solve.limits.reset(temp);
 }
 
 // Creates a ProgramBuilder-object if necessary and reads

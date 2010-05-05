@@ -23,17 +23,7 @@
 #include <clasp/solve_algorithms.h>
 #include <stdio.h>
 
-namespace Clasp { namespace {
-inline double percent(uint64 r, uint64 b) { 
-	if (b == 0) return 0;
-	return (static_cast<double>(r)/b)*100.0;
-}
-inline double average(uint64 x, uint64 y) {
-	if (!x || !y) return 0.0;
-	return static_cast<double>(x) / static_cast<double>(y);
-}
-}
-
+namespace Clasp { 
 OutputFormat::OutputFormat()  {
 	format[comment] = "";
 	format[model]   = "";
@@ -100,6 +90,8 @@ void OutputFormat::printJumpStats(const SolverStatistics& stats) {
 	printf("%s%-*s: %-6.1f\n", c, w, "Average Model Length",average(st.modLits,st.models));
 #endif
 }
+
+void OutputFormat::printProgress(const Solver&, uint64, uint32) {}
 /////////////////////////////////////////////////////////////////////////////////////////
 // ASP output
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +171,7 @@ void AspOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 			, percent(other, st.learnt[0]));
 		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Conflicts", st.learnt[0]-st.loops, average(st.lits[0], st.learnt[0]-st.loops));
 		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Loops",     st.loops, average(st.lits[1], st.loops));
+		printf("%-12s: %-6u\n", "  Deleted",     st.learnt[3]);
 		OutputFormat::printJumpStats(stats);
 		fflush(stdout);
 	}

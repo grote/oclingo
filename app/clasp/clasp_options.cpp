@@ -202,11 +202,10 @@ void BasicOptions::initOptions(ProgramOptions::OptionGroup& root) {
 		("stats"   , bool_switch(&stats),"Print extended statistics")
 		("quiet,q", bool_switch(&quiet), "Do not print models")
 		("asp09" , bool_switch(&asp09),  "Write output in ASP Competition'09 format")
-		("time-limit" , value<int>(&timeout), "Set time limit to <n> seconds", "<n>")
+		("time-limit" , storeTo(timeout), "Set time limit to <n> seconds", "<n>")
 	;
 	root.addOptions(basic, true);
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // Clasp specific mode options
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -226,7 +225,8 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 		("cautious" , bool_switch(&config->enumerate.cautious), "Compute cautious consequences\n")
 
 		("pre" , bool_switch(&config->onlyPre), "Run ASP preprocessor and exit")
- 
+		("search-limit", value<std::pair<int, int> >(), "Terminate search after <n> conflicts or <m> restarts\n", "<n,m>")
+		
 		("opt-all"    , bool_switch(&config->enumerate.opt.all), "Compute all optimal models")
 		("opt-ignore" , bool_switch(&config->enumerate.opt.no), "Ignore minimize statements")
 		("opt-heu"    , bool_switch(&config->enumerate.opt.heu), "Consider minimize statements in heuristics")
@@ -272,6 +272,14 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 	;
 }
 bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages&) {
+	if (vm.count("search-limit") != 0) {
+		std::pair<int, int> limits = value_cast<std::pair<int, int> >(vm["search-limit"]);
+		if (limits.first <= 0) limits.first = -1;
+		if (limits.second<= 0) limits.second= -1;
+		config->solve.limits.reset( new SearchLimits );
+		config->solve.limits->conflicts = static_cast<uint64>(limits.first);
+		config->solve.limits->restarts  = static_cast<uint64>(limits.second);
+	}
 	if (vm.count("opt-value") != 0) {
 		const std::vector<int>& vals = value_cast<std::vector<int> >(vm["opt-value"]);
 		config->enumerate.opt.vals.assign(vals.begin(), vals.end());
@@ -287,8 +295,6 @@ bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages&
 void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
 	OptionGroup search("Clasp - Search Options");
 	search.addOptions()
-		("no-lookback"   ,bool_switch(), "Disable lookback strategies (learning, backjumping,...)\n")
-		
 		("lookahead"  , storeTo(config->heuristic.lookahead)->setImplicit(),
 			"Configure failed-literal detection (fld)\n"
 			"      Default: no (atom, if --nolookback)\n"
@@ -331,6 +337,8 @@ void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	
 	OptionGroup lookback("Clasp - Lookback Options");
 	lookback.addOptions()
+		("no-lookback"   ,bool_switch(), "Disable all lookback strategies\n")
+
 		("restarts,r", storeTo(parseSolve)->parser(&SolveOptionsWrapper::mapRestarts),
 			"Configure restart policy\n"
 			"      Default: 100,1.5\n"
@@ -437,6 +445,7 @@ void ClaspOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions
 	mode.initOptions(root, hidden);
 	search.initOptions(root, hidden);
 	basic.initOptions(root);
+
 }
 
 bool ClaspOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages& m) {

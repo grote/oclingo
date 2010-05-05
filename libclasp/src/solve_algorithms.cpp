@@ -136,13 +136,13 @@ struct RestartStrategy {
 public:
 	RestartStrategy(const RestartParams& p) 
 		: grow_(p.inc())
-		, outer_(p.outer() ? p.outer() : uint64(-1))
+		, outer_(p.outer() ? p.outer() : UINT64_MAX)
 		, base_(p.base())
 		, idx_(0) {}
 	void reset()  { idx_ = 0; }
 	uint64 next() {
 		uint64 x;
-		if      (base_ == 0)      x = uint64(-1);
+		if      (base_ == 0)      x = UINT64_MAX;
 		else if (grow_ == 0)      x = lubyR();
 		else                      x = innerOuterR();
 		++idx_;
@@ -192,11 +192,21 @@ bool solve(Solver& s, const SolveParams& p) {
 	double randFreq = randRuns == 0 ? p.randomProbability() : 1.0;
 	uint64 maxCfl   = randRuns == 0 ? rs.next() : p.randConflicts();
 	uint32 shuffle  = p.shuffleBase();
-	while (result == value_free) {
+	bool   hasLimits= p.limits.get() != 0;
+	SearchLimits limits = hasLimits ? *p.limits : SearchLimits();
+	uint64 currConf     = 0;
+	while (result == value_free && limits.conflicts != 0) {
+		if (maxCfl > limits.conflicts) {
+			maxCfl = limits.conflicts;
+		}	
 #if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
 		p.enumerator()->reportStatus(s, maxCfl, (uint32)maxLearnts);
 #endif
 		result = s.search(maxCfl, (uint32)maxLearnts, randFreq, p.restart.local);
+		if (hasLimits) {
+			limits.conflicts -= std::min(limits.conflicts, s.stats.solve.conflicts-currConf);
+		}
+		currConf = s.stats.solve.conflicts;
 		if (result == value_true) {
 			if (!p.enumerator()->backtrackFromModel(s)) {
 				break; // No more models requested
@@ -217,6 +227,9 @@ bool solve(Solver& s, const SolveParams& p) {
 			}
 		}
 		else if (result == value_free){  // restart search
+			if ((limits.restarts -= uint32(hasLimits)) == 0) {
+				break;
+			}
 			if (randRuns == 0) {
 				maxCfl = rs.next();
 				if (p.reduce.reduceOnRestart) { s.reduceLearnts(.33f); }
@@ -241,6 +254,7 @@ bool solve(Solver& s, const SolveParams& p) {
 }
 
 bool solve(Solver& s, const LitVec& assumptions, const SolveParams& params) {
+	s.stats.solve.reset();
 	// Remove any existing assumptions and simplify problem.
 	// If this fails, the problem is unsat, even under no assumptions.
 	if (!s.clearAssumptions()) return false;

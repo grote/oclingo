@@ -24,7 +24,6 @@
 #pragma warning (disable : 4200) // nonstandard extension used : zero-sized array
 #pragma once
 #endif
-
 #include <string>
 #include <utility>
 #include <program_opts/app_options.h>
@@ -106,7 +105,7 @@ struct SearchOptions {
 class ClaspOptions {
 public:
 	ClaspOptions() {}
-	BasicOptions   basic;
+	BasicOptions     basic;
 	// Sets the configuration object in which parsed options are stored.
 	// Must be called once before option parsing begins
 	void setConfig(ClaspConfig* config);
