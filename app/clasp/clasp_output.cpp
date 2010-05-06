@@ -172,7 +172,7 @@ void AspOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 			, percent(learntSum-st.binary-st.ternary, learntSum));
 		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Conflicts", st.learnts[0], average(st.lits[0], st.learnts[0]));
 		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Loops",     st.learnts[1], average(st.lits[1], st.learnts[1]));
-		printf("%-12s: %-6u\n", "  Deleted",     st.deleted);
+		printf("%-12s: %-6"PRIu64"\n", "  Deleted",     st.deleted);
 		OutputFormat::printJumpStats(stats);
 		fflush(stdout);
 	}
