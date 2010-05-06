@@ -27,13 +27,24 @@ namespace Clasp {
 /////////////////////////////////////////////////////////////////////////////////////////
 // Enumerator
 /////////////////////////////////////////////////////////////////////////////////////////
-Enumerator::Enumerator(Report* r) : numModels_(1), report_(r), mini_(0), restartOnModel_(false)  {}
-Enumerator::~Enumerator()     { if (mini_) mini_->destroy(); }
+Enumerator::Enumerator(Report* r) : numModels_(1), report_(r), progress_(0), mini_(0), limits_(0), restartOnModel_(false)  {}
+Enumerator::~Enumerator()     { if (mini_) mini_->destroy(); delete limits_; }
 Enumerator::Report::Report()  {}
 Enumerator::Report::~Report() {}
-void Enumerator::setReport(Report* r)                 {  report_ = r;  }
+Enumerator::ProgressReport::ProgressReport()  {}
+Enumerator::ProgressReport::~ProgressReport() {}
+void Enumerator::setReport(Report* r)                 {  report_   = r;  }
+void Enumerator::setProgressReport(ProgressReport* r) {  progress_ = r;  }
 void Enumerator::setMinimize(MinimizeConstraint* min) {  mini_ = min;  }
 void Enumerator::setRestartOnModel(bool r)            { restartOnModel_ = r; }
+void Enumerator::setSearchLimit(int64 maxC, int64 maxR) {
+	delete limits_; limits_ = 0;
+	if (maxC > 0 || maxR > 0) {
+		limits_ = new SearchLimits();
+		limits_->conflicts = maxC >= 0 ? maxC : static_cast<int64>((uint64(1)<<63)-1);
+		limits_->restarts  = maxR >= 0 ? maxR : static_cast<int64>((uint64(1)<<63)-1);
+	}
+}
 void Enumerator::init(Solver& s, uint64 m) { 
 	numModels_ = m; 
 	if (s.strategies().satPrePro.get() != 0) {
@@ -95,6 +106,19 @@ void Enumerator::endSearch(Solver& s, bool complete) {
 	if (report_) {
 		report_->reportSolution(s, *this, complete);
 	}
+}
+
+ValueRep Enumerator::searchEnter(Solver& s, uint64 maxC, uint32 maxL, double rf, bool localR) {
+	if (limits_ && maxC > static_cast<uint64>(limits_->conflicts)) {
+		maxC = static_cast<uint64>(limits_->conflicts);
+	}
+	if (progress_) progress_->reportRestart(s, maxC, maxL);
+	return s.search(maxC, maxL, rf, localR);
+}
+
+bool Enumerator::searchExit(Solver& s, uint64 deltaC, ValueRep v) {
+	return v != value_false
+		&& (!limits_ || limits_->update(deltaC, static_cast<uint64>(v == value_free)));
 }
 
 namespace {
@@ -187,28 +211,19 @@ bool solve(Solver& s, const SolveParams& p) {
 	double maxLearnts   = p.computeReduceBase(s);
 	double boundLearnts = p.reduce.max();
 	RestartStrategy rs(p.restart);
-	ValueRep result = value_free;
+	ValueRep result;
 	uint32 randRuns = p.randRuns();
 	double randFreq = randRuns == 0 ? p.randomProbability() : 1.0;
 	uint64 maxCfl   = randRuns == 0 ? rs.next() : p.randConflicts();
 	uint32 shuffle  = p.shuffleBase();
-	bool   hasLimits= p.limits.get() != 0;
-	SearchLimits limits = hasLimits ? *p.limits : SearchLimits();
-	uint64 currConf     = 0;
-	while (result == value_free && limits.conflicts != 0) {
-		if (maxCfl > limits.conflicts) {
-			maxCfl = limits.conflicts;
-		}	
-#if defined(PRINT_SEARCH_PROGRESS) && PRINT_SEARCH_PROGRESS == 1
-		p.enumerator()->reportStatus(s, maxCfl, (uint32)maxLearnts);
-#endif
-		result = s.search(maxCfl, (uint32)maxLearnts, randFreq, p.restart.local);
-		if (hasLimits) {
-			limits.conflicts -= std::min(limits.conflicts, s.stats.solve.conflicts-currConf);
-		}
-		currConf = s.stats.solve.conflicts;
+	uint64 currConf = 0;
+	uint64 deltaConf= 0;
+	do {
+		result    = p.enumerator()->searchEnter(s, maxCfl, (uint32)maxLearnts, randFreq, p.restart.local);
+		deltaConf = s.stats.solve.conflicts-currConf;
+		currConf  = s.stats.solve.conflicts;
 		if (result == value_true) {
-			if (!p.enumerator()->backtrackFromModel(s)) {
+			if (!p.enumerator()->backtrackFromModel(s) || !p.enumerator()->searchExit(s, deltaConf, result)) {
 				break; // No more models requested
 			}
 			else {
@@ -226,10 +241,7 @@ bool solve(Solver& s, const SolveParams& p) {
 				}
 			}
 		}
-		else if (result == value_free){  // restart search
-			if ((limits.restarts -= uint32(hasLimits)) == 0) {
-				break;
-			}
+		else if (result == value_free && p.enumerator()->searchExit(s, deltaConf, result)){  // restart search
 			if (randRuns == 0) {
 				maxCfl = rs.next();
 				if (p.reduce.reduceOnRestart) { s.reduceLearnts(.33f); }
@@ -246,7 +258,8 @@ bool solve(Solver& s, const SolveParams& p) {
 				randFreq  = p.randomProbability();
 			} 
 		}
-	}
+		else { break; }
+	} while (result == value_free);
 	bool more = result == value_free || s.decisionLevel() > s.rootLevel();
 	p.enumerator()->endSearch(s, !more);
 	s.undoUntil(0);

@@ -134,13 +134,11 @@ IncrementalControl::~IncrementalControl(){}
 // ClaspFacade
 /////////////////////////////////////////////////////////////////////////////////////////
 ClaspFacade::ClaspFacade() 
-	: maxConflicts_(UINT64_MAX)
-	, config_(0)
+	: config_(0)
 	, inc_(0)
 	, cb_(0)
 	, input_(0)
 	, api_(0)
-	, maxLearnts_(UINT32_MAX)
 	, result_(result_unknown)
 	, state_(state_not_started)
 	, step_(0)
@@ -157,18 +155,18 @@ void ClaspFacade::init(Input& problem, ClaspConfig& config, IncrementalControl* 
 	state_        = state_not_started;
 	step_         = 0;
 	more_         = true;
-	if (config.solve.limits.get()) {
-		maxConflicts_ = config.solve.limits->conflicts;
-		maxLearnts_   = config.solve.limits->learnts;
-	}
-	else {
-		maxConflicts_ = UINT64_MAX;
-		maxLearnts_   = UINT32_MAX;
-	}
 	validateWeak();
 	config.solve.setEnumerator( config.enumerate.createEnumerator() );
 	config.solve.enumerator()->setReport(this);
 	config.solver->strategies().heuristic.reset(config.heuristic.createHeuristic());
+	if (config.enumerate.limits.get()) {
+		if (!inc) {
+			config.solve.enumerator()->setSearchLimit(config.enumerate.limits->first, config.enumerate.limits->second);
+		}
+		else {
+			warning("Option 'search-limit' is ignored in incremental setting!");
+		}
+	}
 }
 
 void ClaspFacade::validateWeak() {
@@ -216,8 +214,6 @@ void ClaspFacade::solve(Input& problem, ClaspConfig& config, Callback* c) {
 void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, IncrementalControl& inc, Callback* c) {
 	init(problem, config, &inc, c);
 	LitVec assume;
-	SearchLimits* temp = config_->solve.limits.release();
-	if (temp) { warning("Option 'search-limit' is ignored in incremental setting!");  }
 	do {
 		inc.initStep(*this);
 		result_   = result_unknown;
@@ -241,7 +237,6 @@ void ClaspFacade::solveIncremental(Input& problem, ClaspConfig& config, Incremen
 			}
 		}
 	} while (inc.nextStep(*this) && ++step_);
-	config_->solve.limits.reset(temp);
 }
 
 // Creates a ProgramBuilder-object if necessary and reads

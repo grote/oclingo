@@ -22,6 +22,7 @@
 #include <clasp/smodels_constraints.h>
 #include <clasp/solve_algorithms.h>
 #include <stdio.h>
+#include <numeric>
 
 namespace Clasp { 
 OutputFormat::OutputFormat()  {
@@ -38,7 +39,7 @@ OutputFormat::OutputFormat()  {
 }
 OutputFormat::~OutputFormat() {}
 
-void OutputFormat::initSolve(const Solver&, ProgramBuilder*) {}
+void OutputFormat::initSolve(const Solver&, ProgramBuilder*, Enumerator*) {}
 
 void OutputFormat::printConsequences(const Solver& s, const Enumerator&) {
 	assert(s.strategies().symTab.get());
@@ -65,33 +66,32 @@ void OutputFormat::printOptimizeValues(const MinimizeConstraint& m) {
 }
 void OutputFormat::printSolution(const Solver& s, const Enumerator& en, bool complete) {
 	Result state = unknwon;
+	bool hasModel= s.stats.solve.models > 0;
 	if (complete) {
-		if      (s.stats.solve.models == 0)  state = unsat;
-		else if (en.minimize())              state = optimum;
-		else                                 state = sat;
+		if      (!hasModel)     state = unsat;
+		else if (en.minimize()) state = optimum;
+		else                    state = sat;
 	}
-	else if (s.stats.solve.models > 0)     state = sat;
+	else if (hasModel)        state = sat;
 	printf("%s%s\n", format[solution], result[state]);
 }
 void OutputFormat::printJumpStats(const SolverStatistics& stats) {
-	(void)stats;
-#if MAINTAIN_JUMP_STATS == 1
 	const SolveStats& st  = stats.solve; 
-	int w = 20 - (int)strlen(format[comment]);
-	const char* c = format[comment];
-	printf("%s\n%-*s: %-6"PRIu64"\n", c, w, "Backtracks",st.conflicts-st.jumps);
-	printf("%s%-*s: %-6"PRIu64" (Bounded: %"PRIu64")\n", c, w, "Backjumps", st.jumps, st.bJumps);
-	printf("%s%-*s: %-6"PRIu64"\n", c, w, "Skippable Levels",st.jumpSum);
-	printf("%s%-*s: %-6"PRIu64" (%5.1f%%)\n", c, w, "Levels skipped",st.jumpSum - st.boundSum, percent(st.jumpSum - st.boundSum, st.jumpSum));
-	printf("%s%-*s: %-6u (Executed: %u)\n", c, w, "Max Jump Length",st.maxJump, st.maxJumpEx);
-	printf("%s%-*s: %-6u\n", c, w, "Max Bound Length",st.maxBound);
-	printf("%s%-*s: %-6.1f (Executed: %.1f)\n", c, w, "Average Jump Length",st.avgJumpLen(), st.avgJumpLenEx());
-	printf("%s%-*s: %-6.1f\n", c, w, "Average Bound Length",average(st.boundSum,st.bJumps));
-	printf("%s%-*s: %-6.1f\n", c, w, "Average Model Length",average(st.modLits,st.models));
-#endif
+	if (st.jumps) {
+		const JumpStats& js = *st.jumps;
+		int w = 20 - (int)strlen(format[comment]);
+		const char* c = format[comment];
+		printf("%s\n%-*s: %-6"PRIu64"\n", c, w, "Backtracks",st.conflicts-js.jumps);
+		printf("%s%-*s: %-6"PRIu64" (Bounded: %"PRIu64")\n", c, w, "Backjumps", js.jumps, js.bJumps);
+		printf("%s%-*s: %-6"PRIu64"\n", c, w, "Skippable Levels",js.jumpSum);
+		printf("%s%-*s: %-6"PRIu64" (%5.1f%%)\n", c, w, "Levels skipped",js.jumpSum - js.boundSum, percent(js.jumpSum - js.boundSum, js.jumpSum));
+		printf("%s%-*s: %-6u (Executed: %u)\n", c, w, "Max Jump Length",js.maxJump, js.maxJumpEx);
+		printf("%s%-*s: %-6u\n", c, w, "Max Bound Length",js.maxBound);
+		printf("%s%-*s: %-6.1f (Executed: %.1f)\n", c, w, "Average Jump Length",js.avgJumpLen(), js.avgJumpLenEx());
+		printf("%s%-*s: %-6.1f\n", c, w, "Average Bound Length",average(js.boundSum,js.bJumps));
+		printf("%s%-*s: %-6.1f\n", c, w, "Average Model Length",average(st.modLits,st.models));
+	}
 }
-
-void OutputFormat::printProgress(const Solver&, uint64, uint32) {}
 /////////////////////////////////////////////////////////////////////////////////////////
 // ASP output
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -102,7 +102,7 @@ AspOutput::AspOutput(bool asp09) : asp09_(asp09) {
 	}
 }
 
-void AspOutput::initSolve(const Solver&, ProgramBuilder* api) {
+void AspOutput::initSolve(const Solver&, ProgramBuilder* api, Enumerator*) {
 	// grab the stats_ so that we can later print them
 	if (api) stats_.accu(api->stats);
 }
@@ -163,15 +163,16 @@ void AspOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 			, percent(ps.constraints[1], ps.constraints[0])
 			, percent(ps.constraints[2], ps.constraints[0])
 			, percent(other, ps.constraints[0]));
-		other = st.learnt[0] - st.learnt[1] - st.learnt[2];
-		printf("%-12s: %-6u (Binary:%5.1f%% Ternary:%5.1f%% Other:%5.1f%%)\n", "Lemmas"
-			, st.learnt[0]
-			, percent(st.learnt[1], st.learnt[0])
-			, percent(st.learnt[2], st.learnt[0])
-			, percent(other, st.learnt[0]));
-		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Conflicts", st.learnt[0]-st.loops, average(st.lits[0], st.learnt[0]-st.loops));
-		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Loops",     st.loops, average(st.lits[1], st.loops));
-		printf("%-12s: %-6u\n", "  Deleted",     st.learnt[3]);
+
+		uint64 learntSum = std::accumulate(st.learnts, st.learnts+Constraint_t::max_value, uint64(0));
+		printf("%-12s: %-6"PRIu64" (Binary:%5.1f%% Ternary:%5.1f%% Other:%5.1f%%)\n", "Lemmas"
+			, learntSum
+			, percent(st.binary, learntSum)
+			, percent(st.ternary, learntSum)
+			, percent(learntSum-st.binary-st.ternary, learntSum));
+		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Conflicts", st.learnts[0], average(st.lits[0], st.learnts[0]));
+		printf("%-12s: %-6"PRIu64" (Average Length: %.1f) \n", "  Loops",     st.learnts[1], average(st.lits[1], st.learnts[1]));
+		printf("%-12s: %-6u\n", "  Deleted",     st.deleted);
 		OutputFormat::printJumpStats(stats);
 		fflush(stdout);
 	}
@@ -209,10 +210,10 @@ void SatOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 	printf("c %-10s: %u\n", "Clauses",ps.constraints[0]);
 	printf("c %-10s: %u\n", "  Binary",ps.constraints[1]);
 	printf("c %-10s: %u\n", "  Ternary",ps.constraints[2]);
-	printf("c %-10s: %u\n", "Lemmas",st.learnt[0]);
-	printf("c %-10s: %u\n", "  Binary",st.learnt[1]);
-	printf("c %-10s: %u\n", "  Ternary",st.learnt[2]);
-	printf("c %-10s: %u\n", "  Deleted",st.learnt[3]);
+	printf("c %-10s: %"PRIu64"\n", "Lemmas",st.learnts[0]);
+	printf("c %-10s: %"PRIu64"\n", "  Binary",st.binary);
+	printf("c %-10s: %"PRIu64"\n", "  Ternary",st.ternary);
+	printf("c %-10s: %"PRIu64"\n", "  Deleted",st.deleted);
 	OutputFormat::printJumpStats(stats);
 	fflush(stdout);
 }

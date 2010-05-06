@@ -927,26 +927,29 @@ public:
 		SolveStats st, st2;
 		st.models     = 10; st2.models    = 2;
 		st.conflicts  = 12; st2.conflicts = 3;
-		st.loops      = 5;  st2.loops     = 4;
-	  st.choices    = 100;st2.choices   = 99;	
+		st.choices    = 100;st2.choices   = 99;	
 		st.restarts   = 7;  st2.restarts  = 8;
-		st.lits[0]    = 5;  st2.lits[1]   = 4;
-		st.learnt[0]  = 6;  st2.learnt[1] = 7;
-		st.learnt[2]  = 6;  st2.learnt[3] = 7;
+		
+		st.learnts[0] = 6;  st2.learnts[0] = 4;
+		st.learnts[1] = 5;  st2.learnts[1] = 4;
+		st.lits[0]    = 15; st2.lits[0]    = 14;
+		st.lits[1]    = 5;  st2.lits[1]    = 4;
+		st.binary     = 6;  st2.ternary    = 5;
+		st.deleted    = 10;
 		
 		st.accu(st2);
 
 		CPPUNIT_ASSERT_EQUAL(uint64(12), st.models);
 		CPPUNIT_ASSERT_EQUAL(uint64(15), st.conflicts);
-		CPPUNIT_ASSERT_EQUAL(uint64(9),  st.loops);
 		CPPUNIT_ASSERT_EQUAL(uint64(199),st.choices);
 		CPPUNIT_ASSERT_EQUAL(uint64(15),st.restarts);
-		CPPUNIT_ASSERT_EQUAL(uint64(5),st.lits[0]);
-		CPPUNIT_ASSERT_EQUAL(uint64(4),st.lits[1]);
-		CPPUNIT_ASSERT_EQUAL(uint32(6),st.learnt[0]);
-		CPPUNIT_ASSERT_EQUAL(uint32(7),st.learnt[1]);
-		CPPUNIT_ASSERT_EQUAL(uint32(6),st.learnt[2]);
-		CPPUNIT_ASSERT_EQUAL(uint32(7),st.learnt[3]);
+		CPPUNIT_ASSERT_EQUAL(uint64(29),st.lits[0]);
+		CPPUNIT_ASSERT_EQUAL(uint64(9),st.lits[1]);
+		CPPUNIT_ASSERT_EQUAL(uint64(10),st.learnts[0]);
+		CPPUNIT_ASSERT_EQUAL(uint64(9),st.learnts[1]);
+		CPPUNIT_ASSERT_EQUAL(uint64(6),st.binary);
+		CPPUNIT_ASSERT_EQUAL(uint64(5),st.ternary);
+		CPPUNIT_ASSERT_EQUAL(uint64(10),st.deleted);
 	}
 
 	void testIncrementalSolve() {

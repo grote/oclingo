@@ -68,8 +68,9 @@ bool parseValue(const std::string&, SolverStrategiesWrapper&, int);
 struct BasicOptions {
 	BasicOptions();
 	void initOptions(ProgramOptions::OptionGroup& root);
+	static bool mapStats(const std::string& s, uint8& stats);
 	int         timeout;// timeout in seconds (default: none=-1)
-	bool        stats;  // print statistics
+	uint8       stats;  // print statistics
 	bool        quiet;  // do not print models
 	bool        asp09;  // force ASP'09 output format
 };

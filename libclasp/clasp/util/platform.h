@@ -78,13 +78,4 @@ typedef uintptr_t   uintp;
 // return true if bit n in x is set
 #define test_bit(x,n)  ( ((x) & BIT_MASK((x),(n))) != 0 )
 
-#if !defined(MAINTAIN_JUMP_STATS)
-#define MAINTAIN_JUMP_STATS 0
-#endif
-
-#if !defined(PRINT_SEARCH_PROGRESS)
-// If set to 1, Enumerator::Report::reportStatus() is called on each restart.
-#define PRINT_SEARCH_PROGRESS 0
-#endif
-
 #endif

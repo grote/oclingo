@@ -912,7 +912,7 @@ void Solver::reduceLearnts(float maxRem) {
 		}
 	}
 	learnts_.erase(learnts_.begin()+j, learnts_.end());
-	stats.solve.learnt[3] += oldS - numLearntConstraints();
+	stats.solve.deleted += (oldS - numLearntConstraints());
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -945,8 +945,7 @@ ValueRep Solver::search(uint64 maxConflicts, uint32 maxLearnts, double randProp,
 		// found a model candidate
 		assert(numFreeVars() == 0);
 	} while (!post_.isModel(*this));
-	++stats.solve.models;
-	stats.solve.updateModels(decisionLevel());
+	stats.solve.addModel(decisionLevel());
 	if (strategy_.satPrePro.get()) {
 		strategy_.satPrePro->extendModel(assign_);
 	}
@@ -957,14 +956,12 @@ bool Solver::nextSymModel(bool expand) {
 	assert(numFreeVars() == 0);
 	if (expand) {
 		if (strategy_.satPrePro.get() != 0 && strategy_.satPrePro->hasSymModel()) {
-			++stats.solve.models;
-			stats.solve.updateModels(decisionLevel());
+			stats.solve.addModel(decisionLevel());
 			strategy_.satPrePro->extendModel(assign_);
 			return true;
 		}
 		else if (post_.nextSymModel(*this, true)) {
-			++stats.solve.models;
-			stats.solve.updateModels(decisionLevel());
+			stats.solve.addModel(decisionLevel());
 			return true;
 		}
 	}

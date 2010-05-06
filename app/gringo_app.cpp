@@ -387,8 +387,11 @@ void ClingoApp::configureInOut(Streams& s) {
 int ClingoApp::doRun() {
 	using namespace Clasp;
 	if (opts.onlyGround) {
-		opts.stats = cmdOpts_.basic.stats;
+		opts.stats = cmdOpts_.basic.stats != 0;
 		return GringoApp::doRun();
+	}
+	if (cmdOpts_.basic.stats > 1) {
+		solver_.stats.solve.enableJumpStats();
 	}
 	Streams s;
 	configureInOut(s);
@@ -477,7 +480,7 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			solver_.reset(); // release constraints and strategies - no longer needed
 			solver_.strategies().symTab.reset(x);
 		}
-		else { out_->initSolve(solver_, f.api()); }
+		else { out_->initSolve(solver_, f.api(), f.config()->solve.enumerator()); }
 	}
 }
 

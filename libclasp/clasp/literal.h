@@ -49,6 +49,11 @@ const Var sentVar = 0;
 //! A signed integer type used to represent weights
 typedef int32 weight_t;
 
+typedef uint8 ValueRep;           /**< Type of the three value-literals */
+const ValueRep value_true   = 1;  /**< Value used for variables that are true */
+const ValueRep value_false  = 2;  /**< Value used for variables that are false */
+const ValueRep value_free   = 0;  /**< Value used for variables that are unassigned */
+
 //! A literal is a variable or its negation.
 /*!
  * A literal is determined by two things: a sign and a variable index. 

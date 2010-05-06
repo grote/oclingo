@@ -64,27 +64,64 @@ struct ProblemStats {
 	} 
 };
 
-//! A struct for aggregating statistics for one solve operation
-struct SolveStats {
-	SolveStats() { std::memset(this, 0, sizeof(*this)); }
-	uint64 models;    /**< Number of models found */
-	uint64 conflicts; /**< Number of conflicts found */
-	uint64 loops;     /**< Number of learnt loop nogoods */
+//! A struct for holding core solving statistics used by a solver
+struct CoreStats {
+	CoreStats() { reset(); }
+	void reset(){ std::memset(this, 0, sizeof(*this)); }
+	void accu(const CoreStats& o) {
+		choices  += o.choices;
+		conflicts+= o.conflicts;
+		restarts += o.restarts;
+		models   += o.models;
+		
+		binary   += o.binary;
+		ternary  += o.ternary;
+		deleted  += o.deleted;
+		modLits  += o.modLits;
+		for (int i = 0; i != Constraint_t::max_value; ++i) {
+			learnts[i] += o.learnts[i];
+			lits[i]    += o.lits[i];
+		}
+	}
+	void addLearnt(uint32 size, ConstraintType t) {
+		assert(t != Constraint_t::native_constraint && t <= Constraint_t::max_value);
+		++learnts[t-1];
+		lits[t-1] += size;
+		binary += (size == 2);
+		ternary+= (size == 3);
+	}
+	void addModel(uint32 size) {
+		++models;
+		modLits += size;
+	}
+	
 	uint64 choices;   /**< Number of choices performed */
+	uint64 conflicts; /**< Number of conflicts found */
 	uint64 restarts;  /**< Number of restarts */ 
-	uint64 lits[2];   /**< 0: conflict, 1: loop */
-	uint32 learnt[4]; /**< 0: all, 1: binary, 2: ternary, 3: deleted */
-#if MAINTAIN_JUMP_STATS == 1
-	uint64  modLits;  /**< Number of decision literals in models */
-	uint64  jumps;    /**< Number of backjumps (i.e. number of analyzed conflicts) */
-	uint64  bJumps;   /**< Number of backjumps that were bounded */
-	uint64  jumpSum;  /**< Number of levels that could be skipped w.r.t first-uip */
-	uint64  boundSum; /**< Number of levels that could not be skipped because of backtrack-level*/
-	uint32  maxJump;  /**< Longest possible backjump */
-	uint32  maxJumpEx;/**< Longest executed backjump (< maxJump if longest jump was bounded) */
-	uint32  maxBound; /**< Max difference between uip- and backtrack-level */
-	void updateModels(uint32 n) { modLits += n; }
-	void updateJumps(uint32 dl, uint32 uipLevel, uint32 bLevel) {
+	uint64 models;    /**< Number of models found */
+
+	uint64 learnts[Constraint_t::max_value]; /**< Number of learnt nogoods of type t-1 */
+	uint64 lits[Constraint_t::max_value];    /**< Sum of literals in nogoods of type t-1 */
+	uint64 binary;    /**< Number of learnt binary nogoods */
+	uint64 ternary;   /**< Number of learnt ternary nogoods*/
+	uint64 deleted;   /**< Sum of learnt nogoods removed */
+	uint64 modLits;   /**< Sum of decision literals in models */
+};
+
+//! A struct for jump statistics
+struct JumpStats {
+	JumpStats() { reset(); }
+	void reset(){ std::memset(this, 0, sizeof(*this)); }
+	void accu(const JumpStats& o) {
+		jumps   += o.jumps;
+		bJumps  += o.bJumps;
+		jumpSum += o.jumpSum;
+		boundSum+= o.boundSum;
+		if (o.maxJump   > maxJump)   maxJump   = o.maxJump;
+		if (o.maxJumpEx > maxJumpEx) maxJumpEx = o.maxJumpEx;
+		if (o.maxBound  > maxBound)  maxBound  = o.maxBound;
+	}
+	void    update(uint32 dl, uint32 uipLevel, uint32 bLevel) {
 		++jumps;
 		jumpSum += dl - uipLevel; 
 		maxJump = std::max(maxJump, dl - uipLevel);
@@ -94,49 +131,40 @@ struct SolveStats {
 			maxJumpEx = std::max(maxJumpEx, dl - bLevel);
 			maxBound  = std::max(maxBound, bLevel - uipLevel);
 		}
-		else {
-			maxJumpEx = maxJump;
-		}
+		else { maxJumpEx = maxJump; }
 	}
-	double avgJumpLen() const {
-		return jumpSum/std::max(1.0,(double)jumps);
+	double avgJumpLen()   const { return jumpSum/std::max(1.0,(double)jumps); }
+	double avgJumpLenEx() const { return (jumpSum-boundSum)/std::max(1.0,(double)jumps); }
+	uint64  jumps;    /**< Number of backjumps (i.e. number of analyzed conflicts) */
+	uint64  bJumps;   /**< Number of backjumps that were bounded */
+	uint64  jumpSum;  /**< Number of levels that could be skipped w.r.t first-uip */
+	uint64  boundSum; /**< Number of levels that could not be skipped because of backtrack-level*/
+	uint32  maxJump;  /**< Longest possible backjump */
+	uint32  maxJumpEx;/**< Longest executed backjump (< maxJump if longest jump was bounded) */
+	uint32  maxBound; /**< Max difference between uip- and backtrack-level */
+};
+
+//! A struct for aggregating statistics of one solve operation
+struct SolveStats : public CoreStats {
+	SolveStats() : jumps(0) { }
+	SolveStats(const SolveStats& o) : CoreStats(o), jumps(0) { if (o.jumps) jumps = new JumpStats(*o.jumps); }
+	~SolveStats() { delete jumps; }
+	void enableJumpStats()   { if (!jumps) jumps = new JumpStats();   }
+	void reset() {  
+		CoreStats::reset();
+		if (jumps)   jumps->reset();
 	}
-	double avgJumpLenEx() const {
-		return (jumpSum-boundSum)/std::max(1.0,(double)jumps);
+	void accu(const SolveStats& o) {
+		CoreStats::accu(o);
+		if (jumps && o.jumps) jumps->accu(*o.jumps);
 	}
-#else
-	void updateModels(uint32) {}
-  void updateJumps(uint32, uint32, uint32) {}
-#endif
-	void updateLearnt(uint32 n, ConstraintType t) {
-		assert(t != Constraint_t::native_constraint);
-		++learnt[0];  
-		lits[t-1]  += n;
-		loops += t == Constraint_t::learnt_loop;
-		if (n > 1 && n < 4) {
-			++learnt[n-1];
-		}
+	void updateJumps(uint32 dl, uint32 uipLevel, uint32 bLevel) {
+		if (!jumps) return;
+		jumps->update(dl, uipLevel, bLevel);
 	}
-	void   reset() { *this = SolveStats(); }
-	void   accu(const SolveStats& o) {
-		models   += o.models;
-		conflicts+= o.conflicts;
-		loops    += o.loops;
-		choices  += o.choices;
-		restarts += o.restarts;
-		for (int i = 0; i != 2; ++i) lits[i]   += o.lits[i];
-		for (int i = 0; i != 4; ++i) learnt[i] += o.learnt[i];
-#if MAINTAIN_JUMP_STATS == 1
-		modLits += o.modLits;
-		jumps   += o.jumps;
-		bJumps  += o.bJumps;
-		jumpSum += o.jumpSum;
-		boundSum+= o.boundSum;
-		if (o.maxJump   > maxJump)   maxJump   = o.maxJump;
-		if (o.maxJumpEx > maxJumpEx) maxJumpEx = o.maxJumpEx;
-		if (o.maxBound  > maxBound)  maxBound  = o.maxBound;
-#endif
-	}
+	JumpStats*  jumps;  /**< optional jump statistics */
+private:
+	SolveStats& operator=(const SolveStats&);
 };
 
 //! A struct for aggregating some solver statistics
@@ -160,11 +188,6 @@ struct Watch {
 	Constraint* con;    /**< The constraint watching a certain literal */
 	uint32      data;   /**< Additional data associated with this watch - passed to constraint on update */
 };
-
-typedef uint8 ValueRep;           /**< Type of the three value-literals */
-const ValueRep value_true   = 1;  /**< Value used for variables that are true */
-const ValueRep value_false  = 2;  /**< Value used for variables that are false */
-const ValueRep value_free   = 0;  /**< Value used for variables that are unassigned */
 
 //! returns the value that makes the literal lit true.
 /*!

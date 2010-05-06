@@ -195,16 +195,24 @@ bool SolverStrategiesWrapper::mapSatElite(const std::string& s, SolverStrategies
 /////////////////////////////////////////////////////////////////////////////////////////
 // Clasp specific basic options
 /////////////////////////////////////////////////////////////////////////////////////////
-BasicOptions::BasicOptions() : timeout(-1), stats(false), quiet(false), asp09(false) {}
+BasicOptions::BasicOptions() : timeout(-1), stats(0), quiet(false), asp09(false) {}
 void BasicOptions::initOptions(ProgramOptions::OptionGroup& root) {
 	OptionGroup basic("Basic Options");
 	basic.addOptions()
-		("stats"   , bool_switch(&stats),"Print extended statistics")
+		("stats"   , storeTo(stats)->parser(&BasicOptions::mapStats)->setImplicit(),"Print extended statistics")
 		("quiet,q", bool_switch(&quiet), "Do not print models")
 		("asp09" , bool_switch(&asp09),  "Write output in ASP Competition'09 format")
 		("time-limit" , storeTo(timeout), "Set time limit to <n> seconds", "<n>")
 	;
 	root.addOptions(basic, true);
+}
+bool BasicOptions::mapStats(const std::string& s, uint8& stats) {
+	int parsed = 1;
+	if (s.empty() || ProgramOptions::parseValue(s, parsed, 1)) {
+		stats = static_cast<uint8>(parsed);
+		return true;
+	}
+	return false;
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 // Clasp specific mode options
@@ -276,9 +284,7 @@ bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages&
 		std::pair<int, int> limits = value_cast<std::pair<int, int> >(vm["search-limit"]);
 		if (limits.first <= 0) limits.first = -1;
 		if (limits.second<= 0) limits.second= -1;
-		config->solve.limits.reset( new SearchLimits );
-		config->solve.limits->conflicts = static_cast<uint64>(limits.first);
-		config->solve.limits->restarts  = static_cast<uint64>(limits.second);
+		config->enumerate.limits.reset(new std::pair<int, int>(limits));
 	}
 	if (vm.count("opt-value") != 0) {
 		const std::vector<int>& vals = value_cast<std::vector<int> >(vm["opt-value"]);

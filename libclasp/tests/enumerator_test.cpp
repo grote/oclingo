@@ -66,7 +66,7 @@ public:
 		solver.assume(index[4].lit);
 		solver.propagate();
 		CPPUNIT_ASSERT(solver.numVars() == solver.numAssignedVars());
-		++solver.stats.solve.models;
+		solver.stats.solve.addModel(solver.decisionLevel());
 		CPPUNIT_ASSERT_EQUAL(true, enumerator.backtrackFromModel(solver));
 
 		solver.undoUntil(0);
@@ -109,7 +109,7 @@ public:
 		solver.assume(index[2].lit) && solver.propagate();
 		solver.assume(index[3].lit) && solver.propagate();
 		solver.assume(index[4].lit) && solver.propagate();
-		++solver.stats.solve.models;
+		solver.stats.solve.addModel(solver.decisionLevel());
 		CPPUNIT_ASSERT_EQUAL(uint32(0), solver.numFreeVars());
 		CPPUNIT_ASSERT_EQUAL(true, enumerator.backtrackFromModel(solver));
 		uint32 numW = solver.numWatches(index[1].lit) + solver.numWatches(index[2].lit) + solver.numWatches(index[3].lit) + solver.numWatches(index[4].lit);

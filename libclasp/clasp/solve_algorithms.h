@@ -36,6 +36,14 @@ namespace Clasp {
 
 class Solver;
 class MinimizeConstraint;
+struct SearchLimits {
+	int64 conflicts;
+	int64 restarts;
+	bool  update(uint64 cfl, uint64 r) {
+		return (conflicts -= static_cast<int64>(cfl)) > 0
+			&&   (restarts  -= static_cast<int64>(r))   > 0;
+	}
+};
 
 //! Interface for enumerating models
 class Enumerator : public Constraint {
@@ -44,22 +52,38 @@ public:
 	public:
 		Report();
 		virtual ~Report();
-		virtual void reportStatus(const Solver&, uint64, uint32) {}
 		virtual void reportModel(const Solver& s, const Enumerator& self) = 0;
 		virtual void reportSolution(const Solver& s, const Enumerator& self, bool complete) = 0;
 	private:
 		Report(const Report&);
 		Report& operator=(const Report&);
 	};
-	
+	class ProgressReport {
+	public:
+		ProgressReport();
+		virtual ~ProgressReport();
+		virtual void reportRestart(const Solver& s, uint64 maxCfl, uint32 maxL) = 0;
+	private:
+		ProgressReport(const ProgressReport&);
+		ProgressReport& operator=(const ProgressReport&);
+	};
+
 	explicit Enumerator(Report* r = 0);
 	virtual ~Enumerator();
+	
 	//! Sets the report callback to be used during enumeration
 	/*!
 	 * \note Ownership is *not* transferred and r must be valid
 	 * during complete search
 	 */
 	void setReport(Report* r);
+
+	//! Sets the progress report callback to be used during enumeration
+	/*!
+	 * \note Ownership is *not* transferred and r must be valid
+	 * during complete search
+	 */
+	void setProgressReport(ProgressReport* r);
 
 	//! if true, does a search-restart after each model found
 	void setRestartOnModel(bool r);
@@ -70,6 +94,8 @@ public:
 	 */
 	void setMinimize(MinimizeConstraint* min);
 	const MinimizeConstraint* minimize() const { return mini_; }
+
+	void setSearchLimit(int64 maxCfl, int64 maxRestarts);
 
 	//! Initializes the enumerator and sets the number of models to compute. 
 	/*!
@@ -94,10 +120,9 @@ public:
 	
 	//! Called after search has stopped
 	void endSearch(Solver& s, bool complete);
-
-	void reportStatus(const Solver& s, uint64 maxCfl, uint32 maxL) {
-		if (report_) report_->reportStatus(s, maxCfl, maxL); 
-	}
+	
+	ValueRep searchEnter(Solver& s, uint64 maxCfl, uint32 maxLearnts, double randFreq, bool localR);
+	bool     searchExit(Solver& s, uint64 deltaCfl, ValueRep v);
 protected:
 	//! Defaults to a noop
 	PropResult propagate(const Literal&, uint32&, Solver&);
@@ -120,7 +145,9 @@ private:
 	bool onModel(Solver& s);
 	uint64              numModels_;
 	Report*             report_;
+	ProgressReport*     progress_;
 	MinimizeConstraint* mini_;
+	SearchLimits*       limits_;
 	uint32              activeLevel_;
 	bool                restartOnModel_;
 };
@@ -206,14 +233,6 @@ public:
 	}
 };
 
-//! Aggregates search limit parameters
-struct SearchLimits {
-	SearchLimits() : conflicts(UINT64_MAX), restarts(UINT32_MAX), learnts(UINT32_MAX) {}
-	uint64 conflicts; /**< current conflict limit */
-	uint32 restarts;  /**< current restart limit */
-	uint32 learnts;   /**< current limit for learnt nogoods */
-};
-
 //! Parameter-Object for configuring search-parameters
 /*!
  * \ingroup solver
@@ -233,9 +252,6 @@ struct SolveParams {
 	
 	RestartParams restart;
 	ReduceParams  reduce;
-	
-	typedef std::auto_ptr<SearchLimits> LimitsPtr;
-	LimitsPtr     limits;
 	
 	//! Enumerator to use during search
 	/*!

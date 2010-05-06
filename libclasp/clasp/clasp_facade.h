@@ -63,6 +63,7 @@ struct ApiOptions {
 struct EnumerateOptions {
 	EnumerateOptions();
 	Enumerator* createEnumerator() const;
+	typedef std::auto_ptr<std::pair<int, int> > Limits;
 	bool consequences() const { return brave || cautious; }
 	const char* cbType()const {
 		if (consequences()) { return brave ? "Brave" : "Cautious"; }
@@ -70,6 +71,7 @@ struct EnumerateOptions {
 	}
 	int  numModels;       /**< number of models to compute */
 	int  projectOpts;     /**< options for projection */
+	Limits limits;        /**< search limits          */
 	struct Optimize {     /**< Optimization options */
 		Optimize() : no(false), all(false), heu(false) {}
 		WeightVec vals;     /**< initial values for optimize statements */
@@ -156,7 +158,6 @@ public:
 		event_state_enter, /*!< a new state was entered */
 		event_state_exit,  /*!< about to exit from the active state */
 		event_p_prepared,  /*!< problem was transformed to nogoods */
-		event_restart,     /*!< search restarted */
 		event_model        /*!< a model was found */
 	};
 	//! Defines possible solving results
@@ -220,10 +221,6 @@ public:
 	int    step()   const { return step_; }
 	//! returns the current input problem
 	Input* input() const { return input_; }
-	//! returns the maximal number of conflicts before search stops
-	uint64 maxConflicts() const { return maxConflicts_; }
-	//! returns the maximal number of learnt nogoods before search stops
-	uint32 maxLearnts()   const { return maxLearnts_; }
 
 	const ClaspConfig* config() const { return config_; }
 
@@ -259,11 +256,6 @@ private:
 		}
 		setState(state_, event_state_exit);
 	}
-	void reportStatus(const Solver&, uint64 maxCfl, uint32 maxL) {
-		maxConflicts_ = maxCfl;
-		maxLearnts_   = maxL;
-		fireEvent(event_restart);
-	}
 	// -------------------------------------------------------------------------------------------
 	// Internal setup functions
 	void   validateWeak();
@@ -274,13 +266,11 @@ private:
 	bool   configureMinimize(MinimizeConstraint* min) const;
 	bool   initEnumerator(MinimizeConstraint* min)    const;
 	// -------------------------------------------------------------------------------------------
-	uint64              maxConflicts_;
 	ClaspConfig*        config_;
 	IncrementalControl* inc_;
 	Callback*           cb_;
 	Input*              input_;
 	Api                 api_;
-	uint32              maxLearnts_;
 	Result              result_;
 	State               state_;
 	int                 step_;

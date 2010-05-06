@@ -54,7 +54,7 @@ public:
 	const char* result[end_result]; /**< Default result strings */
 
 	//! Called once before solve
-	virtual void initSolve(const Solver& s, ProgramBuilder* api);
+	virtual void initSolve(const Solver& s, ProgramBuilder* api, Enumerator* e);
 	
 	/*!
 	 * Called for each model.
@@ -68,15 +68,6 @@ public:
 	 * \param en The active enumerator
 	 */
 	virtual void printStats(const SolverStatistics& st, const Enumerator& en) = 0;
-	/*!
-	 * Called before each individual search operation
-	 * \param s    The solver that is about to start a new search
-	 * \param maxC Conflict limit of the new search
-	 * \param maxL Learnt limit of the new search
-	 * \note 
-	 *    This function is only called if clasp was compiled with PRINT_SEARCH_PROGRESS
-	 */
-	virtual void printProgress(const Solver& s, uint64 maxC, uint32 maxL);
 	
 	/*!
 	 * Prints the current consequences (marked atoms) in the format 
@@ -124,7 +115,7 @@ private:
 class AspOutput : public OutputFormat {
 public: 
 	explicit AspOutput(bool asp09);
-	void initSolve(const Solver& s, ProgramBuilder* api);
+	void initSolve(const Solver& s, ProgramBuilder* api, Enumerator*);
 	/*!
 	 * Prints all named atoms of the symbol table that 
 	 * are true in the current model.
