@@ -116,7 +116,7 @@ ValueRep Enumerator::searchEnter(Solver& s, uint64 maxC, uint32 maxL, double rf,
 	return s.search(maxC, maxL, rf, localR);
 }
 
-bool Enumerator::searchExit(Solver& s, uint64 deltaC, ValueRep v) {
+bool Enumerator::searchExit(Solver&, uint64 deltaC, ValueRep v) {
 	return v != value_false
 		&& (!limits_ || limits_->update(deltaC, static_cast<uint64>(v == value_free)));
 }
