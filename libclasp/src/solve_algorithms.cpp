@@ -41,8 +41,8 @@ void Enumerator::setSearchLimit(int64 maxC, int64 maxR) {
 	delete limits_; limits_ = 0;
 	if (maxC > 0 || maxR > 0) {
 		limits_ = new SearchLimits();
-		limits_->conflicts = maxC >= 0 ? maxC : static_cast<int64>((uint64(1)<<63)-1);
-		limits_->restarts  = maxR >= 0 ? maxR : static_cast<int64>((uint64(1)<<63)-1);
+		limits_->conflicts = maxC >= 0 ? maxC   : static_cast<int64>((uint64(1)<<63)-1);
+		limits_->restarts  = maxR >= 0 ? maxR+1 : static_cast<int64>((uint64(1)<<63)-1);
 	}
 }
 void Enumerator::init(Solver& s, uint64 m) { 
