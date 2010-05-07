@@ -70,6 +70,8 @@ public:
 
 	explicit Enumerator(Report* r = 0);
 	virtual ~Enumerator();
+
+	enum { LIMIT_BIT = 7 };
 	
 	//! Sets the report callback to be used during enumeration
 	/*!
@@ -95,8 +97,6 @@ public:
 	void setMinimize(MinimizeConstraint* min);
 	const MinimizeConstraint* minimize() const { return mini_; }
 
-	void setSearchLimit(int64 maxCfl, int64 maxRestarts);
-
 	//! Initializes the enumerator and sets the number of models to compute. 
 	/*!
 	 * Must be called once before search is started
@@ -104,6 +104,29 @@ public:
 	 * \note nm = 0 means compute all models
 	 */
 	void init(Solver& s, uint64 nm);
+
+	//! Sets a search limit for the subsequent search
+	/*!
+	 * \param maxCfl maximum number of conflicts (<= 0: no limit)
+	 * \param maxRestarts maximum number of restarts (<= 0: no limit)
+	 */
+	void setSearchLimit(int64 maxCfl, int64 maxRestarts);
+
+	//! Executes the next search iteration under the current search limit (if any)
+	/*!
+	 * The function first applies any active search limit to maxCfl,
+	 * notifies the installed ProgressReport callback (if set), and then calls
+	 * Solver::search() on the given solver with the given parameters.
+	 *
+	 * \return 
+	 *   The result of Solver::search(). If the search limit has been reached, 
+	 *   the returned value has the LIMIT_BIT set, i.e. test_bit(r, LIMIT_BIT)
+	 *   is true.
+	 * \note 
+	 *   The function should be called in a loop until either enough models
+	 *   have been enumerated, value_false is returned, or the search limit has been reached.
+	 */
+	ValueRep search(Solver& s, uint64 maxCfl, uint32 maxLearnts, double randFreq, bool localR);
 
 	//! Called whenever the solver has found a model.
 	/*!
@@ -118,11 +141,8 @@ public:
 	 */
 	bool backtrackFromModel(Solver& s);
 	
-	//! Called after search has stopped
+	//! Shall be called once after search has stopped
 	void endSearch(Solver& s, bool complete);
-	
-	ValueRep searchEnter(Solver& s, uint64 maxCfl, uint32 maxLearnts, double randFreq, bool localR);
-	bool     searchExit(Solver& s, uint64 deltaCfl, ValueRep v);
 protected:
 	//! Defaults to a noop
 	PropResult propagate(const Literal&, uint32&, Solver&);

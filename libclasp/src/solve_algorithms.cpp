@@ -108,17 +108,19 @@ void Enumerator::endSearch(Solver& s, bool complete) {
 	}
 }
 
-ValueRep Enumerator::searchEnter(Solver& s, uint64 maxC, uint32 maxL, double rf, bool localR) {
+ValueRep Enumerator::search(Solver& s, uint64 maxC, uint32 maxL, double rf, bool localR) {
 	if (limits_ && maxC > static_cast<uint64>(limits_->conflicts)) {
 		maxC = static_cast<uint64>(limits_->conflicts);
 	}
 	if (progress_) progress_->reportRestart(s, maxC, maxL);
-	return s.search(maxC, maxL, rf, localR);
-}
-
-bool Enumerator::searchExit(Solver&, uint64 deltaC, ValueRep v) {
-	return v != value_false
-		&& (!limits_ || limits_->update(deltaC, static_cast<uint64>(v == value_free)));
+	uint64 currentC = s.stats.solve.conflicts;
+	ValueRep v = s.search(maxC, maxL, rf, localR);
+	if (limits_ && !limits_->update(s.stats.solve.conflicts - currentC, static_cast<uint64>(v == value_free))) {
+		limits_->conflicts = 0;
+		limits_->restarts  = 0;
+		v = set_bit(v, LIMIT_BIT);
+	}
+	return v;
 }
 
 namespace {
@@ -216,19 +218,16 @@ bool solve(Solver& s, const SolveParams& p) {
 	double randFreq = randRuns == 0 ? p.randomProbability() : 1.0;
 	uint64 maxCfl   = randRuns == 0 ? rs.next() : p.randConflicts();
 	uint32 shuffle  = p.shuffleBase();
-	uint64 currConf = 0;
-	uint64 deltaConf= 0;
 	do {
-		result    = p.enumerator()->searchEnter(s, maxCfl, (uint32)maxLearnts, randFreq, p.restart.local);
-		deltaConf = s.stats.solve.conflicts-currConf;
-		currConf  = s.stats.solve.conflicts;
-		if (result == value_true) {
-			if (!p.enumerator()->backtrackFromModel(s) || !p.enumerator()->searchExit(s, deltaConf, result)) {
+		result    = p.enumerator()->search(s, maxCfl, (uint32)maxLearnts, randFreq, p.restart.local);
+		if ((result & value_true) != 0) {
+			if (!p.enumerator()->backtrackFromModel(s)) {
 				break; // No more models requested
 			}
 			else {
-				result = value_free; // continue enumeration
-				randRuns = 0;        // but cancel remaining probings
+				// continue enumeration
+				// but cancel remaining probings
+				randRuns = 0;        
 				randFreq = p.randomProbability();
 				if (p.restart.resetOnModel) {
 					rs.reset();
@@ -241,7 +240,7 @@ bool solve(Solver& s, const SolveParams& p) {
 				}
 			}
 		}
-		else if (result == value_free && p.enumerator()->searchExit(s, deltaConf, result)){  // restart search
+		else if (result == value_free){  // restart search
 			if (randRuns == 0) {
 				maxCfl = rs.next();
 				if (p.reduce.reduceOnRestart) { s.reduceLearnts(.33f); }
@@ -258,8 +257,8 @@ bool solve(Solver& s, const SolveParams& p) {
 				randFreq  = p.randomProbability();
 			} 
 		}
-		else { break; }
-	} while (result == value_free);
+	} while (result < value_false);
+	store_clear_bit(result, Enumerator::LIMIT_BIT);
 	bool more = result == value_free || s.decisionLevel() > s.rootLevel();
 	p.enumerator()->endSearch(s, !more);
 	s.undoUntil(0);
