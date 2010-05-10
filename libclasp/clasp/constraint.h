@@ -44,8 +44,7 @@ class Solver;
 
 //! Constraint types distinguished by a Solver.
 struct Constraint_t {
-	enum Type { native_constraint = 0, learnt_conflict = 1, learnt_loop = 2};
-	enum      { max_value = 2 };
+	enum Type { native_constraint = 0, learnt_conflict = 1, learnt_loop = 2, max_value = learnt_loop};
 };  
 typedef Constraint_t::Type ConstraintType;
 
