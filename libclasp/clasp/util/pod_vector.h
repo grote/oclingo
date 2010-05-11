@@ -481,8 +481,11 @@ private:
 		insert(pos, temp.begin(), temp.end());
 	}
 	
-	template <class P>
-	void insert_impl(iterator pos, size_type n, const P& pred) {
+	// NOTE: template parameter ST should always equal size_type
+	// and is only needed to workaround an internal compiler error
+	// in gcc 3.4.3
+	template <class ST, class P>
+	void insert_impl(iterator pos, ST n, const P& pred) {
 		assert(n == 0 || (size()+n) > size() );
 		if (size()+n <= capacity()) {
 			move_right(pos, n);
