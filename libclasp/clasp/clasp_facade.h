@@ -176,7 +176,14 @@ public:
 		/*!
 		 * \param e an event that is neither event_state_enter nor event_state_exit 
 		 */
-		virtual void event(Event e, ClaspFacade& f) = 0;
+		virtual void event(Event e, ClaspFacade& f) = 0;		
+		//! The solver is about to (re-)start
+		/*!
+		 * \note
+		 *   The function is only called if e.enableProgressReport(&f) is called, where
+		 *   e is the current enumerator and f is the current facade object.
+		 */
+		virtual void reportRestart(const Solver& /* s */, uint64 /* maxCfl */, uint32 /* maxL */) {}
 		//! Some configuration option is unsafe/unreasonable w.r.t the current problem
 		virtual void warning(const char* msg)       = 0;
 	};
@@ -255,6 +262,9 @@ private:
 			result_ = result_unsat;
 		}
 		setState(state_, event_state_exit);
+	}
+	void reportRestart(const Solver& s, uint64 maxCfl, uint32 maxL) {
+		if (cb_) cb_->reportRestart(s, maxCfl, maxL);
 	}
 	// -------------------------------------------------------------------------------------------
 	// Internal setup functions

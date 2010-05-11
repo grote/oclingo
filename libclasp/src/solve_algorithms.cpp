@@ -29,14 +29,13 @@ namespace Clasp {
 /////////////////////////////////////////////////////////////////////////////////////////
 Enumerator::Enumerator(Report* r) : numModels_(1), report_(r), progress_(0), mini_(0), limits_(0), restartOnModel_(false)  {}
 Enumerator::~Enumerator()     { if (mini_) mini_->destroy(); delete limits_; }
-Enumerator::Report::Report()  {}
-Enumerator::Report::~Report() {}
 Enumerator::ProgressReport::ProgressReport()  {}
 Enumerator::ProgressReport::~ProgressReport() {}
-void Enumerator::setReport(Report* r)                 {  report_   = r;  }
-void Enumerator::setProgressReport(ProgressReport* r) {  progress_ = r;  }
-void Enumerator::setMinimize(MinimizeConstraint* min) {  mini_ = min;  }
-void Enumerator::setRestartOnModel(bool r)            { restartOnModel_ = r; }
+Enumerator::Report::Report()  {}
+void Enumerator::setReport(Report* r)                   {  report_   = r; }
+void Enumerator::enableProgressReport(ProgressReport* r){  progress_ = r; }
+void Enumerator::setMinimize(MinimizeConstraint* min)   {  mini_ = min;   }
+void Enumerator::setRestartOnModel(bool r)              { restartOnModel_ = r; }
 void Enumerator::setSearchLimit(int64 maxC, int64 maxR) {
 	delete limits_; limits_ = 0;
 	if (maxC > 0 || maxR > 0) {

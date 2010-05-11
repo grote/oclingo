@@ -48,44 +48,39 @@ struct SearchLimits {
 //! Interface for enumerating models
 class Enumerator : public Constraint {
 public:
-	class Report {
-	public:
-		Report();
-		virtual ~Report();
-		virtual void reportModel(const Solver& s, const Enumerator& self) = 0;
-		virtual void reportSolution(const Solver& s, const Enumerator& self, bool complete) = 0;
-	private:
-		Report(const Report&);
-		Report& operator=(const Report&);
-	};
 	class ProgressReport {
 	public:
 		ProgressReport();
 		virtual ~ProgressReport();
-		virtual void reportRestart(const Solver& s, uint64 maxCfl, uint32 maxL) = 0;
+		//! the solver is about to (re-)start
+		virtual void reportRestart(const Solver& /* s */, uint64 /* maxCfl */, uint32 /* maxL */) {}
 	private:
 		ProgressReport(const ProgressReport&);
 		ProgressReport& operator=(const ProgressReport&);
 	};
-
+	//! Interface used by the enumerator to report important events
+	class Report : public ProgressReport {
+	public:
+		Report();
+		//! the solver has found a new model
+		virtual void reportModel(const Solver& /* s */, const Enumerator& /* self */) {}
+		//! enumeration has terminated
+		virtual void reportSolution(const Solver& /* s */, const Enumerator& /* self */, bool /* complete */) {}
+	};
 	explicit Enumerator(Report* r = 0);
 	virtual ~Enumerator();
 
 	enum { LIMIT_BIT = 7 };
 	
-	//! Sets the report callback to be used during enumeration
+	//! sets the report callback to be used during enumeration
 	/*!
 	 * \note Ownership is *not* transferred and r must be valid
 	 * during complete search
 	 */
 	void setReport(Report* r);
 
-	//! Sets the progress report callback to be used during enumeration
-	/*!
-	 * \note Ownership is *not* transferred and r must be valid
-	 * during complete search
-	 */
-	void setProgressReport(ProgressReport* r);
+	//! enables progress reporting via the given report callback
+	void enableProgressReport(ProgressReport* r);
 
 	//! if true, does a search-restart after each model found
 	void setRestartOnModel(bool r);
@@ -97,7 +92,7 @@ public:
 	void setMinimize(MinimizeConstraint* min);
 	const MinimizeConstraint* minimize() const { return mini_; }
 
-	//! Initializes the enumerator and sets the number of models to compute. 
+	//! initializes the enumerator and sets the number of models to compute. 
 	/*!
 	 * Must be called once before search is started
 	 * \note In the incremental setting, init must be called once for each incremental step
@@ -105,14 +100,14 @@ public:
 	 */
 	void init(Solver& s, uint64 nm);
 
-	//! Sets a search limit for the subsequent search
+	//! sets a search limit for the subsequent search
 	/*!
 	 * \param maxCfl maximum number of conflicts (<= 0: no limit)
 	 * \param maxRestarts maximum number of restarts (<= 0: no limit)
 	 */
 	void setSearchLimit(int64 maxCfl, int64 maxRestarts);
 
-	//! Executes the next search iteration under the current search limit (if any)
+	//! executes the next search iteration under the current search limit (if any)
 	/*!
 	 * The function first applies any active search limit to maxCfl,
 	 * notifies the installed ProgressReport callback (if set), and then calls
@@ -128,7 +123,7 @@ public:
 	 */
 	ValueRep search(Solver& s, uint64 maxCfl, uint32 maxLearnts, double randFreq, bool localR);
 
-	//! Called whenever the solver has found a model.
+	//! called whenever the solver has found a model.
 	/*!
 	 * The return value determines how search proceeds.
 	 * If false is returned, the search is stopped.
