@@ -28,5 +28,5 @@ cp build/clingo/release/bin/clingo <somewhere-in-your-path>
 1.3 iclingo:
 --------------
 make iclingo_release
-cp build/iclingo/release/bin/clingo <somewhere-in-your-path>
+cp build/iclingo/release/bin/iclingo <somewhere-in-your-path>
 
