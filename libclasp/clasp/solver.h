@@ -608,6 +608,17 @@ public:
 	 */
 	void setConflict(LitVec& cfl) { conflict_.swap(cfl); }
 
+	//! Sets a conflict that forces the solver to terminate its search
+	/*!
+	 * \post hasConflict()
+	 *
+	 * \note 
+	 *   To prevent the solver from resolving the stop conflict, the
+	 *   function sets the root level to the current decision level. 
+	 *   Hence, a stop conflict can be removed only via a call to clearAssumptions().
+	 */
+	void setStopConflict();
+
 	/*!
 	 * propagates all enqueued literals. If a conflict arises during propagation
 	 * propagate returns false and the current conflict (as a set of literals)
@@ -773,6 +784,7 @@ private:
 		PostPropagator* look;
 		PostPropagator* saved;
 	};
+	inline  bool hasStopConflict() const;
 	bool    validWatch(Literal p) const { return p.index() < (uint32)watches_.size(); }
 	uint32  mark(uint32 s, uint32 e);
 	void    initRandomHeuristic(double randFreq);

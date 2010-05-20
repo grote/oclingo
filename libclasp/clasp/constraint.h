@@ -224,20 +224,26 @@ public:
 	 */
 	virtual uint32 priority() const;
 
-	//! propagates the current assignment until a fixpoint is reached w.r.t this post propagator
+	//! shall enqueue new assignments to be propagated
 	/*!
-	 * \param  s The solver in which this object is used
-	 * \return false if propagation led to conflict, true otherwise
 	 * \pre    the assignment is fully propagated.
-	 * \post   a fixpoint was reached or propagation led to a conflict.
-	 * \note   The default implementation implements the following loop:
-	 *   while (propagate() && PQ.size() > 0) 
-	 *     if (!s.propagateUntil(this)) return false;
-	 *   return true
-	 * \note   normally, subclasses only need to implement propagate(Solver& s) 
+	 * \param  s The solver in which this object is used
+	 * \return 
+	 *   - false if propagation led to conflict
+	 *   - true otherwise
+	 *
+	 * \note 
+	 *   The function is called in the context of
+	 *   PostPropagator::propagateFixpoint(Solver& s).
+	 *   It must not call s.propagate() or any other function
+	 *   that would result in a recursive chain of propagate()
+	 *   calls.
+	 *
+	 * \see PostPropagator::propagateFixpoint(Solver& s)
 	 */
-	virtual bool propagateFixpoint(Solver& s);
+	virtual bool propagate(Solver& s) = 0;
 
+	
 	//! clears internal state of this object and aborts any active propagation.
 	/*!
 	 * The solver containing this object calls reset() whenever a conflict is
@@ -273,15 +279,29 @@ public:
 	 * \note the default implementation always returns false
 	 */ 
 	virtual bool nextSymModel(Solver& s, bool expand);
-protected:
+
+
+	//! propagates the current assignment until a fixpoint is reached w.r.t this post propagator
 	/*!
-	 * Shall enqueue new assignments to be propagated.
-	 * \note The function is called in the context of
-	 *       PostPropagator::propagateFixpoint(Solver& s).
-	 *       It must not call s.propagate()!
-	 * \see PostPropagator::propagateFixpoint(Solver& s)
+	 * This function implements a basic propagation loop that calls
+	 * PostPropagator::propagate(Solver& s) until a fixpoint is reached or
+	 * a conflict is detected.
+	 * \note
+	 *   Normally, subclasses only need to implement 
+	 *   PostPropagator::propagate(Solver& s).
+	 *
+	 * \param  s The solver in which this object is used
+	 * \return false if propagation led to conflict, true otherwise
+	 * \pre    the assignment is fully propagated.
+	 * \post   a fixpoint was reached or propagation led to a conflict.
+	 * \note   The default implementation implements the following loop:
+	 *   while (propagate() && s.queueSize() > 0) 
+	 *     if (!s.propagateUntil(this)) return false;
+	 *   return true
+	 * \note   
 	 */
-	virtual bool propagate(Solver& s) = 0;
+	virtual bool propagateFixpoint(Solver& s);
+protected:
 	// Constraint interface - noops
 	PropResult     propagate(const Literal&, uint32&, Solver&);
 	void           reason(const Literal& p, LitVec& lits);

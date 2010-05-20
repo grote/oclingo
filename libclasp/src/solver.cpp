@@ -352,11 +352,24 @@ bool Solver::addTernary(Literal p, Literal q, Literal r, bool asserting) {
 	watches_[(~r).index()].push_back(TernStub(p, q));
 	return !asserting || force(p, Antecedent(~q, ~r));
 }
+void Solver::setStopConflict() {
+	if (!hasConflict()) {
+		// we use the nogood {FALSE} to represent the unrecoverable conflict -
+		// note that {FALSE} can otherwise never be a violated nogood because
+		// TRUE is always true in every solver
+		conflict_.push_back(negLit(0));
+	}
+	// artificially increase root level -
+	// this way, the solver is prevented from resolving the conflict
+	setRootLevel(decisionLevel());
+}
+bool Solver::hasStopConflict() const { return conflict_[0] == negLit(0); }
 bool Solver::clearAssumptions()  {
 	rootLevel_ = btLevel_ = 0;
 	undoUntil(0);
 	assert(decisionLevel() == 0);
-	if (!hasConflict()) {
+	if (!hasConflict() || hasStopConflict()) {
+		conflict_.clear();
 		for (ImpliedLits::size_type i = 0; i != impliedLits_.size(); ++i) {
 			if (impliedLits_[i].level == 0 && !force(impliedLits_[i].lit, impliedLits_[i].ante)) {
 				return false;
@@ -650,6 +663,9 @@ bool Solver::resolveConflict() {
 			return backtrack();
 		}
 	}
+	// do not count artificial conflicts that are only used
+	// to stop the current search
+	stats.solve.conflicts -= hasStopConflict();
 	return false;
 }
 
