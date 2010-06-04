@@ -927,6 +927,14 @@ void DefaultUnfoundedCheck::computeReason() {
 	}
 	picked_.clear();
 	pickedAtoms_.clear();
+	double ratio = activeClause_->size()/double(solver_->decisionLevel()+1);
+	if (ratio > 10 && activeClause_->size() > 100 && !solver_->isFalse((*activeClause_)[0])) {
+		Literal a = (*activeClause_)[0];
+		activeClause_->startAsserting(Constraint_t::learnt_loop, a);
+		for (uint32 i = 1; i <= solver_->decisionLevel(); ++i) {
+			activeClause_->add(~solver_->decision(i));
+		}
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
