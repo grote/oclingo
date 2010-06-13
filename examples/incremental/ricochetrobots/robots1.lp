@@ -81,7 +81,5 @@ position(R,I,J,t) :- position(R,I,J,t - 1), {go(R,D,t - 1):direction(D)} 0, robo
 %
 1 {go(R,D,t - 1):robot(R):direction(D)} 1.
 
-#hide time/1,robot/1,dim/1,direction/1.
-#hide position/4.
-#hide blocked/3, barrier/3.
-%#hide go/3.
+#hide.
+#show go/3.
