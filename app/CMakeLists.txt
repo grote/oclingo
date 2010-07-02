@@ -19,8 +19,8 @@ set_target_properties(gringo-app PROPERTIES OUTPUT_NAME gringo)
 
 add_executable(clingo-app clingo.cpp)
 target_link_libraries(clingo-app appclingo-lib appgringo-lib clasp-lib ${gringo-libs})
-set_target_properties(clingo-app PROPERTIES OUTPUT_NAME clagringo)
+set_target_properties(clingo-app PROPERTIES OUTPUT_NAME clingo)
 
 add_executable(iclingo-app iclingo.cpp)
 target_link_libraries(iclingo-app appclingo-lib appgringo-lib clasp-lib ${gringo-libs})
-set_target_properties(iclingo-app PROPERTIES OUTPUT_NAME iclagringo)
+set_target_properties(iclingo-app PROPERTIES OUTPUT_NAME iclingo)

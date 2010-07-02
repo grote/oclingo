@@ -10,7 +10,7 @@ rm -rf $public_html
 mkdir -p $public_html
 
 
-for target in bingo clabingo iclabingo
+for target in gringo clingo iclingo
 do
 	for variant in debug static
 	do
