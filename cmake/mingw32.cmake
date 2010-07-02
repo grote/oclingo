@@ -1,16 +1,9 @@
-# the name of the target operating system
-SET(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_C_COMPILER mingw32-gcc)
+set(CMAKE_CXX_COMPILER mingw32-g++)
 
-# which compilers to use for C and C++
-SET(CMAKE_C_COMPILER mingw32-gcc)
-SET(CMAKE_CXX_COMPILER mingw32-g++)
+SET(CMAKE_FIND_ROOT_PATH /usr/mingw32 $ENV{HOME}/local/mingw32)
 
-# here is the target environment located
-SET(CMAKE_FIND_ROOT_PATH /usr/lib/gcc/mingw32/4.3.2)
-
-# adjust the default behaviour of the FIND_XXX() commands:
-# search headers and libraries in the target environment, search 
-# programs in the host environment
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

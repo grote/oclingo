@@ -1,0 +1,2 @@
+file(GLOB_RECURSE GUIDE_TEX RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.tex *.lp)
+add_latex_document(guide.tex INPUTS ${GUIDE_TEX} BIBFILES guide.bib DEFAULT_PDF)

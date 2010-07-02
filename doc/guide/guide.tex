@@ -1,19 +1,24 @@
 \documentclass[a4paper,10pt]{article}
 
-%\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
 %\usepackage[nofancy]{svninfo}
+\usepackage{pict2e}
 \usepackage[english]{babel}
 \usepackage{listings}
 \usepackage{helvet,times,courier}
 \usepackage{amsfonts,amssymb,amsmath,amsthm}
 \usepackage[dvipsnames,usenames]{color}
 \usepackage[colorlinks=false,pagebackref=true]{hyperref}
+\usepackage{ifpdf}
+\ifpdf
+\else
 \usepackage{breakurl}
+\fi
+\usepackage{comments}
 
 \input{macro}
 \sloppy
 \renewcommand{\dagger}{**}
-
 \author{%
 Martin Gebser \and 
 Roland Kaminski \and  
@@ -29,7 +34,6 @@ Sven Thiele
 \begin{document}
 %\svnInfo $Id$
 \maketitle
-%\begin{center}\stamp\end{center}
 
 \input{abstract}
 
@@ -40,8 +44,7 @@ Sven Thiele
 \newpage
 
 \input{introduction}
-\input{background}
-\input{restrictions}
+\input{quickstart}
 \input{language}
 \input{examples}
 \input{options}
@@ -53,6 +56,10 @@ Sven Thiele
 \addcontentsline{toc}{section}{References}
 \bibliographystyle{plain}
 \bibliography{guide}
+
+\appendix
+\input{background}
+\input{restrictions}
 
 \newpage
 \begin{appendix}

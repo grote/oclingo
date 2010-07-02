@@ -23,6 +23,7 @@
 \newcommand{\dlv}[0]{\sysfont{dlv}}
 \newcommand{\gnt}[0]{\sysfont{gnt}}
 \newcommand{\gringo}[0]{\sysfont{gringo}}
+\newcommand{\dlvcomplex}[0]{\sysfont{dlv-complex}}
 \newcommand{\iclingo}[0]{\sysfont{iclingo}}
 \newcommand{\lparse}[0]{\sysfont{lparse}}
 \newcommand{\nomorepp}[0]{\sysfont{nomore++}}
@@ -41,8 +42,16 @@
 
 \lstset{numbers=left,numberblanklines=false,basicstyle=\ttfamily,xleftmargin=10pt}
 \addtolength{\oddsidemargin}{-0.25\marginparwidth}
+
+% look whether commentssidepar exists
+\ifx\@commentsidepar\@empty
 \newcommand{\marginlabel}[1]{\marginpar{\hspace*{-1.75mm}%
   \fbox{\parbox[t]{1.76\marginparwidth}{\footnotesize #1}}}}
+\else
+\newcommand{\marginlabel}[1]{\commentsidepar{\hspace*{-1.75mm}%
+  \fbox{\parbox[t]{1.76\marginparwidth}{\footnotesize #1}}}}
+\fi
+
 % \newcommand{\Comment}[1]{\marginpar{\hspace*{-1.5mm}%
 %   \fbox{\parbox[t]{1.7\marginparwidth}{\footnotesize \underline{COMMENT}\\#1}}}}
 \newcommand{\code}[1]{\texttt{#1}}

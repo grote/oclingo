@@ -1,5 +1,2 @@
 ADD_EXECUTABLE(lemon lemon.c)
-if (MSVC)
-	SET_TARGET_PROPERTIES(lemon PROPERTIES PREFIX "../")
-endif()
-
+EXPORT(TARGETS lemon FILE ${CMAKE_BINARY_DIR}/import_lemon.cmake)

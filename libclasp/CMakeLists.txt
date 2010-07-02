@@ -1,9 +1,8 @@
-file(GLOB LIBCLASP_SRC src/*.cpp)
-file(GLOB LIBCLASP_INC clasp/*.h)
+file(GLOB_RECURSE LIBCLASP_SRC src/*.cpp *.h)
 
-include_directories(.)
-add_library(clasp-lib STATIC ${LIBCLASP_SRC} ${LIBCLASP_INC})
+include_directories(src .)
+
+add_library(clasp-lib STATIC ${LIBCLASP_SRC})
+
+target_link_libraries(clasp-lib)
 set_target_properties(clasp-lib PROPERTIES OUTPUT_NAME clasp)
-
-#install(FILES ${LIBCLASP_INC} DESTINATION include/clasp)
-#install(TARGETS clasp-lib ARCHIVE DESTINATION lib)

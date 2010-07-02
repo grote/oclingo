@@ -110,6 +110,15 @@ That is, \gringo\ usually outputs a ground program in \lparse's numerical format
 dealt with by various solvers (cf.\ Section~\ref{subsec:asp}),
 and it performs binder-splitting in rule instantiation.
 
+\begin{newstuff}
+	\begin{itemize}
+		\item stats is not yet implemented
+		\item verbose takes level now
+		\item debug corresponds to verbose=3
+		\item aspils is gone
+		\item bindersplit is gone (not worth implementing, can be done in preprocessor)
+	\end{itemize}
+\end{newstuff}
 
 \subsection{\clingo\ Options}\label{subsec:opt:clingo}
 
@@ -238,6 +247,11 @@ which is then consumed by \clasp\ that computes and outputs answer sets.
 Note that \clasp\ offers plenty of options to configure its behavior.
 We thus categorize them according to their functionalities in the following description.
 
+\begin{newstuff}
+	\begin{itemize}
+		\item the subsubsections below are probably outdated, benny?
+	\end{itemize}
+\end{newstuff}
 
 \subsubsection{General Options}\label{subsec:clasp:general}
 

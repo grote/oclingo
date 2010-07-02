@@ -1,5 +1,6 @@
 \section{Restrictedness Notions}\label{sec:restricted}
 
+\begin{oldstuff}
 In view of function symbols with non-zero arity,
 we may be confronted with logic programs over an infinite Herbrand base.
 In order to maintain decidability of reasoning tasks,
@@ -19,8 +20,35 @@ Section~\ref{subsec:strat} introduces stratified programs and the related
 concept of domain predicates, which can serve particular purposes during grounding.
 Both sections may be skimmed or even skipped upon the first reading,
 and rather be looked up later on to find out details.
+\end{oldstuff}
 
+\begin{newstuff}
+In order to apply a grounding algorithm to a logic program,
+we have to impose certain restrictions on the input format.
+We will allow for a very general class of logic programs,
+so called safe programs,
+that give us a lot of modeling flexibility.
+In fact, \gringo-3.0's new input language is Turing-complete.
+This implies that in contrast to previous versions\comment{refer to appendix},
+the grounding is no longer guaranteed to be finite
+and thus the grounding algorithm will not necessarily halt.
+On first sight this might seem to be a disadvantage but is compensated by the fact 
+that much more interesting problems, often in a more concise way, can be represented now.
+For example, we can run some calculation till a certain fix-point is reached.
+This has not been possible before and frequently workarounds were needed, e.g, 
+large domains that provide the necessary values to perform the desired calculation.
+With safe programs such values can be calculated on demand,
+which often prevents space explosion, and also keeps the encoding more compact.
+The formal definition of safe programs programs,
+which can be grounded by \gringo\ (stand-alone or embedded in \clingo\ and \iclingo),
+is provided in Section~\ref{subsec:safe}.
+Section~\ref{subsec:strat} introduces stratified programs and the related
+concept of domain predicates, which can serve particular purposes during grounding.
+Both sections may be skimmed or even skipped upon the first reading,
+and rather be looked up later on to find out details.
+\end{newstuff}
 
+\begin{oldstuff}
 \subsection{Level-Restricted Logic Programs}\label{subsec:lambda}
 
 The main task of a grounder is to substitute the variables in a logic program~$\Pi$
@@ -161,7 +189,108 @@ difficult to check.
 In fact, \gringo\ performs such a check and accepts an input program if it is level-restricted.
 Generalizations of level-restrictedness to the rich input language of \gringo\
 will be discussed in Section~\ref{sec:language}.
+\end{oldstuff}
 
+\begin{newstuff}
+\subsection{Safe Logic Programs}\label{subsec:safe}
+
+The main task of a grounder is to substitute the variables in a logic program~$\Pi$
+by terms such that the result is a finite equivalent ground program~$\alt{\Pi}$.%
+\footnote{$\Pi$ and~$\alt{\Pi}$ are equivalent if they have the same answer sets.}
+Of course, a necessary condition for this is that~$\Pi$ possesses
+only finitely many finite answer sets.
+Unfortunately, such a property is undecidable in general~\cite{daeigovo01a}.
+Instead of semantic properties, grounders do thus impose rather simple syntactic
+conditions to guarantee the existence of finite equivalent ground programs
+(which are then also computed).
+For instance, the \dlv\ system~\cite{dlv03a} requires programs to be \emph{safe} for
+establishing finiteness in the absence of functions with non-zero arity and under
+limited arithmetic.
+Grounder \lparse~\cite{lparseManual} deals with \emph{$\omega$-restricted}
+programs~\cite{syrjanen01a}, which are more restrictive than safe programs
+but guarantee finiteness also in the presence of functions with non-zero arity.
+Previous \gringo~\cite{gescth07a} versions required programs to be \emph{$\lambda$-restricted},
+a property more general than $\omega$-restrictedness but likewise applicable
+to programs over the same languages.
+Finally, recent \gringo\ versions and, e.g., \dlvcomplex~\comment{add reference} use \emph{safe programs}, 
+which are a strict super set of \emph{$\lambda$-restricted} programs 
+and, in constrast to \dlv\, do not limit arithmetics and also allow for using function symbols.
+In this setting, it is no longer possibile to check
+whether there is a finite grounding for a given program and 
+thus a grounding algorithm need not necessarily hold on some inputs.
+
+A logic program is safe if every variable in each rule occurs in some positive predicate of the rule.
+In this case, we can apply \emph{semi-naive evaluation} \comment{add reference} to ground the logic program.
+Whenever we ground a rule and see a new head, we can use this head to bind variables
+in corresponding positive predicates to obtain new ground rules.
+This process is repeated until no more new ground rules will be generated.
+The sketched approach is justified by the $\subseteq$-minimality of answer sets
+in the sense of Section~\ref{subsec:semantics},
+as it allows us to restrict the attention to rules whose bodies are derivable w.r.t.\
+some answer set.
+
+\begin{example}\label{ex:safe}
+Consider the following logic program:
+%
+\lstinputlisting{examples/zigzagx.lp}
+%
+The set~$\mathcal{P}$ of predicates contains
+\pred{zig}/$1$, \pred{zag}/$1$,
+and \pred{zigzag}/$2$.
+The rules~$r$ with head predicates \pred{zig}/$1$ or \pred{zag}/$1$ in Line~1 and~2
+are ground ($\vars{r}=\nolinebreak\emptyset$).
+Hence, we immediately get the two ground rules
+\begin{lstlisting}[firstnumber=1]
+zigzag(0).
+zigzag(1).
+\end{lstlisting}
+There are two new heads $\pred{zig}(0)$ and $\pred{zag}(1)$ that can be used to instantiate the third rule
+\begin{lstlisting}[firstnumber=3]
+zigzag(0,1) :- zig(0), zag(1).
+\end{lstlisting}
+This allows use to use $\pred{zigzag}(0,1)$ to instantiate the last rule
+\begin{lstlisting}[firstnumber=4]
+zigzag(1,0) :- zigzag(0,1).
+\end{lstlisting}
+We get a new head $\pred{zigzag}(1,0)$ that will be used to instantiate the same rule again
+\begin{lstlisting}[firstnumber=5]
+zigzag(0,1) :- zigzag(1,0).
+\end{lstlisting}
+At this point, no new heads have been generated and the grounding process stops.
+\end{example}
+
+\begin{example}\label{ex:unsafe}
+Note that safety is a very intuitive concept.
+Consider for example the following unsafe program
+\begin{lstlisting}[firstnumber=1]
+a(X) :- not b(Y).
+\end{lstlisting}
+Using an infinite Herbrand base, the above program neither has a finite instantiation nor a finite answer set
+and we cannot apply the grounding algorithm sketched above.\comment{Refer to literature that covers such programs?}
+\end{example}
+
+The fundamental property of a safe
+program is that it admits using the grounding algorithm sketched above 
+and that it might yield a finite ground instantiation, not to be confused with
+the (full) ground instantiation because $\ground{\Pi}$ may still be infinite.
+Furthermore, safety provides a syntactic criterion that is not
+difficult to check.
+In fact, \gringo\ performs such a check and accepts an input program only if it is safe.
+To generalize the notion of safety to the rich input language of \gringo,
+we formalize safety using a directed \emph{variable graph} $G_r=(V \cup \{\$\},E)$
+w.r.t. a rule~$r$.
+The set~$V$ corresponds to the variables that occur in the rule and
+the set of edges~$E \subseteq (V \cup \{\$\}) \times V$ connect variables 
+or the special start node $\$$ with other variables.
+Only positive predicates contribute to edges of the graph.
+For every variable~$X$ that occurs in a positive literal of the rule there is an edge~$(\$,X)\in E$.
+A rule~$r$ is safe if there is a level mapping $\lambda:V\cup\{\$\}\rightarrow\mathbb{N}$ 
+and for every~$X \in V$ exits a~$Y \in V\cup\{\$\}$ 
+such that $\lambda(X) < \lambda(Y)$ and $(X,Y) \in E$ for $G_r=(V \cup \{\$\}, E)$.
+Finally, a logic program $\Pi$ is safe if all its rules are safe.
+In Section~\ref{sec:language}, extensions to this graph will be dicussed
+whenever new language constructs are introduced.
+\end{newstuff}
 
 \subsection{Stratified Logic Programs}\label{subsec:strat}
 
@@ -170,7 +299,7 @@ as every stratified (normal) program has a unique answer.
 Grounder \gringo\ exploits stratification in two respects:
 first, it fully evaluates stratified (sub)programs during grounding, and second,
 predicates that are subject to stratification can serve as domain predicates (see below).
-As with level-restrictedness, stratification can be characterized in terms
+Stratification can be characterized in terms
 of level mappings, here, witnessing the absence of recursion through ``\code{not}.''
 We start by introducing stratification on normal programs, and in a second step,
 we consider stratified subprograms.
@@ -309,27 +438,14 @@ $.
 \eexample
 \end{example}
 
-One can check that the program consisting of Line~1--5
-in Example~\ref{ex:strat:prog} is level-restricted, but not stratified.
-Conversely, program
+Consider the safe, stratified (take $\xi=\{\pred{nat}/1 \mapsto 0\}$) program
 \begin{lstlisting}[numbers=none]
 nat(0).  nat(s(X)) :- nat(X).
 \end{lstlisting}
-is stratified (take $\xi=\{\pred{nat}/1 \mapsto 0\}$),
-but not level-restricted
-($\lambda(\pred{nat}/1)>\lambda(\pred{nat}/1)$
- needed because of the second rule is impossible).
 In fact, the program has a unique but infinite answer set.
 Thus,
-the program cannot be translated to a finite equivalent ground program,
-which is why \gringo\ does not accept it.
-Rather, in the first place, a program must be level-restricted in order
-to ground it with \gringo.
-If level-restrictedness is granted,
-the maximal stratified subprogram is exploited in a second stage
-to optimize grounding and to make use of domain predicates.
+the program cannot be translated to a finite equivalent ground program.
+Nevertheless, \gringo\ would accept it, but it will not halt (assuming infinite memory).
+Stratified subprograms can be exploited during instantiation
+to optimize the grounding, e.g. facts in rule bodies need not be printed, and to make use of domain predicates, e.g., in aggregates~\comment{reference aggregates}.
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "guide"
-%%% End: 

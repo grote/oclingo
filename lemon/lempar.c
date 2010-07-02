@@ -466,6 +466,7 @@ static int yy_find_reduce_action(
 ** The following routine is called if the stack overflows.
 */
 static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
+   (void)yypMinor;
    ParseARG_FETCH;
    yypParser->yyidx--;
 #ifndef NDEBUG
@@ -646,6 +647,8 @@ static void yy_syntax_error(
   int yymajor,                   /* The major type of the error token */
   YYMINORTYPE yyminor            /* The minor type of the error token */
 ){
+  (void)yymajor;
+  (void)yyminor;
   ParseARG_FETCH;
 #define TOKEN (yyminor.yy0)
 %%

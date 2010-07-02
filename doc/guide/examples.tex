@@ -1,135 +1,16 @@
 \section{Examples}\label{sec:examples}
 
 We exemplarily solve the following problems in ASP:
-$N$-Coloring (Section~\ref{subsec:ex:color}),
 Traveling Salesperson (Section~\ref{subsec:ex:tsp}), and
 Blocks-World Planning (Section~\ref{subsec:ex:block}).
-While the first problem could likewise be solved within neighboring paradigms,
-the second one requires checking reachability,
-something that is rather hard to encode in either
+The first problem demonstrates the advanced modeling capacities of ASP.
+It requires checking reachability,
+something that is rather hard to encode in neighboring paradigms like
 Boolean Satisfiability~\cite{bihemawa08a} or
 Constraint Programming~\cite{robewa06a}.
 The third problem coming from the area of planning
 illustrates incremental solving with \iclingo.
  
-
-\subsection{$N$-Coloring}\label{subsec:ex:color}
-
-As already mentioned in Section~\ref{subsec:asp},
-it is custom in ASP to provide a \emph{uniform}
-problem definition~\cite{martru99a,niemela99a,schlipf95a}.
-We follow this methodology and separate the encoding
-from an instance of the following problem:
-given a (directed) graph, decide whether each node can be assigned
-one of~$N$ colors such that any pair of adjacent nodes is colored differently.
-Note that this problem is NP-complete for~$N\geq 3$
-(see, e.g.,~\cite{papadimitriou94a}),
-and thus it seems unlikely that a worst-case polynomial algorithm
-can be found.
-In view of this,
-it is convenient to reduce the particular problem to
-a declarative problem solving paradigm like ASP,
-where efficient off-the-shelf tools like \gringo\ and \clasp\
-are ready to solve the problem reasonably well.
-Such a reduction is now exemplified.
-
-\subsubsection{Problem Instance}\label{subsec:color:instance}
-\input{figures/graph}
-
-We consider directed graphs specified via facts over predicates
-\pred{node}/$1$ and \pred{edge}/$2$.%
-\footnote{%
-  Directedness is not an issue in $N$-Coloring,
-  but we will reuse our directed example graph in Section~\ref{subsec:ex:tsp}.}
-The graph shown in Figure~\ref{fig:graph} is represented by the following set of facts:
-%
-\lstinputlisting{examples/graph.lp}
-%
-Recall from Section~\ref{subsec:lang:gringo} that~``\code{..}'' and~``\code{;}''
-in the head expand to multiple rules, which are facts here.
-Thus, the instance contains six nodes and 17 directed edges.
-
-\subsubsection{Problem Encoding}\label{subsec:color:encoding}
-
-We now proceed by encoding $N$-coloring via non-ground rules that are
-independent of particular instances.
-Typically, an encoding consists of a \emph{Generate}, a \emph{Define},
-and a \emph{Test} part~\cite{lifschitz02a}.
-As $N$-Coloring has a rather simple pattern, the following encoding does
-not contain any Define part:
-%
-\lstinputlisting{examples/color.lp}
-%
-In Line~2, we use the \code{\#const} declarative,
-described in Section~\ref{subsec:gringo:meta},
-to install~\const{3} as default value for constant~\const{n} that is to be replaced
-with the number~$N$ of colors.
-(The default value can be overridden by invoking \gringo\ with option
- \code{--const n=$N$}.)
-The Generate rule in Line~4 makes use of the \const{count} aggregate
-(cf.\ Section~\ref{subsec:gringo:aggregate}).
-For our example graph and~\const{1} substituted for~\var{X},
-we obtain the following ground rule:%
-\marginlabel{%
-  The full ground program is obtained by invoking:\\
-  \code{\mbox{~}gringo -t \textbackslash\\
-    \mbox{~}examples/color.lp \textbackslash\\
-    \mbox{~}examples/graph.lp}}
-%
-\begin{lstlisting}[numbers=none]
-1 { color(1,1), color(1,2), color(1,3) } 1.
-\end{lstlisting}
-%
-Note that~\code{\pred{node}(\const{1})} has been removed from the body,
-as it is derived via a corresponding fact,
-and similar ground instances are obtained for the other nodes~\const{2} to~\const{6}.
-Furthermore, for each instance of \pred{edge}/2,
-we obtain~\code{n} ground instances of the integrity constraint in Line~6,
-prohibiting that the same color~\var{C} is assigned to the adjacent nodes.
-Given~\code{\const{n}=\const{3}},
-we get the following ground instances due to \code{\pred{edge}(\const{1},\const{2})}:
-%
-\begin{lstlisting}[numbers=none]
-:- color(1,1), color(2,1).
-:- color(1,2), color(2,2).
-:- color(1,3), color(2,3).
-\end{lstlisting}
-%
-Again note that \code{\pred{edge}(\const{1},\const{2})},
-derived via a fact, has been removed from the body.
-
-\subsubsection{Problem Solution}\label{subsec:color:solution}
-\input{figures/color}
-
-Provided that a given graph is colorable with~\const{n} colors,
-a solution can be read off an answer set of the program consisting
-of the instance and the encoding.
-For the graph in Figure~\ref{fig:graph},
-the following answer set can be computed:%
-\marginlabel{%
-  To find an answer set, invoke:\\
-  \code{\mbox{~}gringo \textbackslash\\
-        \mbox{~}examples/color.lp \textbackslash\\
-        \mbox{~}examples/graph.lp |\rlap{\:\textbackslash}\\
-        \mbox{~}clasp}\\
-  or alternatively:\\
-  \code{\mbox{~}clingo \textbackslash\\
-        \mbox{~}examples/color.lp \textbackslash\\
-        \mbox{~}examples/graph.lp}}
-%
-\begin{lstlisting}[numbers=none]
-Answer: 1
-... color(1,2) color(2,1) color(3,1) color(4,3) color(5,2) color(6,3)
-\end{lstlisting}
-%
-Note that we have omitted the six instances of \pred{node}/$1$ and the
-17 instances of \pred{edge}/$2$ in order to emphasize the actual solution,
-which is depicted in Figure~\ref{fig:color}.
-Such output projection can also be specified within a logic program file by
-using the declaratives \code{\#hide} and \code{\#show},
-described in Section~\ref{subsec:gringo:meta}.
-
-
 \subsection{Traveling Salesperson}\label{subsec:ex:tsp}
 
 We now consider the well-known Traveling Salesperson Problem (TSP),
@@ -465,6 +346,11 @@ such that the prerequisites apply.
 Some attention should of course be spent on
 putting rules into the right program parts.
 
+\begin{newstuff}
+	\begin{itemize}
+		\item allows for saving some predicates now
+	\end{itemize}
+\end{newstuff}
 
 \subsubsection{Problem Solution}\label{subsec:block:solution}
 
@@ -528,3 +414,10 @@ are required if the bound of an optimal solution is a priori unknown.
 %%% mode: latex
 %%% TeX-master: "guide"
 %%% End: 
+
+\begin{newstuff}
+	\begin{itemize}
+		\item we need a better example to show the benefits of bingo simplified gbie?
+	\end{itemize}
+\end{newstuff}
+

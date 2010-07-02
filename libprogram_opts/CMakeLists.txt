@@ -1,7 +1,9 @@
-file(GLOB LIBPROGRAM_OPTS_SRC src/*.cpp)
-file(GLOB LIBPROGRAM_OPTS_INC program_opts/*.h)
+file(GLOB_RECURSE LIBPROGRAM_OPTS_SRC src/*.cpp *.h)
 
-include_directories(.)
+include_directories(src .)
 
-add_library(program_opts-lib STATIC ${LIBPROGRAM_OPTS_SRC} ${LIBPROGRAM_OPTS_INC})
-set_target_properties(program_opts-lib PROPERTIES OUTPUT_NAME libprogram_opts)
+add_library(program_opts-lib STATIC ${LIBPROGRAM_OPTS_SRC})
+
+target_link_libraries(program_opts-lib)
+set_target_properties(program_opts-lib PROPERTIES OUTPUT_NAME program_opts)
+

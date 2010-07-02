@@ -1,182 +1,147 @@
-// Copyright (c) 2008, Roland Kaminski
+// Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
-// This file is part of GrinGo.
+// This file is part of gringo.
 //
-// GrinGo is free software: you can redistribute it and/or modify
+// gringo is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// GrinGo is distributed in the hope that it will be useful,
+// gringo is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef GRINGO_H
-#define GRINGO_H
+#ifndef _GRINGO_H
+#define _GRINGO_H
 
-#include <cassert>
+#define GRINGO_VERSION "3.0-alpha"
+
+#include <gringo/val.h>
+#include <gringo/clone_ptr.h>
+
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_unordered_map.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
+#include <boost/unordered/unordered_set.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/foreach.hpp>
+#include <boost/logic/tribool.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+
 #include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <set>
-#include <queue>
-#include <map>
-#include <list>
-#include <stack>
-#include <cmath>
-#include <cfloat>
-#include <typeinfo>
-#include <algorithm>
-#include <cstring>
-#include <cstdlib>
-#include <climits>
-#include <memory>
+#include <cstdio>
 #include <stdexcept>
 #include <limits>
+#include <vector>
+#include <memory>
+#include <string>
+#include <set>
+#include <stack>
+#include <map>
+#include <queue>
+#include <sstream>
+#include <cassert>
+#include <list>
+#include <fstream>
 
-#define FAIL_CONCAT2(x,y) x "( " #y "): Assertion failed!"
-#define FAIL_CONCAT(x, y) FAIL_CONCAT2(x, y)
-#define FAIL(x) (void)(!(x) || (throw std::logic_error(FAIL_CONCAT(__FILE__,__LINE__)),true))
-
-#if !defined(HAS_TR1_UNORDERED) || HAS_TR1_UNORDERED == 0
-#include <ext/hash_set>
-#include <ext/hash_map>
-template<class Key, class T, class F = __gnu_cxx::hash<Key>, class Eq = std::equal_to<Key>, class A= std::allocator<T> >
-struct HashMap {
-    typedef __gnu_cxx::hash_map<Key, T, F, Eq, A> type;
-};
-template<class V, class H= __gnu_cxx::hash<V>, class Eq = std::equal_to<V>, class A=std::allocator<V> >
-struct HashSet {
-    typedef  __gnu_cxx::hash_set<V, H, Eq, A> type;
-};
-inline size_t hashString(const std::string& str) {
-	return __gnu_cxx::__stl_hash_string(str.c_str());
-}
-#else
-#include <unordered_map>
-#include <unordered_set>
-template<class Key, class Ty, class Hash = NS_TR1::hash<Key>, class Pred = std::equal_to<Key>, class Alloc = std::allocator<Key> >
-struct HashMap {
-    typedef NS_TR1::unordered_map<Key, Ty, Hash, Pred, Alloc> type;
-};
-template<class Value, class Hash = NS_TR1::hash<Value>, class Pred = std::equal_to<Value>, class Alloc = std::allocator<Value> >
-struct HashSet {
-    typedef NS_TR1::unordered_set<Value, Hash, Pred, Alloc> type;
-};
-inline size_t hashString(const std::string& str) {
-	return NS_TR1::hash<std::string>()(str);
-}
-#endif
-
-
-namespace gringo
+#define foreach BOOST_FOREACH
+inline bool unknown(
+		boost::logic::tribool x,
+		boost::logic::detail::indeterminate_t dummy = boost::logic::detail::indeterminate_t())
 {
-	class GlobalStorage;
-
-	class PDG;
-	class PDGBuilder;
-
-	class LDGBuilder;
-	typedef std::vector<LDGBuilder*> LDGBuilderVector;
-
-	class LDG;
-	typedef std::vector<LDG*> LDGVector;
-
-	typedef std::pair<int, int> Signature;
-	typedef std::vector<Signature> SignatureVector;
-	class Evaluator;
-
-	class Expandable;
-	class Groundable;
-
-	class IndexedDomain;
-	typedef std::vector<IndexedDomain*> IndexedDomainVector;
-
-	class Value;
-	typedef std::vector<Value> ValueVector;
-
-	enum MatchStatus { SuccessfulMatch, FailureOnNextMatch, FailureOnFirstMatch };
-	enum IncPart { NONE, BASE, LAMBDA, DELTA };
-	enum GroundStep { PREPARE, REINIT, GROUND, RELEASE };
-
-	class DLVGrounder;
-
-	class StatementChecker;
-	class Printable;
-	class DependencyRelation;
-
-	enum VarsType { VARS_PROVIDED, VARS_NEEDED, VARS_GLOBAL, VARS_ALL };
-	typedef std::set<int> VarSet;
-	typedef std::set<int> IntSet;
-	typedef std::vector<int> VarVector;
-	typedef std::vector<int> IntVector;
-
-	class Variable;
-	class Constant;
-	typedef std::vector<std::string*> StringVector;
-	typedef std::vector<Constant*> ConstantVector;
-
-	class AggregateLiteral;
-
-	class SDG;
-
-	class GrinGoParser;
-	class LparseParser;
-
-	class GrinGoLexer;
-	class LparseLexer;
-	class PlainLparseLexer;
-
-	class Grounder;
-
-	class Literal;
-	typedef std::vector<Literal*> LiteralVector;
-	typedef std::list<Literal*> LiteralList;
-
-	class SDGNode;
-	typedef std::vector<SDGNode*> SDGNodeVector;
-
-	class Statement;
-	typedef std::vector<Statement*> StatementVector;
-
-	class Term;
-	typedef std::vector<Term*> TermVector;
-
-	class ConditionalLiteral;
-	typedef std::vector<ConditionalLiteral*> ConditionalLiteralVector;
-
-	class PredicateLiteral;
-	typedef std::vector<PredicateLiteral*> PredicateLiteralVector;
-
-	class FuncSymbol;
-	typedef std::vector<FuncSymbol* > FuncSymbolVector;
-
-	class ConditionalLiteralTarget;
-
-	inline std::ostream& NL(std::ostream& os)
-	{
-		return os.put(os.widen('\n'));
-	}
-
-	class Program;
-	typedef std::vector<Program*> ProgramVector;
-
-	class Domain;
-	typedef std::vector<Domain*> DomainVector;
-
-	namespace NS_OUTPUT
-	{
-		class Output;
-		struct Object;
-		struct Atom;
-	}
+	(void)dummy;
+	return x.value == boost::logic::tribool::indeterminate_value;
 }
+
+using boost::logic::tribool;
+
+class ArgTerm;
+class CondLit;
+class ConstTerm;
+class Domain;
+class Expander;
+class Func;
+class Groundable;
+class Grounder;
+class Index;
+class Instantiator;
+class Lexer;
+class Lit;
+class Loc;
+class LuaLit;
+class LuaTerm;
+class LparseConverter;
+class MathLit;
+class Output;
+class Parser;
+class PredIndex;
+class PredLit;
+class PredLitRep;
+class PredLitSet;
+class PrgVisitor;
+class Printer;
+class RelLit;
+class RelLit;
+class Rule;
+class Statement;
+class Storage;
+class Term;
+class VarCollector;
+class VarTerm;
+class WeightLit;
+class IncLit;
+class IncConfig;
+class Streams;
+
+struct Loc;
+
+namespace LitDep
+{
+	class GrdNode;
+}
+
+typedef std::vector<std::string> StringVec;
+typedef boost::ptr_vector<Statement> StatementPtrVec;
+typedef boost::ptr_vector<Index> IndexPtrVec;
+typedef boost::ptr_vector<Lit> LitPtrVec;
+typedef boost::ptr_vector<Term> TermPtrVec;
+typedef std::vector<VarTerm*> VarTermVec;
+typedef std::vector<std::string> StringVec;
+typedef std::vector<Val> ValVec;
+typedef std::vector<uint32_t> VarVec;
+typedef std::map<uint32_t,uint32_t> VarMap;
+typedef std::set<uint32_t> VarSet;
+typedef std::pair<uint32_t, uint32_t> Signature;
+typedef boost::ptr_unordered_map<Signature, Domain> DomainMap;
+typedef boost::ptr_vector<CondLit> CondLitVec;
+typedef boost::iterator_range<ValVec::const_iterator> ValRng;
+typedef boost::iterator_range<StatementPtrVec::iterator> StatementRng;
+typedef std::pair<Loc, uint32_t> VarSig;
+typedef std::vector<VarSig> VarSigVec;
+
+Term* new_clone(const Term& a);
+VarTerm* new_clone(const VarTerm& a);
+Lit* new_clone(const Lit& a);
+WeightLit* new_clone(const WeightLit& a);
+Instantiator* new_clone(const Instantiator& a);
+LitDep::GrdNode* new_clone(const LitDep::GrdNode& a);
+CondLit* new_clone(const CondLit& a);
+
+namespace boost
+{
+	size_t hash_value(const Func &f);
+}
+
+#include <gringo/index_set.h>
 
 #endif
 

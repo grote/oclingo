@@ -1,27 +1,27 @@
-file(GLOB LIBGRINGO_INC gringo/*.h)
-file(GLOB LIBGRINGO_SRC src/*.cpp)
- 
-if(${GRINGO_TYPE} STREQUAL "gringo")
-	include_directories(${CMAKE_CURRENT_BINARY_DIR}	src .)
-else()
-	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/libclasp src .)
+file(GLOB_RECURSE LIBGRINGO_SRC    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp *.h)
+file(GLOB_RECURSE LIBGRINGO_LEXER  RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.r2c)
+file(GLOB_RECURSE LIBGRINGO_PARSER RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.y)
+
+include_directories(src .)
+
+if(WITH_LUA STREQUAL "system")
+	add_definitions("-DWITH_LUA=1")
+	include_directories(${LUA_INCLUDE_DIR})
+elseif(WITH_LUA STREQUAL "shipped")
+	add_definitions("-DWITH_LUA=2")
+	include_directories(${CMAKE_SOURCE_DIR}/liblua)
+	if(WITH_LUASQL)
+		add_definitions("-DWITH_LUASQL")
+		include_directories(${CMAKE_SOURCE_DIR}/libluasql ${CMAKE_BINARY_DIR}/libluasql)
+	endif()
 endif()
 
-RE2C(src/lparselexer lparselexer LIBGRINGO_SRC)
-LEMON(src/lparseparser_impl lparseparser_impl LIBGRINGO_SRC)
+RE2C(LIBGRINGO_SRC ${LIBGRINGO_LEXER})
+LEMON(LIBGRINGO_SRC ${LIBGRINGO_PARSER})
 
-RE2C(src/plainlparselexer plainlparselexer LIBGRINGO_SRC)
-LEMON(src/lparseconverter_impl lparseconverter_impl LIBGRINGO_SRC)
+add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 
-add_library(gringo-lib STATIC ${LIBGRINGO_SRC} ${LIBGRINGO_INC})
-
-target_link_libraries (gringo-lib)
+target_link_libraries(gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
-if(PCHSupport_FOUND)
-	add_precompiled_header(gringo-lib ${CMAKE_CURRENT_SOURCE_DIR}/gringo/gringo.h)
-endif()
-
-#install(FILES ${LIBGRINGO_INC} DESTINATION include/gringo)
-#install(TARGETS gringo-lib ARCHIVE DESTINATION lib)
-
+ADD_PRECOMPILED_HEADER(gringo-lib ${CMAKE_SOURCE_DIR}/libgringo/gringo/gringo.h)

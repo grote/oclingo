@@ -1,32 +1,29 @@
-To build gringo the build system cmake is used. To build the lexers used by
-gringo, the lexer-generator re2c is needed. The source code release contains
-pregenerated paser and lexer files, so re2c is only needed if you checked out
-a svn version. In case of trouble, there is always a set of pre-build versions
-for different architectures available on:
-http://sourceforge.net/projects/potassco/files/gringo_clingo_iclingo
+1 Prerequisites
+---------------
 
-The usual way to compile and install gringo should be:
-make
-cp build/gringo/release/bin/gringo <somewhere-in-your-path>
+To build the lexer used by gringo, the lexer-generator re2c is needed. 
+Additionally, a recent version of the boost library is needed (> 1.35.*).
+For development boost version 1.40 is used. This is the latest version
+and may not be available as package on your system. But boost can easily
+be installed locally (see boost documentation). Gringo depends on the 
+two (non-header-only) boost libraries system and filesystem. Furthermore,
+gringo uses the build system cmake. At least cmake version 1.6 is required.
 
-1 Compilation/Installation:
----------------------------
-There is a Makefile simplifying the build process. This Makefile is 
-capable of initializing out-of-source builds to build different versions of
-gringo.
-
-1.1 gringo:
--------------
-make gringo_release
-cp build/gringo/release/bin/gringo <somewhere-in-your-path>
-
-1.2 clingo:
--------------
-make clingo_release
-cp build/clingo/release/bin/clingo <somewhere-in-your-path>
-
-1.3 iclingo:
+2 Compilation:
 --------------
-make iclingo_release
-cp build/iclingo/release/bin/iclingo <somewhere-in-your-path>
+
+To build gringo you have to create some folder and call cmake with the 
+desired option from there. For *nix system there is a Makefile that wraps
+cmake and allows for creating a debug, release or static build. On such 
+systems the following command line should compile gringo:
+	make BUILD_TYPE=<type>
+where <type> is either debug, release or static.
+Note that if you installed boost locally, you may have to specify the path
+to the boost installation via the BOOST_ROOT variable.
+
+3 Installation:
+---------------
+
+If compilation succeeded, the build folder will contain a bin folder with
+a gringo executable, which should be copied somewhere into your path.
 

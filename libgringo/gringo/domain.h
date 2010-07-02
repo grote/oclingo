@@ -1,60 +1,72 @@
-// Copyright (c) 2008, Roland Kaminski
+// Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
-// This file is part of GrinGo.
+// This file is part of gringo.
 //
-// GrinGo is free software: you can redistribute it and/or modify
+// gringo is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// GrinGo is distributed in the hope that it will be useful,
+// gringo is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef DOMAIN_H
-#define DOMAIN_H
+#pragma once
 
 #include <gringo/gringo.h>
-#include <gringo/value.h>
 
-namespace gringo
+class Domain
 {
-	class Domain
+public:
+	struct Index
 	{
-	public:
-		enum Type {UNDEFINED = 3, FACT = 0, BASIC = 1, NORMAL = 2};
-	public:
-		Domain();
-		bool complete() const;
-		bool solved() const;
-		void setSolved(bool solved);
-		void reset();
-		void finish();
-		void evaluate();
-		bool hasFacts() const;
-		void addFact(const ValueVector &values);
-		bool isFact(const ValueVector &values) const;
-		bool inDomain(const ValueVector &values) const;
-		void addDomain(const ValueVector &values);
-		void removeDomain(const ValueVector &values);
-		void setType(Type type_);
-		Type getType() const { return type_; }
-		int getDefines();
-		ValueVectorSet &getDomain() const;
-		void moveDomain(Domain *nextDomain);
-		~Domain();
-	private:
-		enum Type type_;
-		int defines_;
-		ValueVectorSet facts_;
-		ValueVectorSet domain_;
-		bool solved_;
+		Index(uint32_t index, bool fact = false);
+		uint32_t index : 31;
+		mutable uint32_t fact : 1;
+		bool valid() const;
+		operator uint32_t() const { return index; }
 	};
-}
-
-#endif
+private:
+	struct TupleCmp
+	{
+		TupleCmp(Domain *d);
+		size_t operator()(const Index &i) const;
+		bool operator()(const Index &a, const Index &b) const;
+		Domain *dom;
+	};
+	typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
+	typedef std::pair<PredIndex*,Groundable*> PredInfo;
+	typedef std::vector<PredInfo> PredInfoVec;
+	typedef std::vector<PredIndex*> PredIndexVec;
+	typedef std::vector<Groundable*> GroundableVec;
+public:
+	Domain(uint32_t nameId, uint32_t arity, uint32_t domId);
+	const Index &find(const ValVec::const_iterator &v) const;
+	void insert(const ValVec::const_iterator &v, bool fact = false);
+	void enqueue(Grounder *g);
+	void append(Grounder *g, Groundable *gr, PredIndex *i);
+	uint32_t size() const   { return valSet_.size(); }
+	bool complete() const   { return complete_ && !external_; }
+	void complete(bool c)   { complete_ = c; }
+	void external(bool e)   { external_ = e; }
+	bool external() const   { return external_; }
+	uint32_t arity() const  { return arity_; }
+	uint32_t nameId() const { return nameId_; }
+	uint32_t domId() const  { return domId_; }
+private:
+	uint32_t       nameId_;
+	uint32_t       arity_;
+	uint32_t       domId_;
+	mutable ValVec vals_;
+	ValSet         valSet_;
+	PredInfoVec    index_;
+	PredIndexVec   completeIndex_;
+	uint32_t       new_;
+	bool           complete_;
+	bool           external_;
+};
 

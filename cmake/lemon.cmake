@@ -1,25 +1,39 @@
-MACRO(LEMON SRC DST VAR)
-    IF(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.cpp AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.h)
-        IF(UNIX)
-	    SET(COPY_OR_LINK create_symlink)
-	ELSE()
-	    SET(COPY_OR_LINK copy_if_different)
-	ENDIF()
-        ADD_CUSTOM_COMMAND(
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lempar.c
-            COMMAND cmake -E ${COPY_OR_LINK} ${CMAKE_SOURCE_DIR}/lemon/lempar.c ${CMAKE_CURRENT_BINARY_DIR}/lempar.c
-            MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/lemon/lempar.c
-        )
-        ADD_CUSTOM_COMMAND(
-            OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${DST}.c ${CMAKE_CURRENT_BINARY_DIR}/${DST}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${DST}.h
-            COMMAND cmake -E ${COPY_OR_LINK} ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.y ${CMAKE_CURRENT_BINARY_DIR}/${DST}.y
-            COMMAND cmake -E chdir ${CMAKE_CURRENT_BINARY_DIR} ${EXECUTABLE_OUTPUT_PATH}/lemon -q ${DST}.y
-            COMMAND cmake -E ${COPY_OR_LINK} ${CMAKE_CURRENT_BINARY_DIR}/${DST}.c ${CMAKE_CURRENT_BINARY_DIR}/${DST}.cpp
-            MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.y
-            DEPENDS lemon ${CMAKE_CURRENT_BINARY_DIR}/lempar.c
-        )
-        SET(${VAR} ${${VAR}} ${CMAKE_CURRENT_BINARY_DIR}/${DST}.cpp)
-    ELSE()
-        SET(${VAR} ${${VAR}} ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.cpp ${CMAKE_CURRENT_SOURCE_DIR}/${SRC}.h)
-    ENDIF()
+MACRO(LEMON VAR)
+    FOREACH(SRC ${ARGN})
+        GET_FILENAME_COMPONENT(DST  "${SRC}" PATH)
+        GET_FILENAME_COMPONENT(NAME "${SRC}" NAME_WE)
+        IF(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DST}/${NAME}.cpp" AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${DST}/${NAME}.h")
+            IF(NOT TARGET lemon)
+                IF(CMAKE_CROSSCOMPILING)
+                    # for some reason this has to be done directly in front of the custom command
+                    SET(IMPORT_LEMON "IMPORTFILE-NOTFOUND" CACHE FILEPATH "Path to the export file of the native lemon build")
+                    INCLUDE(${IMPORT_LEMON})
+                ELSE()
+                    add_subdirectory("${CMAKE_SOURCE_DIR}/lemon" "${CMAKE_BINARY_DIR}/lemon")
+                ENDIF()
+            ENDIF()
+            IF(UNIX)
+                SET(COPY_OR_LINK create_symlink)
+            ELSE()
+                SET(COPY_OR_LINK copy_if_different)
+            ENDIF()
+            ADD_CUSTOM_COMMAND(
+                OUTPUT "${DST}/lempar.c"
+                COMMAND cmake -E make_directory "${DST}"
+                COMMAND cmake -E ${COPY_OR_LINK} "${CMAKE_SOURCE_DIR}/lemon/lempar.c" "${DST}/lempar.c"
+                MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/lemon/lempar.c"
+            )
+            ADD_CUSTOM_COMMAND(
+                OUTPUT "${DST}/${NAME}.cpp" "${DST}/${NAME}.h"
+                COMMAND cmake -E ${COPY_OR_LINK} "${CMAKE_CURRENT_SOURCE_DIR}/${SRC}" "${NAME}.y"
+                COMMAND lemon -q "${NAME}.y"
+                COMMAND cmake -E ${COPY_OR_LINK} ${NAME}.c ${NAME}.cpp
+                MAIN_DEPENDENCY "${SRC}"
+                DEPENDS lemon "${CMAKE_CURRENT_BINARY_DIR}/${DST}/lempar.c"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${DST}"
+            )
+            SET(${VAR} ${${VAR}} "${DST}/${NAME}.cpp" "${DST}/${NAME}.h")
+            INCLUDE_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/${DST}")
+        ENDIF()
+    ENDFOREACH()
 ENDMACRO()

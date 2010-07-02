@@ -1,137 +1,118 @@
-// Copyright (c) 2008, Roland Kaminski
+// Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
-// This file is part of GrinGo.
+// This file is part of gringo.
 //
-// GrinGo is free software: you can redistribute it and/or modify
+// gringo is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// GrinGo is distributed in the hope that it will be useful,
+// gringo is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/domain.h>
-#include <gringo/value.h>
+#include <gringo/val.h>
+#include <gringo/predindex.h>
+#include <gringo/grounder.h>
+#include <gringo/groundable.h>
+#include <gringo/instantiator.h>
+#include <gringo/grounder.h>
 
-using namespace gringo;
-
-Domain::Domain() : type_(UNDEFINED), defines_(0), solved_(false)
+Domain::TupleCmp::TupleCmp(Domain *d) :
+	dom(d)
 {
 }
 
-void Domain::setType(Type type)
+size_t Domain::TupleCmp::operator()(const Index &i) const
 {
-	type_ = type;
+	return boost::hash_range(dom->vals_.begin() + i, dom->vals_.begin() + i + dom->arity_);
 }
 
-int Domain::getDefines()
+bool Domain::TupleCmp::operator()(const Index &a, const Index &b) const
 {
-	return defines_;
+	return std::equal(dom->vals_.begin() + a, dom->vals_.begin() + a + dom->arity_, dom->vals_.begin() + b);
 }
 
-bool Domain::complete() const
+namespace
 {
-	return defines_ == 0;
+	const Domain::Index invalid(std::numeric_limits<uint32_t>::max(), 0);
 }
 
-bool Domain::solved() const
+Domain::Index::Index(uint32_t index, bool fact) :
+	index(index),
+	fact(fact)
 {
-	return solved_;
 }
 
-void Domain::setSolved(bool solved)
+bool Domain::Index::valid() const
 {
-	solved_ = solved;
-/*
-// incremental grounding may fail cause of that
-// since this is only a very small optimization
-// i simply turn it off in iclingo
-#ifndef WITH_ICLASP
-	// when a domain is solved all of its entries are facts
-	if(solved_)
+	return *this != invalid;
+}
+
+Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
+	: nameId_(nameId)
+	, arity_(arity)
+	, domId_(domId)
+	, valSet_(0, TupleCmp(this), TupleCmp(this))
+	, new_(0)
+	, complete_(false)
+        , external_(false)
+{
+}
+
+const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
+{
+	Index idx(vals_.size());
+	vals_.insert(vals_.end(), v, v + arity_);
+	ValSet::iterator i = valSet_.find(idx);
+	vals_.resize(idx.index);
+	if(i != valSet_.end()) return *i;
+	else return invalid;
+}
+
+void Domain::insert(const ValVec::const_iterator &v, bool fact)
+{
+	Index idx(vals_.size(), fact);
+	vals_.insert(vals_.end(), v, v + arity_);
+	std::pair<ValSet::iterator, bool> res = valSet_.insert(idx);
+	if(!res.second) 
 	{
-		ValueVectorSet facts;
-		std::swap(facts, facts_);
+		vals_.resize(idx.index);
+		if(fact) res.first->fact = fact;
 	}
-#endif
-*/
 }
 
-void Domain::evaluate()
+void Domain::enqueue(Grounder *g)
 {
-	setSolved(complete() && (type_ == FACT  || type_ == BASIC));
+	uint32_t end = valSet_.size();
+	foreach(const PredInfo &info, index_)
+	{
+		bool modified = false;
+		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
+		for(ValSet::size_type i = new_; i < valSet_.size(); ++i, k+= arity_)
+			modified = info.first->extend(g, k) || modified;
+		if(modified) g->enqueue(info.second);
+	}
+	foreach(PredIndex *idx, completeIndex_)
+	{
+		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
+		for(ValSet::size_type i = new_; i < valSet_.size(); ++i, k+= arity_)
+			idx->extend(g, k);
+	}
+	new_ = end;
 }
 
-void Domain::reset()
+void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
 {
-	defines_++;
-	solved_ = false;
-}
-
-void Domain::finish()
-{
-	defines_--;
-}
-
-bool Domain::isFact(const ValueVector &values) const
-{
-	return facts_.find(values) != facts_.end();
-}
-
-void Domain::addFact(const ValueVector &values)
-{
-	// fact programs dont need to store their facts seperatly cause 
-	// directly after grounding all values in their domain are facts
-	// and there cant be any cycles through fact programs
-	// examples:
-	// a(1).
-	// a(X) :- b(X)
-	// b(X) :- a(X)
-	// here a(1) is a fact but the rest is a basic program and a/1 is
-	// not yet complete
-	//if(type_ != FACT)
-		facts_.insert(values);
-}
-
-bool Domain::inDomain(const ValueVector &values) const
-{
-	return domain_.find(values) != domain_.end();
-}
-
-void Domain::removeDomain(const ValueVector &values)
-{
-	domain_.erase(values);
-}
-
-void Domain::addDomain(const ValueVector &values)
-{
-	domain_.insert(values);
-}
-
-bool Domain::hasFacts() const
-{
-	return facts_.size() > 0;
-}
-
-ValueVectorSet &Domain::getDomain() const
-{
-	return const_cast<ValueVectorSet &>(domain_);
-}
-
-void Domain::moveDomain(Domain *nextDomain)
-{
-	domain_.swap(nextDomain->domain_);
-	facts_.swap(nextDomain->facts_);
-	nextDomain->domain_.clear();
-	nextDomain->facts_.clear();
-}
-
-Domain::~Domain() 
-{
+	ValVec::const_iterator j = vals_.begin();
+	for(ValSet::size_type i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
+	assert(!complete_ || new_ == valSet_.size());
+	if(!complete_) { index_.push_back(PredInfo(idx, gr)); }
+	else { completeIndex_.push_back(idx); }
 }
 

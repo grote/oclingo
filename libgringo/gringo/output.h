@@ -1,235 +1,113 @@
-// Copyright (c) 2008, Roland Kaminski
+// Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
-// This file is part of GrinGo.
+// This file is part of gringo.
 //
-// GrinGo is free software: you can redistribute it and/or modify
+// gringo is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// GrinGo is distributed in the hope that it will be useful,
+// gringo is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef OUTPUT_H
-#define OUTPUT_H
+#pragma once
 
 #include <gringo/gringo.h>
-#include <gringo/value.h>
+#include <gringo/printer.h>
 
-namespace gringo
+class Output
 {
-	namespace NS_OUTPUT
-	{
-		typedef std::vector<Object*> ObjectVector;
+private:
+	typedef std::map<Signature, bool> ShowMap;
+	typedef std::set<Signature> ExternalSet;
+	typedef boost::ptr_vector<boost::nullable<Printer> > PrinterVec;
+public:
+	Output(std::ostream *out);
+	virtual void initialize() { }
+	virtual void finalize() { }
+	virtual void addDomain(Domain *d) { (void)d; }
+	std::ostream &out() const { return *out_; }
+	Storage *storage() const { return s_; }
+	void storage(Storage *s) { s_ = s; }
+	void show(bool s);
+	void show(uint32_t nameId, uint32_t arity, bool s);
+	virtual void doShow(bool s) { (void) s; }
+	virtual void doShow(uint32_t nameId, uint32_t arity, bool s) { (void)nameId; (void)arity; (void) s; }
+	bool show(uint32_t nameId, uint32_t arity);
+	void external(uint32_t nameId, uint32_t arity);
+	template<class P>
+	static bool expPrinter();
+	template<class T>
+	T *printer();
+	template<class P, class B, class O>
+	static bool regPrinter();
+	virtual ~Output() { }
+protected:
+	template<class T>
+	void initPrinters();
+private:
+	template<class T>
+	struct PrinterFactory;
+	template<class T>
+	static PrinterFactory<T> &printerFactory();
+protected:
+	std::ostream *out_;
+	ShowMap       showMap_;
+	ExternalSet   external_;
+	Storage      *s_;
+	bool          show_;
+//private:
+public:
+	PrinterVec    printers_;
+};
 
-		class Output
-		{
-		protected:
-			typedef HashMap<ValueVector, int, Value::VectorHash, Value::VectorEqual>::type AtomHash;
-			typedef std::vector<AtomHash> AtomLookUp;
-		public:
-			Output(std::ostream *out);
-			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
-			virtual void reinitialize();
-			virtual int getIncUid();
-			virtual void print(NS_OUTPUT::Object *o) = 0;
-			virtual void finalize(bool last) = 0;
-			std::string atomToString(int id, const ValueVector &values) const;
-			virtual bool addAtom(NS_OUTPUT::Atom *r);
-			virtual int newUid();
-			virtual ~Output();
-
-			void hideAll();
-			void setVisible(int id, int arity, bool visible);
-			bool isVisible(int uid);
-			bool isVisible(int id, int arity);
-			
-			// must be called if predicates are added after initialize has been called
-			void addSignature();
-			struct Stats
-			{
-				enum Language
-				{
-					UNKNOWN,
-					SMODELS,
-					TEXT,
-					ASPILS
-				};
-
-				Language language;
-				unsigned int rules;
-				unsigned int atoms;
-				unsigned int auxAtoms;
-				unsigned int count;
-				unsigned int sum;
-				unsigned int max;
-				unsigned int min;
-				unsigned int compute;
-				unsigned int optimize;
-			};
-		protected:
-			int uids_;
-			std::ostream *out_;
-			AtomLookUp atoms_;
-			SignatureVector *pred_;
-			bool hideAll_;
-			std::map<Signature, bool> hide_;
-			std::vector<bool> visible_;
-			GlobalStorage *g_;
-		public:
-			Stats stats_;
-		};
-	
-		struct Object
-		{
-			Object();
-			Object(bool neg);
-			virtual void print(Output *o, std::ostream &out) = 0;
-			virtual void print_plain(Output *o, std::ostream &out) = 0;
-			virtual void addDomain(bool fact = true) = 0;
-			int getUid();
-			virtual ~Object();
-			
-			bool neg_;
-			int uid_;
-		};
-
-		struct Atom : public Object
-		{
-			Atom(bool neg, Domain *node, int predUid, const ValueVector &values);
-			Atom(bool neg, int predUid, const ValueVector &values);
-			Atom(bool neg, int predUid);
-			void addDomain(bool fact);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			
-			// TODO: change sth here!
-			Domain *node_;
-			int  predUid_;
-			ValueVector values_;
-		};
-
-		struct Rule : public Object
-		{
-			Rule(Object* head, Object *body);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Rule();
-			void addDomain(bool fact);
-
-			Object *head_;
-			Object *body_;
-		};
-
-		struct Fact : public Object
-		{
-			Fact(Object *head);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Fact();
-			void addDomain(bool fact);
-
-			Object *head_;
-		};
-		
-		struct Integrity : public Object
-		{
-			Integrity(Object *body);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			void addDomain(bool fact);
-			~Integrity();
-
-			Object *body_;
-		};
-
-		struct Conjunction : public Object
-		{
-			Conjunction(ObjectVector &lits);
-			Conjunction();
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Conjunction();
-			void addDomain(bool fact);
-
-			ObjectVector lits_;
-		};
-
-		struct Disjunction : public Object
-		{
-			Disjunction(ObjectVector &lits);
-			Disjunction();
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Disjunction();
-			void addDomain(bool fact);
-
-			ObjectVector lits_;
-		};
-
-		struct Aggregate : public Object
-		{
-			enum Type   { SUM = 0xf, COUNT = 0xe, MAX = 0x10, MIN=0x11, TIMES=0x12, AVG=0x13, PARITY=0x14 };
-			enum Bounds { LU = 3, U = 2, L = 1, N = 0 };
-			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights, int upper);
-			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights);
-			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights, int upper);
-			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights);
-			Aggregate(bool neg, Type type);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			void addDomain(bool fact);
-			~Aggregate();
-
-			int          type_;
-			ObjectVector lits_;
-			IntVector    weights_;
-			Bounds       bounds_;
-			int          lower_;
-			int          upper_;
-		};
-		
-		struct Compute : public Object
-		{
-			Compute(ObjectVector &lits, int models);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Compute();
-			void addDomain(bool fact);
-
-			ObjectVector lits_;
-			int models_;
-		};	
-		
-		struct Optimize : public Object
-		{
-			enum Type { MINIMIZE, MAXIMIZE };
-			Optimize(Type type, ObjectVector &lits, IntVector &weights);
-			void print_plain(Output *o, std::ostream &out);
-			void print(Output *o, std::ostream &out);
-			~Optimize();
-			void addDomain(bool fact);
-
-			int          type_;
-			ObjectVector lits_;
-			IntVector    weights_;
-		};
-
-		struct DeltaObject : public NS_OUTPUT::Object
-		{
-			DeltaObject();
-			void print(NS_OUTPUT::Output *o, std::ostream &out);
-			void print_plain(NS_OUTPUT::Output *o, std::ostream &out);
-			void addDomain(bool fact = true);
-			virtual ~DeltaObject();
-		};
-	}
+template<class T>
+inline T *Output::printer()
+{
+	assert(Printer::printer<T>() < printers_.size() && !printers_.is_null(Printer::printer<T>()) && "no printer registered!");
+	return static_cast<T *>(&printers_[Printer::printer<T>()]);
 }
 
-#endif
+template<class T>
+struct Output::PrinterFactory
+{
+	typedef std::pair<uint32_t, Printer *(*)(T*)> Func;
+	typedef std::vector<Func> FuncVec;
+	FuncVec init;
+};
+
+template<class T>
+inline typename Output::PrinterFactory<T> &Output::printerFactory()
+{
+	static PrinterFactory<T> factory;
+	return factory;
+}
+
+template<class T>
+inline void Output::initPrinters()
+{
+	size_t printers = Printer::printers(false);
+	printers_.reserve(printers);
+	for(size_t i = 0; i < printers; i++) printers_.push_back(0);
+	foreach(typename PrinterFactory<T>::Func &i, printerFactory<T>().init)
+		printers_.replace(i.first, i.second(static_cast<T*>(this))).release();
+}
+
+template<class P, class B, class O>
+inline bool Output::regPrinter()
+{
+	Output::printerFactory<O>().init.push_back(std::make_pair(Printer::printer<B>(), &Printer::create<P, O>));
+	return true;
+}
+
+#define GRINGO_REGISTER_PRINTER(P,B,O) \
+template<> bool Output::expPrinter<P>() { return Output::regPrinter<P, B, O>(); }
+
+#define GRINGO_EXPORT_PRINTER(P) \
+static bool gringo_exported_ ## P = Output::expPrinter<class P>();
 

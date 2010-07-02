@@ -1,22 +1,49 @@
-gringo - A grounder for logic programs:
----------------------------------------
-gringo is distributed under the GNU Public Licence, see file COPYING for 
-details. For instructions on how to compile and install gringo consult 
-the INSTALL file.
+gringo - A bottom up grounder for logic programs:
+------------------------------------------------
+gringo is distributed under the GNU Public Licence, see file COPYING for
+details.
+
+!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!
+------------------------------------------------
+This software is under development. It supports a subset of the gringo
+language plus some features that are not present in gringo. Additional
+features include:
+ - Relaxed restrictions on programs
+ - #include directives
+ - No domain predicates needed in (stratified) aggregates
+ - Arbitrary literals in aggregates
+ - Minimize statements with priorities
+ - domain statements
+ - show/hide statements with extended functionality
+Not yet implemented:
+ - Most aggregates: #count, #avg, #times, #even, #odd, #min, #max
+ - Disjunction, conjunction
+ - Compute statements (won't be implemented?)
+ - #maximize (use negative weights for now)
+ - classical negation
+ - external statements (similar to maximize syntax)
+ - further relexed safety: b :-  not not a(X)
+
+Prerequisites:
+--------------
+ - Build system cmake:   http://www.cmake.org/
+ - Lexer generator re2c: http://re2c.org/
+ - Boost C++ Libraries:  http://www.boost.org/
 
 Distribution contents:
+----------------------
    COPYING        - GNU Public Licence
    CHANGES        - Major changes between versions
-   README         - This file
    INSTALL        - Installation instructions
-   CMakeLists.txt - Used to build project using cmake
-   Makefile       - Contains preset configurations for common builds
-   app/           - Source code directory of the command-line interface
-   lib*/          - Sourcecode + includes for all required libraries
-   doc/           - Documentation directory (doxygen is required to build the
-                    api documentation and latex to build the guide)
-   cmake/         - Contains auxiliary files for cmake
+   README         - This file
+   TODO           - Possible future extensions
+   CMakeLists.txt - Build specification
+   Makefile       - Makefile to build a debug binary (wraps cmake)
+   build/         - Build folder
+   doc/           - Api documentation (still missing)
+   inlucde/       - Includes needed to build the project
+   tests/         - Some small examples and tests
+   src/           - Sources needed to build the project
 
-gringo is written in mostly Standard-C++ and was successfully built and run 
-under Linux (x86-32, x86-64) using gcc and Windows (x86-32) using MinGW. 
-
+gringo is written in mostly Standard-C++ and was successfully built and run
+under Linux (x86-32, x86-64) using gcc.
