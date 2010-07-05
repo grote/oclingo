@@ -136,12 +136,4 @@ Instantiator* new_clone(const Instantiator& a);
 LitDep::GrdNode* new_clone(const LitDep::GrdNode& a);
 CondLit* new_clone(const CondLit& a);
 
-namespace boost
-{
-	size_t hash_value(const Func &f);
-}
-
-#include <gringo/index_set.h>
-
 #endif
-

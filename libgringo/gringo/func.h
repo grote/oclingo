@@ -35,11 +35,7 @@ protected:
 	ValVec   args_;
 };
 
-namespace boost
+inline size_t hash_value(const Func &f)
 {
-	inline size_t hash_value(const Func &f)
-	{
-		return f.hash();
-	}
+	return f.hash();
 }
-

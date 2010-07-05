@@ -28,22 +28,24 @@ Storage::Storage(Output *output)
 
 uint32_t Storage::index(const Func &f)
 {
-	return funcs_.insert(f);
+	FuncSet::iterator it = funcs_.push_back(f).first;
+	return it - funcs_.begin();
 }
 
 const Func &Storage::func(uint32_t i)
 {
-	return funcs_.get(i);
+	return funcs_.at(i);
 }
 
 uint32_t Storage::index(const std::string &s)
 {
-	return strings_.insert(s);
+	StringSet::iterator it = strings_.push_back(s).first;
+	return it - strings_.begin();
 }
 
 const std::string &Storage::string(uint32_t i)
 {
-	return strings_.get(i);
+	return strings_.at(i);
 }
 
 Domain *Storage::domain(uint32_t nameId, uint32_t arity)

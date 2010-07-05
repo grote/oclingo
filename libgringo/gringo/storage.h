@@ -18,9 +18,27 @@
 #pragma once
 
 #include <gringo/gringo.h>
+#include <gringo/func.h>
 
 class Storage
 {
+private:
+	typedef boost::multi_index::multi_index_container
+	<
+		std::string, boost::multi_index::indexed_by
+		<
+			boost::multi_index::random_access<>,
+			boost::multi_index::hashed_unique<boost::multi_index::identity<std::string> >
+		>
+	> StringSet;
+	typedef boost::multi_index::multi_index_container
+	<
+		Func, boost::multi_index::indexed_by
+		<
+			boost::multi_index::random_access<>,
+			boost::multi_index::hashed_unique<boost::multi_index::identity<Func> >
+		>
+	> FuncSet;
 public:
 	Storage(Output *output);
 	uint32_t index(const Func &f);
@@ -34,10 +52,10 @@ public:
 	virtual int compare(uint32_t type, uint32_t a, uint32_t b);
 	~Storage();
 private:
-	index_set<std::string> strings_;
-	index_set<Func>        funcs_;
-	DomainMap              doms_;
-	Output                *output_;
+	StringSet strings_;
+	FuncSet   funcs_;
+	DomainMap doms_;
+	Output   *output_;
 };
 
 inline void Storage::print(std::ostream &, uint32_t, uint32_t) { assert(false); }
