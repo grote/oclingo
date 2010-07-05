@@ -37,6 +37,7 @@ private:
 	typedef std::vector<ErrorTok> ErrorVec;
 	typedef boost::ptr_map<uint32_t, Term> ConstMap;
 	typedef std::list<DomStm> DomStmList;
+	typedef std::auto_ptr<Statement> StatementPtr;
 
 public:
 	typedef std::multimap<uint32_t, DomStm*> DomStmMap;
@@ -84,6 +85,7 @@ public:
 private:
 	void parse(std::istream &sin);
 	void include();
+	void add();
 
 private:
 	Grounder    *g_;
@@ -94,6 +96,7 @@ private:
 	bool         error_;
 	uint32_t     include_;
 	ErrorVec     errors_;
+	StatementPtr last_;
 	// parsing optimize statements
 	int          level_;
 	bool         maximize_;

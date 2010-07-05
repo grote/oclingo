@@ -18,6 +18,7 @@
 
 #include "gringo/gringo_options.h"
 #include "gringo/main_app.h"
+#include <gringo/streams.h>
 
 /**
  * Gringo command line application.
@@ -38,7 +39,7 @@ protected:
 	/** returns a stream of constants provided through the command-line.
 	  * \returns input stream containing the constant definitions in ASP
 	  */
-	std::istream *constStream() const;
+	Streams::StreamPtr constStream() const;
 	// ---------------------------------------------------------------------------------------
 	// AppOptions interface
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {

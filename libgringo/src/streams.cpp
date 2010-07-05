@@ -19,58 +19,51 @@
 #include <gringo/exceptions.h>
 #include <boost/filesystem.hpp>
 
-Streams::Streams(const StringVec &files, std::istream *constants)
+Streams::Streams(const StringVec &files, StreamPtr constants)
 {
 	open(files, constants);
 }
 
-void Streams::open(const StringVec &files, std::istream *constants)
+void Streams::open(const StringVec &files, StreamPtr constants)
 {
-	if(constants) appendStream(constants, new std::string("<constants>"));
-	foreach(const std::string &filename, files)
-		addFile(filename);
-	if (files.empty())
-		appendStream(new std::istream(std::cin.rdbuf()), new std::string("<stdin>"));
+	if(constants.get()) { appendStream(constants, "<constants>"); }
+	foreach(const std::string &filename, files) { addFile(filename, false); }
+	if (files.empty()) { addFile("-"); }
 }
 
-void Streams::addFile(const std::string &filename)
+void Streams::addFile(const std::string &filename, bool relative)
 {
 	// handle stdin
 	if(filename == "-")
 	{
-		if(!unique(filename)) return;
-		appendStream(new std::istream(std::cin.rdbuf()), new std::string("<stdin>"));
+		appendStream(StreamPtr(new std::istream(std::cin.rdbuf())), "<stdin>");
 	}
 	// handle files
 	else
 	{
-		std::string *path = 0;
-
+		std::string path = filename;
 		// create path relative to current file
-		if(currentFilename() != "<stdin>")
+		if(relative)
 		{
-			boost::filesystem::path file(currentFilename());
-			file.remove_leaf();
-			file /= boost::filesystem::path(filename).leaf();
-			if(boost::filesystem::exists(file)) path = new std::string(file.string());
+			boost::filesystem::path relpath(currentFilename()), child(filename);
+			relpath.remove_leaf();
+			if (!child.is_complete()) { relpath /= child; }
+			else                      { relpath  = child; }
+			if(boost::filesystem::exists(relpath)) { path = relpath.string(); }
 		}
-
-		// create path relative to current directory
-		if(!path) path = new std::string(filename);
-
 		// create and add stream
-		if(!unique(*path)) return;
-		appendStream(new std::ifstream(path->c_str()), path);
-		if(!streams_.back().first->good())
-		{
-			throw FileException(streams_.back().second.c_str());
-		}
+		appendStream(StreamPtr(new std::ifstream(path.c_str())), path);
 	}
 }
 
-void Streams::appendStream(std::istream *stream, std::string *name)
+void Streams::appendStream(StreamPtr stream, const std::string &name)
 {
-	streams_.push(StreamPair(StreamPair::first_type(stream), *name));
+	if(!unique(name)) { return; }
+	streams_.push(StreamPair(StreamPair::first_type(stream), name));
+	if(!streams_.back().first->good())
+	{
+		throw FileException(streams_.back().second.c_str());
+	}
 }
 
 bool Streams::next()
@@ -91,6 +84,6 @@ const std::string &Streams::currentFilename()
 
 bool Streams::unique(const std::string &file)
 {
-	if(file.compare("-") == 0) return files_.insert(file).second;
-	else return files_.insert(boost::filesystem::system_complete(boost::filesystem::path(file)).string()).second;
+	if(file.size() > 0 && file[0] == '<') { return files_.insert(file).second; }
+	else { return files_.insert(boost::filesystem::system_complete(boost::filesystem::path(file)).string()).second; }
 }

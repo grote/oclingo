@@ -204,7 +204,7 @@ void Parser::parse(std::istream &in)
 	{
 		token = lex();
 		parser(parser_, token, token_, this);
-
+		add();
 		include();
 	}
 	while(token != 0);
@@ -351,9 +351,14 @@ Parser::DomStmRng Parser::domainStm(uint32_t var)
 void Parser::add(Statement *s)
 {
 	if(config_.incBase && iPart_ != IPART_BASE) { delete s; }
-	else
+	else                                        { last_.reset(s); }
+}
+
+void Parser::add()
+{
+	if(last_.get())
 	{
-		StatementRng rng(grounder()->add(s));
+		StatementRng rng(grounder()->add(last_.release()));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
@@ -366,8 +371,6 @@ void Parser::add(Statement *s)
 				IncVarFinder finder(iVar_);
 				if(finder.find(&statement))
 				{
-					// TODO: this might throw an exception,
-					//       which is dangerous because the code here is called from within lemon
 					statement.append(new IncLit(iLoc_, config_, true, iVar_));
 				}
 			}

@@ -20,7 +20,6 @@
 #include <gringo/inclit.h>
 #include <gringo/parser.h>
 #include <gringo/converter.h>
-#include <gringo/streams.h>
 #include <gringo/grounder.h>
 #include <gringo/plainoutput.h>
 #include <gringo/lparseoutput.h>
@@ -51,12 +50,12 @@ GringoApp& GringoApp::instance()
 	return app;
 }
 
-std::istream *GringoApp::constStream() const
+Streams::StreamPtr GringoApp::constStream() const
 {
 	std::auto_ptr<std::stringstream> constants(new std::stringstream());
 	for(std::vector<std::string>::const_iterator i = opts.consts.begin(); i != opts.consts.end(); ++i)
 		*constants << "#const " << *i << ".\n";
-	return constants.release();
+	return Streams::StreamPtr(constants.release());
 }
 
 int GringoApp::doRun()

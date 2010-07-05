@@ -30,6 +30,7 @@ private:
 	typedef std::pair<boost::shared_ptr<std::istream>, std::string> StreamPair;
 	typedef std::queue<StreamPair> StreamQueue;
 public:
+	typedef std::auto_ptr<std::istream> StreamPtr;
 	/**
 	 * \param files Initial list of files to be opened by name.
 	 *        If the list is empty or contains the name "-", stdin will be opened.
@@ -37,21 +38,21 @@ public:
 	 * \param constants Definitions of constants to be added as first stream.
 	 */
 	Streams() { }
-	Streams(const StringVec &files, std::istream *constants);
+	Streams(const StringVec &files, StreamPtr constants = StreamPtr(0));
 
-	void open(const StringVec &files, std::istream *constants = 0);
+	void open(const StringVec &files, StreamPtr constants = StreamPtr(0));
 
 	/** adds a file.
 	 * \param filename The filename or "-" to open stdin.
 	 */
-	void addFile(const std::string &filename);
+	void addFile(const std::string &filename, bool relative = true);
 
 	/** adds a stream.
 	 * \note both stream and name will be deleted by Streams.
 	 * \param stream The input stream.
 	 * \param name The stream name that's printed on parsing errors.
 	 */
-	void appendStream(std::istream *stream, std::string *name);
+	void appendStream(StreamPtr stream, const std::string &name);
 
 	/** returns the current stream */
 	std::istream &currentStream();
