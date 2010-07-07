@@ -1,28 +1,18 @@
-gringo - A bottom up grounder for logic programs:
+Gringo - A bottom up grounder for logic programs:
 ------------------------------------------------
-gringo is distributed under the GNU Public Licence, see file COPYING for
-details.
-
-!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!
-------------------------------------------------
-This software is under development. It supports a subset of the gringo
-language plus some features that are not present in gringo. Additional
+Gringo is distributed under the GNU Public Licence, see file COPYING for
+details. Gringo-3.x should accept almost all gringo-2.x programs plus some 
+language constructs that were not present in previous versions. Additional 
 features include:
  - Relaxed restrictions on programs
- - #include directives
  - No domain predicates needed in (stratified) aggregates
  - Arbitrary literals in aggregates
- - Minimize statements with priorities
- - domain statements
- - show/hide statements with extended functionality
-Not yet implemented:
- - Most aggregates: #count, #avg, #times, #even, #odd, #min, #max
- - Disjunction, conjunction
- - Compute statements (won't be implemented?)
- - #maximize (use negative weights for now)
- - classical negation
- - external statements (similar to maximize syntax)
- - further relexed safety: b :-  not not a(X)
+ - Lua scripting language to write custom functions
+ - #include directives
+ - #minimize statements with priorities
+ - #domain statements
+ - #show/#hide statements with extended functionality
+ - #external statements (extends lparse counterpart)
 
 Prerequisites:
 --------------
@@ -32,18 +22,28 @@ Prerequisites:
 
 Distribution contents:
 ----------------------
-   COPYING        - GNU Public Licence
-   CHANGES        - Major changes between versions
-   INSTALL        - Installation instructions
-   README         - This file
-   TODO           - Possible future extensions
-   CMakeLists.txt - Build specification
-   Makefile       - Makefile to build a debug binary (wraps cmake)
-   build/         - Build folder
-   doc/           - Api documentation (still missing)
-   inlucde/       - Includes needed to build the project
-   tests/         - Some small examples and tests
-   src/           - Sources needed to build the project
+   COPYING          - GNU Public Licence
+   CHANGES          - Major changes between versions
+   INSTALL          - Installation instructions
+   README           - This file
+   TODO             - Possible future extensions
+   Makefile         - Makefile to build binaries (wraps cmake)
+   doc/             - Documentation (incomplete)
+   tests/           - Some small examples and tests
+   CMakeLists.txt   - Build specification
+   cmake/           - Auxiliary cmake scripts 
+   build/           - Build folder
+   app/             - Sources for applications on top of libgringo
+   lemon/           - Parser generator used by gringo
+   libclasp/        - The clasp library
+   libgringo/       - The gringo library
+   liblua/          - Shipped Lua library
+   libluasql/       - Shipped LuaSQL library
+   libprogram_opts/ - Library for options parsing 
 
-gringo is written in mostly Standard-C++ and was successfully built and run
-under Linux (x86-32, x86-64) using gcc.
+
+
+Gringo is written in mostly Standard-C++ and was successfully built and run
+under Linux (x86, x86_64) using gcc and icc. Other compilers might work but 
+have not been tested.
+
