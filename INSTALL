@@ -1,29 +1,34 @@
 1 Prerequisites
 ---------------
 
-To build the lexer used by gringo, the lexer-generator re2c is needed. 
-Additionally, a recent version of the boost library is needed (> 1.35.*).
-For development boost version 1.40 is used. This is the latest version
-and may not be available as package on your system. But boost can easily
-be installed locally (see boost documentation). Gringo depends on the 
-two (non-header-only) boost libraries system and filesystem. Furthermore,
-gringo uses the build system cmake. At least cmake version 1.6 is required.
+re2c             - http://re2c.org/
+Boost (>= v1.36) - http://www.boost.org/
+cmake (>= v2.6)  - http://www.cmake.org/
+
+1.1 Optional Components
+-----------------------
+SQLite (v3.x) - http://www.sqlite.org/
+MySQL         - http://www.mysql.com/
+Lua    (v5.1) - http://www.lua.org/
+
+Note that the project ships with a lua library. But it is also possible to
+use the library provided by the system.
 
 2 Compilation:
 --------------
 
-To build gringo you have to create some folder and call cmake with the 
-desired option from there. For *nix system there is a Makefile that wraps
-cmake and allows for creating a debug, release or static build. On such 
-systems the following command line should compile gringo:
-	make BUILD_TYPE=<type>
-where <type> is either debug, release or static.
-Note that if you installed boost locally, you may have to specify the path
-to the boost installation via the BOOST_ROOT variable.
+If all prerequisites are satisfied and you are running a *nix, compilation
+should be as simple as typing:
+	make
 
-3 Installation:
+2.1 Customization
+-----------------
+Additional options might be specified to cmake. To get an overview use
+for example cmake-gui or take a look at the main cmake file.
+
+4 Installation:
 ---------------
 
-If compilation succeeded, the build folder will contain a bin folder with
-a gringo executable, which should be copied somewhere into your path.
+If compilation succeeded, the respective build folder will contain a bin
+folder with an executable, which should be copied somewhere into your path.
 
