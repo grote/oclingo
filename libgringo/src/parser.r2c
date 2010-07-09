@@ -64,7 +64,7 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams)
 	LUACALL    = "@"[a-zA-Z_][A-Za-z0-9_]*;
 	VARIABLE   = [_]*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
-	STRING     = "\"" [^"\n]* "\"";
+	STRING     = "\"" ([^"\n]*|[\]["])* "\"";
 */
 
 int Parser::lex()

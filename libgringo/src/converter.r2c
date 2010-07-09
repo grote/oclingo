@@ -39,7 +39,7 @@ Converter::Converter(Output *output, Streams &streams)
 	WS         = [\t\r ]*;
 	NL         = "\n";
 	IDENTIFIER = [a-z][A-Za-z0-9_]*;
-	STRING     = "\"" [^"\n]* "\"";
+	STRING     = "\"" ([^"\n]*|[\]["])* "\"";
 */
 
 int Converter::lex()
