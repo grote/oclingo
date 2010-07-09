@@ -32,7 +32,8 @@
 #include "clingo/timer.h"
 #include <iomanip>
 
-#define CLASP_VERSION "1.3.2"
+// TODO: is this a good place to specify the version
+#define CLASP_VERSION "1.3.4"
 
 // (i)Clingo application, i.e. gringo+clasp
 template <bool ICLINGO>
