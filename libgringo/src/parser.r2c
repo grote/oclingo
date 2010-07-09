@@ -60,11 +60,11 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams)
 	ANY        = [\000-\377];
 	WS         = [\t\r ]*;
 	NL         = "\n";
-	IDENTIFIER = [_]*[a-z][A-Za-z0-9_]*;
+	IDENTIFIER = "_"*[a-z][A-Za-z0-9_]*;
 	LUACALL    = "@"[a-zA-Z_][A-Za-z0-9_]*;
-	VARIABLE   = [_]*[A-Z][A-Za-z0-9_]*;
+	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
-	STRING     = "\"" ([^"\n]*|[\]["])* "\"";
+	STRING     = "\"" ([^"\n]|"\\\"")* "\"";
 */
 
 int Parser::lex()
