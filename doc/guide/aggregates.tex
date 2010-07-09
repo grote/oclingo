@@ -1,0 +1,588 @@
+\com{Rewrote much here}
+
+An aggregate is an operation on a multiset of weighted literals that evaluates to a value,
+depending on the type of aggregate this might be integers but, 
+e.g., \const{\#min} and \const{\#max} aggregates also permit function symbols.
+In combination with comparisons, we can extract a truth value from
+an aggregate's evaluation, thus, obtaining an aggregate atom.
+Customizing the notation in~\cite{ferraris05a},
+we consider ground \emph{aggregate atoms} of the form:
+%
+\begin{equation}\label{eq:aggregate:atom}
+  l~ 
+  \mathrm{op} 
+  \code{[}
+  L_1\code{=}w_1\code{,}
+  \dots\code{,}
+  L_n\code{=}w_n
+  \code{]}
+  u
+\end{equation}
+%
+where~$l$ and~$u$ are values each of which can possibly be omitted,
+$\mathrm{op}$ is a function from multisets of values to a value,
+each $L_i$ is a literal of the form~$A$ or $\code{not}~A$
+for some atom~$A\in\ground{\mathcal{A}}$,
+and each~$w_i$ is a value.
+The intuitive reading of an aggregate atom is that the value returned by~$\mathrm{op}$
+applied to all weights~$w_i$ such that~$L_i$ holds should be in-between
+lower bound~$l$ and upper bound~$u$ (inclusively).
+If~$l$ or~$u$ is omitted,
+it means that the aggregate's value is not constrained from below or above,
+respectively.
+
+For an aggregate atom~$\mathit{Agg}$ as in Equation(\ref{eq:aggregate:atom}),
+we let $\atom{\mathit{Agg}}=\{L_i\in\nolinebreak\ground{\mathcal{A}}\mid 1\leq i\leq n\}$
+denote the set of atoms occurring positively in~$\mathit{Agg}$.
+Currently, \gringo\ and \clingo\ support aggregate operations
+\const{\#sum}, \const{\#min}, and \const{\#max}, \const{\#avg}, \const{\#even}, and \const{\#odd}.%
+\footnote{%
+  The additional operation \const{count} is a shorthand for a \const{sum}
+  aggregate in which all weights are~\const{1}.}
+We can now extend translations~$\phi$ and~$\psi$ from Section~\ref{subsec:semantics}
+to aggregate atoms, 
+using the approach in~\cite{ferraris05a} but
+applying the ``choice semantics'' for aggregates
+in heads of rules~\cite{ferlif05a,siniso02a}:%
+ 
+\newcommand\shiftleft{\kern\leftshift&\kern-\leftshift}
+
+\newlength{\leftshift} 
+\setlength{\leftshift} {2em}
+%\settowidth{\leftshift}{$\phi^{+}[ l~ \const{\#sum} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ]$}
+
+\begin{align}
+  % l op u (head) %
+  \shiftleft
+  \psi[ \lhd~ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}\rhd ] 
+  \label{eq:aggr_head} \\
+   &= \phi[ \triangleleft~ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}\triangleright ] \notag \\
+   &\wedge \bigl(\bigwedge\nolimits_{A\in atom(\triangleleft~ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}\triangleright)}(A\vee\neg A)\bigr) \notag \\
+  % l op u %
+  \shiftleft
+  \phi[ l~ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} u ]
+  \label{eq:aggr_lu} \\
+  &= \phi[ l~ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] \wedge{} 
+    \phi[ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} u ] \notag \\
+  % op %
+  \shiftleft
+  \phi[ \mathrm{op} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] = \top
+  \label{eq:aggr}
+\end{align}
+Translation~$\psi$ of an aggregate atom in the head of a rule consists of two parts:
+first, $\phi$ is used as defined in the following
+(in Equation (\ref{eq:aggr_head}), $\lhd$ and~$\rhd$ are used as ``wildcards'' for provided or omitted 
+ lower and upper bounds),
+second, a disjunction $(A\vee\neg A)$ is added for each atom~$A$ occurring positively.
+Even though such disjunctions are tautological,
+they are important under answer set semantics (cf.\ Section~\ref{subsec:semantics}),
+as they permit deriving an arbitrary subset of atoms from an aggregate in the head
+(which explains the name  ``choice semantics'').
+Equation \ref{eq:aggr_lu} splits up an aggregate with lower and an upper into the conjunction of two
+conjunctively connected parts.
+Note that this split agrees with the semtaics in \cite{ferraris05a} independend of the aggregate $\mathrm{op}$ used.
+Finally, Equation (\ref{eq:aggr}) reflects that an unconstrained aggregate atom always holds.
+
+\paragraph{Sum Aggregates}
+First, we show how monotone aggregates can be translated into a nested expression.
+Using this translation we show how to transfom antimonotone sum aggregates and 
+also give a translation that treats negative weights.
+\footnote{%
+  The translation~$\phi$ we provide for \const{sum} aggregates
+  assumes that there are no negative weights for literals,
+  while the more sophisticated translation in~\cite{ferraris05a} also
+  captures negative weights.
+  All current solvers work with positive weights only, and thus
+  \gringo\ and \lparse\ use a compilation technique~\cite{siniso02a}
+  to eliminate negative weights, which are not permitted in
+  \lparse's output format~\cite{lparseManual}.
+  As this technique may lead to counterintuitive results~\cite{ferraris05a},
+  we strongly recommend not to use negative weights within \const{sum} aggregates.}
+\begin{align}
+  % l sum+ %
+  \shiftleft
+  \phi[ l~ \const{\#sum}^{+} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] 
+  \label{eq:sum_plus}\\
+  &= \bigvee\nolimits_{\{i_1,\dots,i_j\}\subseteq\{1,\dots,n\},l\leq w_{i_1}+\dots+w_{i_j}}
+   (\phi[L_{i_1}]\wedge\dots\wedge \phi[L_{i_j}]) \notag 
+\end{align}
+Equation (\ref{eq:sum_plus}) translates a monotone aggregate~$\const{\#sum}^{+}$
+with a lower bound and only positive weights into a nested expressions.
+
+\begin{align}
+  % l sum %
+  \shiftleft
+  \phi[l~\const{\#sum}~\code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ]
+  \label{eq:sum_neg} \\
+  &= \phi [ l + \phi^{+}(w_1) + \dots + \phi^{+}(w_n) ~\const{\#sum}^{+}
+    \code{[} \phi^{+}(L_1\code{=}w_1)\code{,} \dots\code{,} \phi^{+}(L_n\code{=}w_n) \code{]} ] \notag \\
+  % weight lit %
+  \shiftleft
+  \phi^{+}(L=w) = 
+    \left\{\begin{aligned}
+      L=w & \mbox{ if } w \geq 0 \\
+      \overline{L}=-w &  \mbox{ otherwise}\\
+    \end{aligned}\right. \notag \\
+  % weight %
+  \shiftleft
+  \phi^{+}(w) =-\min\{0,w\} \notag
+\end{align}
+Equation (\ref{eq:sum_neg}) removes all negative weights from a sum aggregate with a lower bound 
+and then applies the transformation described above.
+Whenever there is a negative weight, the sign of both literal and weight is inverted and the weight itself is subtracted from the bound.
+Note that this transformation produces counter-intuitive results as soon as the aggregate is used recursively.
+Nevertheless, there are scenarios where negative weights might be helpfull.
+As long as the aggregate is stratified, the transformation corresponds with the intuitive meaning, e.g.,
+you can use negative weights to compare two sets $A=\{a,b,c\}$ and $B=\{d,e\}$:
+\begin{lstlisting}[numbers=none]
+subseteq(A,B) :- #sum [ a=1,b=1,c=1,d=-1,e=-1 ] ] 0.
+\end{lstlisting}
+
+\begin{align}
+  % sum u %
+  \phi[ \const{\#sum} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}~u ] 
+  &= \neg \phi[  u+1~\const{\#sum} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}]
+  \label{eq:sum_u}
+\end{align}
+Finally, Equation (\ref{eq:sum_u}) translates sum aggregates with an upper bound using the
+translation for sum aggregates with lower bounds described above.
+Note that again negative literals might cause problems.
+Even in the case that all weights are negative (and as such the sum aggregate itself is monotone),
+the above translation is used, which might lead to counter-intuitive results.
+
+\paragraph{Max and Min Aggregates} 
+We define the sematics of max aggregates using the transformation for sum aggregates described above.
+First, we translate max aggregates with upper and lower bound, respectively, into corresponding sum aggregates.
+Then we give the semantics of min aggregates using the translation for max aggregates.
+Note that in constrast to sum aggregates, max aggregates allow for using non-integer weights as long as there
+is some strict total ordering defined on them.
+\begin{align}
+  % l max
+  \shiftleft
+  \phi[l~\const{\#max} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ]
+  \label{eq:max_l}\\
+  &= \phi[1~\const{\#sum} \code{[} L_1\code{=}\mathrm{ge}(w_1, l)\code{,} \dots\code{,} L_n\code{=}\mathrm{ge}(w_1, l) \code{]} ]  \notag \\
+  % max(w,l)
+  \shiftleft
+  \mathrm{ge}(a, b) = \left\{\!\begin{aligned}
+       1 &\mbox{ if } a \geq b \\
+       0 &\mbox{ otherwise}
+     \end{aligned}\right. \notag
+\end{align}
+A (monotone) max aggregate with a lower bound is translated into a sum by setting all weights 
+that are greater equal to the lower bound to one and requiring that the sum of weights is at least one.
+This transformation preserves the monotonicity of the aggregate and holds independendly of the type of weights used.
+
+\begin{align}
+  % max u %
+  \shiftleft
+  \phi[\const{\#max} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} u]
+  \label{eq:max_u} \\
+  &= \phi[\const{\#sum} \code{[} L_1\code{=}\mathrm{ge}(w_1, l)\code{,} \dots\code{,} L_n\code{=}\mathrm{ge}(w_1, l) \code{]} 0]  \notag \\
+  \shiftleft
+  \mathrm{gt}(a, b) = \left\{\!\begin{aligned}
+       1 &\mbox{ if } a > b \\
+       0 &\mbox{ otherwise}
+     \end{aligned}\right. \notag
+\end{align}
+Similarly to Equation~(\ref{eq:max_l}), an (antimonotone) max aggregate with an upper bound can be translated into a sum with an upper bound.
+Again the monotonicity of the aggregate is preserved.
+
+\begin{align}
+  % min u %
+  \shiftleft
+  \phi[ \const{\#min} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}~u ] 
+  \label{eq:min_u}  \\
+  &= \phi[1~\const{\#sum} \code{[} L_1\code{=}\mathrm{ge}(l,w_1)\code{,} \dots\code{,} L_n\code{=}\mathrm{ge}(l,w_1) \code{]}]
+  \notag \\
+  % l min %
+  \shiftleft
+  \phi[ l~ \const{\#min} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ]
+  \label{eq:min_l} \\
+  &= \phi[\const{\#sum} \code{[} L_1\code{=}\mathrm{gt}(l,w_1)\code{,} \dots\code{,} L_n\code{=}\mathrm{gt}(l,w_1) \code{]} 0]
+  \notag
+\end{align}
+Analogous to the definition of max aggregates, 
+Equations (\ref{eq:min_l}) and (\ref{eq:min_u}) define the semantics of min aggregates.
+
+\paragraph{Average Aggregates}
+Avergate can be directly translated into sum aggregates by modifying the weights of its literals.
+To see how the translation works consider:
+\begin{align*}
+\mathrm{avg}\code{[}a_1,\dots,a_n\code{]} &\prec b \\
+a_1+\dots+a_n               &\prec n \cdot b \\
+a_1 - b + \dots + a_n - b   &\prec 0
+\end{align*}
+where $\prec$ is some relation.
+To avoid problems with empty average aggregates we define that $\mathrm{avg}\code{[} \code{]} \prec b$ iff $0 \prec 0$.
+Thus the translation can turn an average aggregate into a sum by subtracting the bound from all its weights.
+A strong point of this translation is that it preserves the monotonicity of the average aggregate.
+This translation is applied in Equations (\ref{eq:avg_l}) and (\ref{eq:avg_u}).
+
+\begin{align}
+  % l avg %
+  \shiftleft
+  \phi[ l~\const{\#avg} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] 
+  \label{eq:avg_l} \\
+  &= \phi[ \const{\#sum} \code{[} L_1\code{=}w_1-l \code{,} \dots\code{,} L_n\code{=}w_n-l \code{]}~0 ] 
+  \notag \\
+  % avg u %
+  \shiftleft
+  \phi[ \const{\#avg} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]}~u ] = 
+  \label{eq:avg_u} \\
+  &= \phi[ \const{\#sum} \code{[} L_1\code{=}w_1-u \code{,} \dots\code{,} L_n\code{=}w_n-u \code{]}~0 ]
+  \notag
+\end{align}
+
+\paragraph{Parity Aggregates}
+We also support the two parity aggregates $\code{\#even}$ and $\code{\#odd}$.
+Intuitively, an even or odd aggregate is true if the sum of its weights modulo two is one or zero, respectively.
+Note that we do not write bounds
+Even and odd aggregates are transformed into nested expressions:
+\begin{align}
+  % odd %
+  \shiftleft
+  \phi[ \const{\#odd} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] \\
+  &=\left\{\begin{aligned}
+    \bot & \mbox{ if } n = 0 \\
+    \phi[ \const{\#odd} \code{[} L_2\code{=}w_2-u \code{,} \dots\code{,} L_n\code{=}w_n-u \code{]}~0 ] & \mbox{ if } 2 | w_1  \\
+    \neg L_1 \wedge \phi[ \const{\#odd} \code{[} L_2\code{=}w_2 \code{,} \dots\code{,} L_n\code{=}w_n \code{]}~0 ] & \\
+    \vee L_1 \wedge \neg \phi[ \const{\#odd} \code{[} L_2\code{=}w_2 \code{,} \dots\code{,} L_n\code{=}w_n \code{]}~0 ] & \mbox{ otherwise}
+  \end{aligned}\right. \notag
+\end{align}
+
+\begin{align}
+  % even %
+  \shiftleft
+  \phi[ \const{\#even} \code{[} L_1\code{=}w_1\code{,} \dots\code{,} L_n\code{=}w_n \code{]} ] \\
+  &=\left\{\begin{aligned}
+    \top & \mbox{ if } n = 0 \\
+    \phi[ \const{\#even} \code{[} L_2\code{=}w_2-u \code{,} \dots\code{,} L_n\code{=}w_n-u \code{]}~0 ] & \mbox{ if } 2 | w_1  \\
+    \neg L_1 \wedge \phi[ \const{\#even} \code{[} L_2\code{=}w_2 \code{,} \dots\code{,} L_n\code{=}w_n \code{]}~0 ] & \\
+    \vee L_1 \wedge \neg \phi[ \const{\#even} \code{[} L_2\code{=}w_2 \code{,} \dots\code{,} L_n\code{=}w_n \code{]}~0 ] & \mbox{ otherwise}
+  \end{aligned}\right. \notag
+\end{align}
+
+Item~3--8 specify these parts individually for~\const{sum},~\const{max}, and~\const{min}
+aggregates, respectively.
+Provided that only non-negative weights are used within \const{sum}s,
+all three aggregates are subject to one comparison that is monotone,
+meaning that by default it evaluates to \textit{false} so that truth must be established.
+For \const{sum} and \const{max} aggregates, these monotone comparisons are related
+to lower bounds (Item~3 and~5),
+while an upper bound behaves monotonically for \const{min} (Item~8).
+In turn, the opposite comparison is antimonotone, that is,
+by default it evaluates to \textit{true} unless too many or improper literals hold.
+This is the case for comparisons to upper bounds with aggregates
+\const{sum} and \const{max} (Item~4 and~6), while it concerns 
+the lower bound for \const{min} (Item~7).
+% <cut here>
+Beyond this special treatment in rule heads,
+the truth values of aggregate atoms result from their literals as
+may be intuitively expected,
+and Item~1--8 basically do nothing but formalizing the standard meanings
+of aggregate operations.
+Note that the above translations merely define the semantics of aggregates,
+which does not imply that solvers unfold them in this way.
+In fact, \clasp\ natively supports aggregates without translating them.
+
+As regards syntactic representation,
+weight~\const{1} is considered a default,
+so that $L_i\code{=}\const{1}$ can simply be written as $L_i$.
+For instance, the following (multi)sets of (weighted) literals are the same
+when combined with any kind of aggregate operation and bounds:
+\begin{lstlisting}[numbers=none,escapechar=@]
+[a=1, not b=1, c=2]  @\textnormal{and}@
+[a,   not b,   c=2]@\textnormal{.}@
+\end{lstlisting}
+%
+Furthermore,
+keyword \const{sum} may be omitted, which in a sense makes \const{sum} the default
+aggregate operation.
+In fact, the following aggregate atoms are synonyms:
+\begin{lstlisting}[numbers=none,escapechar=@]
+2 sum [a, not b, c=2] 3  @\textnormal{and}@
+2     [a, not b, c=2] 3@\textnormal{.}@
+\end{lstlisting}
+By omitting keyword \const{sum}, we obtain the same notation as the one of 
+so-called ``weight constraints''~\cite{siniso02a,lparseManual}, which are actually aggregate atoms
+whose operation is addition.
+
+It is important to note that the (weighted) literals within an aggregate
+belong to a multiset.
+In particular, if there are multiple occurrences
+$L\code{=}w_1,\dots,L\code{=}w_k$
+of a literal~$L$, in combination with \const{min} and \const{max},
+it is not the same like having $L\code{=}w_1+\dots+w_k$.
+To see this, note that the program consisting of the facts:
+\begin{lstlisting}[numbers=none]
+2 max [a=2].  2 min [a=2].
+\end{lstlisting}
+has $\{\code{a}\}$ as its unique answer set, while there is no answer set for:
+\begin{lstlisting}[numbers=none]
+2 max [a,a].  2 min [a,a].
+\end{lstlisting}
+
+If literals ought not to be repeated,
+we can use \const{count} instead of \const{sum}.
+Syntactically, \const{count} requires curly instead of square
+brackets, and there must not be any weights within a \const{count} aggregate.
+Regarding semantics,
+% \begin{equation*}%\label{eq:aggregate:atom}
+$(
+  l~ 
+  \const{count} 
+  \code{\char`\{}
+  L_1\code{,}
+  \dots\code{,}
+  L_n
+  \code{\char`\}}
+  u
+)$ 
+%\end{equation*}
+reduces to
+$(
+  l~ 
+  \const{sum} 
+  \code{[}
+  L_1\code{=}\const{1}\code{,}
+  \dots\code{,}
+  L_m\code{=}\const{1}
+  \code{]}
+  u
+)$,
+where $\{L_1,\dots,L_m\}=\{L_i \mid 1\leq i\leq n\}$ is obtained by dropping
+repeated literals.
+Of course, the use of~$l$ and~$u$ is optional also with \const{count}.
+As an example, note that the next aggregate atoms express the same:
+\begin{lstlisting}[numbers=none,escapechar=@]
+1 sum   [a=1, not b=1]     1  @\textnormal{and}@ 
+1 count {a,a, not b,not b} 1@\textnormal{.}@  
+\end{lstlisting}
+Keyword \const{count} can be omitted (like \const{sum}),
+so that the following are synonyms:
+\begin{lstlisting}[numbers=none,escapechar=@]
+1 count {a, not b} 1  @\textnormal{and}@ 
+1       {a, not b} 1@\textnormal{.}@  
+\end{lstlisting}
+The last notation is similar to the one of so-called
+``cardinality constraints''~\cite{siniso02a,lparseManual},
+which are aggregate atoms using counting as their operation.
+
+After considering the syntax and semantics of ground aggregate atoms,
+we now turn our attention to non-ground aggregates.
+Regarding contained variables, an atom occurring in an aggregate behaves
+similar to an atom on the left-hand side of a condition
+(cf.\ Section~\ref{subsec:gringo:condition}).
+That is, any variable occurring within an aggregate is a priori local,
+and it must be bound via a variable of the same name that is global
+or that occurs on the right-hand side of a condition
+(with the atom containing the variable in front).
+As with local variables of conditions, global variables take priority
+during grounding, so that the names of local variables must be chosen
+with care to avoid accidental clashes.
+Beyond conditions (which are more or less the natural construct to use
+for instantiating variables within an aggregate),
+classical negation (cf.\ Section~\ref{subsec:gringo:negation}),
+built-in arithmetic functions (cf.\ Section~\ref{subsec:gringo:arith}),
+intervals (cf.\ Section~\ref{subsec:gringo:interval}), and 
+pooling (cf.\ Section~\ref{subsec:gringo:pool})
+can be incorporated as usual within aggregates,
+where intervals and pooling are expanded locally.%
+\footnote{%
+  Assignments (cf.\ Section~\ref{subsec:gringo:assign}) and (currently)
+  also built-in comparison predicates (cf.\ Section~\ref{subsec:gringo:comp})
+  are permitted on the right-hand sides of conditions only.}
+That is, an interval gives rise to multiple literals connected via~``\code{,}''
+within the same aggregate.
+The same applies to pooling in front of a condition,
+while it turns into a composite condition chained by~``\code{:}'' on the right-hand side.
+The notions of level-restrictedness and stratification
+(cf.\ Section~\ref{subsec:lambda} and~\ref{subsec:strat}) are extended
+to programs with aggregates by
+considering the predicates of all atoms (except for those on the right-hand side of a condition)
+in an aggregate atom occurring as the head of a rule~$r$,%
+\footnote{%
+  The rules in a (maximal) stratified subprogram (cf.\ Section~\ref{subsec:strat})
+  cannot have aggregate atoms in the head.}
+and by assuming $A\in\nbody{r}$ for all atoms~$A$ of an aggregate in the body of~$r$.
+Finally, note that aggregates without bounds are also permitted on the
+right-hand sides of assignments, but using this feature is only recommended
+for aggregates whose atoms belong to domain predicates because space blow-up
+can become a bottleneck otherwise.
+The following example, making exhaustive use of aggregates,
+nonetheless demonstrates this and other features.
+
+\begin{example}\label{ex:aggr}
+Consider a situation where an informatics student
+wants to enroll for a number of courses at the beginning of a new term.
+In the university calendar, eight courses are found eligible,
+and they are represented by the following facts:
+%
+\lstinputlisting[xrightmargin=-20pt,lastline=8]{examples/aggr.lp}
+%
+In an instance of \const{course}/$3$,
+the first argument is a number identifying one of the eight courses,
+and the third argument provides the course's contact hours per week.
+The second argument stands for a subject area:
+\const{1} corresponding to ``theoretical informatics,''
+\const{2}               to ``practical informatics,''
+\const{3}               to ``technical informatics,''
+and~\const{4}               to ``applied informatics.''
+For instance, atom \code{\const{course}(\const{1},\const{2},\const{5})}
+expresses that course~\const{1} accounts for~\const{5} contact hours per week
+that may be credited to subject area~\const{2} (``practical informatics'').
+Observe that a single course is usually eligible for multiple
+subject areas.
+
+After specifying the above facts,
+the student starts to provide personal constraints on the courses to enroll.
+The first condition is that~\const{3} to~\const{6} courses should be enrolled:
+%
+\lstinputlisting[nolol,firstline=11,lastline=11,firstnumber=9]{examples/aggr.lp}
+%
+Instantiating the above \const{count} aggregate
+yields the following ground rule:%
+\marginlabel{%
+  The full ground program is obtained by invoking:\\
+  \code{\mbox{~}gringo -t \textbackslash\\\mbox{~}examples/aggr.lp}}
+%
+\begin{lstlisting}[firstnumber=9,stepnumber=9]
+3 { enroll(1), enroll(2), enroll(3), enroll(4), 
+    enroll(5), enroll(6), enroll(7), enroll(8) } 6.
+\end{lstlisting}
+%
+Observe that an instance of atom~\code{\const{enroll}(\var{C})} is included for each
+instantiation of~\var{C} such that \code{\const{course}(\var{C},\var{S},\var{H})}
+holds for some values of~\var{S} and~\var{H}.
+Duplicates resulting from distinct values for~\var{S} are removed, thus,
+obtaining the above set of ground atoms.
+
+The next constraints of the student regard the subject areas of enrolled courses:
+%
+\lstinputlisting[nolol,firstline=13,lastline=15,firstnumber=10]{examples/aggr.lp}
+%
+Each of the three integrity constraints above contains a \const{sum} aggregate,
+using default weight~\const{1} for literals.
+Recalling that \const{sum} aggregates operate on multisets,
+duplicates are not removed.
+Thus, the integrity constraint in Line~10 is instantiated as follows:
+%
+\begin{lstlisting}[firstnumber=10,stepnumber=10]
+:- [ enroll(1) = 1, enroll(1) = 1, 
+     enroll(2) = 1, enroll(2) = 1,
+     enroll(3) = 1, enroll(3) = 1,
+     enroll(4) = 1, enroll(4) = 1, enroll(4) = 1,
+     enroll(5) = 1, enroll(5) = 1,
+     enroll(6) = 1, enroll(6) = 1,
+     enroll(7) = 1, enroll(7) = 1, enroll(7) = 1,
+     enroll(8) = 1, enroll(8) = 1 ] 10.
+\end{lstlisting}
+%
+Note that courses~\const{4} and~\const{7} count three times because
+they are eligible for three subject areas, viz., there are three
+distinct instantiations for~\var{S} in
+\code{\const{course}(\var{4},\var{S},\const{3})} and
+\code{\const{course}(\var{7},\var{S},\const{4})}, respectively.
+Comparing the above ground instance,
+the meaning of the integrity constraint in Line~10 is that the 
+number of eligible subject areas over all enrolled courses
+must be more than~\const{10}.
+Similarly, the integrity constraint in Line~11 expresses the requirement
+that at most one course of subject area~\const{2} (``practical informatics'')
+is not enrolled,
+while Line~12 stipulates that the enrolled courses
+amount to less than six nominations of
+subject area~\const{3} (``technical informatics'') 
+or~\const{4} (``applied informatics'').
+Also note that, given the facts in Line~1--8,
+we could equivalently have used \const{count} rather than \const{sum} in Line~11,
+but not in Line~10 and~12.
+
+The remaining constraints of the student deal with contact hours.
+To express them, we first introduce an auxiliary rule and a fact:
+%
+\lstinputlisting[nolol,firstline=17,lastline=18,firstnumber=13]{examples/aggr.lp}
+%
+The rule in Line~13 projects instances of \pred{course}/$3$ to
+\pred{hours}/$2$, thereby, dropping courses' subject areas.
+This is used to not consider the same course multiple times within the following
+integrity constraints:
+%
+\lstinputlisting[nolol,firstline=20,lastline=22,firstnumber=15]{examples/aggr.lp}
+%
+As Line~15 shows,
+we may use default negation via ``\code{not}'' in front of aggregate atoms,
+and bounds may be specified in terms of variables.
+In fact, by instantiating~\var{M} to~\const{20},
+we obtain the following ground instance of the integrity constraint in Line~15:
+%
+\begin{lstlisting}[firstnumber=15,stepnumber=15]
+:- not 18 [ enroll(1) = 5, enroll(2) = 4, 
+            enroll(3) = 6, enroll(4) = 3,
+            enroll(5) = 4, enroll(6) = 2,
+            enroll(7) = 4, enroll(8) = 5 ] 20.
+\end{lstlisting}
+%
+The above integrity constraint states that the \const{sum} of contact hours per week
+must lie in-between~\const{18} and~\const{20}.
+Note that the \const{min} and \const{max} aggregates in Line~16 and~17, respectively,
+work on the same (multi)set of weighted literals as in Line~15.
+While the integrity constraint in Line~16 stipulates that any course to enroll
+must include more than~\const{2} contact hours,
+the one in Line~17 prohibits enrolling for courses of~\const{6} or more contact hours.
+Of course, the last two requirements could also be formulated as follows:
+%
+\begin{lstlisting}[firstnumber=16]
+:- enroll(C), hours(C,H), H <= 2.
+:- enroll(C), hours(C,H), H >= 6.
+\end{lstlisting}
+
+Finally, the following rules illustrate the use of aggregates within assignments:
+%
+\lstinputlisting[nolol,firstline=24,lastline=25,firstnumber=18]{examples/aggr.lp}
+%
+Note that the above aggregates have already been used in Line~9 and~15, respectively,
+where keywords \const{count} and \const{sum} have been omitted for convenience.
+These keywords can be dropped here too, and we merely include them to show the
+more verbose notations of \const{count} and \const{sum} aggregates.
+However, the usage of aggregates in the last two lines is different from before,
+as they now serve to assign an integer to a variable~\var{N}.
+In this context, bounds are not permitted, and so none are provided in Line~18 and~19.
+The effect of these two lines is that the student can read off the number of
+courses to enroll and the amount of contact hours per week from instances of
+\pred{courses}/$1$ and \pred{hours}/$1$ belonging to an answer set.%
+\marginlabel{%
+  To compute the unique answer set of the program, invoke:\\
+  \code{\mbox{~}gringo \textbackslash\\
+        \mbox{~}examples/aggr.lp | \textbackslash\\
+        \mbox{~}clasp -n 0}\\
+  or alternatively:\\
+  \code{\mbox{~}clingo -n 0 \textbackslash\\
+        \mbox{~}examples/aggr.lp}}
+%
+In fact, running \clasp\ shows the student that a unique
+collection of~\const{5} courses to enroll satisfies all requirements:
+the courses~\const{1}, \const{2}, \const{4}, \const{5}, and~\const{7},
+amounting to~\const{20} contact hours per week.
+
+Although the above program does not reflect this possibility,
+it should be noted that (as has been mentioned in Section~\ref{subsec:gringo:condition})
+multiple literals may be connected via ``\code{:}'' in order to construct
+composite conditions within an aggregate.
+As before, the predicates of atoms on the right-hand side of such conditions
+must be either domain predicates or built-in.
+Furthermore, the usage of non-domain predicates within an aggregate
+on the right-hand side of an assignment (like \pred{enroll}/$1$ in Line~18 and~19 above)
+is not recommended in general because the space blow-up may be significant.
+\eexample
+\end{example}
+
+\begin{newstuff}
+	\begin{itemize}
+		\item there is also $\#$avg, $\#$times, $\#$even, $\#$odd
+		\item bingo will support everything but times
+		\item heads of stratified aggregates can bind their variables
+		\item a \# has to be put in front of every aggregate $\Rightarrow$ adjust examples
+	\end{itemize}
+\end{newstuff}

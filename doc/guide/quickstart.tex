@@ -1,0 +1,108 @@
+\section{Quickstart}
+
+In ASP it is custom to provide a \emph{uniform}
+problem definition~\cite{martru99a,niemela99a,schlipf95a}.
+Following this methodology we separate the encoding
+from an instance of the following problem:
+given a (directed) graph, decide whether each node can be assigned
+one of~$N$ colors such that any pair of adjacent nodes is colored differently.
+Note that this problem is NP-complete for~$N\geq 3$
+(see, e.g.,~\cite{papadimitriou94a}),
+and thus it seems unlikely that a worst-case polynomial algorithm
+can be found.
+In view of this,
+it is convenient to reduce the particular problem to
+a declarative problem solving paradigm like ASP,
+where efficient off-the-shelf tools like \gringo\ and \clasp\
+are ready to solve the problem reasonably well.
+Such a reduction is now exemplified.
+
+\subsection{Problem Instance}\label{subsec:color:instance}
+\input{figures/graph_intro}
+
+We consider directed graphs specified via facts over predicates
+\pred{node}/$1$ and \pred{edge}/$2$.%
+The predicate \pred{color}/$1$ denotes the colors that shall be used to color the graph.
+Figure~\ref{fig:graph_intro} depicts the graph specified by the following set of facts:
+%
+\lstinputlisting{examples/graph_intro.lp}
+
+\subsection{Problem Encoding}\label{subsec:color:encoding}
+
+We now proceed by encoding $N$-coloring via non-ground rules that are
+independent of particular instances.
+Typically, an encoding consists of a \emph{Generate}, a \emph{Define},
+and a \emph{Test} part~\cite{lifschitz02a}.
+As $N$-Coloring has a rather simple pattern, the following encoding does
+not contain any Define part:
+%
+\lstinputlisting{examples/color.lp}
+%
+The Generate rule in Line~2 makes use of the \const{count} aggregate
+(cf.\ Section~\ref{subsec:gringo:aggregate}).
+For our example graph and~\const{1} substituted for~\var{X},
+we obtain the following ground rule:%
+\marginlabel{%
+  The full ground program is obtained by invoking:\\
+  \code{\mbox{~}gringo -t \textbackslash\\
+    \mbox{~}examples/color.lp \textbackslash\\
+    \mbox{~}examples/graph.lp}}
+%
+\begin{lstlisting}[numbers=none]
+1 { color(1,red), color(1,green), color(1,blue) } 1.
+\end{lstlisting}
+%
+The \code{1} on the left hand side (right hand side) specifies that at least (at most) on atom within the curly brackets has to be true
+that is~\code{\pred{node}(\const{1})} must have exactly one color.
+Note that~\code{\pred{node}(\const{1})} has been removed from the body,
+as it is derived via a corresponding fact and \code{color(1,C)} has been expanded using 
+the colors \code{red}, \code{green}, and \code{blue} given by \pred{color}/$1$ specified in the instance.
+Similar ground instances are obtained for the other nodes~\const{2} to~\const{6}.
+With these six rules alone we already have a coloring the graph,
+which does not yet ensure that two adjacent nodes have different colors.
+This property is asserted by the rule in line four in the test part.
+For each instance of \pred{edge}/2,
+we obtain~\code{n} ground instances of the integrity constraint in Line~6,
+prohibiting that the same color~\var{C} is assigned to the adjacent nodes.
+We get the following ground instances due to \code{\pred{edge}(\const{1},\const{2})}:
+%
+\begin{lstlisting}[numbers=none]
+:- color(1,red), color(2,red).
+:- color(1,green), color(2,green).
+:- color(1,blue), color(2,blue).
+\end{lstlisting}
+%
+Again note that \code{\pred{edge}(\const{1},\const{2})},
+derived via a fact, has been removed from the body.
+
+\subsection{Problem Solution}\label{subsec:color:solution}
+\input{figures/color}
+
+Provided that a given graph is colorable with the colors given in the instance,
+a solution can be read off an answer set of the program consisting
+of the instance and the encoding.
+For the graph in Figure~\ref{fig:graph_intro},
+the following answer set can be computed:%
+\marginlabel{%
+  To find an answer set, invoke:\\
+  \code{\mbox{~}gringo \textbackslash\\
+        \mbox{~}examples/color.lp \textbackslash\\
+        \mbox{~}examples/graph.lp |\rlap{\:\textbackslash}\\
+        \mbox{~}clasp}\\
+  or alternatively:\\
+  \code{\mbox{~}clingo \textbackslash\\
+        \mbox{~}examples/color.lp \textbackslash\\
+        \mbox{~}examples/graph.lp}}
+%
+\begin{lstlisting}[numbers=none]
+Answer: 1
+... color(1,red)  color(2,green) color(3,green)
+    color(4,blue) color(5,red)   color(6,blue)
+\end{lstlisting}
+%
+Note that we have omitted the instances of \pred{color}/$1$, \pred{node}/$1$ 
+and \pred{edge}/$2$ in order to emphasize the actual solution,
+which is depicted in Figure~\ref{fig:color}.
+Such output projection can also be specified within a logic program file by
+using the declaratives \code{\#hide} and \code{\#show},
+described in Section~\ref{subsec:gringo:meta}.
