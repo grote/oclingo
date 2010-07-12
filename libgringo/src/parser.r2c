@@ -143,9 +143,9 @@ start:
 	*/
 lua:
 	/*!re2c
-		"#end_lua"  { grounder()->luaExec(luaBegin_, string(10, 8)); goto start; }
-		NL          { if(eof()) { syntaxError(); return 0; } step(); goto lua; }
-		ANY         { goto lua; }
+                "#end_lua" WS* "." { grounder()->luaExec(luaBegin_, string(10, 8)); goto start; }
+                NL                 { if(eof()) { syntaxError(); return 0; } step(); goto lua; }
+                ANY                { goto lua; }
 	 */
 blockcomment:
 	/*!re2c
