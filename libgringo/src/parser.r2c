@@ -70,6 +70,7 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams)
 int Parser::lex()
 {
 start:
+        char *luaEnd = 0;
 	int bc = 0;
 	start();
 	token_.line   = line();
@@ -142,10 +143,11 @@ start:
 		ANY           { syntaxError(); goto start; }
 	*/
 lua:
+        luaEnd = state().cursor_;
 	/*!re2c
-                "#end_lua" WS* "." { grounder()->luaExec(luaBegin_, string(10, 8)); goto start; }
-                NL                 { if(eof()) { syntaxError(); return 0; } step(); goto lua; }
-                ANY                { goto lua; }
+                "#end_lua" WS "." { grounder()->luaExec(luaBegin_, string(10, state().cursor_ - luaEnd)); goto start; }
+                NL                { if(eof()) { syntaxError(); return 0; } step(); goto lua; }
+                ANY               { goto lua; }
 	 */
 blockcomment:
 	/*!re2c
