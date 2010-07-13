@@ -1,21 +1,22 @@
 1 Prerequisites
 ---------------
 
-re2c             - http://re2c.org/
 Boost (>= v1.36) - http://www.boost.org/
 cmake (>= v2.6)  - http://www.cmake.org/
 
 1.1 Optional Components
 -----------------------
+re2c          - http://re2c.org/
 SQLite (v3.x) - http://www.sqlite.org/
 MySQL         - http://www.mysql.com/
 Lua    (v5.1) - http://www.lua.org/
 
-Note that the project ships with a lua library. But it is also possible to
-use the library provided by the system.
+Note that the lexer generatror re2c is only needed if the svn version has 
+been checked. Furthermore, the project ships with a lua library. But it is
+also possible to use the library provided by the system.
 
-2 Compilation:
---------------
+2 Compilation
+-------------
 
 If all prerequisites are satisfied and you are running a *nix, compilation
 should be as simple as typing:
@@ -26,8 +27,8 @@ should be as simple as typing:
 Additional options might be specified to cmake. To get an overview use
 for example cmake-gui or take a look at the main cmake file.
 
-4 Installation:
----------------
+4 Installation
+--------------
 
 If compilation succeeded, the respective build folder will contain a bin
 folder with an executable, which should be copied somewhere into your path.
