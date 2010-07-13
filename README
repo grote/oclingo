@@ -26,13 +26,9 @@ Distribution contents:
    CHANGES          - Major changes between versions
    INSTALL          - Installation instructions
    README           - This file
-   TODO             - Possible future extensions
    Makefile         - Makefile to build binaries (wraps cmake)
-   doc/             - Documentation (incomplete)
-   tests/           - Some small examples and tests
    CMakeLists.txt   - Build specification
    cmake/           - Auxiliary cmake scripts 
-   build/           - Build folder
    app/             - Sources for applications on top of libgringo
    lemon/           - Parser generator used by gringo
    libclasp/        - The clasp library
@@ -40,8 +36,6 @@ Distribution contents:
    liblua/          - Shipped Lua library
    libluasql/       - Shipped LuaSQL library
    libprogram_opts/ - Library for options parsing 
-
-
 
 Gringo is written in mostly Standard-C++ and was successfully built and run
 under Linux (x86, x86_64) using gcc and icc. Other compilers might work but 
