@@ -1,4 +1,20 @@
 #!/bin/bash
+set -eu
+cd "$(dirname "$(readlink -f "$0")")"
+config="${HOME}/.potassco_sourceforge_username"
+echo -n "username: "
+if [[ -e "$config" ]]
+then
+	config_username=$(cat "$config")
+	echo -n "[$config_username] "
+fi
+read username
+if [[ -n "$username" ]]
+then
+	echo "$username" > "$config"
+else
+	username="$config_username"
+fi
 version=3.0.0
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
 make static  target=all
@@ -18,7 +34,7 @@ for x in gringo clingo iclingo; do
 	(cd build/dist; zip -r  ${x}-${version}-win32.tar.gz ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
 	mkdir -p ${x}/${version}
-	scp -r ${x}/${version} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/
+	scp -r ${x}/${version} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/
 	scp CHANGES build/dist/${x}-${version}{-win32.tar.gz,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
 done
 
