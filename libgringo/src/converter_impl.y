@@ -19,6 +19,7 @@
 #include "gringo/gringo.h"
 #include "converter_impl.h"
 #include "gringo/converter.h"
+#include "gringo/storage.h"
 
 #define ONE   Val::create(Val::NUM, 1)
 #define UNDEF Val::create()
@@ -109,6 +110,7 @@ body_literal ::= aggr_atom.
 body_literal ::= NOT aggr_atom. { pConverter->addSign(); }
 
 string    ::= STRING(id).        { pConverter->addVal(Val::create(Val::ID, id.index)); }
+empty     ::= .                  { pConverter->addVal(Val::create(Val::ID, pConverter->storage()->index(""))); }
 posnumber ::= NUMBER(num).       { pConverter->addVal(Val::create(Val::NUM, num.number)); }
 number    ::= MINUS NUMBER(num). { pConverter->addVal(Val::create(Val::NUM, -num.number)); }
 number    ::= posnumber.
@@ -118,9 +120,10 @@ infimum   ::= INF.               { pConverter->addVal(Val::inf()); }
 numterm ::= number.   { pConverter->add(Converter::TERM, 0); }
 numterm ::= supremum. { pConverter->add(Converter::TERM, 0); }
 numterm ::= infimum.  { pConverter->add(Converter::TERM, 0); }
-term ::= id.                         { pConverter->add(Converter::TERM, 0); }
-term ::= string.                     { pConverter->add(Converter::TERM, 0); }
-term ::= id LBRAC termlist(n) RBRAC. { pConverter->add(Converter::TERM, n); }
+term ::= id.                                       { pConverter->add(Converter::TERM, 0); }
+term ::= string.                                   { pConverter->add(Converter::TERM, 0); }
+term ::= empty LBRAC termlist(n) COMMA term RBRAC. { pConverter->add(Converter::TERM, n+1); }
+term ::= id LBRAC termlist(n) RBRAC.               { pConverter->add(Converter::TERM, n); }
 term ::= numterm.
 
 nnumweightlist(res) ::= numweightlit.                         { res = 1; }
