@@ -267,7 +267,6 @@ term(res) ::= ANONYMOUS(var). { res = new VarTerm(var.loc()); }
 term(res) ::= INFIMUM(inf).   { res = new ConstTerm(inf.loc(), Val::create(Val::INF, 0)); }
 term(res) ::= SUPREMUM(sup).  { res = new ConstTerm(sup.loc(), Val::create(Val::SUP, 0)); }
 
-term(res) ::= LBRAC term(term) RBRAC.                    { res = term; }
 term(res) ::= term(a) DOTS term(b).                      { res = new RangeTerm(a->loc(), a, b); }
 term(res) ::= term(a) SEM term(b).                       { res = new PoolTerm(a->loc(), a, b); }
 term(res) ::= term(a) PLUS term(b).                      { res = new MathTerm(a->loc(), MathTerm::PLUS, a, b); }
@@ -279,6 +278,7 @@ term(res) ::= term(a) MOD term(b).                       { res = new MathTerm(a-
 term(res) ::= term(a) POW term(b).                       { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
 term(res) ::= ABS LBRAC term(a) RBRAC.                   { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
 term(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
+term(res) ::= LBRAC(l) termlist(args) RBRAC.             { res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= LUACALL(id) LBRAC termlist(args) RBRAC.    { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
 term(res) ::= LUACALL(id) LBRAC RBRAC.                   { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
 term(res) ::= MINUS(m) term(a). [UMINUS]                 { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
