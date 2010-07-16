@@ -49,7 +49,6 @@ public:
 	/** whether disjunctions will get shifted */
 	bool disjShift;
 	std::string depGraph;
-
-private:
+	bool compat;
 };
 

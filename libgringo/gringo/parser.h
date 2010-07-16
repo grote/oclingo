@@ -59,8 +59,9 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, IncConfig &config, Streams &streams);
+	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat);
 	int lex();
+	int lex_compat();
 	std::string errorToken();
 	void syntaxError();
 	void include(uint32_t filename);
@@ -115,5 +116,6 @@ private:
 	DomStmMap    domStmMap_;
 	// Lua
 	Loc          luaBegin_;
+	bool         compat_;
 };
 

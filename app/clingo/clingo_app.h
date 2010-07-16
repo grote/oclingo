@@ -165,7 +165,7 @@ FromGringo<ICLINGO>::FromGringo(const GenericOptions &generic, const GringoOptio
 	else
 	{
 		grounder.reset(new Grounder(out.get(), generic.verbose > 2));
-		parser.reset(new Parser(grounder.get(), config, str));
+		parser.reset(new Parser(grounder.get(), config, str, gringo.compat));
 	}
 }
 
