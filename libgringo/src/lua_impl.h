@@ -100,6 +100,7 @@ namespace
 	static Val toVal(lua_State *L, int index)
 	{
 		int type = lua_type(L, index);
+		if(type == LUA_TSTRING && lua_isnumber(L, index)) { type = LUA_TNUMBER; }
 		switch(type)
 		{
 			case LUA_TSTRING:
@@ -151,6 +152,7 @@ namespace
 	static int Val_new (lua_State *L)
 	{
 		int type  = luaL_checkinteger(L, 1);
+		if(type == Val::ID && lua_isnumber(L, 2)) { type = Val::NUM; }
 		switch(type)
 		{
 			case Val::ID:
@@ -174,11 +176,23 @@ namespace
 			case Val::FUNC:
 			{
 				Storage *storage = checkStorage(L);
-				const char *name = luaL_checkstring(L, 2);
-				luaL_checktype(L, 3, LUA_TTABLE);
+				const char *name;
+				int table;
+				if(lua_type(L, 2) == LUA_TTABLE)
+				{
+					name = "";
+					luaL_checktype(L, 2, LUA_TTABLE);
+					table = 2;
+				}
+				else
+				{
+					name = luaL_checkstring(L, 2);
+					luaL_checktype(L, 3, LUA_TTABLE);
+					table = 3;
+				}
 				ValVec vals;
 				lua_pushnil(L);
-				while (lua_next(L, 3) != 0)
+				while (lua_next(L, table) != 0)
 				{
 					vals.push_back(toVal(L, -1));
 					lua_pop(L, 1); // pop val
