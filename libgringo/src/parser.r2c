@@ -230,8 +230,10 @@ void Parser::parse()
 	incremental(IPART_BASE);
 	foreach(DomainMap::const_reference val, grounder()->domains())
 	{
-		if(grounder()->string(val.first.first)[0] == '-')
+		const std::string &name = grounder()->string(val.first.first);
+		if(name.size() > 0 && name[0] == '-')
 		{
+			uint32_t pos = grounder()->index(std::string(name.begin() + 1, name.end()));
 			Loc loc(grounder()->index("#internal"), 1, 1);
 			TermPtrVec t1, t2;
 			for(uint32_t i = 0; i < val.first.second; i++)
@@ -243,7 +245,7 @@ void Parser::parse()
 				t2.push_back(new VarTerm(loc, index));
 			}
 			LitPtrVec body;
-			body.push_back(new PredLit(loc, grounder()->domain(val.first.first, val.first.second), t1));
+			body.push_back(new PredLit(loc, grounder()->domain(pos, val.first.second), t1));
 			body.push_back(new PredLit(loc, grounder()->domain(val.first.first, val.first.second), t2));
 			grounder()->add(new Rule(loc, 0, body));
 		}
