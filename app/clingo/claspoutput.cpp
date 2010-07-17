@@ -136,6 +136,16 @@ void ClaspOutput::doFinalize()
 	printSymbolTable();
 }
 
+const LparseConverter::SymbolMap &ClaspOutput::symbolMap(uint32_t domId) const
+{
+	return symTab_[domId];
+}
+
+ValRng ClaspOutput::vals(Domain *dom, uint32_t offset) const
+{
+	return ValRng(vals_.begin() + offset, vals_.begin() + offset + dom->arity());
+}
+
 ClaspOutput::~ClaspOutput()
 {
 }

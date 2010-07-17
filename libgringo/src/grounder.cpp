@@ -37,6 +37,8 @@ public:
 	void call(const LuaLit *, const ValVec &, ValVec &) { throw std::runtime_error("lua: gringo was build without lua support"); }
 	int index(const Loc &, const char *) { throw std::runtime_error("lua: gringo was build without lua support"); return 0; }
 	void exec(const Loc &, const std::string &) { throw std::runtime_error("lua: gringo was build without lua support"); }
+	lua_State *state() { return 0; }
+	void pushVal(const Val &) { }
 };
 
 #endif
@@ -63,6 +65,16 @@ int Grounder::luaIndex(const LuaTerm *term)
 void Grounder::luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals)
 {
 	luaImpl_->call(lit, args, vals);
+}
+
+lua_State *Grounder::luaState()
+{
+	return luaImpl_->state();
+}
+
+void Grounder::luaPushVal(const Val &val)
+{
+	return luaImpl_->pushVal(val);
 }
 
 void Grounder::addInternal(Statement *s)

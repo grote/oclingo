@@ -39,9 +39,16 @@
 template <bool ICLINGO>
 class ClingoApp : public GringoApp, public Clasp::ClaspFacade::Callback
 {
+private:
+	class LuaImpl;
+	typedef std::auto_ptr<LuaImpl> LuaImplPtr;
+	LuaImplPtr luaImpl;
+
 public:
 	/** returns a singleton instance */
 	static ClingoApp& instance();
+	void luaInit(Grounder &g, ClaspOutput &o);
+	bool luaLocked();
 
 protected:
 	// AppOptions interface
@@ -50,7 +57,7 @@ protected:
 		config_.solver = &solver_;
 		cmdOpts_.setConfig(&config_);
 		cmdOpts_.initOptions(root, hidden);
-		clingo_.initOptions(root, hidden);
+		clingo.initOptions(root, hidden);
 		generic.verbose = 1;
 		GringoApp::initOptions(root, hidden);
 	}
@@ -58,7 +65,7 @@ protected:
 	void addDefaults(std::string& defaults)
 	{
 		cmdOpts_.addDefaults(defaults);
-		clingo_.addDefaults(defaults);
+		clingo.addDefaults(defaults);
 		defaults += "  --verbose=1";
 		GringoApp::addDefaults(defaults);
 	}
@@ -69,7 +76,7 @@ protected:
 			m.warning.push_back("Time limit not supported");
 		return cmdOpts_.validateOptions(v, m)
 			&& GringoApp::validateOptions(v, m)
-			&& clingo_.validateOptions(v, GringoApp::opts, m);
+			&& clingo.validateOptions(v, GringoApp::gringo, m);
 	}
 	// ---------------------------------------------------------------------------------------
 
@@ -100,11 +107,12 @@ protected:
 	Clasp::SolveStats      stats_;            // accumulates clasp solve stats in incremental setting
 	Clasp::ClaspConfig     config_;           // clasp configuration - from command-line
 	Clasp::ClaspOptions    cmdOpts_;          // clasp basic options - from command-line
-	ClingoOptions<ICLINGO> clingo_;           // (i)clingo options   - from command-line
 	Timer                  timer_[numStates]; // one timer for each state
 	ClaspOutPtr            out_;              // printer for printing result of search
 	ClaspInPtr             in_;               // input for clasp
 	Clasp::ClaspFacade*    facade_;           // interface to clasp lib
+public:
+	ClingoOptions<ICLINGO> clingo;            // (i)clingo options   - from command-line
 };
 
 template <bool ICLINGO>
@@ -117,13 +125,14 @@ struct FromGringo : public Clasp::Input
 	typedef std::auto_ptr<ClaspOutput> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 
-	FromGringo(const GenericOptions &generic, const GringoOptions& gringo, ClingoOptions<ICLINGO> &clingo, Streams& str, bool clingoMode);
+	FromGringo(ClingoApp<ICLINGO> &app, Streams& str);
 	Format format() const { return Clasp::Input::SMODELS; }
 	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { return api ? api->createMinimize(s, heu) : 0; }
 	void getAssumptions(Clasp::LitVec& a);
 	bool read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int);
 	void release();
 
+	ClingoApp<ICLINGO>    &app;
 	GrounderPtr            grounder;
 	StoragePtr             storage;
 	ParserPtr              parser;
@@ -131,48 +140,58 @@ struct FromGringo : public Clasp::Input
 	OutputPtr              out;
 	IncConfig              config;
 	Clasp::Solver*         solver;
-	bool                   clingoMode;
-	std::string            depGraph;
 };
+
+#ifdef WITH_LUA
+#	include "clingo/lua_impl.h"
+#else
+
+template <bool ICLINGO>
+class ClingoApp<ICLINGO>::LuaImpl
+{
+public:
+	bool locked() { return false; }
+	void onModel(Grounder *, Clasp::Solver *, ClaspOutput *) { }
+};
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // FromGringo
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <bool ICLINGO>
-FromGringo<ICLINGO>::FromGringo(const GenericOptions &generic, const GringoOptions& gringo, ClingoOptions<ICLINGO> &clingo, Streams& str, bool clingoMode)
-	: clingoMode(clingoMode)
-	, depGraph(gringo.depGraph)
+FromGringo<ICLINGO>::FromGringo(ClingoApp<ICLINGO> &a, Streams& str)
+	: app(a)
 {
-	config.incBase  = gringo.ibase;
+	config.incBase  = app.gringo.ibase;
 	config.incBegin = 1;
-	config.incEnd   = config.incBegin + clingo.inc.iQuery;
-	if (clingoMode)
+	if (app.clingo.clingoMode)
 	{
-		config.incEnd   = config.incBegin + gringo.ifixed;
-		out.reset(new ClaspOutput(gringo.disjShift));
+		config.incEnd   = config.incBegin + app.gringo.ifixed;
+		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
 	else if(ICLINGO)
 	{
-		config.incEnd   = config.incBegin + clingo.inc.iQuery;
-		out.reset(new iClaspOutput(gringo.disjShift));
+		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
+		out.reset(new iClaspOutput(app.gringo.disjShift));
 	}
-	if(clingoMode && gringo.groundInput)
+	if(app.clingo.clingoMode && app.gringo.groundInput)
 	{
 		storage.reset(new Storage(out.get()));
 		converter.reset(new Converter(out.get(), str));
 	}
 	else
 	{
-		grounder.reset(new Grounder(out.get(), generic.verbose > 2));
-		parser.reset(new Parser(grounder.get(), config, str, gringo.compat));
+		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2));
+		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
 	}
 }
 
 template <bool ICLINGO>
 void FromGringo<ICLINGO>::getAssumptions(Clasp::LitVec& a)
 {
-	if(ICLINGO && !clingoMode)
+	if(ICLINGO && !app.clingo.clingoMode)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 		a.push_back(i.find(out->getIncAtom())->lit);
@@ -196,8 +215,9 @@ bool FromGringo<ICLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 		if (parser.get())
 		{
 			parser->parse();
-			grounder->analyze(depGraph);
+			grounder->analyze(app.gringo.depGraph);
 			parser.reset(0);
+			app.luaInit(*grounder, *out);
 		}
 		else
 		{
@@ -214,7 +234,7 @@ bool FromGringo<ICLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 template <bool ICLINGO>
 void FromGringo<ICLINGO>::release()
 {
-	if (clingoMode)
+	if (app.clingo.clingoMode && !app.luaLocked())
 	{
 		grounder.reset(0);
 		out.reset(0);
@@ -270,7 +290,7 @@ void ClingoApp<ICLINGO>::configureInOut(Streams& s)
 	using namespace Clasp;
 	in_.reset(0);
 	facade_ = 0;
-	if(clingo_.claspMode)
+	if(clingo.claspMode)
 	{
 		s.open(generic.input);
 		if (generic.input.size() > 1) { messages.warning.push_back("Only first file will be used"); }
@@ -279,11 +299,11 @@ void ClingoApp<ICLINGO>::configureInOut(Streams& s)
 	else
 	{
 		s.open(generic.input, constStream());
-		in_.reset(new FromGringo<ICLINGO>(generic, opts, clingo_,  s, clingo_.clingoMode));
+		in_.reset(new FromGringo<ICLINGO>(*this, s));
 	}
 	if(config_.onlyPre)
 	{
-		if(clingo_.claspMode || clingo_.clingoMode) { generic.verbose = 0; }
+		if(clingo.claspMode || clingo.clingoMode) { generic.verbose = 0; }
 		else { warning("Option '--pre' is ignored in incremental setting!"); config_.onlyPre = false; }
 	}
 	if(in_->format() == Input::SMODELS)
@@ -296,22 +316,34 @@ void ClingoApp<ICLINGO>::configureInOut(Streams& s)
 }
 
 template <bool ICLINGO>
+void ClingoApp<ICLINGO>::luaInit(Grounder &g, ClaspOutput &o)
+{
+	luaImpl.reset(new LuaImpl(&g, &solver_, &o));
+}
+
+template <bool ICLINGO>
+bool ClingoApp<ICLINGO>::luaLocked()
+{
+	return luaImpl->locked();
+}
+
+template <bool ICLINGO>
 int ClingoApp<ICLINGO>::doRun()
 {
 	using namespace Clasp;
-	if (opts.groundOnly) { return GringoApp::doRun(); }
+	if (gringo.groundOnly) { return GringoApp::doRun(); }
 	if (cmdOpts_.basic.stats > 1) { solver_.stats.solve.enableJumpStats(); }
 	Streams s;
 	configureInOut(s);
 	ClaspFacade clasp;
 	facade_ = &clasp;
 	timer_[0].start();
-	if (clingo_.claspMode || clingo_.clingoMode)
+	if (clingo.claspMode || clingo.clingoMode)
 	{
-		clingo_.iStats = false;
+		clingo.iStats = false;
 		clasp.solve(*in_, config_, this);
 	}
-	else { clasp.solveIncremental(*in_, config_, clingo_.inc, this); }
+	else { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
 	timer_[0].stop();
 	printResult(reason_end);
 	if      (clasp.result() == ClaspFacade::result_unsat) { return S_UNSATISFIABLE; }
@@ -334,7 +366,7 @@ void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 			{
 				STATUS(2, cout << getExecutable() << " version " << getVersion() << "\n");
 			}
-			if (clingo_.iStats)
+			if (clingo.iStats)
 			{
 				cout << "=============== step " << f.step()+1 << " ===============" << endl;
 			}
@@ -359,7 +391,7 @@ void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 		if (f.state() == ClaspFacade::state_solve)
 		{
 			stats_.accu(solver_.stats.solve);
-			if (clingo_.iStats)
+			if (clingo.iStats)
 			{
 				timer_[0].stop();
 				cout << "\nModels   : " << solver_.stats.solve.models << "\n"
@@ -399,6 +431,7 @@ void ClingoApp<ICLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
 		}
+		if(luaImpl.get()) { luaImpl->onModel(); }
 	}
 	else if (e == ClaspFacade::event_p_prepared)
 	{
@@ -443,7 +476,7 @@ void ClingoApp<ICLINGO>::printResult(ReasonEnd end)
 	Solver& s            = solver_;
 	s.stats.solve.accu(stats_);
 	const Enumerator& en = *config_.solve.enumerator();
-	if (clingo_.iStats) { cout << "=============== Summary ===============" << endl; }
+	if (clingo.iStats) { cout << "=============== Summary ===============" << endl; }
 	out_->printSolution(s, en, complete);
 	if (cmdOpts_.basic.quiet && config_.enumerate.consequences() && s.stats.solve.models != 0)
 	{

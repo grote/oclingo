@@ -383,6 +383,8 @@ public:
 	int index(const Loc &loc, const char *name);
 	void call(const LuaLit *lit, const ValVec &args, ValVec &vals);
 	void exec(const Loc &loc, const std::string &lua);
+	lua_State *state() { return luaState_; }
+	void pushVal(const Val &val) { ::pushVal(luaState_, val); }
 	~LuaImpl();
 private:
 	static int error(lua_State *L);
@@ -425,7 +427,7 @@ void Grounder::LuaImpl::call(const LuaLit *lit, const ValVec &args, ValVec &vals
 {
 	LuaTop top(luaState_); (void)top;
 	lua_pushvalue(luaState_, lit->index());
-	foreach(const Val &val, args) { pushVal(luaState_, val); }
+	foreach(const Val &val, args) { ::pushVal(luaState_, val); }
 	lua_call(luaState_, args.size(), 1);
 	if(lua_type(luaState_, -1) == LUA_TTABLE)
 	{

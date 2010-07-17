@@ -25,7 +25,6 @@ class LparseConverter : public Output
 public:
 	typedef std::vector<uint32_t> AtomVec;
 	typedef std::vector<int32_t>  WeightVec;
-protected:
 	struct ValCmp
 	{
 		ValCmp(const ValVec *v, uint32_t s);
@@ -35,6 +34,7 @@ protected:
 		uint32_t size;
 	};
 	typedef boost::unordered_map<uint32_t, uint32_t, ValCmp, ValCmp> SymbolMap;
+protected:
 	typedef std::vector<SymbolMap> SymbolTable;
 	struct Minimize
 	{
@@ -60,7 +60,7 @@ public:
 	void externalAtom(PredLitRep *l);
 	void printSymbolTable();
 	void printExternalTable();
-	bool shiftDisjunctions() { return shiftDisjunctions_; };
+	bool shiftDisjunctions() const { return shiftDisjunctions_; }
 	void addCompute(PredLitRep *l);
 	virtual ~LparseConverter();
 public:

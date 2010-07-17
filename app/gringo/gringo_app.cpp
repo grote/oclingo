@@ -36,12 +36,12 @@ namespace
 
 Output *GringoApp::output() const
 {
-	if (opts.metaOut)
+	if (gringo.metaOut)
 		return new ReifiedOutput(&std::cout);
-	else if (opts.textOut)
+	else if (gringo.textOut)
 		return new PlainOutput(&std::cout);
 	else
-		return new LparseOutput(&std::cout, opts.disjShift);
+		return new LparseOutput(&std::cout, gringo.disjShift);
 }
 
 GringoApp& GringoApp::instance()
@@ -53,7 +53,7 @@ GringoApp& GringoApp::instance()
 Streams::StreamPtr GringoApp::constStream() const
 {
 	std::auto_ptr<std::stringstream> constants(new std::stringstream());
-	for(std::vector<std::string>::const_iterator i = opts.consts.begin(); i != opts.consts.end(); ++i)
+	for(std::vector<std::string>::const_iterator i = gringo.consts.begin(); i != gringo.consts.end(); ++i)
 		*constants << "#const " << *i << ".\n";
 	return Streams::StreamPtr(constants.release());
 }
@@ -62,7 +62,7 @@ int GringoApp::doRun()
 {
 	std::auto_ptr<Output> o(output());
 	Streams  inputStreams(generic.input, constStream());
-	if(opts.groundInput)
+	if(gringo.groundInput)
 	{
 		Storage   s(o.get());
 		Converter c(o.get(), inputStreams);
@@ -76,15 +76,15 @@ int GringoApp::doRun()
 	{
 		IncConfig config;
 		Grounder  g(o.get(), generic.verbose > 2);
-		Parser    p(&g, config, inputStreams, opts.compat);
+		Parser    p(&g, config, inputStreams, gringo.compat);
 
 		config.incBegin = 1;
-		config.incEnd   = config.incBegin + opts.ifixed;
-		config.incBase  = opts.ibase;
+		config.incEnd   = config.incBegin + gringo.ifixed;
+		config.incBase  = gringo.ibase;
 
 		o->initialize();
 		p.parse();
-		g.analyze(opts.depGraph);
+		g.analyze(gringo.depGraph);
 		g.ground();
 		o->finalize();
 	}

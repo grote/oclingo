@@ -22,6 +22,8 @@
 #include <gringo/context.h>
 #include <gringo/locateable.h>
 
+typedef struct lua_State lua_State;
+
 class Grounder : public Storage, public Context
 {
 private:
@@ -43,6 +45,8 @@ public:
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
 	int luaIndex(const LuaTerm *term);
+	lua_State *luaState();
+	void luaPushVal(const Val &val);
 	void ground();
 	StatementRng add(Statement *s);
 	void addInternal(Statement *stm);

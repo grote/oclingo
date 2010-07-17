@@ -43,13 +43,13 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	// AppOptions interface
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
-		opts.initOptions(root, hidden);
+		gringo.initOptions(root, hidden);
 	}
 	void addDefaults(std::string& defaults) {
-		opts.addDefaults(defaults);
+		gringo.addDefaults(defaults);
 	}
 	bool validateOptions(ProgramOptions::OptionValues& v, Messages& m) {
-		return opts.validateOptions(v, m);
+		return gringo.validateOptions(v, m);
 	}
 	// ---------------------------------------------------------------------------------------
 	// Application interface
@@ -60,5 +60,5 @@ protected:
 	// ---------------------------------------------------------------------------------------
 
 public:
-	GringoOptions opts;
+	GringoOptions gringo;
 };
