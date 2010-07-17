@@ -15,7 +15,7 @@ then
 else
 	username="$config_username"
 fi
-version=3.0.0
+version=3.0.1
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
 make static  target=all
 make mingw32 target=all

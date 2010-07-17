@@ -18,7 +18,7 @@
 #ifndef _GRINGO_H
 #define _GRINGO_H
 
-#define GRINGO_VERSION "3.0-alpha"
+#define GRINGO_VERSION "3.0.1"
 
 #include <gringo/val.h>
 #include <gringo/clone_ptr.h>
