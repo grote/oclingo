@@ -105,13 +105,31 @@ namespace
 			}
 		}
 
-		void pushTruth(lua_State *L)
+		void pushIsTrue(lua_State *L)
 		{
-			if(!active)      { luaL_error(L, "Model.truth() may only be called in onModel"); }
-			if(!started)     { luaL_error(L, "Model.truth() called without prior call to Model.begin()"); }
-			if(start == end) { luaL_error(L, "Model.truth() called after Model.next() returned false"); }
+			if(!active)      { luaL_error(L, "Model.isTrue() may only be called in onModel"); }
+			if(!started)     { luaL_error(L, "Model.isTrue() called without prior call to Model.begin()"); }
+			if(start == end) { luaL_error(L, "Model.isTrue() called after Model.next() returned false"); }
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->isTrue(atom->lit));
+		}
+
+		void pushIsFalse(lua_State *L)
+		{
+			if(!active)      { luaL_error(L, "Model.isFalse() may only be called in onModel"); }
+			if(!started)     { luaL_error(L, "Model.isFalse() called without prior call to Model.begin()"); }
+			if(start == end) { luaL_error(L, "Model.isFalse() called after Model.next() returned false"); }
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			lua_pushboolean(L, atom && solver->isFalse(atom->lit));
+		}
+
+		void pushIsUndef(lua_State *L)
+		{
+			if(!active)      { luaL_error(L, "Model.isUndef() may only be called in onModel"); }
+			if(!started)     { luaL_error(L, "Model.isUndef() called without prior call to Model.begin()"); }
+			if(start == end) { luaL_error(L, "Model.isUndef() called after Model.next() returned false"); }
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			lua_pushboolean(L, atom && solver->value(atom->lit.var()) == Clasp::value_free);
 		}
 
 		typedef LparseConverter::SymbolMap::const_iterator SymIt;
@@ -160,12 +178,27 @@ namespace
 		return 1;
 	}
 
-	static int Model_truth(lua_State *L)
+	static int Model_isTrue(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
-		domIter->pushTruth(L);;
+		domIter->pushIsTrue(L);
 		return 1;
 	}
+
+	static int Model_isFalse(lua_State *L)
+	{
+		DomainIter *domIter = checkDomainIter(L);
+		domIter->pushIsFalse(L);
+		return 1;
+	}
+
+	static int Model_isUndef(lua_State *L)
+	{
+		DomainIter *domIter = checkDomainIter(L);
+		domIter->pushIsUndef(L);
+		return 1;
+	}
+
 
 	static int Model_name(lua_State *L)
 	{
@@ -183,13 +216,15 @@ namespace
 
 	static const luaL_reg Model_methods[] =
 	{
-		{"begin", Model_begin},
-		{"next",  Model_next},
-		{"args",  Model_args},
-		{"truth", Model_truth},
-		{"args",  Model_args},
-		{"name",  Model_name},
-		{"arity", Model_arity},
+		{"begin",   Model_begin},
+		{"next",    Model_next},
+		{"args",    Model_args},
+		{"isTrue",  Model_isTrue},
+		{"isFalse", Model_isFalse},
+		{"isUndef", Model_isUndef},
+		{"args",    Model_args},
+		{"name",    Model_name},
+		{"arity",   Model_arity},
 		{0, 0}
 	};
 
