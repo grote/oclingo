@@ -150,8 +150,11 @@ template <bool ICLINGO>
 class ClingoApp<ICLINGO>::LuaImpl
 {
 public:
+	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o);
 	bool locked() { return false; }
-	void onModel(Grounder *, Clasp::Solver *, ClaspOutput *) { }
+	void onModel() { }
+	void onBeginStep() { }
+	void onEndStep() { }
 };
 
 #endif
@@ -357,6 +360,7 @@ template <bool ICLINGO>
 void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	using namespace Clasp;
 	using namespace std;
+	// TODO: hook in here to report UNSAT
 	if (e == ClaspFacade::event_state_enter)
 	{
 		MainApp::printWarnings();
@@ -379,9 +383,11 @@ void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 		else if (f.state() == ClaspFacade::state_solve)
 		{
 			STATUS(2, cout << "Solving...\n");
+			if(luaImpl.get()) { luaImpl->onBeginStep(); }
 		}
 		cout << flush;
 		timer_[f.state()].start();
+
 	}
 	else if (e == ClaspFacade::event_state_exit)
 	{
@@ -402,6 +408,7 @@ void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 						 << "Conflicts: " << solver_.stats.solve.conflicts << "\n";
 				timer_[0].start();
 			}
+			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();
 		}
 	}

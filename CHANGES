@@ -1,4 +1,6 @@
 gringo 3.0.1
+	* added possibility to intercept models using lua
+	* fixed compilation issues with cmake-2.6
 	* when appropriate automatic conversion from string to int in lua
 	* support for unnamed function symbols (aka tuples)
 	* fixed classical negation

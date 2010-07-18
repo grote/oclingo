@@ -33,7 +33,7 @@ extern "C"
 #	include <lua/lauxlib.h>
 #endif
 
-#define MODEL "Model"
+#define ASSIGNMENT "Assignment"
 
 namespace
 {
@@ -55,7 +55,7 @@ namespace
 
 		void begin(lua_State *L, const char *name, uint32_t arity)
 		{
-			if(!active) { luaL_error(L, "Model.begin() may only be called in onModel"); }
+			if(!active) { luaL_error(L, "Assignment.begin() may only be called in onModel"); }
 			dom     = grounder->domain(grounder->index(name), arity);
 			const LparseConverter::SymbolMap &map = output->symbolMap(dom->domId());
 			start   = map.begin();
@@ -65,7 +65,7 @@ namespace
 
 		void pushNext(lua_State *L)
 		{
-			if(!active) { luaL_error(L, "Model.next() may only be called in onModel"); }
+			if(!active) { luaL_error(L, "Assignment.next() may only be called in onModel"); }
 			if(start == end) { lua_pushboolean(L, false); }
 			else
 			{
@@ -77,23 +77,29 @@ namespace
 
 		void pushName(lua_State *L)
 		{
-			if(!active)  { luaL_error(L, "Model.name() may only be called in onModel"); }
-			if(!started) { luaL_error(L, "Model.name() called without prior call to Model.begin()"); }
+			if(!active)  { luaL_error(L, "Assignment.name() may only be called in onModel"); }
+			if(!started) { luaL_error(L, "Assignment.name() called without prior call to Assignment.begin()"); }
 			lua_pushstring(L, grounder->string(dom->nameId()).c_str());
 		}
 
 		void pushArity(lua_State *L)
 		{
-			if(!active)  { luaL_error(L, "Model.arity() may only be called in onModel"); }
-			if(!started) { luaL_error(L, "Model.arity() called without prior call to Model.begin()"); }
+			if(!active)  { luaL_error(L, "Assignment.arity() may only be called in onModel"); }
+			if(!started) { luaL_error(L, "Assignment.arity() called without prior call to Assignment.begin()"); }
 			lua_pushinteger(L, dom->arity());
+		}
+
+		void checkIter(lua_State *L, const char *func)
+		{
+			if(!active)      { luaL_error(L, "Assignment.%s() may only be called in on{Assignment,BeginStep,EndStep}", func); }
+			if(!started)     { luaL_error(L, "Assignment.%s() called without prior call to Assignment.begin()", func); }
+			if(start == end) { luaL_error(L, "Assignment.%s() called after Assignment.next() returned false", func); }
+
 		}
 
 		void pushArgs(lua_State *L)
 		{
-			if(!active)      { luaL_error(L, "Model.args() may only be called in onModel"); }
-			if(!started)     { luaL_error(L, "Model.args() called without prior call to Model.begin()"); }
-			if(start == end) { luaL_error(L, "Model.args() called after Model.next() returned false"); }
+			checkIter(L, "pushArgs");
 			ValRng rng = output->vals(dom, start->first);
 			lua_createtable(L, rng.size(), 0);
 			int i = 1;
@@ -107,29 +113,30 @@ namespace
 
 		void pushIsTrue(lua_State *L)
 		{
-			if(!active)      { luaL_error(L, "Model.isTrue() may only be called in onModel"); }
-			if(!started)     { luaL_error(L, "Model.isTrue() called without prior call to Model.begin()"); }
-			if(start == end) { luaL_error(L, "Model.isTrue() called after Model.next() returned false"); }
+			checkIter(L, "pushIsTrue");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->isTrue(atom->lit));
 		}
 
 		void pushIsFalse(lua_State *L)
 		{
-			if(!active)      { luaL_error(L, "Model.isFalse() may only be called in onModel"); }
-			if(!started)     { luaL_error(L, "Model.isFalse() called without prior call to Model.begin()"); }
-			if(start == end) { luaL_error(L, "Model.isFalse() called after Model.next() returned false"); }
+			checkIter(L, "pushIsFalse");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->isFalse(atom->lit));
 		}
 
 		void pushIsUndef(lua_State *L)
 		{
-			if(!active)      { luaL_error(L, "Model.isUndef() may only be called in onModel"); }
-			if(!started)     { luaL_error(L, "Model.isUndef() called without prior call to Model.begin()"); }
-			if(start == end) { luaL_error(L, "Model.isUndef() called after Model.next() returned false"); }
+			checkIter(L, "pushIsUndef");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->value(atom->lit.var()) == Clasp::value_free);
+		}
+
+		void pushLevel(lua_State *L)
+		{
+			checkIter(L, "pushLevel");
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			lua_pushnumber(L, !atom || solver->value(atom->lit.var()) == Clasp::value_free ? -1 : solver->level(atom->lit.var()));
 		}
 
 		typedef LparseConverter::SymbolMap::const_iterator SymIt;
@@ -146,14 +153,14 @@ namespace
 
 	static DomainIter* checkDomainIter(lua_State *L)
 	{
-		lua_pushliteral(L, "Model.domainIter");
+		lua_pushliteral(L, "Assignment.domainIter");
 		lua_rawget(L, LUA_REGISTRYINDEX);
 		DomainIter *domIter = (DomainIter *)lua_touserdata(L, -1);
 		lua_pop(L, 1); // pop storage
 		return domIter;
 	}
 
-	static int Model_begin(lua_State *L)
+	static int Assignment_begin(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		luaL_checkstring(L, 1);
@@ -164,82 +171,89 @@ namespace
 		return 0;
 	}
 
-	static int Model_next(lua_State *L)
+	static int Assignment_next(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushNext(L);
 		return 1;
 	}
 
-	static int Model_args(lua_State *L)
+	static int Assignment_args(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushArgs(L);
 		return 1;
 	}
 
-	static int Model_isTrue(lua_State *L)
+	static int Assignment_isTrue(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushIsTrue(L);
 		return 1;
 	}
 
-	static int Model_isFalse(lua_State *L)
+	static int Assignment_isFalse(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushIsFalse(L);
 		return 1;
 	}
 
-	static int Model_isUndef(lua_State *L)
+	static int Assignment_isUndef(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushIsUndef(L);
 		return 1;
 	}
 
-
-	static int Model_name(lua_State *L)
+	static int Assignment_name(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushName(L);
 		return 1;
 	}
 
-	static int Model_arity(lua_State *L)
+	static int Assignment_arity(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
 		domIter->pushArity(L);
 		return 1;
 	}
 
-	static const luaL_reg Model_methods[] =
+	static int Assignment_level(lua_State *L)
 	{
-		{"begin",   Model_begin},
-		{"next",    Model_next},
-		{"args",    Model_args},
-		{"isTrue",  Model_isTrue},
-		{"isFalse", Model_isFalse},
-		{"isUndef", Model_isUndef},
-		{"args",    Model_args},
-		{"name",    Model_name},
-		{"arity",   Model_arity},
+		DomainIter *domIter = checkDomainIter(L);
+		domIter->pushLevel(L);
+		return 1;
+	}
+
+	static const luaL_reg Assignment_methods[] =
+	{
+		{"begin",   Assignment_begin},
+		{"next",    Assignment_next},
+		{"args",    Assignment_args},
+		{"isTrue",  Assignment_isTrue},
+		{"isFalse", Assignment_isFalse},
+		{"isUndef", Assignment_isUndef},
+		{"args",    Assignment_args},
+		{"name",    Assignment_name},
+		{"arity",   Assignment_arity},
+		{"level",   Assignment_level},
 		{0, 0}
 	};
 
-	static const luaL_reg Model_meta[] =
+	static const luaL_reg Assignment_meta[] =
 	{
 		{0, 0}
 	};
 
-	int Model_register (lua_State *L, DomainIter *iter)
+	int Assignment_register (lua_State *L, DomainIter *iter)
 	{
-		luaL_openlib(L, MODEL, Model_methods, 0);
+		luaL_openlib(L, ASSIGNMENT, Assignment_methods, 0);
 
-		luaL_newmetatable(L, MODEL);
+		luaL_newmetatable(L, ASSIGNMENT);
 
-		luaL_openlib(L, 0, Model_meta, 0);
+		luaL_openlib(L, 0, Assignment_meta, 0);
 
 		lua_pushliteral(L, "__index");
 		lua_pushvalue(L, -3);
@@ -251,7 +265,7 @@ namespace
 
 		lua_pop(L, 2); // pop metatable and meta methods
 
-		lua_pushliteral(L, "Model.domainIter");
+		lua_pushliteral(L, "Assignment.domainIter");
 		lua_pushlightuserdata(L, iter);
 		lua_rawset(L, LUA_REGISTRYINDEX);
 
@@ -270,31 +284,50 @@ public:
 		lua_State *L = g->luaState();
 		if(L)
 		{
-			lua_getglobal(L, "onModel");
-			onModel_ = lua_gettop(L);
-			if(!lua_isfunction(L, onModel_)) { onModel_ = -1; }
-			Model_register(L, &domIter_);
+			onModel_     = onIndex(L, "onModel");
+			onBeginStep_ = onIndex(L, "onBeginStep");
+			onEndStep_   = onIndex(L, "onEndStep");
+			Assignment_register(L, &domIter_);
 		}
 	}
-	void onModel()
+
+	int onIndex(lua_State *L, const char *onName)
 	{
-		if(onModel_ != -1)
+		lua_getglobal(L, onName);
+		int index = lua_gettop(L);
+		if(!lua_isfunction(L, index)) { return -1; }
+		else                          { return index; }
+	}
+
+	void onCall(int index)
+	{
+		if(index != -1)
 		{
 			lua_State *L = domIter_.grounder->luaState();
 			if(L)
 			{
 				domIter_.reset();
-				lua_pushvalue(L, onModel_);
+				lua_pushvalue(L, index);
 				lua_call(L, 0, 0);
 				domIter_.active = false;
 			}
 		}
+
 	}
+
+	void onModel()     { onCall(onModel_); }
+	void onBeginStep() { onCall(onBeginStep_); }
+	void onEndStep()   { onCall(onEndStep_); }
+
 	bool locked()
 	{
 		return onModel_ != -1;
 	}
 private:
-	DomainIter        domIter_;
-	int               onModel_;
+	DomainIter domIter_;
+	int        onModel_;
+	int        onBeginStep_;
+	int        onEndStep_;
 };
+
+#undef ASSIGNMENT
