@@ -360,7 +360,6 @@ template <bool ICLINGO>
 void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	using namespace Clasp;
 	using namespace std;
-	// TODO: hook in here to report UNSAT
 	if (e == ClaspFacade::event_state_enter)
 	{
 		MainApp::printWarnings();
