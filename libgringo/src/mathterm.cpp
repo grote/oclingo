@@ -41,6 +41,9 @@ Val MathTerm::val(Grounder *grounder) const
 			case DIV:   return Val::create(Val::NUM, a_->val(grounder).number() / b_->val(grounder).number()); break;
 			case MOD:   return Val::create(Val::NUM, a_->val(grounder).number() % b_->val(grounder).number()); break;
 			case POW:   return Val::create(Val::NUM, int(pow(a_->val(grounder).number(), b_->val(grounder).number()))); break;
+			case AND:   return Val::create(Val::NUM, a_->val(grounder).number() & b_->val(grounder).number()); break;
+			case XOR:   return Val::create(Val::NUM, a_->val(grounder).number() ^ b_->val(grounder).number()); break;
+			case  OR:   return Val::create(Val::NUM, a_->val(grounder).number() | b_->val(grounder).number()); break;
 			case ABS:   return Val::create(Val::NUM, std::abs(a_->val(grounder).number())); break;
 		}
 	}
@@ -95,8 +98,11 @@ void MathTerm::print(Storage *sto, std::ostream &out) const
 		case MULT:  out << "*"; break;
 		case DIV:   out << "/"; break;
 		case MOD:   out << " #mod "; break;
-		case POW:   out << " #pow "; break;
-		case ABS: out << "#abs"; break;
+		case POW:   out << " ** "; break;
+		case AND:   out << " & "; break;
+		case XOR:   out << " ^ "; break;
+		case  OR:   out << " ? "; break;
+		case ABS:   out << "#abs"; break;
 	}
 	if(b_.get()) b_->print(sto, out);
 	else

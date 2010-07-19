@@ -23,7 +23,7 @@
 class MathTerm : public Term
 {
 public:
-	enum Func { PLUS, MINUS, MULT, DIV, MOD, POW, ABS };
+  enum Func { PLUS, MINUS, MULT, DIV, MOD, POW, AND, XOR, OR, ABS };
 public:
 	MathTerm(const Loc &loc, const Func &f, Term *a, Term *b = 0);
 	Val val(Grounder *grounder) const;
