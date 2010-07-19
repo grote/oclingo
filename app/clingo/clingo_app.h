@@ -150,7 +150,7 @@ template <bool ICLINGO>
 class ClingoApp<ICLINGO>::LuaImpl
 {
 public:
-	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o);
+	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o) {}
 	bool locked() { return false; }
 	void onModel() { }
 	void onBeginStep() { }
@@ -335,7 +335,10 @@ int ClingoApp<ICLINGO>::doRun()
 {
 	using namespace Clasp;
 	if (gringo.groundOnly) { return GringoApp::doRun(); }
-	if (cmdOpts_.basic.stats > 1) { solver_.stats.solve.enableJumpStats(); }
+	if (cmdOpts_.basic.stats > 1) { 
+		solver_.stats.solve.enableJumpStats(); 
+		stats_.enableJumpStats();
+	}
 	Streams s;
 	configureInOut(s);
 	ClaspFacade clasp;
