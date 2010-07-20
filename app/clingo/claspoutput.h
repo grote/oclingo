@@ -24,6 +24,7 @@
 
 class ClaspOutput : public LparseConverter
 {
+	typedef std::vector<bool> BoolVec;
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
@@ -45,6 +46,8 @@ protected:
 	void doFinalize();
 protected:
 	Clasp::ProgramBuilder *b_;
+	BoolVec  atomUnnamed_;
+	uint32_t lastUnnamed_;
 };
 
 class iClaspOutput : public ClaspOutput

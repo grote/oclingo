@@ -23,6 +23,7 @@
 ClaspOutput::ClaspOutput(bool shiftDisj)
 	: LparseConverter(0, shiftDisj)
 	, b_(0)
+	, lastUnnamed_(0)
 {
 }
 
@@ -30,6 +31,8 @@ void ClaspOutput::initialize()
 {
 	LparseConverter::initialize();
 	b_->setCompute(false_, false);
+	lastUnnamed_ = atomUnnamed_.size();
+	atomUnnamed_.clear();
 }
 
 void ClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg)
@@ -117,6 +120,7 @@ void ClaspOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, con
 		ss << ")";
 	}
 	b_->setAtomName(atom.first, ss.str().c_str());
+	atomUnnamed_[atom.first - lastUnnamed_] = false;
 }
 
 void ClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
@@ -128,12 +132,17 @@ void ClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, c
 
 uint32_t ClaspOutput::symbol()
 {
-	return b_->newAtom();
+	uint32_t atom = b_->newAtom();
+	atomUnnamed_.resize(atom + 1 - lastUnnamed_, true);
+	return atom;
 }
 
 void ClaspOutput::doFinalize()
 {
 	printSymbolTable();
+	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
+	lastUnnamed_+= atomUnnamed_.size();
+	atomUnnamed_.clear();
 }
 
 const LparseConverter::SymbolMap &ClaspOutput::symbolMap(uint32_t domId) const
@@ -162,7 +171,6 @@ void iClaspOutput::initialize()
 	else { b_->unfreeze(incUid_); }
 	// create a new uid
 	incUid_ = symbol();
-	b_->setAtomName(incUid_, "");
 	b_->freeze(incUid_);
 }
 
