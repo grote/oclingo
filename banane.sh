@@ -5,7 +5,7 @@ REV=$(svn status -v | grep -o "^ *[0-9]* *[0-9]*" | head -n1 | grep -o "[0-9]*$"
 make debug release static target=all || exit 1
 
 prefix=/home/wv/bin/linux/32
-public_html=${HOME}/public_html/bingo/bingo-x86-linux
+public_html=${HOME}/public_html/gringo/gringo-x86-linux
 rm -rf $public_html
 mkdir -p $public_html
 
@@ -28,8 +28,8 @@ do
 				(
 					cd $public_html
 					cd ..
-					rm -f bingo-x86-linux.tar.bz2
-					tar -cjf bingo-x86-linux.tar.bz2 bingo-x86-linux
+					rm -f gringo-x86-linux.tar.bz2
+					tar -cjf gringo-x86-linux.tar.bz2 gringo-x86-linux
 				)
 				name=$target-r$REV
 				cp build/$variant/bin/$target $prefix/$name
