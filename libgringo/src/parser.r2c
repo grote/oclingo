@@ -186,7 +186,7 @@ start:
 		"show"           { return PARSER_SHOW; }
 		"hide"           { return PARSER_HIDE; }
 		"const"          { return PARSER_CONST; }
-		"mod"            { return PARSER_MOD; }
+		"mod"            { return PARSER_PMOD; }
 		"div"            { return PARSER_PDIV; }
 		"pow"            { return PARSER_PPOW; }
 		"abs"            { return PARSER_PABS; }
