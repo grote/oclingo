@@ -295,7 +295,7 @@ public:
 	{
 		lua_getglobal(L, onName);
 		int index = lua_gettop(L);
-		if(!lua_isfunction(L, index)) { return -1; }
+		if(!lua_isfunction(L, index)) { lua_pop(L, 1); return -1; }
 		else                          { return index; }
 	}
 
@@ -321,7 +321,7 @@ public:
 
 	bool locked()
 	{
-		return onModel_ != -1;
+		return onModel_ != -1 || onBeginStep_ != -1 || onEndStep_ != -1;
 	}
 private:
 	DomainIter domIter_;
