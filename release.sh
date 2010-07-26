@@ -17,9 +17,9 @@ else
 fi
 version=3.0.1
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
-make static  target=all
-make mingw32 target=all
-gringo_gen=$(ls build/static/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
+make static32 target=all
+make mingw32  target=all
+gringo_gen=$(ls build/static32/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
 rm -rf build/dist
 mkdir -p build/dist
 for x in gringo clingo iclingo; do
@@ -29,12 +29,12 @@ for x in gringo clingo iclingo; do
 	(cd build/dist; tar -czf ${x}-${version}-source.tar.gz ${x}-${version}-source)
 	mkdir -p build/dist/{${x}-${version}-win32,${x}-${version}-x86-linux}
 	cp build/mingw32/bin/$x.exe CHANGES COPYING build/dist/${x}-${version}-win32
-	cp build/static/bin/$x CHANGES COPYING build/dist/${x}-${version}-x86-linux
+	cp build/static32/bin/$x CHANGES COPYING build/dist/${x}-${version}-x86-linux
 	(cd build/dist; tar -czf ${x}-${version}-x86-linux.tar.gz ${x}-${version}-x86-linux)
 	(cd build/dist; zip -r  ${x}-${version}-win32.tar.gz ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
-	mkdir -p ${x}/${version}
-	scp -r ${x}/${version} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/
-	scp CHANGES build/dist/${x}-${version}{-win32.tar.gz,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
+	mkdir -p build/dist/${x}/${version}
+	#(build/dist; scp -r ${x}/${version} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
+	#scp CHANGES build/dist/${x}-${version}{-win32.tar.gz,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
 done
 

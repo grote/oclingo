@@ -31,6 +31,17 @@ static:
 		${cmake_options} && \
 	$(MAKE) $(target)
 
+static32:
+	mkdir -p build/static32
+	cd build/static32 && \
+	cmake ../.. \
+		-DCMAKE_CXX_FLAGS="-Wall -m32" \
+		-DCMAKE_FIND_ROOT_PATH="/usr/lib32;${HOME}/local/x86" \
+		-DCMAKE_BUILD_TYPE=release \
+		-DUSE_STATIC_LIBS=ON \
+		${cmake_options} && \
+	$(MAKE) $(target)
+
 mingw32:
 	@[ -x build/release/bin/lemon ] || (echo "error: make release first" && false)
 	mkdir -p build/mingw32/bin

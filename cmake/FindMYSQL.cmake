@@ -10,8 +10,8 @@ IF(NOT MYSQL_FOUND)
 		SET(ERROR TRUE)
 	ENDIF()
 
-	FIND_PATH(MYSQL_INCLUDE mysql.h PATHS "${MYSQL_ROOT}/include" /usr/include/mysql)
-	FIND_LIBRARY(MYSQL_LIB mysqlclient PATHS ${MYSQL_ROOT}/lib /usr/lib/mysql)
+	FIND_PATH(MYSQL_INCLUDE mysql.h HINTS "${MYSQL_ROOT}/include" /usr/include/mysql)
+	FIND_LIBRARY(MYSQL_LIB mysqlclient HINTS ${MYSQL_ROOT}/lib /usr/lib/mysql)
 
 	IF(MYSQL_INCLUDE AND MYSQL_LIB AND NOT ERROR)
 		SET(MYSQL_FOUND TRUE CACHE BOOL "Whether mysql has been found")
