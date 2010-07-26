@@ -23,7 +23,7 @@ gringo_gen=$(ls build/static/libgringo/src/{converter.cpp,converter_impl.cpp,con
 rm -rf build/dist
 mkdir -p build/dist
 for x in gringo clingo iclingo; do
-	rsync --delete -a ${files} build/dist/${x}-${version}-source/
+	rsync --delete --exclude ".svn" -a ${files} build/dist/${x}-${version}-source/
 	sed "s/target=gringo/target=${x}/" < Makefile > build/dist/${x}-${version}-source/Makefile
 	cp ${gringo_gen} build/dist/${x}-${version}-source/libgringo/src/
 	(cd build/dist; tar -czf ${x}-${version}-source.tar.gz ${x}-${version}-source)
