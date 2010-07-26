@@ -17,6 +17,7 @@ else
 fi
 version=$(grep GRINGO_VERSION libgringo/gringo/gringo.h | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
+make release  target=all
 make static32 target=all
 make mingw32  target=all
 gringo_gen=$(ls build/static32/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
@@ -34,7 +35,7 @@ for x in gringo clingo iclingo; do
 	(cd build/dist; zip -r  ${x}-${version}-win32.tar.gz ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
 	mkdir -p build/dist/${x}/${version}
-	(cd build/dist; scp -r ${x}/${version} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
+	(cd build/dist; scp -r ${x} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
 	scp CHANGES build/dist/${x}-${version}{-win32.tar.gz,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
 done
 
