@@ -15,7 +15,7 @@ then
 else
 	username="$config_username"
 fi
-version=3.0.1
+version=$(grep GRINGO_VERSION libgringo/gringo/gringo.h | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
 make static32 target=all
 make mingw32  target=all
