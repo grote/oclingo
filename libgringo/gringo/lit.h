@@ -61,7 +61,7 @@ public:
 	/** whether the literal is in the set. Used in aggregates and optimize statements.
 	 * \param val additional information (e.g. used to distinguish literals with priorities in optimize statements)
 	 */
-	virtual bool testUnique(PredLitSet &set, Val val=Val::create()) { (void)set; (void)val; return true; }
+	virtual bool testUnique(PredLitSet&, Val=Val::create()) { return true; }
 
 	virtual void pop() { }
 	virtual void move(size_t p) { (void)p; }

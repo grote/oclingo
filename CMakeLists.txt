@@ -21,7 +21,7 @@ project(gringo)
 include(cmake/re2c.cmake)
 include(cmake/lemon.cmake)
 include(cmake/macros.cmake)
-include(cmake/PCHSupport.cmake)
+# include(cmake/PCHSupport.cmake)
 
 ENSURE_OUT_OF_SOURCE_BUILD("you have to create an out-of-source build")
 
@@ -42,7 +42,7 @@ IF(USE_STATIC_LIBS)
 ENDIF()
 
 set(Boost_USE_MULTITHREADED OFF CACHE STRING "Whether to Use multi-threaded boost libraries")
-find_package(Boost COMPONENTS filesystem system REQUIRED)
+find_package(Boost COMPONENTS filesystem system)
 include_directories(${Boost_INCLUDE_DIRS})
 if(WITH_LUA STREQUAL "system")
 	find_package(LUA51 REQUIRED)

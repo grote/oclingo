@@ -38,29 +38,6 @@ GRINGO_EXPORT_PRINTER(IncPrinter)
 
 }
 
-class ReifiedOutput::Node
-{
-public:
-	Node(size_t symbol);
-	size_t symbol() const;
-	void visit(size_t visited);
-	uint32_t visited() const;
-	void mark();
-	bool marked() const;
-	void pop();
-	bool popped() const;
-	Node *next();
-	bool root();
-
-public:
-	std::vector<Node*> children;
-
-private:
-	size_t   symbol_;
-	uint32_t visited_;
-	uint32_t finished_;
-};
-
 ReifiedOutput::Node::Node(size_t symbol)
 	: symbol_(symbol)
 	, visited_(0)
