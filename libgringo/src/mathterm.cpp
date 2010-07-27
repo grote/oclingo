@@ -23,6 +23,25 @@
 #include <gringo/prgvisitor.h>
 #include <gringo/exceptions.h>
 
+namespace
+{
+	int ipow(int a, int b)
+	{
+		if(b < 0) { return 0; }
+		else
+		{
+			int r = 1;
+			while(b > 0)
+			{
+				if(b & 1) { r *= a; }
+				b >>= 1;
+				a *= a;
+			}
+			return r;
+		}
+	}
+}
+
 MathTerm::MathTerm(const Loc &loc, const Func &f, Term *a, Term *b) :
 	Term(loc), f_(f), a_(a), b_(b)
 {
@@ -40,10 +59,10 @@ Val MathTerm::val(Grounder *grounder) const
 			case MULT:  return Val::create(Val::NUM, a_->val(grounder).number() * b_->val(grounder).number()); break;
 			case DIV:   return Val::create(Val::NUM, a_->val(grounder).number() / b_->val(grounder).number()); break;
 			case MOD:   return Val::create(Val::NUM, a_->val(grounder).number() % b_->val(grounder).number()); break;
-			case POW:   return Val::create(Val::NUM, int(pow(a_->val(grounder).number(), b_->val(grounder).number()))); break;
+			case POW:   return Val::create(Val::NUM, ipow(a_->val(grounder).number(), b_->val(grounder).number())); break;
 			case AND:   return Val::create(Val::NUM, a_->val(grounder).number() & b_->val(grounder).number()); break;
 			case XOR:   return Val::create(Val::NUM, a_->val(grounder).number() ^ b_->val(grounder).number()); break;
-			case  OR:   return Val::create(Val::NUM, a_->val(grounder).number() | b_->val(grounder).number()); break;
+			case OR:    return Val::create(Val::NUM, a_->val(grounder).number() | b_->val(grounder).number()); break;
 			case ABS:   return Val::create(Val::NUM, std::abs(a_->val(grounder).number())); break;
 		}
 	}

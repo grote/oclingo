@@ -21,7 +21,7 @@ project(gringo)
 include(cmake/re2c.cmake)
 include(cmake/lemon.cmake)
 include(cmake/macros.cmake)
-# include(cmake/PCHSupport.cmake)
+include(cmake/PCHSupport.cmake)
 
 ENSURE_OUT_OF_SOURCE_BUILD("you have to create an out-of-source build")
 
