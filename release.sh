@@ -35,10 +35,10 @@ for x in gringo clingo iclingo; do
 	strip build/dist/${x}-${version}-x86-linux/$x
 	mingw32-strip build/dist/${x}-${version}-win32/$x.exe
 	(cd build/dist; tar -czf ${x}-${version}-x86-linux.tar.gz ${x}-${version}-x86-linux)
-	(cd build/dist; zip -r  ${x}-${version}-win32.tar.gz ${x}-${version}-win32)
+	(cd build/dist; zip -r  ${x}-${version}-win32.zip ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
 	mkdir -p build/dist/${x}/${version}
 	(cd build/dist; scp -r ${x} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
-	scp CHANGES build/dist/${x}-${version}{-win32.tar.gz,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
+	scp CHANGES build/dist/${x}-${version}{-win32.zip,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
 done
 
