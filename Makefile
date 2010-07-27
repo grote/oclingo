@@ -50,6 +50,7 @@ mingw32:
 		-DIMPORT_LEMON="$(PWD)/build/release/import_lemon.cmake" \
 		-DCMAKE_TOOLCHAIN_FILE=../../cmake/mingw32.cmake \
 		-DCMAKE_BUILD_TYPE=release \
+		-DUSE_STATIC_LIBS=ON \
 		${cmake_options} && \
 	$(MAKE) $(target)
 
