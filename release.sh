@@ -17,9 +17,10 @@ else
 fi
 version=$(grep GRINGO_VERSION libgringo/gringo/gringo.h | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLists.txt,Makefile,README,INSTALL,CHANGES,COPYING})
-make release  target=all
-make static32 target=all
-make mingw32  target=all
+cpus=$[$(cat /proc/cpuinfo| grep processor | wc -l)+1]
+make -j${cpus} release  target=all
+make -j${cpus} static32 target=all
+make -j${cpus} mingw32  target=all
 gringo_gen=$(ls build/static32/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
 rm -rf build/dist
 mkdir -p build/dist
@@ -31,6 +32,8 @@ for x in gringo clingo iclingo; do
 	mkdir -p build/dist/{${x}-${version}-win32,${x}-${version}-x86-linux}
 	cp build/mingw32/bin/$x.exe CHANGES COPYING build/dist/${x}-${version}-win32
 	cp build/static32/bin/$x CHANGES COPYING build/dist/${x}-${version}-x86-linux
+	strip build/dist/${x}-${version}-x86-linux/$x
+	mingw32-strip build/dist/${x}-${version}-win32/$x.exe
 	(cd build/dist; tar -czf ${x}-${version}-x86-linux.tar.gz ${x}-${version}-x86-linux)
 	(cd build/dist; zip -r  ${x}-${version}-win32.tar.gz ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
