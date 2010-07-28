@@ -116,19 +116,19 @@ void MathTerm::print(Storage *sto, std::ostream &out) const
 		case MINUS: out << "-"; break;
 		case MULT:  out << "*"; break;
 		case DIV:   out << "/"; break;
-		case MOD:   out << " #mod "; break;
-		case POW:   out << " ** "; break;
-		case AND:   out << " & "; break;
-		case XOR:   out << " ^ "; break;
-		case  OR:   out << " ? "; break;
-		case ABS:   out << "#abs"; break;
+		case MOD:   out << "\\"; break;
+		case POW:   out << "**"; break;
+		case AND:   out << "&"; break;
+		case XOR:   out << "^"; break;
+		case OR:    out << "?"; break;
+		case ABS:   break;
 	}
 	if(b_.get()) b_->print(sto, out);
 	else
 	{
-		out << "(";
+		out << "|";
 		a_->print(sto, out);
-		out << ")";
+		out << "|";
 	}
 }
 

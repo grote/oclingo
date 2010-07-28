@@ -287,6 +287,7 @@ term(res) ::= term(a) AND term(b).                       { res = new MathTerm(a-
 term(res) ::= term(a) XOR term(b).                       { res = new MathTerm(a->loc(), MathTerm::XOR, a, b); }
 term(res) ::= term(a) QUESTION term(b).                  { res = new MathTerm(a->loc(), MathTerm::OR, a, b); }
 term(res) ::= PABS LBRAC term(a) RBRAC.                  { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
+term(res) ::= VBAR term(a) VBAR.                         { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
 term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
 term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
 term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
@@ -395,9 +396,9 @@ weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) A
 weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { res = new Optimize(head->loc(), head, weight, new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
 weightedpriolit(res) ::= priolit(lit). { res = lit; }
 
-priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-priolit(res) ::= predlit(head) priolit_cond(body).                                    { res = new Optimize(head->loc(), head, ONE(head->loc()), new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
+priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).  { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
+priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio). { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
+priolit(res) ::= predlit(head) priolit_cond(body).                { res = new Optimize(head->loc(), head, ONE(head->loc()), new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
 
 npriolit_cond(res) ::= COLON literal(lit).                     { res = vec1(lit); }
 npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; list->push_back(lit); }
