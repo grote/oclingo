@@ -62,7 +62,6 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat)
 	WS         = [\t\r ]*;
 	NL         = "\n";
 	IDENTIFIER = "_"*[a-z][A-Za-z0-9_]*;
-	LUACALL    = "@"[a-zA-Z_][A-Za-z0-9_]*;
 	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
 	STRING     = "\"" ([^"\n]|"\\\"")* "\"";
@@ -113,7 +112,6 @@ start:
 		"#div"           { return PARSER_PDIV; }
 		"#pow"           { return PARSER_PPOW; }
 		"#abs"           { return PARSER_PABS; }
-		LUACALL          { token_.index  = g_->index(string(1)); return PARSER_LUACALL; }
 		";;"             { return PARSER_DSEM; }
 		";"              { return PARSER_SEM; }
 		".."             { return PARSER_DOTS; }
@@ -228,7 +226,6 @@ start:
 		"#div"           { return PARSER_PDIV; }
 		"#pow"           { return PARSER_PPOW; }
 		"#abs"           { return PARSER_PABS; }
-		LUACALL          { token_.index  = g_->index(string(1)); return PARSER_LUACALL; }
 		";;"             { return PARSER_DSEM; }
 		";"              { return PARSER_SEM; }
 		".."             { return PARSER_DOTS; }
@@ -272,7 +269,7 @@ lua:
 		"#end_lua" WS "." { grounder()->luaExec(luaBegin_, string(10, state().cursor_ - luaEnd)); goto start; }
 		NL                { if(eof()) { syntaxError(); return 0; } step(); goto lua; }
 		ANY               { goto lua; }
-	 */
+	*/
 blockcomment:
 	/*!re2c
 		"*%" { if(--bc == 0) goto start; goto blockcomment; }

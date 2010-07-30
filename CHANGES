@@ -1,3 +1,6 @@
+gringo 3.0.2
+	* fixed parsing problems with @ symbol
+	* fixed wrong handling of minimize constraints
 gringo 3.0.1
 	* added possibility to intercept models using lua
 	* fixed compilation issues with cmake-2.6

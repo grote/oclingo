@@ -271,32 +271,32 @@ term(res) ::= ANONYMOUS(var). { res = new VarTerm(var.loc()); }
 term(res) ::= INFIMUM(inf).   { res = new ConstTerm(inf.loc(), Val::create(Val::INF, 0)); }
 term(res) ::= SUPREMUM(sup).  { res = new ConstTerm(sup.loc(), Val::create(Val::SUP, 0)); }
 
-term(res) ::= term(a) DOTS term(b).                      { res = new RangeTerm(a->loc(), a, b); }
-term(res) ::= term(a) SEM term(b).                       { res = new PoolTerm(a->loc(), a, b); }
-term(res) ::= term(a) PLUS term(b).                      { res = new MathTerm(a->loc(), MathTerm::PLUS, a, b); }
-term(res) ::= term(a) MINUS term(b).                     { res = new MathTerm(a->loc(), MathTerm::MINUS, a, b); }
-term(res) ::= term(a) MULT term(b).                      { res = new MathTerm(a->loc(), MathTerm::MULT, a, b); }
-term(res) ::= term(a) SLASH term(b).                     { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) DIV term(b).                       { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) PDIV term(b).                      { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) MOD term(b).                       { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= term(a) PMOD term(b).                      { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= term(a) POW term(b).                       { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= term(a) PPOW term(b).                      { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= term(a) AND term(b).                       { res = new MathTerm(a->loc(), MathTerm::AND, a, b); }
-term(res) ::= term(a) XOR term(b).                       { res = new MathTerm(a->loc(), MathTerm::XOR, a, b); }
-term(res) ::= term(a) QUESTION term(b).                  { res = new MathTerm(a->loc(), MathTerm::OR, a, b); }
-term(res) ::= PABS LBRAC term(a) RBRAC.                  { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
-term(res) ::= VBAR term(a) VBAR.                         { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
-term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.    { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
-term(res) ::= LBRAC(l) termlist(args) RBRAC.             { res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
-term(res) ::= LUACALL(id) LBRAC termlist(args) RBRAC.    { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
-term(res) ::= LUACALL(id) LBRAC RBRAC.                   { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
-term(res) ::= MINUS(m) term(a). [UMINUS]                 { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
-term(res) ::= BNOT(m) term(a). [UBNOT]                   { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
+term(res) ::= term(a) DOTS term(b).                         { res = new RangeTerm(a->loc(), a, b); }
+term(res) ::= term(a) SEM term(b).                          { res = new PoolTerm(a->loc(), a, b); }
+term(res) ::= term(a) PLUS term(b).                         { res = new MathTerm(a->loc(), MathTerm::PLUS, a, b); }
+term(res) ::= term(a) MINUS term(b).                        { res = new MathTerm(a->loc(), MathTerm::MINUS, a, b); }
+term(res) ::= term(a) MULT term(b).                         { res = new MathTerm(a->loc(), MathTerm::MULT, a, b); }
+term(res) ::= term(a) SLASH term(b).                        { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) DIV term(b).                          { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) PDIV term(b).                         { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) MOD term(b).                          { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= term(a) PMOD term(b).                         { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= term(a) POW term(b).                          { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= term(a) PPOW term(b).                         { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= term(a) AND term(b).                          { res = new MathTerm(a->loc(), MathTerm::AND, a, b); }
+term(res) ::= term(a) XOR term(b).                          { res = new MathTerm(a->loc(), MathTerm::XOR, a, b); }
+term(res) ::= term(a) QUESTION term(b).                     { res = new MathTerm(a->loc(), MathTerm::OR, a, b); }
+term(res) ::= PABS LBRAC term(a) RBRAC.                     { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
+term(res) ::= VBAR term(a) VBAR.                            { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
+term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
+term(res) ::= LBRAC(l) termlist(args) RBRAC.                { res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
+term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
+term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
+term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
+term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
 
 nweightlist(res) ::= weightlit(lit).                         { res = vec1(lit); }
 nweightlist(res) ::= nweightlist(list) COMMA weightlit(lit). { res = list; res->push_back(lit); }
