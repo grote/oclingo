@@ -2,7 +2,8 @@
 
 svn update
 REV=$(svn status -v | grep -o "^ *[0-9]* *[0-9]*" | head -n1 | grep -o "[0-9]*$")
-make debug release static target=all || exit 1
+cpus=$[$(cat /proc/cpuinfo| grep processor | wc -l)+1]
+make debug release static target=all -j${cpus} || exit 1
 
 prefix=/home/wv/bin/linux/32
 public_html=${HOME}/public_html/gringo/gringo-x86-linux
