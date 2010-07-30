@@ -89,15 +89,15 @@ private:
 	void add();
 
 private:
-	Grounder    *g_;
-	IncConfig   &config_;
-	Streams     &streams_;
-	void        *parser_;
-	Token        token_;
-	bool         error_;
-	uint32_t     include_;
-	ErrorVec     errors_;
-	StatementPtr last_;
+	Grounder       *g_;
+	IncConfig      &config_;
+	Streams        &streams_;
+	void           *parser_;
+	Token           token_;
+	bool            error_;
+	uint32_t        include_;
+	ErrorVec        errors_;
+	StatementPtrVec last_;
 	// parsing optimize statements
 	int          level_;
 	bool         maximize_;

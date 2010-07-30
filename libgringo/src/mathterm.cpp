@@ -51,7 +51,7 @@ Val MathTerm::val(Grounder *grounder) const
 {
 	try
 	{
-		// TODO: what about moving all the function into Val
+		// TODO: what about moving all the functions into Val
 		switch(f_)
 		{
 			case PLUS:  return Val::create(Val::NUM, a_->val(grounder).number() + b_->val(grounder).number()); break;

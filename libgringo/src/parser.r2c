@@ -479,14 +479,14 @@ Parser::DomStmRng Parser::domainStm(uint32_t var)
 void Parser::add(Statement *s)
 {
 	if(config_.incBase && iPart_ != IPART_BASE) { delete s; }
-	else                                        { last_.reset(s); }
+	else                                        { last_.push_back(s); }
 }
 
 void Parser::add()
 {
-	if(last_.get())
+	while(!last_.empty())
 	{
-		StatementRng rng(grounder()->add(last_.release()));
+		StatementRng rng(grounder()->add(last_.pop_back().release()));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
