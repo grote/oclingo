@@ -1,7 +1,7 @@
 1 Prerequisites
 ---------------
 
-Boost (>= v1.36) - http://www.boost.org/
+Boost (>= v1.37) - http://www.boost.org/
 cmake (>= v2.6)  - http://www.cmake.org/
 
 1.1 Optional Components
