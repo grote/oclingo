@@ -143,7 +143,7 @@ namespace
 			case LUA_TSTRING: { return Val::ID; }
 			default:
 			{
-				Val *val  = checkVal(L, 1);
+				Val *val  = checkVal(L, index);
 				return val->type;
 			}
 		}
