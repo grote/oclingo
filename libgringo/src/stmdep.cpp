@@ -22,9 +22,6 @@
 #include <gringo/grounder.h>
 #include <gringo/exceptions.h>
 
-#define BOOST_NO_HASH
-#include <boost/graph/graphviz.hpp>
-
 namespace StmDep
 {
 
@@ -388,29 +385,27 @@ void Builder::analyze(Grounder *g)
 
 void Builder::toDot(Grounder *g, std::ostream &out)
 {
-	typedef boost::GraphvizDigraph Graph;
-	typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
-	typedef boost::graph_traits<Graph>::edge_descriptor Edge;
-	Graph graph;
-	std::map<StmNode*, Vertex>  stmMap;
-	std::map<PredNode*, Vertex> predMap;
+	std::map<StmNode*,  int>  stmMap;
+	std::map<PredNode*, int> predMap;
+
+	out << "digraph {\n";
 	foreach(StmNode &stm, stmNodes_)
 	{
-		Vertex v = stmMap[&stm] = boost::add_vertex(graph);
-		std::ostringstream oss;
-		stm.print(g, oss);
-		boost::get(boost::vertex_attribute, graph)[v]["label"] = oss.str();
-		boost::get(boost::vertex_attribute, graph)[v]["shape"] = "box";
+		int id = stmMap.size() + predMap.size();
+		stmMap[&stm] = id;
+		out << id << "[label=\"";
+		stm.print(g, out);
+		out << "\", shape=box]\n";
 	}
 	foreach(PredNode &pred, predNodes_)
 	{
 		if(!pred.isNull())
 		{
-			Vertex v = predMap[&pred] = boost::add_vertex(graph);
-			std::ostringstream oss;
-			pred.print(g, oss);
-			boost::get(boost::vertex_attribute, graph)[v]["label"] = oss.str();
-			boost::get(boost::vertex_attribute, graph)[v]["shape"] = "ellipse";
+			int id = stmMap.size() + predMap.size();
+			predMap[&pred] = id;
+			out << id << "[label=\"";
+			pred.print(g, out);
+			out << "\", shape=ellipse]\n";
 		}
 	}
 	foreach(StmNode &stm, stmNodes_)
@@ -418,15 +413,15 @@ void Builder::toDot(Grounder *g, std::ostream &out)
 		typedef std::pair<PredNode*, Node::Type> Pred;
 		foreach(Pred pred, stm.depend_)
 		{
-			Edge edge = boost::add_edge(predMap[pred.first], stmMap[&stm], graph).first;
-			if(pred.second == Node::NEG)
-				boost::get(boost::edge_attribute, graph)[edge]["style"] = "dashed";
+			out << predMap[pred.first] << " -> " << stmMap[&stm];
+			if(pred.second == Node::NEG) { out << "[style=\"dashed\"]"; }
+			out << ";\n";
 		}
 	}
 	foreach(PredNode &pred, predNodes_)
 		foreach(StmNode *stm, pred.depend_)
-			boost::add_edge(stmMap[stm], predMap[&pred], graph).first;
-	boost::write_graphviz(out, graph);
+			out << stmMap[stm] << " -> " << predMap[&pred] << ";\n";
+	out << "}\n";
 }
 
 Builder::~Builder()
