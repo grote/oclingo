@@ -84,6 +84,7 @@ void Grounder::addInternal(Statement *s)
 	{
 		s->ground(this);
 		delete s;
+		stats_.addFact();
 	}
 	else { statements_.push_back(s); }
 }
@@ -96,8 +97,9 @@ StatementRng Grounder::add(Statement *s)
 	return StatementRng(statements_.begin() + offset, statements_.end());
 }
 
-void Grounder::analyze(const std::string &depGraph)
+void Grounder::analyze(const std::string &depGraph, bool stats)
 {
+	// build dependency graph
 	StmDep::Builder prgDep;
 	foreach(Statement &s, statements_) prgDep.visit(&s);
 	prgDep.analyze(this);
@@ -105,6 +107,20 @@ void Grounder::analyze(const std::string &depGraph)
 	{
 		std::ofstream out(depGraph.c_str());
 		prgDep.toDot(this, out);
+	}
+
+	// generate input statistics
+	if(stats)
+	{
+		foreach(Statement &s, statements_) stats_.visit(&s);
+		prgDep.stats(this, stats_);
+		stats_.numScc = components_.size();
+		stats_.numPred = domains().size();
+		foreach(Component &component, components_)
+		{
+			if(component.statements.size() > 1) stats_.numSccNonTrivial ++;
+		}
+		stats_.print(std::cerr);
 	}
 }
 

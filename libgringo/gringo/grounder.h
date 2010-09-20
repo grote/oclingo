@@ -21,6 +21,7 @@
 #include <gringo/storage.h>
 #include <gringo/context.h>
 #include <gringo/locateable.h>
+#include <gringo/stats.h>
 
 typedef struct lua_State lua_State;
 
@@ -41,7 +42,7 @@ private:
 
 public:
 	Grounder(Output *out, bool debug);
-	void analyze(const std::string &depGraph = "");
+	void analyze(const std::string &depGraph = "", bool stats = false);
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
 	int luaIndex(const LuaTerm *term);
@@ -71,5 +72,6 @@ private:
 	bool                   debug_;
 	bool                   initialized_;
 	std::auto_ptr<LuaImpl> luaImpl_;
+	Stats                  stats_;
 };
 

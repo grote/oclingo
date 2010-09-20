@@ -84,7 +84,7 @@ int GringoApp::doRun()
 
 		o->initialize();
 		p.parse();
-		g.analyze(gringo.depGraph);
+		g.analyze(gringo.depGraph, gringo.stats);
 		g.ground();
 		o->finalize();
 	}

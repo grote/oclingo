@@ -48,7 +48,10 @@ public:
 	bool groundInput;
 	/** whether disjunctions will get shifted */
 	bool disjShift;
+	/** filename for optional dependency graph dump */
 	std::string depGraph;
 	bool compat;
+	/** whether statistics will be printed to stderr */
+	bool stats;
 };
 
