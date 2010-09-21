@@ -115,7 +115,8 @@ the following answer set can be computed:%
 %
 \begin{lstlisting}[numbers=none]
 Answer: 1
-... color(1,2) color(2,1) color(3,1) color(4,3) color(5,2) color(6,3)
+... color(1,2) color(2,1) color(3,1) \
+    color(4,3) color(5,2) color(6,3)
 \end{lstlisting}
 %
 Note that we have omitted the six instances of \pred{node}/$1$ and the
@@ -240,9 +241,7 @@ rather than in arbitrary ones.
 In order to determine the optimum, we can start by gradually
 decreasing the costs associated to answer sets
 until we cannot find a strictly better one anymore.
-To this end, it is important to invoke \clasp\ (or \clingo)
-with option ``\code{-n~0}'' (cf.\ Section~\ref{subsec:opt:clasp}),
-making it enumerate successively better answer sets
+\clasp\ (or \clingo) enumerates successively better answer sets
 w.r.t.\ the provided optimization statements (cf.\ Section~\ref{subsec:gringo:optimize}).
 Any answer set is printed as soon as it has been computed,
 and the last one is optimal.
@@ -280,7 +279,7 @@ In order to find them too, we can use the following command line options
 of \clasp\ (cf.\ Section~\ref{subsec:opt:clasp}):
 ``\code{--opt-value=11}'' in order to initialize the optimum and
 ``\code{--opt-all}'' to compute also equitable
-(rather than only strictly better) answer sets.%
+(rather than only strictly better) answer sets.
 \marginlabel{%
   The full invocation is:\\
   \code{\mbox{~}gringo \textbackslash\\
@@ -299,8 +298,8 @@ After obtaining only the second answer given above,
 we are sure that this is the unique optimal answer set,
 whose associated edge costs (cf.\ Figure~\ref{fig:tsp}) correspond to
 the reported optimization value~\code{11}.
-Note that, with \const{maximize} statements in the input, this correlation
-might be less straightforward because they are compiled into \const{minimize}
+Note that, with \const{\#maximize} statements in the input, this correlation
+might be less straightforward because they are compiled into \const{\#minimize}
 statements in the process of generating \lparse's output format~\cite{lparseManual}.
 Furthermore, if there are multiple optimization statements,
 \clasp\ (or \clingo) will report separate optimization values ordered by significance.
