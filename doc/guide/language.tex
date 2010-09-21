@@ -20,6 +20,7 @@ System \clingo\ internally couples \gringo\ and \clasp, thus,
 it takes care of both grounding and solving.
 In contrast to \gringo\ outputting ground programs, 
 \clingo\ returns answer sets.
+
 Usually logic programs are specified in one or more text files whose names are passed via the command line
 in an invocation of either \gringo\ or \clingo.
 We below provide a description of constructs belonging to the input language of \gringo\ and \clingo.
@@ -69,40 +70,41 @@ Any $L_j$ is a \emph{literal} of the form $A$ or $\code{not}~A$
 for an atom~$A$ where the connective \code{not} corresponds to default negation.
 The set of literals $\{L_1,\dots,L_n\}$ is called the body of the rule.
 Facts have an empty body.
-Throughout this section we will further extend the predicates that can be used 
+Throughout this section we further extend the predicates that can be used 
 in a rule including comparison predicates (Section \ref{subsec:gringo:comp}) and aggregates (Section \ref{subsec:gringo:aggregate}).
-Furthermore, \gringo{} expects rules to be save, i.e., 
-all variables that appear in a rule have to appear in some some positive literal (a literal not preceded by \code{not}) in the body.
+Furthermore, \gringo{} expects rules to be safe, i.e., 
+all variables that appear in a rule have to appear in some positive literal (a literal not preceded by \code{not}) in the body.
 If a variable appears positively in some predicate, then we say that this predicate binds the variable.
 
 Intuitively, the head of a rule has to be true whenever all its body literals are true.
-In ASP every predicate needs some derivation, i.e., 
-a predicate cannot be true if there is no body deriving it.
-This implies that only predicates appearing in some head can appear in answer sets.
-Furthermore, derivations
+In ASP every atom needs some derivation, i.e., 
+an atom cannot be true if there is no rule deriving it.
+This implies that only atoms appearing in some head can appear in answer sets.
+Furthermore, derivations%
 \footnote{There are extensions like disjunctions 
 that go beyond simple derivability and also require minimality w.r.t. a reduct. 
-We will not cover the semantics of such constraints in this guide.}%
+We do not cover the semantics of such constraints in this guide.}%
 have to be acyclic,
 a feature that is important to model reachability.
-As a simple example consider the program \code{a :- b. b :- a.}
+As a simple example, consider the program \code{a :- b. b :- a.}
 The only answer set to this program is the empty set.
 Adding either \code{a.} or \code{b.} to the program results in the answer set $\{a,b\}$.
 Finally, note that default negation is ignored when checking for acyclic derivations 
-(we do not need a reason for a predicate being false).
+(we do not need a reason for an atom being false).
 Default negation can be used to express choices, e.g., the program \code{a :- not b. b :- not a.} 
 has the two answer sets $\{a\}$ and $\{b\}$.
 But in practice it is never needed to express choices this way.
 For example in the introductory example in Section~\ref{sec:quickstart} we used a cardinality 
 constraint, which provides a much more readable way to introduce choices.
+\com{This paragraph contains a lot of information. Could someone help me making it more readable?}
 
 A fact has an empty body and thus its associated head predicate is always true 
-and will appear in all answer sets.
+and appears in all answer sets.
 On the other hand, integrity constraints eliminate answer set candidates.
 They are merely tests that discard unwanted answer sets.
-That is, there will be no answer sets that satisfy all literals an integrity constraint.
+That is, there are no answer sets that satisfy all literals an integrity constraint.
 Elaborate examples on the usage of facts, rules, and integrity constraints
-will be provided in Section~\ref{sec:examples}.
+are provided in Section~\ref{sec:examples}.
 
 \subsubsection{Classical Negation}\label{subsec:gringo:negation}
 
@@ -155,7 +157,7 @@ In fact, answer set candidates that contain both
 Disjunctive logic programs permit connective~``\code{|}'' between atoms in rule heads.
 A disjunction is true if at least one of its atoms is true.
 Additionally, logic programs have to satisfy a minimality criterion, 
-which we will not detail in this guide.
+which we do not detail in this guide.
 The simple program \code{a | b.} has the two answer sets $\{a\}$ and $\{b\}$ but
 does not admit the answer set ${a,b}$ because it is no minimal model.
 
@@ -174,7 +176,7 @@ Rather,
 \claspD~\cite{drgegrkakoossc08a},
 \cmodels~\cite{gilima06a,lierler05a}, or
 \gnt~\cite{janisesiyo06a}
-needs to be used for solving a disjunctive program.%
+need to be used for solving a disjunctive program.%
 \footnote{System \dlv~\cite{dlv03a} also deals with disjunctive programs,
   but it uses a different syntax than presented here.}
 We thus suggest to use ``choice constructs'' (cf.\ Section~\ref{subsec:gringo:aggregate})
@@ -216,7 +218,7 @@ spaces can also be dropped,
 while spaces after tokens \code{\#div} and \code{\#mod} are mandatory.
 Furthermore, the argument of function \code{\#abs}, \code{\#div}, and \code{\#mod} must be enclosed in parentheses.
 The four bitwise functions apply to signed integers,
-using the complement on two of a negative integer.
+using the two's complement of a negative integer.
 \eexample
 \end{example}
 
@@ -224,7 +226,7 @@ It is important to note that variables
 in the scope of an arithmetic function are not bound by a corresponding atom.
 For instance, the rule \code{p(X) :- p(X+1).} is not safe but \code{p(X-1) :- p(X).} is.
 Although, the latter might produce an infinite grounding 
-and \gringo{} will not necessarily halt when given such an input.
+and \gringo{} not necessarily halts when given such an input.
 
 \subsubsection{Built-In Comparison Predicates}\label{subsec:gringo:comp}
 
@@ -241,9 +243,9 @@ within the bodies of rules:
 The usage of comparison predicates is illustrated by the logic program:%
 \marginlabel{%
   The unique answer set of the program is obtained via call:\\
-  \code{\mbox{~}gringo -t \attach{examples/arithf.lp}{arithf.lp}}}
+  \code{\mbox{~}gringo -t \attach{examples/arithc.lp}{arithc.lp}}}
 %
-\lstinputlisting{examples/arithf.lp}
+\lstinputlisting{examples/arithc.lp}
 %
 The last two lines hint at the fact that arithmetic functions are evaluated
 before comparison predicates, so that the latter actually compare integers.
@@ -263,6 +265,7 @@ If the arity differs, then the name of the function symbol is compared lexicogra
 If again the name differs, then arguments are compared component wise.
 Finally, integers are always smaller than constants and constants are always smaller than function symbols.
 \eexample
+\comment{add \#sup and \#inf?}
 \end{example}
 
 Importantly, a built-in comparison predicate cannot bind variables, i.e.,
@@ -286,7 +289,7 @@ The next program demonstrates how terms can be assigned to variables:%
 %
 Line~3 contains four assignments, where the right-hand sides directly or indirectly
 depend on~\var{X} and~\var{Y}.
-These two variables are bound in Line~4 via atoms of predicate \pred{num}/$1$.
+These two variables are bound in Line~5 via atoms of predicate \pred{num}/$1$.
 Also observe the different usage and role of built-in comparison predicate~\code{==}.
 \eexample
 \end{example}
@@ -302,23 +305,23 @@ which allows for terms on the left hand side:
 %
 Here the term \code{f(a,X,X+1)} is unified with every function symbol provided by \code{sym}/$1$.
 Note the usage of \code{X+1} in the term.
-\gringo{} will not try to unify any term containing arithmetic 
+\gringo{} does not try to unify any term containing arithmetic 
 but in this example \code{X} occurs also directly as second argument of the argument
 and can thus be unified with.
-The term $X+1$ is merely a test that deferred and checked later.
+The term $X+1$ is merely a test that is deferred and checked later.
 For example, the fourth line is equivalent to:
 \begin{lstlisting}[firstnumber=6]
-unifyf(X) :- f(a,X,Y) := F, sym(F), Y = X + 1.
+unifyf(X) :- f(a,X,Y) := F, sym(F), Y == X + 1.
 \end{lstlisting}%
 \eexample
 \end{example}
 
-Finally, note that assignments to some extend can bind variables.
+Finally, note that assignments to some extent can bind variables.
 Of course cyclic assignments cannot bind variables.
 For example the rule \code{p(X) :- X = Y, Y = X.} is rejected by \gringo{}.
 Either \code{X} or \code{Y} has to be provided by some positive predicate in this case.
-Additionally, the unification is restricted to ground terms on the right hand side of the assignment, 
-that is all variables on the right hand side have to be by some other predicate.
+Additionally, unification is restricted to ground terms on the right hand side of the assignment, 
+that is, all variables on the right hand side have to be bound by some other predicate.
 
 \subsubsection{Intervals}\label{subsec:gringo:interval}
 
@@ -421,7 +424,7 @@ instantiated as follows:%
 %
 \begin{lstlisting}[firstnumber=5]
 meet :- available(jane), available(john).
-on(mon) | on(tues) | on(wed) | on(thurs) | on(fri) :- meet.
+on(mon) | on(tue) | on(wed) | on(thu) | on(fri) :- meet.
 \end{lstlisting}
 %
 The conjunction in Line~5 is obtained by replacing~\var{X} in
@@ -453,7 +456,7 @@ of the condition.
 Thus, the instantiated rule in Line~8 looks as follows:
 %
 \begin{lstlisting}[firstnumber=8]
-weekdays :- day(mon), day(tues), day(wed), day(thurs), day(fri).
+weekdays :- day(mon), day(tue), day(wed), day(thu), day(fri).
 \end{lstlisting}
 %
 The atoms in the body of this rule follow from facts, so that
@@ -462,25 +465,24 @@ the rule can be simplified to a fact \code{\pred{weekdays}.}
 \eexample
 \end{example}
 
-There are three important issues about the correct usage of conditions.
-First, all predicates of atoms on the right-hand side of a condition
+Note that there are three important issues about the correct usage of conditions:
+\begin{enumerate}
+\item All predicates of atoms on the right-hand side of a condition
 must be either domain predicates\comment{refer to appendix?},
 i.e., predicates that can be completely evaluated during grounding,
-or built-in (can be used on the left-hand side but only in a rule body),
-which is due to the fact that conditions are evaluated during grounding.
-
-Second, any variable occurring within a condition is considered as \emph{local},
-that is, a condition cannot be used to bind variables outside itself.
+or built-in, which is due to the fact that conditions are evaluated during grounding.
+\item Any variable occurring within a condition is considered as \emph{local},
+that is, a condition cannot be used to bind variables outside the condition.
 In turn, variables outside conditions are \emph{global}, and each variable
 within an atom in front of a condition must occur on the right-hand side or
 be global.
-Third, global variables take priority over local ones, that is,
+\item Global variables take priority over local ones, that is,
 they are instantiated first.
 As a consequence, a local variable that also occurs globally is substituted by a term
 before the ground instances of a condition are determined.
 Hence, the names of local variables must be chosen with care,
 making sure that they do not accidentally match the names of global variables.
-
+\end{enumerate}
 
 \subsubsection{Pooling}\label{subsec:gringo:pool}
 
@@ -901,8 +903,8 @@ duplicates of literals are removed
 as with \const{count} aggregates.
 Additionally, priorities can be associated with each literal.
 A (ground) optimize statement has the form:
-\[\mathsf{opt}\,\code{[}\,L_1=w_1@p_1,\dots,L_n=w_n@p_n\,\code{\char`\}}\]
-\[\mathsf{opt}\,\code{\char`\{}\,L_1=w_1@p_1,\dots,L_n=w_n@p_n\,\code{\char`\}}\]
+\[\mathsf{opt}\,\code{[}\,L_1=w_1@p_1,\dots,L_n=w_n@p_n\,\code{\char`\}}\] 
+\[\mathsf{opt}\,\code{\char`\{}\,L_1@p_1,\dots,L_n@p_n\,\code{\char`\}}\]
 where $\mathsf{opt}$ is either \code{\#maximize} or \code{\#minimize} , $L_i$ are literals 
 with associates (integer) weights $w_i$ and (integer) priorities $p_i$.
 
@@ -928,7 +930,7 @@ to always specify priorities to make the program more readable and order indepen
 To illustrate optimization, we consider a hotel booking situation
 where we want to choose one among five available hotels.
 The hotels are identified via numbers assigned in descending order of stars.
-Of course, the more stars a hotel has the more it costs per night.
+Of course, the more stars a hotel has, the more it costs per night.
 As an ancillary information, we know that hotel~\const{4} is located
 on a main street, which is why we expect its rooms to be noisy.
 This knowledge is specified in Line~1--5 of the following program:
@@ -981,7 +983,7 @@ To keep records of the contents of a logic program,
 a logic program file may include comments.
 A comment until the end of a line is initiated by symbol ``\code{\%},''
 and a comment within one or over multiple lines is enclosed
-by ``\code{\%*}'' and ``\code{*\%}.''
+in ``\code{\%*}'' and ``\code{*\%}.''
 As an abstract example, consider:
 %
 \begin{lstlisting}[numbers=none,escapechar=@]
@@ -1015,7 +1017,7 @@ Here are some examples:
 %
 \begin{lstlisting}[numbers=none]
 #show p/3. % Include all atoms of predicate p/3 in output
-#showp(X,Y) : q(X). % Supress p/3 if the condition holds
+#show(X,Y) : q(X). % Include p/3 if the condition holds
 \end{lstlisting}
 %
 A typical usage of \code{\#hide} and \code{\#show} is to hide all predicates
@@ -1025,14 +1027,14 @@ via ``\code{\#hide.}'' and to selectively re-add atoms of certain predicates
 \paragraph{Constant Replacement.}
 Constants appearing in a logic program may actually be placeholders for
 concrete values to be provided by a user.
-An example of this will be given in Section~\ref{subsec:ex:color}.
+An example of this is given in Section~\ref{subsec:ex:color}.
 Via the \code{\#const} declarative,
 one may define a default value to be inserted for a constant.
 Such a default value can still be overridden via command line option
 \code{--const} (cf.\ Section~\ref{subsec:opt:gringo}).
 Syntactically, \code{\#const} must be followed by an assignment having
 a (symbolic) constant on the left-hand side and a term on the right-hand side.
-Some exemplary \code{\#const} declarations are:
+Some exemplary constant declarations are:
 %
 \begin{lstlisting}[numbers=none]
 #const x = 42.
@@ -1071,7 +1073,7 @@ q(Z,X) :- p(X,Y), p(Y,Z), not p(Z,X).
 Observe that the resulting program is safe.
 Nevertheless, we suggest not to use domain statements because 
 in ASP it is common to use very short variable names and
-using domain statements will likely result in name clashes
+using domain statements likely results in name clashes
 and undesired behavior.
 
 \paragraph{Compute Statements.}
@@ -1105,7 +1107,7 @@ q(1;2).
 
 \paragraph{External Statements.}
 External statements are used to mark certain atoms as external. This means 
-that those atoms are not subject of simplification and consequently will not be removed 
+that those atoms are not subject of simplification and consequently are not removed 
 from the logic program. There are two kinds of external directives, 
 global and local external statements.
 
@@ -1121,8 +1123,8 @@ Consider the following example:
 p(1). p(2).
 r(X) :- q(X), p(X).
 \end{lstlisting}
-Here, the external predicate \code{q}/$1$ will not be used for simplification
-of the problem and hence two ground rules (excluding facts) will be printed.
+Here, the external predicate \code{q}/$1$ is not used for simplification
+of the problem and hence two ground rules (excluding facts) are printed.
 \eexample
 \end{example}
 
@@ -1146,6 +1148,8 @@ Furthermore, the \lparse\ output\cite{lparseManual} has been modified to include
 that stores a list  of all external atoms. For compatibility, this table is only inserted if the 
 program actually contains external directives. It contains the respective atom indices terminated
 by a zero and is inserted directly after \lparse' compute statement.
+\begin{example}
+The following listing gives schematic example output of \gringo\ when external are used:
 \begin{lstlisting}[numbers=none]
   ...
   0
@@ -1165,13 +1169,15 @@ by a zero and is inserted directly after \lparse' compute statement.
   0
   1
 \end{lstlisting}
+\eexample
+\end{example}
 
 \subsubsection{Integrated Scripting Language}\label{subsec:lang:lua}
 Utilizing the scripting language Lua\footnote{\url{http://www.lua.org}}, 
 \gringo's input language can be enriched by arbitrary arithmetical functions and implicit domains,
 answer sets can be intercepted and for example inserted into a database, or
 interactions between grounding and solving are possible when incrementally solving with \iclingo.
-We do not give an introduction to Lua here (there are numerous tutorial on the web), 
+We do not give an introduction to Lua here (there are numerous tutorials on the web), 
 but give some examples showing the capabilities of this integration.
 
 \begin{example}
@@ -1185,11 +1191,11 @@ To compute the unique answer set, invoke:\\
 In Line 3 we add a function that calculates the greatest common divisor of two numbers.
 This function is called in Line 20 and the result stored in predicate \code{gcd}/$3$.
 Note that Lua function calls look like function symbols but are preceded by ``\code{@}''.
-Regarding binding of variables, the same restrictions as with arithmetic \ref{subsec:gringo:arith} apply.
+Regarding binding of variables, the same restrictions as with arithmetic in Section \ref{subsec:gringo:arith} apply.
 
-In Line 9 we add function that emulates a range term.
+In Line 9 we add a function that emulates a range term.
 It returns a table containing all numbers in the interval $[\code{a},\code{b}]$.
-The values in this table are then successively replaced for the call \code{\@rng{X,Y}}.
+The values in this table are then successively replaced for the call \code{\@rng(X,Y)}.
 In fact, this function exactly behaves like a range term.
 \eexample
 \end{example}
@@ -1232,15 +1238,15 @@ To compute the unique answer set, invoke:\\
 \mbox{~}gringo -t \attach{examples/luav.lp}{luav.lp}}
 }%
 Function \code{f} in Line 2 returns a tuple 
-its first member a string indicating the type of the argument 
+whose first member is a string indicating the type of the argument 
 and the second reconstructs the value passed to function \code{f}.
-Note that in Line 4,6,9,11 and 13 the function \code{Val.new} is called.
+Note that in Line 4, 6, 9, 11 and 13 the function \code{Val.new} is called.
 Its first argument indicates that a function symbol is to be created and 
 the second argument passes the arguments of the function symbol.
 We do not give a name for the function symbol,
 thus a tuple is created (this is equivalent to passing the empty string as name).
-You can infer from context, how \gringo's other in-built ground terms are created.
-Finally, note that \gringo integers and strings are directly mapped 
+Similarly, \gringo's other in-built ground terms are created.
+Finally, note that \gringo\ integers and strings are directly mapped 
 to the respective Lua types.
 \eexample
 \end{example}
@@ -1303,6 +1309,7 @@ Note that the values from the answer set are inserted into the database.
 In fact the output of the program changes when it is consecutively called.
 Even more non-determinism can be added by using the option \code{--rand-freq=1.0}
 to induce 100 percent random decisions.
+\com{Admittedly, this example is somewhat spacy. Better ideas?}
 \eexample
 \end{example}
 
@@ -1343,7 +1350,7 @@ During an incremental computation, all static program parts are grounded first,
 while cumulative and volatile parts are grounded step-wise,
 replacing \code{\textit{constant}}s with successive step numbers starting from~\const{1}.
 Note that due to \gringo's grounding algorithm,
-rules will not be grounded twice using the same substitution of global variables
+rules are not grounded twice using the same substitution of global variables
 (the incremental constant is treated like a global constant here).
 After a grounding step, \clasp\ is usually invoked via an internal interface
 (like with \clingo), and the incremental computation stops after a step
@@ -1355,7 +1362,7 @@ it is important that (ground) head atoms within static, cumulative, and volatile
 are distinct from each other, and they must also be different from step to step
 (see~\cite{gekakaosscth08a} for details).
 In Section~\ref{subsec:ex:block},
-we will provide a typical example in which these conditions naturally hold.
+we provide a typical example in which these conditions naturally hold.
 
 \begin{example}
 For now, consider this simple Schur number example:
@@ -1366,8 +1373,7 @@ For now, consider this simple Schur number example:
   --istop=UNSAT
   }\\
   The solving stops when the largest number has been found.
-}
-%
+}%
 The Schur number~$n$ w.r.t. to a given number~$c$ is the largest integer 
 such that the interval~$[1..n]$ can be partitioned into $c$ sum-free sets.
 A set $S=\{c_1 ,\dots, c_k\}$ is sum-free if for each~$x_i$ and~$x_j$, 
