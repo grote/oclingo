@@ -27,6 +27,13 @@ We below provide a description of constructs belonging to the input language of 
 
 
 \subsubsection{Normal Programs and Integrity Constraints}\label{subsec:gringo:normal}
+\index{Terms}
+\index{Terms!Constants}
+\index{Terms!Variables}
+\index{Terms!Variables!Anonymous}
+\index{Terms!Functions}
+\index{Terms!\code{\#supremum}}
+\index{Terms!\code{\#infimum}}
 
 \begin{figure}
 \begin{rail}
@@ -54,6 +61,9 @@ A term that does not contain any (anonymous) variables is called a ground term.
 More complex terms involving arithmetics and other constructs
 are introduced later on.
 
+\index{Statements!Rules}
+\index{Statements!Facts}
+\index{Statements!Integrity Constraints}
 \begin{tabular}{rl@{}l}\label{eq:normal:rule}
 \textbf{Rule:} & $A_0$& $\code{:-}~L_1\code{,}\dots\code{,}L_n$\code{.}
 \\
@@ -67,7 +77,7 @@ are introduced later on.
 The head~$A_0$ of a fact or a rule is an \emph{atom} of the same form
 as a function symbol or constant.
 Any $L_j$ is a \emph{literal} of the form $A$ or $\code{not}~A$
-for an atom~$A$ where the connective \code{not} corresponds to default negation.
+for an atom~$A$ where the connective \code{not} corresponds to default negation\index{Literals!Default Negation}.
 The set of literals $\{L_1,\dots,L_n\}$ is called the body of the rule.
 Facts have an empty body.
 Throughout this section we further extend the predicates that can be used 
@@ -107,6 +117,7 @@ Elaborate examples on the usage of facts, rules, and integrity constraints
 are provided in Section~\ref{sec:examples}.
 
 \subsubsection{Classical Negation}\label{subsec:gringo:negation}
+\index{Literals!Classical Negation}
 
 In logic programs, connective \code{not} expresses default negation,
 that is, a literal $\code{not}~A$ is assumed to hold unless~$A$ is derived.
@@ -153,7 +164,7 @@ In fact, answer set candidates that contain both
 
 
 \subsubsection{Disjunction}\label{subsec:gringo:disjunction}
-
+\index{Aggregates!Disjunction}
 Disjunctive logic programs permit connective~``\code{|}'' between atoms in rule heads.
 A disjunction is true if at least one of its atoms is true.
 Additionally, logic programs have to satisfy a minimality criterion, 
@@ -185,6 +196,18 @@ instead of disjunction, unless the latter is required for complexity reasons
 
 
 \subsubsection{Built-In Arithmetic Functions}\label{subsec:gringo:arith}
+\index{Literals!Arithmetic Functions}
+\index{Literals!Arithmetic Functions!Addition, \code{+}}
+\index{Literals!Arithmetic Functions!Subtraction, \code{-}}
+\index{Literals!Arithmetic Functions!Multiplication, \code{*}}
+\index{Literals!Arithmetic Functions!Division, \code{/}}
+\index{Literals!Arithmetic Functions!Modulo, \code{\%}}
+\index{Literals!Arithmetic Functions!Exponentation, \code{**}}
+\index{Literals!Arithmetic Functions!Absolute Value, \code{\#abs}}
+\index{Literals!Arithmetic Functions!Bitwise AND, \code{\&}}
+\index{Literals!Arithmetic Functions!Bitwise OR, \code{?}}
+\index{Literals!Arithmetic Functions!Bitwise XOR, \code{\^}}
+\index{Literals!Arithmetic Functions!Bitwise Complement, \code{\textasciitilde}}
 
 \gringo\ and \clingo\ support a number of arithmetic functions that
 are evaluated during grounding.
@@ -229,6 +252,13 @@ Although, the latter might produce an infinite grounding
 and \gringo{} not necessarily halts when given such an input.
 
 \subsubsection{Built-In Comparison Predicates}\label{subsec:gringo:comp}
+\index{Literals!Comparison Predicates}
+\index{Literals!Comparison Predicates!Equality, \code{==}}
+\index{Literals!Comparison Predicates!Inequality, \code{!=}}
+\index{Literals!Comparison Predicates!Less, \code{<}}
+\index{Literals!Comparison Predicates!Less or Equal, \code{<=}}
+\index{Literals!Comparison Predicates!Greater,\code{>}}
+\index{Literals!Comparison Predicates!Greater or Equal\code{>=}}
 
 The following built-in predicates permit term comparisons
 within the bodies of rules:
@@ -274,6 +304,9 @@ comparison predicates are not considered to be positive.
 
 
 \subsubsection{Assignments}\label{subsec:gringo:assign}
+\index{Literals!Assignments}
+\index{Literals!Assignments!Term Unification, \code{:=}}
+\index{Literals!Assignments!Variable Assignment, \code{=}}
 
 The built-in predicates~\code{:=} and ~\code{=} can be used in the body of a rule
 to unify a term on their right-hand side 
@@ -324,6 +357,7 @@ Additionally, unification is restricted to ground terms on the right hand side o
 that is, all variables on the right hand side have to be bound by some other predicate.
 
 \subsubsection{Intervals}\label{subsec:gringo:interval}
+\index{Terms!Intervals}
 
 In Line~1 of Example~\ref{ex:assign},
 there are five facts~\code{\pred{num}($k$)}
@@ -406,6 +440,7 @@ cannot be used to bind the variable.
 
 
 \subsubsection{Conditions}\label{subsec:gringo:condition}
+\index{Aggregates!Conditions}
 
 Conditions allow for instantiating variables to
 collections of terms within a single rule.
@@ -485,6 +520,7 @@ making sure that they do not accidentally match the names of global variables.
 \end{enumerate}
 
 \subsubsection{Pooling}\label{subsec:gringo:pool}
+\index{Terms!Pooling}
 
 Symbol~``\code{;}'' allows for pooling alternative terms to be used as
 argument within an atom, thus, specifying rules more compactly.
@@ -562,6 +598,7 @@ to keep the encoding more compact and readable.
 
 
 \subsubsection{Aggregates}\label{subsec:gringo:aggregate}
+\index{Aggregates}
 
 An aggregate is an operation on a multiset of weighted literals that evaluates to some value. 
 In combination with comparisons, we can extract a truth value from an aggregate's evaluation,
@@ -574,18 +611,20 @@ and a multiset of literal $L_i$ each assigned to a weight $w_i$.
 An aggregate is true if operation $\mathsf{op}$ applied to the multiset of weights 
 of true literals is between the bounds (inclusive).
 Currently, \gringo\ supports the aggregates 
-\code{\#sum} (the sum of weights), 
-\code{\#min} (the minimum weight), 
-\code{\#max} (the maximum weight), and
-\code{\#avg} (the average of all weights
+\code{\#sum} (the sum of weights), \index{Aggregates!Sum, \code{\#sum}}
+\code{\#min} (the minimum weight), \index{Aggregates!Minimum, \code{\#min}}
+\code{\#max} (the maximum weight), and \index{Aggregates!Maximum, \code{\#max}}
+\code{\#avg} (the average of all weights \index{Aggregates!Average, \code{\#avg}}
 \footnote{The average aggregate over an empty set of weights is defined to be always true irrespective of any bounds.}%
 ).
 Furthermore, there are three aggregates that are syntactically different.
-The first is the \code{\#count} aggregate:
+The first is the \code{\#count}\index{Aggregates!Count, \code{\#count}} aggregate:
 \[l\,\code{\#count}\,\code{\char`\{}\, L_1\code{,} \dots\code{,} L_n \,\code{\char`\}}\, u\]%
 which basically are \code{\#sum} aggregates with all weights set to one 
 and duplicate true literals counted only once.
 Finally, there are the two parity aggregates:
+\index{Aggregates!Even Parity, \code{\#even}}%
+\index{Aggregates!Odd Parity, \code{\#odd}}%
 \begin{align*}
 &\code{\#even}\,\code{\char`\{}\, L_1\code{,} \dots\code{,} L_n \,\code{\char`\}} & &
 \code{\#odd}\,\code{\char`\{}\, L_1\code{,} \dots\code{,} L_n \,\code{\char`\}}
@@ -885,6 +924,7 @@ is not recommended in general because the space blow-up may be significant.
 \com{Should we mention stratifed aggregates that do not necessarily need conditions?}
 
 \subsubsection{Optimization}\label{subsec:gringo:optimize}
+\index{Statements!Optimize Statements}
 
 Optimization statements extend the basic question of
 whether a set of atoms is an answer set to
@@ -902,7 +942,9 @@ In set notation (curly brackets),
 duplicates of literals are removed
 as with \const{count} aggregates.
 Additionally, priorities can be associated with each literal.
-A (ground) optimize statement has the form:
+A (ground) optimize statement has the form: 
+\index{Statements!Optimize Statements!\#minimize}%
+\index{Statements!Optimize Statements!\#maximize}%
 \[\mathsf{opt}\,\code{[}\,L_1=w_1@p_1,\dots,L_n=w_n@p_n\,\code{\char`\}}\] 
 \[\mathsf{opt}\,\code{\char`\{}\,L_1@p_1,\dots,L_n@p_n\,\code{\char`\}}\]
 where $\mathsf{opt}$ is either \code{\#maximize} or \code{\#minimize} , $L_i$ are literals 
@@ -974,11 +1016,13 @@ to cost~\const{90} per night.
 
 
 \subsubsection{Meta-Statements}\label{subsec:gringo:meta}
+\index{Meta-Statements}
 
 After considering the language of logic programs,
 we now introduce features going beyond the contents of a program.
 
 \paragraph{Comments.}
+\index{Meta-Statements!Comments}
 To keep records of the contents of a logic program,
 a logic program file may include comments.
 A comment until the end of a line is initiated by symbol ``\code{\%},''
@@ -997,6 +1041,7 @@ comment over multiple lines
 \end{lstlisting}
 
 \paragraph{Hiding Predicates.}
+\index{Meta-Statements!Hiding Predicates, \code{\#show}, \code{\#hide}}%
 Sometimes, one may be interested only in a subset of the atoms belonging
 to an answer set.
 In order to suppress the atoms of ``irrelevant'' predicates from the output,
@@ -1025,6 +1070,7 @@ via ``\code{\#hide.}'' and to selectively re-add atoms of certain predicates
 \code{p/$n$} to the output via ``\code{\#show p/$n$.}''
 
 \paragraph{Constant Replacement.}
+\index{Meta-Statements!Constant Replacement, \code{\#const}}%
 Constants appearing in a logic program may actually be placeholders for
 concrete values to be provided by a user.
 An example of this is given in Section~\ref{subsec:ex:color}.
@@ -1045,6 +1091,7 @@ In the example above \code{x} would be replaced by \code{42}
 but when reversing the directives this would no longer be the case.
 
 \paragraph{Domain Declarations.}
+\index{Meta-Statements!Domain Declarations, \code{\#domain}}%
 Usually, variable names are local to a rule,
 where they must be bound via appropriate atoms.
 This locality can be undermined by using
@@ -1077,6 +1124,7 @@ using domain statements likely results in name clashes
 and undesired behavior.
 
 \paragraph{Compute Statements.}
+\index{Meta-Statements!Compute Statements, \code{\#compute}}%
 These statements are artifacts supported for backward compatibility.
 Although we strongly recommend to avoid compute statements,
 we now describe their syntax.
@@ -1106,6 +1154,7 @@ q(1;2).
 \end{lstlisting}
 
 \paragraph{External Statements.}
+\index{Meta-Statements!External Statements, \code{\#external}}%
 External statements are used to mark certain atoms as external. This means 
 that those atoms are not subject of simplification and consequently are not removed 
 from the logic program. There are two kinds of external directives, 
@@ -1173,6 +1222,7 @@ The following listing gives schematic example output of \gringo\ when external a
 \end{example}
 
 \subsubsection{Integrated Scripting Language}\label{subsec:lang:lua}
+\index{Lua}%
 Utilizing the scripting language Lua\footnote{\url{http://www.lua.org}}, 
 \gringo's input language can be enriched by arbitrary arithmetical functions and implicit domains,
 answer sets can be intercepted and for example inserted into a database, or
@@ -1190,18 +1240,22 @@ To compute the unique answer set, invoke:\\
 }%
 In Line 3 we add a function that calculates the greatest common divisor of two numbers.
 This function is called in Line 20 and the result stored in predicate \code{gcd}/$3$.
-Note that Lua function calls look like function symbols but are preceded by ``\code{@}''.
+Note that Lua function calls look like function symbols but are preceded by ``\code{@}''. 
+\index{Terms!Lua Function Call}%
+\index{Lua!Function Call}%
 Regarding binding of variables, the same restrictions as with arithmetic in Section \ref{subsec:gringo:arith} apply.
 
 In Line 9 we add a function that emulates a range term.
 It returns a table containing all numbers in the interval $[\code{a},\code{b}]$.
-The values in this table are then successively replaced for the call \code{\@rng(X,Y)}.
+\index{Lua!Term Insertion}%
+The values in this table are then successively inserted for the call \code{\@rng(X,Y)}.
 In fact, this function exactly behaves like a range term.
 \eexample
 \end{example}
 
 \begin{table}[ht]
 \centering
+\index{Lua!Val Metatable}%
 \begin{tabular}{||l|l||}
  \hline 
  \code{Val.NUM}  & Type identifier for \gringo\ numbers.\\
@@ -1252,6 +1306,7 @@ to the respective Lua types.
 \end{example}
 
 \begin{table}[ht]
+\index{Lua!Assignment Metatable}%
 \centering
 \begin{tabular}{||l|p{6cm}||}
  \hline 
@@ -1314,6 +1369,7 @@ to induce 100 percent random decisions.
 \end{example}
 
 \subsection{Input Language of \iclingo}\label{subsec:lang:iclingo}
+\index{Incremental Grounding}%
 
 System \iclingo~\cite{gekakaosscth08a} extends \clingo\ by an
 \emph{incremental} computation mode that incorporates both grounding and solving.
@@ -1327,6 +1383,8 @@ In addition, \iclingo\ deals with statements of the following form:
 #volatile   @\textit{constant}@.
 \end{lstlisting}
 %
+\index{Incremental Grounding!Base Part, \code{\#base}}%
+\index{Meta-Statements!Base Part, \code{\#base}}%
 Via ``\code{\const{\#base}.},''
 the subsequent part of a logic program is declared as static, that is,
 it is processed only once at the beginning of an incremental computation.
@@ -1343,6 +1401,10 @@ that is, all rules, facts, and integrity constraints computed in one step
 are dismissed before the next incremental step.
 Note that the type of a logic program part (static, cumulative, or volatile)
 is determined by the last
+\index{Incremental Grounding!Cumulative Part, \code{\#cumulative}}%
+\index{Meta-Statements!Cumulative Part, \code{\#cumulative}}%
+\index{Incremental Grounding!Volatile Part, \code{\#volatile}}%
+\index{Meta-Statements!Volatile Part, \code{\#volatile}}%
 \const{\#base}, \const{\#cumulative}, or \const{\#volatile} statement
 preceding it.
 
