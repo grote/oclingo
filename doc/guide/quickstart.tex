@@ -1,6 +1,6 @@
 \include{figures/hanoi}%
 \section{Quickstart}\label{sec:quickstart}
-In this section we will demonstrate the expressive power 
+In this section we demonstrate the expressive power 
 and the simple yet powerful modeling language of \gringo{}
 by looking at the simple Towers of Hanoi puzzle.
 It consists of three pegs and a set of discs of different sizes, 
@@ -8,13 +8,13 @@ which can be put onto the pegs.
 The goal is to move all pegs from the leftmost peg to the rightmost peg,
 where at each time only the topmost disc can be moved on top of another peg.
 Additionally, a disc may not be put on top of a smaller disc.
-We will ignore that there is an efficient algorithm to solve this problem 
+We ignore that there is an efficient algorithm to solve this problem 
 and just specify how a solution, in terms of a sequence of moves, has to look.
 In ASP it is custom to provide a \emph{uniform}
 problem definition~\cite{martru99a,niemela99a,schlipf95a}.
 Following this methodology, we separate the encoding
 from an instance of the following problem:
-given an initial placement of the discs, a goal situation, and a number of moves $n$,
+given an initial placement of the discs, a goal situation, and a number $n$,
 decide whether there is a sequence of moves of length $n$ 
 that satisfies the conditions given above.
 We will see that this decision problem can be elegantly 
@@ -37,12 +37,12 @@ Discs are enumerated by consecutive integers beginning with one
 where a disc with a lower number is considered to be bigger than a list with a higher number.
 The pegs can have arbitrary names. 
 Furthermore, the predicates \pred{init\_on}/$2$ and \pred{goal\_on}/$2$ describe the initial and goal situation, respectively.
-Their first argument is the number of a disc and the second argument the peg 
-this disc is located in the initial or goal situation.
+Their first argument is the number of a disc and the second argument is the peg 
+on which the disc is located in the initial or goal situation.
 Finally, the predicate \pred{moves}/$1$ specifies the number of moves within which the goal situation has to be reached.
 Note that the original puzzle had exactly three pegs and a fixed initial and goal situation.
 With ASP we can easily change this requirement and 
-the encoding represented in the following will work with an arbitrary number of pegs and any initial or goal situation.
+the encoding represented in the following works with an arbitrary number of pegs and any initial or goal situation.
 Figure~\ref{fig:toh_inst} depicts a possible instance (the dashed discs mark the goal situation) 
 corresponding to the ASP program given below.
 
@@ -69,7 +69,7 @@ We now proceed by encoding the Towers of Hanoi puzzle via non-ground rules (Sect
 i.e, rules with variables that are independent of particular instances.
 Typically, an encoding consists of a \emph{Generate}, a \emph{Define},
 and a \emph{Test} part~\cite{lifschitz02a}.
-We will follow this paradigm and
+We follow this paradigm and
 mark respective parts via comment lines beginning with \code{\%} in the encoding below.
 The variables \code{D}, \code{P}, \code{T}, and \code{M} are used
 to refer to disks, pegs, the \code{T}-th move in the sequence of moves, and the length of the sequence, respectively.
@@ -104,17 +104,17 @@ Note that at this point we have not constrained the moves.
 Up to now, any disc could be moved to any peg at each time point with out considering any problem constraints.
 
 Next follows the Define part, here we give rules that define new auxiliary predicates, 
-which as such do not touch the satisfiability of the problem but will be used in the Test part later on.
+which as such do not touch the satisfiability of the problem but are used in the Test part later on.
 The rule in Line 4 projects out the target peg of a move, i.e., the predicate \code{move}/$2$ can be used 
 if we only need the disc affected by a move but not its target location.
-We will use the predicate \code{on}/$3$ to capture the state of the Hanoi puzzle at each time point.
+We use the predicate \code{on}/$3$ to capture the state of the Hanoi puzzle at each time point.
 Its first two argument give the location of a disc at the time point given by the third argument.
 The next rule in Line 5 infers the location of each disc in the initial state (time point 0).
 Then we model the state transition using the rules in Line 6 and 7.
-The first rule is quite straightforward and states that the moved disc changes its location
+The first rule is quite straightforward and states that the moved disc changes its location.
 Note the usage of \code{not moves(T)} here.
 This literal prevents deriving an infinite number of rules, which would be all useless 
-because the state no longer changes.
+because the state no longer changes after the last move.
 The second rule makes sure that all discs that are not moved stay where they are.
 Finally, we define the auxiliary predicate \code{blocked}/$3$, 
 which marks positions w.r.t. pegs that cannot be moved from.
@@ -124,14 +124,14 @@ Note that we mark position zero to be blocked, too.
 This will be convenient later on to assert some redundant moves.
 
 Finally, there is the Test part building upon both Generate and Define part 
-asserting wrong moves that do not agree with the problem description.
+to rule out wrong moves that do not agree with the problem description.
 It consists solely of integrity constraints, which fail whenever all their literals are true.
-Its first integrity constraint in Line 11 asserts 
+The first integrity constraint in Line 11 asserts 
 that a disc that is blocked, i.e, with some disc on top, cannot be moved.
 Note the usage of \code{D-1} here, this way a disc cannot be put back to the same location again.
 The integrity constraint in Line 12 asserts that a disc can only be placed on top of a bigger disc.
 Line 13 asserts the goal situation.
-To make the the encoding more efficient, we add a redundant constraint in Line 14,
+To make the encoding more efficient, we add a redundant constraint in Line 14,
 which asserts that each disc at all time points is located on exactly one peg.
 Although, this constraint is implied by the constraints above,
 adding this additional domain knowledge greatly improves the speed with which the problem can be solved.
@@ -150,9 +150,9 @@ gringo %\attach{examples/inst_toh.lp}{inst\char`\_toh.lp}% %\attach{examples/enc
 \end{lstlisting}
 Note that (depending on your viewer) you can right or double-click on file names marked with a red font 
 to safe the associated file to disc.
-In the latter of the document, this is possible with all examples.
+This is possible with all examples given in this document.
 
-The output of the solver (\clingo{} in this case) will look something like that:
+The output of the solver (\clingo{} in this case) looks something like that:
 \begin{lstlisting}[numbers=none]
 Answer: 1
 move(4,b,1)  move(3,c,2)  move(4,c,3)  move(2,b,4)  \
