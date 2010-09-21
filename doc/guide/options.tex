@@ -11,8 +11,8 @@ when invoked with flag \code{--help} or \code{-h},
 respectively.%
 \footnote{%
   Note that our description of command line options
-  is based on Version~2.0.2 of \gringo, \clingo, and \iclingo\
-  as well as Version~1.1.2 of \clasp.
+  is based on Version~3.0.x of \gringo, \clingo, and \iclingo\
+  as well as Version~1.3.x of \clasp.
   While it is rather unlikely that command line options will
   disappear in future versions,
   additional ones might be introduced.
@@ -77,6 +77,7 @@ Output ground program in (human-readable) text format.
 \item[\code{--reify}]~\\
 Output ground program in form of facts.
 (These facts can then be used to, i.e., write a meta-interpreter.)
+\comment{add a section about a meta-interpreter}
 \item[\code{--lparse,-l}]~\\
 Output ground program in \lparse's numerical format~\cite{lparseManual}.
 \item[\code{--ground,-g}]~\\
@@ -276,8 +277,6 @@ Depending on the reasoning mode,
 only equitable or strictly better answer sets are computed.
 \item[\code{--supp-models}]~\\
 Compute supported models~\cite{apblwa88a} (rather than answer sets).
-\item[\code{--dimacs}]~\\
-Compute models of a propositional formula in DIMACS/CNF format~\cite{dimacs}.
 \item[\code{--trans-ext all|choice|weight|no}]~\\
 Compile extended rules~\cite{siniso02a} into normal rules of form (\ref{eq:normal:rule}).
 Arguments \code{choice} and \code{weight}
@@ -307,7 +306,7 @@ or systematically (with argument \code{no}).
 \end{description}
 %
 Having introduced the general options of \clasp,
-let us note that the options below \code{--dimacs} in the above list
+let us note that the options below \code{--supp-models} in the above list
 are quite low-level and more or less an issue of fine-tuning.
 More important is the fact that virtually all optimization functionalities
 are only provided by \clasp\ if the maximum number of answer sets to be
@@ -370,6 +369,7 @@ it is worthwhile to give \code{Vmtf} and \code{Vsids} for \code{--heuristic}
 a try, in particular,
 when the program under consideration is huge 
 but scarcely yields conflicts during search.
+For a brief overview about fine-tuning see \cite{gekasc09b}.
 
 
 \subsubsection{Lookback Options}\label{subsec:clasp:back}
