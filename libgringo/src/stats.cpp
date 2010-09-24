@@ -31,7 +31,7 @@ Stats::Stats()
 	, numLit_(0), numLitRel_(0)
 	, numTerm_(0), numTermVar_(0), numTermRestr_(0), numTermConst_(0)
 	, numScc(0), numSccNonTrivial(0)
-	, numPred(0), avgPredParams(0.0), numPredPos_(0), numPredNeg_(0), numPredAggr_(0)
+	, numPred(0), numPredVisible(0), avgPredParams(0.0), numPredPos_(0), numPredNeg_(0), numPredAggr_(0)
 	, integrityConstraint_(false), inAggregate_(false)
 {
 }
@@ -122,6 +122,7 @@ void Stats::print(std::ostream &out)
 
 	// predicates
 	out << "predicates              : " << std::setw(5) << numPred << std::endl;
+	out << " visible                : " << std::setw(5) << numPredVisible << std::endl;
 	out << " average parameters     : " << std::setw(5) << std::setprecision(2)  << avgPredParams << std::endl << std::endl;
 
 	// statements

@@ -113,9 +113,16 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 	if(stats)
 	{
 		foreach(Statement &s, statements_) stats_.visit(&s);
-		prgDep.stats(this, stats_);
 		stats_.numScc = components_.size();
 		stats_.numPred = domains().size();
+		size_t paramCount = 0;
+		foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+		{
+			paramCount += dom.second->arity();
+			stats_.numPredVisible += output()->show(dom.second->nameId(),dom.second->arity());
+		}
+		stats_.avgPredParams = (stats_.numPred == 0) ? 0 : paramCount*1.0 / stats_.numPred;
+
 		foreach(Component &component, components_)
 		{
 			if(component.statements.size() > 1) stats_.numSccNonTrivial ++;

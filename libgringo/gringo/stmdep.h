@@ -118,7 +118,6 @@ namespace StmDep
 		void visit(Groundable *grd, bool choice);
 		void visit(Statement *stm);
 		void analyze(Grounder *g);
-		void stats(Grounder *g, Stats &stats);
 		void toDot(Grounder *g, std::ostream &out);
 		~Builder();
 	private:

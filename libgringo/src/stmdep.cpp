@@ -383,17 +383,6 @@ void Builder::analyze(Grounder *g)
 	foreach(StmNode &stm, stmNodes_) t.start(g, &stm);
 }
 
-void Builder::stats(Grounder *g, Stats &stats)
-{
-	(void)g;
-	size_t count = 0;
-	foreach(PredNode &pred, predNodes_)
-	{
-		if(!pred.isNull()) count += pred.pred()->dom()->arity();
-	}
-	stats.avgPredParams = (stats.numPred == 0) ? 0 : count*1.0 / stats.numPred;
-}
-
 void Builder::toDot(Grounder *g, std::ostream &out)
 {
 	std::map<StmNode*,  int>  stmMap;

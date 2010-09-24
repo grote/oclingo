@@ -66,10 +66,10 @@ public: // added by grounder
 	size_t numScc;
 	//! Number of non-trivial SCCs (|SCC| > 1)
 	size_t numSccNonTrivial;
-
-public: // added by stmdep
 	//! Number of predicates
 	size_t numPred;
+	//! Number of visible predicates
+	size_t numPredVisible;
 	//! Average number of parameters per predicate
 	float avgPredParams;
 
