@@ -64,6 +64,8 @@ are introduced later on.
 \index{Statements!Rules}
 \index{Statements!Facts}
 \index{Statements!Integrity Constraints}
+Rules are defined as follows:\\
+
 \begin{tabular}{rl@{}l}\label{eq:normal:rule}
 \textbf{Rule:} & $A_0$& $\code{:-}~L_1\code{,}\dots\code{,}L_n$\code{.}
 \\
@@ -82,7 +84,7 @@ The set of literals $\{L_1,\dots,L_n\}$ is called the body of the rule.
 Facts have an empty body.
 Throughout this section we further extend the predicates that can be used 
 in a rule including comparison predicates (Section \ref{subsec:gringo:comp}) and aggregates (Section \ref{subsec:gringo:aggregate}).
-Furthermore, \gringo{} expects rules to be safe, i.e., 
+Furthermore, \gringo{} expects rules to be safe, i.e., \index{Safe Program}
 all variables that appear in a rule have to appear in some positive literal (a literal not preceded by \code{not}) in the body.
 If a variable appears positively in some predicate, then we say that this predicate binds the variable.
 
@@ -106,7 +108,7 @@ has the two answer sets $\{a\}$ and $\{b\}$.
 But in practice it is never needed to express choices this way.
 For example in the introductory example in Section~\ref{sec:quickstart} we used a cardinality 
 constraint, which provides a much more readable way to introduce choices.
-\com{This paragraph contains a lot of information. Could someone help me making it more readable?}
+%\com{This paragraph contains a lot of information. Could someone help me making it more readable?}
 
 A fact has an empty body and thus its associated head predicate is always true 
 and appears in all answer sets.
@@ -122,7 +124,7 @@ are provided in Section~\ref{sec:examples}.
 In logic programs, connective \code{not} expresses default negation,
 that is, a literal $\code{not}~A$ is assumed to hold unless~$A$ is derived.
 In contrast, the classical (or strong) negation of some proposition
-holds if the complement of the proposition is objectively derived~\cite{gellif91a}.
+holds if the complement of the proposition is derived~\cite{gellif91a}.
 Classical negation, indicated by symbol ``\code{-},'' is permitted in front of atoms.
 That is, if~$A$ is an atom, then~$\code{-}A$ is the complement of~$A$.
 Semantically, $\code{-}A$ is simply a new atom,
@@ -245,11 +247,13 @@ using the two's complement of a negative integer.
 \eexample
 \end{example}
 
-It is important to note that variables
+\begin{Note}
+that it is important that variables
 in the scope of an arithmetic function are not bound by a corresponding atom.
 For instance, the rule \code{p(X) :- p(X+1).} is not safe but \code{p(X-1) :- p(X).} is.
 Although, the latter might produce an infinite grounding 
 and \gringo{} not necessarily halts when given such an input.
+\end{Note}
 
 \subsubsection{Built-In Comparison Predicates}\label{subsec:gringo:comp}
 \index{Literals!Comparison Predicates}
@@ -295,12 +299,14 @@ If the arity differs, then the name of the function symbol is compared lexicogra
 If again the name differs, then arguments are compared component wise.
 Finally, integers are always smaller than constants and constants are always smaller than function symbols.
 \eexample
-\comment{add \#sup and \#inf?}
+%\comment{add \#sup and \#inf?}
 \end{example}
 
-Importantly, a built-in comparison predicate cannot bind variables, i.e.,
+\begin{Note}
+that a built-in comparison predicate cannot bind variables, i.e.,
 when checking whether a rule is safe, 
 comparison predicates are not considered to be positive.
+\end{Note}
 
 
 \subsubsection{Assignments}\label{subsec:gringo:assign}
@@ -349,12 +355,14 @@ unifyf(X) :- f(a,X,Y) := F, sym(F), Y == X + 1.
 \eexample
 \end{example}
 
-Finally, note that assignments to some extent can bind variables.
+\begin{Note}
+that assignments to some extent can bind variables.
 Of course cyclic assignments cannot bind variables.
 For example the rule \code{p(X) :- X = Y, Y = X.} is rejected by \gringo{}.
 Either \code{X} or \code{Y} has to be provided by some positive predicate in this case.
 Additionally, unification is restricted to ground terms on the right hand side of the assignment, 
 that is, all variables on the right hand side have to be bound by some other predicate.
+\end{Note}
 
 \subsubsection{Intervals}\label{subsec:gringo:interval}
 \index{Terms!Intervals}
@@ -434,10 +442,11 @@ for $\const{1}\leq m\leq\const{5}$ and $\const{5}\leq n\leq\const{9}$.
 \eexample
 \end{example}
 
-As with built-in arithmetic functions,
+\begin{Note}
+that as with built-in arithmetic functions,
 an integer interval mentioning some variable (like~\var{X} in Line~4 of Example~\ref{ex:int})
 cannot be used to bind the variable.
-
+\end{Note}
 
 \subsubsection{Conditions}\label{subsec:gringo:condition}
 \index{Aggregates!Conditions}
@@ -500,10 +509,11 @@ the rule can be simplified to a fact \code{\pred{weekdays}.}
 \eexample
 \end{example}
 
-Note that there are three important issues about the correct usage of conditions:
+\begin{Note}
+that there are three important issues about the correct usage of conditions:
 \begin{enumerate}
 \item All predicates of atoms on the right-hand side of a condition
-must be either domain predicates\comment{refer to appendix?},
+must be either domain predicates,%\comment{refer to appendix?}
 i.e., predicates that can be completely evaluated during grounding,
 or built-in, which is due to the fact that conditions are evaluated during grounding.
 \item Any variable occurring within a condition is considered as \emph{local},
@@ -518,6 +528,7 @@ before the ground instances of a condition are determined.
 Hence, the names of local variables must be chosen with care,
 making sure that they do not accidentally match the names of global variables.
 \end{enumerate}
+\end{Note}
 
 \subsubsection{Pooling}\label{subsec:gringo:pool}
 \index{Terms!Pooling}
@@ -921,7 +932,7 @@ is not recommended in general because the space blow-up may be significant.
 \eexample
 \end{example}
 
-\com{Should we mention stratifed aggregates that do not necessarily need conditions?}
+%\com{Should we mention stratifed aggregates that do not necessarily need conditions?}
 
 \subsubsection{Optimization}\label{subsec:gringo:optimize}
 \index{Statements!Optimize Statements}
@@ -1085,10 +1096,13 @@ Some exemplary constant declarations are:
 \begin{lstlisting}[numbers=none]
 #const x = 42.
 #const y = f(x,h).
-\end{lstlisting}%
-Note that (for efficiency reasons) constant declarations are order dependent.
+\end{lstlisting}
+
+\begin{Note}
+that (for efficiency reasons) constant declarations are order dependent.
 In the example above \code{x} would be replaced by \code{42}
 but when reversing the directives this would no longer be the case.
+\end{Note}
 
 \paragraph{Domain Declarations.}
 \index{Meta-Statements!Domain Declarations, \code{\#domain}}%
@@ -1118,10 +1132,13 @@ q(Z,X) :- p(X,Y), p(Y,Z), not p(Z,X).
 \end{lstlisting}
 %
 Observe that the resulting program is safe.
-Nevertheless, we suggest not to use domain statements because 
+
+\begin{Note}
+that we suggest not to use domain statements because 
 in ASP it is common to use very short variable names and
 using domain statements likely results in name clashes
 and undesired behavior.
+\end{Note}
 
 \paragraph{Compute Statements.}
 \index{Meta-Statements!Compute Statements, \code{\#compute}}%
@@ -1152,6 +1169,13 @@ q(1;2).
 #compute 0 { p(X) : q(X) }.       % :- 1 { not p(X) : q(X) }.
 #compute   { not p(X) : X=4..5 }. % :- 1 { p(X) : X=4..5 }.
 \end{lstlisting}
+
+\begin{Note}
+that compute statement are not needed in general.
+The same behavior can be achieved by using integrity constraints.
+In fact, compute statements exist mainly for compatibility reasons with \lparse.
+We suggest to not use them.
+\end{Note}
 
 \paragraph{External Statements.}
 \index{Meta-Statements!External Statements, \code{\#external}}%
@@ -1364,7 +1388,7 @@ Note that the values from the answer set are inserted into the database.
 In fact the output of the program changes when it is consecutively called.
 Even more non-determinism can be added by using the option \code{--rand-freq=1.0}
 to induce 100 percent random decisions.
-\com{Admittedly, this example is somewhat spacy. Better ideas?}
+%\com{Admittedly, this example is somewhat spacy. Better ideas?}
 \eexample
 \end{example}
 

@@ -44,13 +44,15 @@
 \addtolength{\oddsidemargin}{-0.25\marginparwidth}
 
 % look whether commentssidepar exists
-\ifx\@commentsidepar\@empty
+%\ifx\@commentsidepar\@empty
 \newcommand{\marginlabel}[1]{\marginpar{\hspace*{-1.75mm}%
   \fbox{\parbox[t]{1.76\marginparwidth}{\footnotesize #1}}}}
-\else
-\newcommand{\marginlabel}[1]{\commentsidepar{\hspace*{-1.75mm}%
-  \fbox{\parbox[t]{1.76\marginparwidth}{\footnotesize #1}}}}
-\fi
+%\else
+%\newcommand{\marginlabel}[1]{\commentsidepar{\hspace*{-1.75mm}%
+%  \fbox{\parbox[t]{1.76\marginparwidth}{\footnotesize #1}}}}
+%\fi
+
+\newenvironment{Note}{\noindent\textbf{Note}}{}
 
 % \newcommand{\Comment}[1]{\marginpar{\hspace*{-1.5mm}%
 %   \fbox{\parbox[t]{1.7\marginparwidth}{\footnotesize \underline{COMMENT}\\#1}}}}
