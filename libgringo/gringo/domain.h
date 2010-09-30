@@ -30,15 +30,40 @@ public:
 		bool valid() const;
 		operator uint32_t() const { return index; }
 	};
+	typedef ValVec::iterator       iterator;
+	typedef ValVec::const_iterator const_iterator;
+
 private:
-	struct TupleCmp
+	class ArgSet
 	{
-		TupleCmp(Domain *d);
-		size_t operator()(const Index &i) const;
-		bool operator()(const Index &a, const Index &b) const;
-		Domain *dom;
+	private:
+		struct TupleCmp
+		{
+			TupleCmp(ArgSet *argSet);
+			size_t operator()(const Index &i) const;
+			bool operator()(const Index &a, const Index &b) const;
+			ArgSet *argSet;
+		};
+		typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
+
+	public:
+		iterator       begin()       { return vals_.begin(); }
+		const_iterator begin() const { return vals_.begin(); }
+		iterator       end()         { return vals_.end(); }
+		const_iterator end() const   { return vals_.end(); }
+		uint32_t       size() const  { return valSet_.size(); }
+
+		ArgSet(uint32_t arity);
+		const Index &find(const ValVec::const_iterator &v) const;
+		void insert(const ValVec::const_iterator &v, bool fact = false);
+
+	private:
+		uint32_t       arity_;
+		mutable ValVec vals_;
+		ValSet         valSet_;
 	};
-	typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
+
+public:
 	typedef std::pair<PredIndex*,Groundable*> PredInfo;
 	typedef std::vector<PredInfo> PredInfoVec;
 	typedef std::vector<PredIndex*> PredIndexVec;
@@ -49,7 +74,7 @@ public:
 	void insert(const ValVec::const_iterator &v, bool fact = false);
 	void enqueue(Grounder *g);
 	void append(Grounder *g, Groundable *gr, PredIndex *i);
-	uint32_t size() const   { return valSet_.size(); }
+	uint32_t size() const   { return vals_.size(); }
 	bool complete() const   { return complete_ && !external_; }
 	void complete(bool c)   { complete_ = c; }
 	void external(bool e)   { external_ = e; }
@@ -61,8 +86,7 @@ private:
 	uint32_t       nameId_;
 	uint32_t       arity_;
 	uint32_t       domId_;
-	mutable ValVec vals_;
-	ValSet         valSet_;
+	ArgSet         vals_;
 	PredInfoVec    index_;
 	PredIndexVec   completeIndex_;
 	uint32_t       new_;

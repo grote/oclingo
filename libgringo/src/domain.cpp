@@ -23,19 +23,19 @@
 #include <gringo/instantiator.h>
 #include <gringo/grounder.h>
 
-Domain::TupleCmp::TupleCmp(Domain *d) :
-	dom(d)
+Domain::ArgSet::TupleCmp::TupleCmp(ArgSet *argSet) :
+	argSet(argSet)
 {
 }
 
-size_t Domain::TupleCmp::operator()(const Index &i) const
+size_t Domain::ArgSet::TupleCmp::operator()(const Index &i) const
 {
-	return boost::hash_range(dom->vals_.begin() + i, dom->vals_.begin() + i + dom->arity_);
+	return boost::hash_range(argSet->vals_.begin() + i, argSet->vals_.begin() + i + argSet->arity_);
 }
 
-bool Domain::TupleCmp::operator()(const Index &a, const Index &b) const
+bool Domain::ArgSet::TupleCmp::operator()(const Index &a, const Index &b) const
 {
-	return std::equal(dom->vals_.begin() + a, dom->vals_.begin() + a + dom->arity_, dom->vals_.begin() + b);
+	return std::equal(argSet->vals_.begin() + a, argSet->vals_.begin() + a + argSet->arity_, argSet->vals_.begin() + b);
 }
 
 namespace
@@ -54,18 +54,13 @@ bool Domain::Index::valid() const
 	return *this != invalid;
 }
 
-Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
-	: nameId_(nameId)
-	, arity_(arity)
-	, domId_(domId)
+Domain::ArgSet::ArgSet(uint32_t arity)
+	: arity_(arity)
 	, valSet_(0, TupleCmp(this), TupleCmp(this))
-	, new_(0)
-	, complete_(false)
-        , external_(false)
 {
 }
 
-const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
+const Domain::Index &Domain::ArgSet::find(const ValVec::const_iterator &v) const
 {
 	Index idx(vals_.size());
 	vals_.insert(vals_.end(), v, v + arity_);
@@ -75,33 +70,54 @@ const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
 	else return invalid;
 }
 
-void Domain::insert(const ValVec::const_iterator &v, bool fact)
+void Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
 {
 	Index idx(vals_.size(), fact);
 	vals_.insert(vals_.end(), v, v + arity_);
 	std::pair<ValSet::iterator, bool> res = valSet_.insert(idx);
-	if(!res.second) 
+	if(!res.second)
 	{
 		vals_.resize(idx.index);
 		if(fact) res.first->fact = fact;
 	}
 }
 
+Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
+	: nameId_(nameId)
+	, arity_(arity)
+	, domId_(domId)
+	, vals_(arity)
+	, new_(0)
+	, complete_(false)
+	, external_(false)
+{
+}
+
+const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
+{
+	return vals_.find(v);
+}
+
+void Domain::insert(const ValVec::const_iterator &v, bool fact)
+{
+	vals_.insert(v, fact);
+}
+
 void Domain::enqueue(Grounder *g)
 {
-	uint32_t end = valSet_.size();
+	uint32_t end = vals_.size();
 	foreach(const PredInfo &info, index_)
 	{
 		bool modified = false;
 		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
-		for(ValSet::size_type i = new_; i < valSet_.size(); ++i, k+= arity_)
+		for(uint32_t i = new_; i < vals_.size(); ++i, k+= arity_)
 			modified = info.first->extend(g, k) || modified;
 		if(modified) g->enqueue(info.second);
 	}
 	foreach(PredIndex *idx, completeIndex_)
 	{
 		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
-		for(ValSet::size_type i = new_; i < valSet_.size(); ++i, k+= arity_)
+		for(uint32_t i = new_; i < vals_.size(); ++i, k+= arity_)
 			idx->extend(g, k);
 	}
 	new_ = end;
@@ -110,8 +126,8 @@ void Domain::enqueue(Grounder *g)
 void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
 {
 	ValVec::const_iterator j = vals_.begin();
-	for(ValSet::size_type i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
-	assert(!complete_ || new_ == valSet_.size());
+	for(uint32_t i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
+	assert(!complete_ || new_ == vals_.size());
 	if(!complete_) { index_.push_back(PredInfo(idx, gr)); }
 	else { completeIndex_.push_back(idx); }
 }
