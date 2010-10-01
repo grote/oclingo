@@ -112,6 +112,8 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 	// generate input statistics
 	if(stats)
 	{
+		foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+			dom.second->complete(false);
 		foreach(Statement &s, statements_) stats_.visit(&s);
 		stats_.numScc = components_.size();
 		stats_.numPred = domains().size();

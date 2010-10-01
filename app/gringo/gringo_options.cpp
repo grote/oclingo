@@ -50,7 +50,7 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 
 	gringo.addOptions()
 		("const,c"  , storeTo(consts)->setComposing(), "Replace constant <c> by value <v>\n", "<c>=<v>")
-		("stats"    , bool_switch(&stats),             "Print extended statistics")
+		("gstats"   , bool_switch(&stats),             "Print extended statistics")
 		("dep-graph", storeTo(depGraph),               "Dump program dependency graph to file", "<file>")
 		("text,t"   , bool_switch(&textOut),           "Print plain text format")
 		("reify"    , bool_switch(&metaOut),           "Print reified text format")
