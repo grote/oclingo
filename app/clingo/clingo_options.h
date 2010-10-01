@@ -26,6 +26,8 @@
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
 
+enum Mode { CLINGO, ICLINGO, TEST,  TESTX };
+
 struct iClingoConfig : public Clasp::IncrementalControl
 {
 	iClingoConfig()
@@ -47,7 +49,7 @@ struct iClingoConfig : public Clasp::IncrementalControl
 	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */
 };
 
-template <bool ICLINGO>
+template <Mode M>
 struct ClingoOptions
 {
 	ClingoOptions();
@@ -66,19 +68,19 @@ bool mapKeepForget(const std::string& s, bool&);
 
 //////////////////////////// ClingoOptions ////////////////////////////////////
 
-template <bool ICLINGO>
-ClingoOptions<ICLINGO>::ClingoOptions()
+template <Mode M>
+ClingoOptions<M>::ClingoOptions()
 	: claspMode(false)
-	, clingoMode(!ICLINGO)
+	, clingoMode(M == CLINGO)
 	, iStats(false)
 { }
 
-template <bool ICLINGO>
-void ClingoOptions<ICLINGO>::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden)
+template <Mode M>
+void ClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden)
 {
 	(void)hidden;
 	using namespace ProgramOptions;
-	if(ICLINGO)
+	if(M == ICLINGO)
 	{
 		clingoMode = false;
 		OptionGroup incremental("Incremental Computation Options");
@@ -116,18 +118,18 @@ void ClingoOptions<ICLINGO>::initOptions(ProgramOptions::OptionGroup& root, Prog
 	}
 	OptionGroup basic("Basic Options");
 	basic.addOptions()("clasp",    bool_switch(&claspMode),  "Run in Clasp mode");
-	if(ICLINGO)
+	if(M == ICLINGO)
 		basic.addOptions()("clingo",    bool_switch(&clingoMode),  "Run in Clingo mode");
 	root.addOptions(basic,true);
 
 }
 
-template <bool ICLINGO>
-bool ClingoOptions<ICLINGO>::validateOptions(ProgramOptions::OptionValues& values, GringoOptions& opts, Messages& m)
+template <Mode M>
+bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, GringoOptions& opts, Messages& m)
 {
 	(void)values;
 	(void)opts;
-	if(ICLINGO)
+	if(M == ICLINGO)
 	{
 		if (claspMode && clingoMode)
 		{
@@ -143,10 +145,10 @@ bool ClingoOptions<ICLINGO>::validateOptions(ProgramOptions::OptionValues& value
 	return true;
 }
 
-template <bool ICLINGO>
-void ClingoOptions<ICLINGO>::addDefaults(std::string& def)
+template <Mode M>
+void ClingoOptions<M>::addDefaults(std::string& def)
 {
-	if(ICLINGO)
+	if(M == ICLINGO)
 	{
 		def += "  --istop=SAT --iquery=1 --ilearnt=keep --iheuristic=forget\n";
 	}

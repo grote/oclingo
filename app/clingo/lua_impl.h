@@ -274,8 +274,8 @@ namespace
 
 }
 
-template <bool ICLINGO>
-class ClingoApp<ICLINGO>::LuaImpl
+template <Mode M>
+class ClingoApp<M>::LuaImpl
 {
 public:
 	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o)

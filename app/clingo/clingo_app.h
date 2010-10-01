@@ -33,7 +33,7 @@
 #include <iomanip>
 
 // (i)Clingo application, i.e. gringo+clasp
-template <bool ICLINGO>
+template <Mode M>
 class ClingoApp : public GringoApp, public Clasp::ClaspFacade::Callback
 {
 private:
@@ -109,10 +109,10 @@ protected:
 	ClaspInPtr             in_;               // input for clasp
 	Clasp::ClaspFacade*    facade_;           // interface to clasp lib
 public:
-	ClingoOptions<ICLINGO> clingo;            // (i)clingo options   - from command-line
+	ClingoOptions<M> clingo;                  // (i)clingo options   - from command-line
 };
 
-template <bool ICLINGO>
+template <Mode M>
 struct FromGringo : public Clasp::Input
 {
 	typedef std::auto_ptr<Grounder>    GrounderPtr;
@@ -122,14 +122,14 @@ struct FromGringo : public Clasp::Input
 	typedef std::auto_ptr<ClaspOutput> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 
-	FromGringo(ClingoApp<ICLINGO> &app, Streams& str);
+	FromGringo(ClingoApp<M> &app, Streams& str);
 	Format format() const { return Clasp::Input::SMODELS; }
 	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { return api ? api->createMinimize(s, heu) : 0; }
 	void getAssumptions(Clasp::LitVec& a);
 	bool read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int);
 	void release();
 
-	ClingoApp<ICLINGO>    &app;
+	ClingoApp<M>           &app;
 	GrounderPtr            grounder;
 	StoragePtr             storage;
 	ParserPtr              parser;
@@ -143,8 +143,8 @@ struct FromGringo : public Clasp::Input
 #	include "clingo/lua_impl.h"
 #else
 
-template <bool ICLINGO>
-class ClingoApp<ICLINGO>::LuaImpl
+template <Mode M>
+class ClingoApp<M>::LuaImpl
 {
 public:
 	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o) {}
@@ -160,8 +160,8 @@ public:
 // FromGringo
 /////////////////////////////////////////////////////////////////////////////////////////
 
-template <bool ICLINGO>
-FromGringo<ICLINGO>::FromGringo(ClingoApp<ICLINGO> &a, Streams& str)
+template <Mode M>
+FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
 	config.incBase  = app.gringo.ibase;
@@ -171,7 +171,7 @@ FromGringo<ICLINGO>::FromGringo(ClingoApp<ICLINGO> &a, Streams& str)
 		config.incEnd   = config.incBegin + app.gringo.ifixed;
 		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
-	else if(ICLINGO)
+	else if(M == ICLINGO)
 	{
 		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new iClaspOutput(app.gringo.disjShift));
@@ -188,18 +188,18 @@ FromGringo<ICLINGO>::FromGringo(ClingoApp<ICLINGO> &a, Streams& str)
 	}
 }
 
-template <bool ICLINGO>
-void FromGringo<ICLINGO>::getAssumptions(Clasp::LitVec& a)
+template <Mode M>
+void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
-	if(ICLINGO && !app.clingo.clingoMode)
+	if(M == ICLINGO && !app.clingo.clingoMode)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 		a.push_back(i.find(out->getIncAtom())->lit);
 	}
 }
 
-template <bool ICLINGO>
-bool FromGringo<ICLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
+template <Mode M>
+bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 {
 	assert(out.get());
 	out->setProgramBuilder(api);
@@ -231,8 +231,8 @@ bool FromGringo<ICLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 	return true;
 }
 
-template <bool ICLINGO>
-void FromGringo<ICLINGO>::release()
+template <Mode M>
+void FromGringo<M>::release()
 {
 	if (app.clingo.clingoMode && !app.luaLocked())
 	{
@@ -245,15 +245,15 @@ void FromGringo<ICLINGO>::release()
 // ClingoApp
 /////////////////////////////////////////////////////////////////////////////////////////
 
-template <bool ICLINGO>
-ClingoApp<ICLINGO> &ClingoApp<ICLINGO>::instance()
+template <Mode M>
+ClingoApp<M> &ClingoApp<M>::instance()
 {
-	static ClingoApp<ICLINGO> app;
+	static ClingoApp<M> app;
 	return app;
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::printVersion() const
+template <Mode M>
+void ClingoApp<M>::printVersion() const
 {
 	using namespace std;
 	GringoApp::printVersion();
@@ -265,8 +265,8 @@ void ClingoApp<ICLINGO>::printVersion() const
 	cout << "There is NO WARRANTY, to the extent permitted by law." << endl;
 }
 
-template <bool ICLINGO>
-std::string ClingoApp<ICLINGO>::getVersion() const {
+template <Mode M>
+std::string ClingoApp<M>::getVersion() const {
 	std::string r(GRINGO_VERSION);
 	r += " (clasp ";
 	r += CLASP_VERSION;
@@ -274,8 +274,8 @@ std::string ClingoApp<ICLINGO>::getVersion() const {
 	return r;
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::handleSignal(int) {
+template <Mode M>
+void ClingoApp<M>::handleSignal(int) {
 	for(int i = 0; i != sizeof(timer_)/sizeof(Timer); ++i)
 		timer_[i].stop();
 	fprintf(stderr, "\n*** INTERRUPTED! ***\n");
@@ -284,8 +284,8 @@ void ClingoApp<ICLINGO>::handleSignal(int) {
 	_exit(solver_.stats.solve.models != 0 ?  S_SATISFIABLE : S_UNKNOWN);
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::configureInOut(Streams& s)
+template <Mode M>
+void ClingoApp<M>::configureInOut(Streams& s)
 {
 	using namespace Clasp;
 	in_.reset(0);
@@ -299,7 +299,7 @@ void ClingoApp<ICLINGO>::configureInOut(Streams& s)
 	else
 	{
 		s.open(generic.input, constStream());
-		in_.reset(new FromGringo<ICLINGO>(*this, s));
+		in_.reset(new FromGringo<M>(*this, s));
 	}
 	if(config_.onlyPre)
 	{
@@ -315,20 +315,20 @@ void ClingoApp<ICLINGO>::configureInOut(Streams& s)
 	else if(in_->format() == Input::OPB)    { out_.reset(new PbOutput(generic.verbose > 1));  }
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::luaInit(Grounder &g, ClaspOutput &o)
+template <Mode M>
+void ClingoApp<M>::luaInit(Grounder &g, ClaspOutput &o)
 {
 	luaImpl.reset(new LuaImpl(&g, &solver_, &o));
 }
 
-template <bool ICLINGO>
-bool ClingoApp<ICLINGO>::luaLocked()
+template <Mode M>
+bool ClingoApp<M>::luaLocked()
 {
 	return luaImpl->locked();
 }
 
-template <bool ICLINGO>
-int ClingoApp<ICLINGO>::doRun()
+template <Mode M>
+int ClingoApp<M>::doRun()
 {
 	using namespace Clasp;
 	if (gringo.groundOnly) { return GringoApp::doRun(); }
@@ -356,8 +356,8 @@ int ClingoApp<ICLINGO>::doRun()
 
 #define STATUS(v1,x) if (generic.verbose<v1);else (x)
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
+template <Mode M>
+void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	using namespace Clasp;
 	using namespace std;
 	if (e == ClaspFacade::event_state_enter)
@@ -413,8 +413,8 @@ void ClingoApp<ICLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 	}
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
+template <Mode M>
+void ClingoApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 {
 	using namespace std;
 	using namespace Clasp;
@@ -453,8 +453,8 @@ void ClingoApp<ICLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 	}
 }
 
-template <bool ICLINGO>
-void ClingoApp<ICLINGO>::printResult(ReasonEnd end)
+template <Mode M>
+void ClingoApp<M>::printResult(ReasonEnd end)
 {
 	using namespace std;
 	using namespace Clasp;
