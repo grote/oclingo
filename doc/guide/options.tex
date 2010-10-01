@@ -409,7 +409,7 @@ restarting every $\code{\textit{n1}}*\code{\textit{n2}}^i$ conflicts,
 where~$i$ is the number of restarts performed so far.
 Given three arguments \code{\textit{n1},\textit{n2},\textit{n3}},
 \clasp\ repeats geometric restart sequence $\code{\textit{n1}}*\code{\textit{n2}}^i$
-when it reaches an outer limit~$\code{\textit{n1}}*\code{\textit{n3}}^j$~\cite{biere08a},
+when it reaches an outer limit~$\code{\textit{n3}}*\code{\textit{n2}}^j$~\cite{biere08a},
 where~$j$ counts how often the outer limit has been hit so far.
 Finally, restarts are disabled via argument~\code{no}.
 \item[\code{--local-restarts}]~\\
