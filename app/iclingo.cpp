@@ -19,5 +19,5 @@
 
 int main(int argc, char **argv)
 {
-	return ClingoApp<true>::instance().run(argc, argv);
+	return ClingoApp<ICLINGO>::instance().run(argc, argv);
 }
