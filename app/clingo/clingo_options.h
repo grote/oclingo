@@ -26,7 +26,7 @@
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
 
-enum Mode { CLINGO, ICLINGO, TEST,  TESTX };
+enum Mode { CLINGO, ICLINGO };
 
 struct iClingoConfig : public Clasp::IncrementalControl
 {
