@@ -10,6 +10,7 @@ where at each time only the topmost disc can be moved on top of another peg.
 Additionally, a disc may not be put on top of a smaller disc.
 We ignore that there is an efficient algorithm to solve this problem 
 and just specify how a solution, in terms of a sequence of moves, has to look.
+
 In ASP it is custom to provide a \emph{uniform}
 problem definition~\cite{martru99a,niemela99a,schlipf95a}.
 Following this methodology, we separate the encoding
@@ -33,7 +34,7 @@ Such a reduction is now exemplified.
 
 We consider a Towers of Hanoi instance specified via facts over predicates
 \pred{peg}/$1$ and \pred{disk}/$1$ that correspond to the pegs and disks in the puzzle.
-Discs are enumerated by consecutive integers beginning with one
+Discs are enumerated by consecutive integers beginning with one,
 where a disc with a lower number is considered to be bigger than a disc with a higher number.
 The pegs can have arbitrary names. 
 Furthermore, the predicates \pred{init\_on}/$2$ and \pred{goal\_on}/$2$ describe the initial and goal situation, respectively.
@@ -121,7 +122,7 @@ which marks positions w.r.t. pegs that cannot be moved from.
 First in Line 8, the position below a disc on some peg is blocked.
 Second in Line 9, the position directly below a blocked position is blocked.
 Note that we mark position zero to be blocked, too.
-This will be convenient later on to assert some redundant moves.
+This is convenient later on to assert some redundant moves.
 
 Finally, there is the Test part building upon both Generate and Define part 
 to rule out wrong moves that do not agree with the problem description.
