@@ -167,6 +167,23 @@ void RangeLit::normalize(Grounder *g, Expander *expander)
 	b_->normalize(this, Term::PtrRef(b_), g, expander, false);
 }
 
+double RangeLit::score(Grounder *g) const
+{
+	if(a_->constant() && b_->constant())
+	{
+		Val l = a_->val(g);
+		Val u = b_->val(g);
+		if(l.type == Val::NUM && u.type == Val::NUM)
+		{
+			int diff = u.num - l.num;
+			if(diff >= 0) { return diff; }
+			else          { return Lit::score(g); }
+		}
+		else { return Lit::score(g); }
+	}
+	else { return 0; }
+}
+
 Lit *RangeLit::clone() const
 {
 	return new RangeLit(*this);

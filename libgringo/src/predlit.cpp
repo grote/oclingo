@@ -240,11 +240,10 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
-double PredLit::score() const
+double PredLit::score(Grounder *g) const
 {
-	if(sign()) return -1;
-	else if(terms_.size() == 0) return -1;
-	else return std::pow(dom()->size(), 1.0 / terms_.size());
+	if(sign() || terms_.size() == 0) { return Lit::score(g); }
+	else                             { return std::pow(dom()->size(), 1.0 / terms_.size()); }
 }
 
 Lit *PredLit::clone() const

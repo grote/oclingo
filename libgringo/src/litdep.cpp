@@ -160,7 +160,7 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 	LitQueue queue;
 	foreach(LitNode &lit, litNodes_)
 	{
-		lit.score(lit.lit()->score());
+		lit.score(lit.lit()->score(g));
 		if(lit.done()) queue.push(&lit);
 	}
 	VarSet bound(b);
