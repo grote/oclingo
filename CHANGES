@@ -1,4 +1,5 @@
 gringo 3.0.2
+	* improved literal ordering heuristic
 	* fixed parsing problems with @ symbol
 	* fixed wrong handling of minimize constraints
 gringo 3.0.1
