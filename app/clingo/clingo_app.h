@@ -166,7 +166,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 {
 	config.incBase  = app.gringo.ibase;
 	config.incBegin = 1;
-	if (app.clingo.clingoMode)
+	if (app.clingo.mode == CLINGO)
 	{
 		config.incEnd   = config.incBegin + app.gringo.ifixed;
 		out.reset(new ClaspOutput(app.gringo.disjShift));
@@ -176,7 +176,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new iClaspOutput(app.gringo.disjShift));
 	}
-	if(app.clingo.clingoMode && app.gringo.groundInput)
+	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
 	{
 		storage.reset(new Storage(out.get()));
 		converter.reset(new Converter(out.get(), str));
@@ -191,7 +191,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 template <Mode M>
 void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
-	if(M == ICLINGO && !app.clingo.clingoMode)
+	if(M == ICLINGO && app.clingo.mode == ICLINGO)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 		a.push_back(i.find(out->getIncAtom())->lit);
@@ -234,7 +234,7 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 template <Mode M>
 void FromGringo<M>::release()
 {
-	if (app.clingo.clingoMode && !app.luaLocked())
+	if (app.clingo.mode == CLINGO && !app.luaLocked())
 	{
 		grounder.reset(0);
 		out.reset(0);
@@ -290,7 +290,7 @@ void ClingoApp<M>::configureInOut(Streams& s)
 	using namespace Clasp;
 	in_.reset(0);
 	facade_ = 0;
-	if(clingo.claspMode)
+	if(clingo.mode == CLASP)
 	{
 		s.open(generic.input);
 		if (generic.input.size() > 1) { messages.warning.push_back("Only first file will be used"); }
@@ -303,7 +303,7 @@ void ClingoApp<M>::configureInOut(Streams& s)
 	}
 	if(config_.onlyPre)
 	{
-		if(clingo.claspMode || clingo.clingoMode) { generic.verbose = 0; }
+		if(clingo.mode == CLASP || clingo.mode == CLINGO) { generic.verbose = 0; }
 		else { warning("Option '--pre' is ignored in incremental setting!"); config_.onlyPre = false; }
 	}
 	if(in_->format() == Input::SMODELS)
@@ -341,7 +341,7 @@ int ClingoApp<M>::doRun()
 	ClaspFacade clasp;
 	facade_ = &clasp;
 	timer_[0].start();
-	if (clingo.claspMode || clingo.clingoMode)
+	if (clingo.mode == CLASP || clingo.mode == CLINGO)
 	{
 		clingo.iStats = false;
 		clasp.solve(*in_, config_, this);
