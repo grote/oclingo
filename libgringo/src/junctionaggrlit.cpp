@@ -27,7 +27,7 @@
 #include <gringo/litdep.h>
 
 JunctionAggrLit::JunctionAggrLit(const Loc &loc, CondLitVec &conds)
-	: AggrLit(loc, conds, false, false)
+	: AggrLit(loc, conds, true, false)
 {
 }
 
@@ -36,6 +36,7 @@ bool JunctionAggrLit::match(Grounder *grounder)
 	hasFalse_ = false;
 	hasFact_  = false;
 	factOnly_ = true;
+	uniques_.clear();
 	foreach(CondLit &lit, conds_) lit.ground(static_cast<Grounder*>(grounder));
 	fact_ = head() ? hasFact_ : factOnly_ && !hasFalse_;
 	return !hasFalse_ || head();
@@ -66,8 +67,8 @@ void JunctionAggrLit::print(Storage *sto, std::ostream &out) const
 	bool comma = false;
 	foreach(const CondLit &lit, conds_)
 	{
-		if(comma) out << ",";
-		else comma = true;
+		if(comma) { out << (head() ? "|" : ","); }
+		else      { comma = true; }
 		lit.print(sto, out);
 	}
 }
@@ -75,6 +76,7 @@ void JunctionAggrLit::print(Storage *sto, std::ostream &out) const
 tribool JunctionAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*)
 {
 	(void)weight;
+	if(!lit.testUnique(uniques_)) { return true; }
 	if(lit.isFalse(g))
 	{
 		// no head literal can be false

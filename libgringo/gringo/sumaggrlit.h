@@ -53,8 +53,6 @@ public:
 private:
 	//! whether all evaluated literals are facts
 	bool    factOnly_;
-	//! whether the literal is a #count aggregate
-	bool	count_;
 	//! sum of evaluated weight literals that are facts
 	int32_t fixed_;
 	//! lower bound for the sum of evaluated weight literals that are not facts

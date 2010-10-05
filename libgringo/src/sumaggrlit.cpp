@@ -81,7 +81,6 @@ namespace
 
 SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool count)
 	: AggrLit(loc, conds, count, true)
-	, count_(count)
 {
 }
 
@@ -109,8 +108,8 @@ bool SumAggrLit::match(Grounder *grounder)
 	fact_     = false;
 	factOnly_ = true;
 	valLower_ = valUpper_ = fixed_ = 0;
-	checkUpperBound_ = (count_ && upper_.get());
-	if(set_) uniques_.clear();
+	checkUpperBound_ = (set() && upper_.get());
+	if(set()) uniques_.clear();
 	foreach(CondLit &lit, conds_) lit.ground(grounder);
 	lowerBound_ = lower_.get() ? std::max(lowerBound_ - fixed_, valLower_) : valLower_;
 	upperBound_ = upper_.get() || assign_ ? std::min(upperBound_ - fixed_, valUpper_) : valUpper_;
@@ -130,7 +129,7 @@ boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *ground
 	factOnly_ = true;
 	valLower_ = valUpper_ = fixed_ = 0;
 	checkUpperBound_ = false;
-	if(set_) uniques_.clear();
+	if(set()) uniques_.clear();
 	foreach(CondLit &lit, conds_) lit.ground(grounder);
 	fact_     = factOnly_;
 	return boost::tuple<int32_t, int32_t, int32_t>(valLower_, valUpper_, fixed_);
@@ -159,7 +158,7 @@ void SumAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 void SumAggrLit::accept(::Printer *v)
 { 
 	Printer *printer = v->output()->printer<Printer>();
-	printer->begin(head(), sign_, count_);
+	printer->begin(head(), sign_, set());
 	if(lower_.get() || assign_) printer->lower(lowerBound_);
 	if(upper_.get() || assign_) printer->upper(upperBound_);
 	foreach(CondLit &lit, conds_) lit.accept(printer);
@@ -180,7 +179,7 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 		lower_->print(sto, out);
 		out << (assign_ ? ":=" : " ");
 	}
-	if(count_) out << "#count{";
+	if(set()) out << "#count{";
 	else out << "#sum[";
 	foreach(const CondLit &lit, conds_)
 	{
@@ -188,7 +187,7 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 		else comma = true;
 		lit.print(sto, out);
 	}
-	if(count_) out << "}";
+	if(set()) out << "}";
 	else out << "]";
 	if(upper_.get())
 	{
@@ -202,7 +201,7 @@ tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(c
 	(void)g;
 	int32_t num = weight.number();
 	if(num == 0 && !head()) return true;
-	if(count_ && !lit.testUnique(uniques_))	return true;
+	if(set() && !lit.testUnique(uniques_))	return true;
 	if(lit.fact())
 	{
 		fixed_ += num;
