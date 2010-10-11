@@ -26,7 +26,7 @@
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
 
-enum Mode { CLINGO, ICLINGO };
+enum Mode { CLASP, CLINGO, ICLINGO };
 
 struct iClingoConfig : public Clasp::IncrementalControl
 {
@@ -59,6 +59,7 @@ struct ClingoOptions
 
 	bool claspMode;  // default: false
 	bool clingoMode; // default: true for clingo, false for iclingo
+	Mode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
 	iClingoConfig inc;
 };
@@ -72,6 +73,7 @@ template <Mode M>
 ClingoOptions<M>::ClingoOptions()
 	: claspMode(false)
 	, clingoMode(M == CLINGO)
+	, mode(M)
 	, iStats(false)
 { }
 
@@ -142,6 +144,9 @@ bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, Gri
 			inc.maxSteps = 1;
 		}
 	}
+	if(claspMode)       mode = CLASP;
+	else if(clingoMode) mode = CLINGO;
+	else                mode = ICLINGO;
 	return true;
 }
 
