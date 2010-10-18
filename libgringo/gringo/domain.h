@@ -56,6 +56,13 @@ private:
 		ArgSet(uint32_t arity);
 		const Index &find(const ValVec::const_iterator &v) const;
 		void insert(const ValVec::const_iterator &v, bool fact = false);
+		void extend(ArgSet &other)
+		{
+			foreach(const Index &idx, other.valSet_)
+			{
+				insert(vals_.begin() + idx.index, idx.fact);
+			}
+		}
 
 	private:
 		uint32_t       arity_;
