@@ -130,7 +130,7 @@ static int fail(lua_State *L,  const SQLSMALLINT type, const SQLHANDLE handle) {
     luaL_buffinit(L, &b);
     i = 1;
     while (1) {
-        ret = SQLGetDiagRec(type, handle, i, State, &NativeError, Msg, 
+        ret = SQLGetDiagRec(type, handle, i, State, &NativeError, (SQLCHAR*)Msg, 
                 sizeof(Msg), &MsgSize);
         if (ret == SQL_NO_DATA) break;
         luaL_addlstring(&b, Msg, MsgSize);
@@ -334,7 +334,7 @@ static int cur_close (lua_State *L) {
 		return fail(L, hSTMT, cur->hstmt);
 	/* Decrement cursor counter on connection object */
 	lua_rawgeti (L, LUA_REGISTRYINDEX, cur->conn);
-	conn = lua_touserdata (L, -1);
+	conn = (conn_data*)lua_touserdata (L, -1);
 	conn->cur_counter--;
 	luaL_unref (L, LUA_REGISTRYINDEX, cur->conn);
 	luaL_unref (L, LUA_REGISTRYINDEX, cur->colnames);
@@ -380,7 +380,7 @@ static void create_colinfo (lua_State *L, cur_data *cur) {
 		ret = SQLDescribeCol(cur->hstmt, i, buffer, sizeof(buffer), 
                 &namelen, &datatype, NULL, NULL, NULL);
 		/*if (ret == SQL_ERROR) return fail(L, hSTMT, cur->hstmt);*/
-		lua_pushstring (L, buffer);
+		lua_pushstring (L, (char*)buffer);
 		lua_rawseti (L, names, i);
 		lua_pushstring(L, sqltypetolua(datatype));
 		lua_rawseti (L, types, i);
@@ -433,7 +433,7 @@ static int conn_close (lua_State *L) {
 
 	/* Decrement connection counter on environment object */
 	lua_rawgeti (L, LUA_REGISTRYINDEX, conn->env);
-	env = lua_touserdata (L, -1);
+	env = (env_data*)lua_touserdata (L, -1);
 	env->conn_counter--;
 	/* Nullify structure fields. */
 	conn->closed = 1;
@@ -465,7 +465,7 @@ static int conn_execute (lua_State *L) {
 	if (error(ret))
 		return fail(L, hDBC, hdbc);
 
-	ret = SQLPrepare(hstmt, (char *) statement, SQL_NTS);
+	ret = SQLPrepare(hstmt, (SQLCHAR*) statement, SQL_NTS);
 	if (error(ret)) {
 		ret = fail(L, hSTMT, hstmt);
 		SQLFreeHandle(hSTMT, hstmt);
@@ -598,8 +598,8 @@ static int env_connect (lua_State *L) {
 		return luasql_faildirect (L, LUASQL_PREFIX"connection allocation error.");
 
 	/* tries to connect handle */
-	ret = SQLConnect (hdbc, (char *) sourcename, SQL_NTS, 
-		(char *) username, SQL_NTS, (char *) password, SQL_NTS);
+	ret = SQLConnect (hdbc, (SQLCHAR *) sourcename, SQL_NTS, 
+		(SQLCHAR *) username, SQL_NTS, (SQLCHAR *) password, SQL_NTS);
 	if (error(ret)) {
 		ret = fail(L, hDBC, hdbc);
 		SQLFreeHandle(hDBC, hdbc);

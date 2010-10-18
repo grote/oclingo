@@ -12,6 +12,12 @@ foreach(DRIVER SQLITE3 MYSQL)
 	endif()
 endforeach()
 
+if(WIN32)
+	set(luasql-libs ${luasql-libs} -lodbc32)
+	set(LIBLUASQL_SRC ${LIBLUASQL_SRC} src/ls_odbc.cpp)
+	set(WITH_ODBC TRUE)
+endif()
+
 configure_file(luasql/luasql.h.in ${CMAKE_CURRENT_BINARY_DIR}/luasql/luasql.h)
 
 include_directories(src . ${CMAKE_SOURCE_DIR}/liblua ${CMAKE_CURRENT_BINARY_DIR})
