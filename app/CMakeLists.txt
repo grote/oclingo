@@ -2,6 +2,7 @@ include_directories(${CMAKE_SOURCE_DIR}/libgringo ${CMAKE_SOURCE_DIR}/libprogram
 
 add_subdirectory(gringo)
 add_subdirectory(clingo)
+add_subdirectory(oclingo)
 
 set(gringo-libs gringo-lib program_opts-lib ${Boost_LIBRARIES})
 if(WITH_LUA STREQUAL "system")
@@ -24,3 +25,7 @@ set_target_properties(clingo-app PROPERTIES OUTPUT_NAME clingo)
 add_executable(iclingo-app iclingo.cpp)
 target_link_libraries(iclingo-app appclingo-lib appgringo-lib clasp-lib ${gringo-libs})
 set_target_properties(iclingo-app PROPERTIES OUTPUT_NAME iclingo)
+
+add_executable(oclingo-app oclingo.cpp)
+target_link_libraries(oclingo-app appoclingo-lib appclingo-lib appgringo-lib clasp-lib ${gringo-libs})
+set_target_properties(oclingo-app PROPERTIES OUTPUT_NAME oclingo)
