@@ -147,7 +147,7 @@ template <Mode M>
 class ClingoApp<M>::LuaImpl
 {
 public:
-	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o) {}
+	LuaImpl(Grounder *, Clasp::Solver *, ClaspOutput *) { }
 	bool locked() { return false; }
 	void onModel() { }
 	void onBeginStep() { }
