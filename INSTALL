@@ -11,9 +11,9 @@ SQLite (v3.x) - http://www.sqlite.org/
 MySQL         - http://www.mysql.com/
 Lua    (v5.1) - http://www.lua.org/
 
-Note that the lexer generatror re2c is only needed if the svn version has 
-been checked. Furthermore, the project ships with a lua library. But it is
-also possible to use the library provided by the system.
+Note that the lexer generatror re2c is only needed for the svn version 
+Furthermore, the project ships with a lua library. But it is also possible
+to use a lua library provided by the system.
 
 2 Compilation
 -------------
@@ -21,6 +21,23 @@ also possible to use the library provided by the system.
 If all prerequisites are satisfied and you are running a *nix, compilation
 should be as simple as typing:
 	make
+
+If you want to use a boost library that is not installed in a default 
+location than you can specify its location using environtment variables:
+
+BOOST_ROOT       - The preferred installation prefix for searching for Boost.
+                   Set this if the module has problems finding the proper
+                   Boost installation.
+
+BOOST_INCLUDEDIR - Similar to BOOST_ROOT but sets the path to the include 
+                   directory directly.
+
+BOOST_LIBRARYDIR - Similar to BOOST_ROOT but sets the path to the library
+                   directory directly.
+
+To use a Boost installation in /usr/local, you should compile the project 
+using:
+	BOOST_ROOT=/usr/local make
 
 2.1 Customization
 -----------------
