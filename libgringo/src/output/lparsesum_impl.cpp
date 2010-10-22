@@ -74,7 +74,7 @@ void SumPrinter::weight(const Val &v)
 
 tribool SumPrinter::simplify()
 {
-	int32_t sum = 0;
+	int64_t sum = 0;
 	size_t j = 0;
 	card_ = true;
 	for(size_t i = 0; i < pos_.size(); i++)
@@ -125,15 +125,27 @@ tribool SumPrinter::simplify()
 	}
 	neg_.resize(j);
 	wNeg_.resize(j);
+
+	// turn into count aggregate (important for optimizations later on)
+	if(wNeg_.size() + wPos_.size() == 1 && sum > 1)
+	{
+		if(hasLower_)             { lower_ = (lower_ + sum - 1) / sum; }
+		if(hasUpper_)             { upper_ = upper_ / sum; }
+		if(wPos_.size() > 0)      { wPos_[0] = 1; }
+		else if(wNeg_.size() > 0) { wNeg_[0] = 1; }
+		sum = 1;
+	}
+
 	// TODO: multiple occurrences of the same literal could be combined
 	//       in the head even between true and false literals!!!
 	if(hasLower_ && lower_ <= 0)   { hasLower_ = false; }
 	if(!hasLower_)                 { lower_    = 0; }
 	if(hasUpper_ && upper_ >= sum) { hasUpper_ = false; }
 	if(!hasUpper_)                 { upper_    = sum; }
-	if((upper_ < 0) || (sum < lower_)) { return sign_; }
-	else if(!hasLower_ && !hasUpper_)  { return !sign_; }
-	else                               { return unknown; }
+	if(hasUpper_ && hasLower_ && lower_ > upper_) { return sign_; }
+	if((upper_ < 0) || (sum < lower_))            { return sign_; }
+	else if(!hasLower_ && !hasUpper_)             { return !sign_; }
+	else                                          { return unknown; }
 }
 
 void SumPrinter::end()
