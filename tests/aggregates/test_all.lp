@@ -6,5 +6,6 @@
 #include "test_parity.lp".
 #include "test_avg.lp".
 #include "test_min.lp".
-all :- all(par), all(avg), all(min).
+#include "test_sum.lp".
+all :- all(par), all(avg), all(min), all(sum).
 #show all/0.
