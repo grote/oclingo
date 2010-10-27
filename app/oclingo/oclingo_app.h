@@ -29,7 +29,7 @@ template <>
 FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 	: app(a)
 {
-	std::cerr << "This is OCLINGO!!!" << std::endl;
+	std::cerr << "This is OCLINGO FromGringo!!!" << std::endl;
 
 	config.incBase  = app.gringo.ibase;
 	config.incBegin = 1;
@@ -58,6 +58,7 @@ FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 template <>
 void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 {
+	std::cerr << "This is OCLINGO getAssumptions!!!" << std::endl;
 	if(app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
@@ -69,6 +70,7 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 template <>
 void FromGringo<OCLINGO>::release()
 {
+	std::cerr << "This is OCLINGO release!!!" << std::endl;
 	if (app.clingo.mode == CLINGO && !app.luaLocked())
 	{
 		grounder.reset(0);
@@ -80,6 +82,7 @@ void FromGringo<OCLINGO>::release()
 template <>
 bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 {
+	std::cerr << "This is OCLINGO read!!!" << std::endl;
 	assert(out.get());
 	out->setProgramBuilder(api);
 	solver = &s;
@@ -119,6 +122,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 template <>
 void ClingoApp<OCLINGO>::configureInOut(Streams& s)
 {
+	std::cerr << "This is OCLINGO configureInOut!!!" << std::endl;
 	using namespace Clasp;
 	in_.reset(0);
 	facade_ = 0;
@@ -150,6 +154,7 @@ void ClingoApp<OCLINGO>::configureInOut(Streams& s)
 template <>
 int ClingoApp<OCLINGO>::doRun()
 {
+	std::cerr << "This is OCLINGO doRun!!!" << std::endl;
 	using namespace Clasp;
 	if (gringo.groundOnly) { return GringoApp::doRun(); }
 	if (cmdOpts_.basic.stats > 1) { 
@@ -178,6 +183,7 @@ int ClingoApp<OCLINGO>::doRun()
 
 template <>
 void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
+	std::cerr << "This is OCLINGO state!!!" << std::endl;
 	using namespace Clasp;
 	using namespace std;
 	if (e == ClaspFacade::event_state_enter)
@@ -237,6 +243,7 @@ void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 template <>
 void ClingoApp<OCLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 {
+	std::cerr << "This is OCLINGO event!!!" << std::endl;
 	using namespace std;
 	using namespace Clasp;
 	if (e == ClaspFacade::event_model)

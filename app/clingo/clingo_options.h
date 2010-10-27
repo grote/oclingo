@@ -25,8 +25,8 @@
 #include <clasp/clasp_facade.h>
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
+#include "oclingo/oclingo_options.h"
 
-enum Mode { CLASP, CLINGO, ICLINGO, OCLINGO };
 
 struct iClingoConfig : public Clasp::IncrementalControl
 {
@@ -59,7 +59,6 @@ struct ClingoOptions
 
 	bool claspMode;  // default: false
 	bool clingoMode; // default: true for clingo, false for iclingo
-	bool iclingoMode;// default: true for iclingo, false for oclingo
 	Mode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
 	iClingoConfig inc;
@@ -123,8 +122,6 @@ void ClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOpt
 	basic.addOptions()("clasp",    bool_switch(&claspMode),  "Run in Clasp mode");
 	if(M == ICLINGO || M == OCLINGO)
 		basic.addOptions()("clingo",    bool_switch(&clingoMode),  "Run in Clingo mode");
-	if(M == OCLINGO)
-		basic.addOptions()("iclingo",    bool_switch(&iclingoMode),  "Run in iClingo mode");
 	root.addOptions(basic,true);
 
 }
@@ -147,22 +144,9 @@ bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, Gri
 			inc.maxSteps = 1;
 		}
 	}
-	if(M == OCLINGO) {
-		if (claspMode && iclingoMode)
-		{
-			m.error = "Options '--iclingo' and '--clasp' are mutually exclusive";
-			return false;
-		}
-		if (clingoMode && iclingoMode)
-		{
-			m.error = "Options '--clingo' and '--iclingo' are mutually exclusive";
-			return false;
-		}
-	}
 	if(claspMode)        mode = CLASP;
 	else if(clingoMode)  mode = CLINGO;
-	else if(iclingoMode) mode = ICLINGO;
-	else                 mode = OCLINGO;
+	else                 mode = ICLINGO;
 	return true;
 }
 

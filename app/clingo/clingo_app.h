@@ -28,6 +28,7 @@
 #include "clasp/smodels_constraints.h"
 #include "gringo/gringo_app.h"
 #include "clingo/clingo_options.h"
+#include "oclingo/oclingo_options.h"
 #include "clingo/claspoutput.h"
 #include "clingo/timer.h"
 #include <iomanip>
@@ -55,6 +56,7 @@ protected:
 		cmdOpts_.setConfig(&config_);
 		cmdOpts_.initOptions(root, hidden);
 		clingo.initOptions(root, hidden);
+		if(M == OCLINGO) oclingo.initOptions(root, hidden);
 		generic.verbose = 1;
 		GringoApp::initOptions(root, hidden);
 	}
@@ -63,6 +65,7 @@ protected:
 	{
 		cmdOpts_.addDefaults(defaults);
 		clingo.addDefaults(defaults);
+		if(M == OCLINGO) oclingo.addDefaults(defaults);
 		defaults += "  --verbose=1";
 		GringoApp::addDefaults(defaults);
 	}
@@ -73,7 +76,8 @@ protected:
 			m.warning.push_back("Time limit not supported");
 		return cmdOpts_.validateOptions(v, m)
 			&& GringoApp::validateOptions(v, m)
-			&& clingo.validateOptions(v, GringoApp::gringo, m);
+			&& clingo.validateOptions(v, GringoApp::gringo, m)
+			&& (M != OCLINGO || oclingo.validateOptions(v, clingo.claspMode, clingo.clingoMode, clingo.mode, m));
 	}
 	// ---------------------------------------------------------------------------------------
 
@@ -109,7 +113,8 @@ protected:
 	ClaspInPtr             in_;               // input for clasp
 	Clasp::ClaspFacade*    facade_;           // interface to clasp lib
 public:
-	ClingoOptions<M> clingo;                  // (i)clingo options   - from command-line
+	ClingoOptions<M>  clingo;                  // (i)clingo options   - from command-line
+	oClingoOptions<M> oclingo;                 // oclingo options     - from command-line
 };
 
 template <Mode M>
