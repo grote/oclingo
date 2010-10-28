@@ -1,6 +1,7 @@
 gringo 3.0.3
 	* added (default) ODBC support in windows version
 	* fixed bug in simplification of #count/#sum aggregates
+	* Fixed problem with incremental grounding
 gringo 3.0.2
 	* improved literal ordering heuristic
 	* fixed parsing problems with @ symbol

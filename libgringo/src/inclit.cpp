@@ -94,6 +94,7 @@ namespace
 		if(current_ < config_.incEnd)
 		{
 			if(bind_) { grounder->val(var_, Val::create(Val::NUM, current_++), binder); }
+			else      { current_ = config_.incEnd; }
 			return std::make_pair(true, hasNew());
 		}
 		else { return std::make_pair(false, false); }
@@ -140,6 +141,11 @@ void IncLit::normalize(Grounder *g, Expander *expander)
 Lit *IncLit::clone() const
 {
 	return new IncLit(*this);
+}
+
+double IncLit::score(Grounder *) const
+{
+	return cumulative_ ? config_.incEnd - config_.incBegin : 1;
 }
 
 IncLit::~IncLit()

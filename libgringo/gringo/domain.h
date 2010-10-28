@@ -45,6 +45,7 @@ private:
 			ArgSet *argSet;
 		};
 		typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
+		ArgSet(const ArgSet &args);
 
 	public:
 		iterator       begin()       { return vals_.begin(); }
@@ -60,7 +61,7 @@ private:
 		{
 			foreach(const Index &idx, other.valSet_)
 			{
-				insert(vals_.begin() + idx.index, idx.fact);
+				insert(other.vals_.begin() + idx.index, idx.fact);
 			}
 		}
 
