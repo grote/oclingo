@@ -25,6 +25,7 @@
 #include <gringo/varcollector.h>
 #include <gringo/varterm.h>
 #include <gringo/output.h>
+#include <gringo/exceptions.h>
 
 IncLit::IncLit(const Loc &loc, IncConfig &config, bool cumulative, uint32_t varId)
 	: Lit(loc)
@@ -53,7 +54,7 @@ namespace
 	class IncIndex : public Index
 	{
 	public:
-		IncIndex(uint32_t var, bool cumulative, bool bind, IncConfig &config);
+		IncIndex(uint32_t var, bool cumulative, IncConfig &config);
 		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
 		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
 		void reset()  { finished_ = std::numeric_limits<int>::max(); }
@@ -66,16 +67,14 @@ namespace
 	private:
 		int        finished_;
 		bool       cumulative_;
-		bool       bind_;
 		IncConfig &config_;
 		uint32_t   var_;
 		int        current_;
 	};
 
-	IncIndex::IncIndex(uint32_t var, bool cumulative, bool bind, IncConfig &config)
+	IncIndex::IncIndex(uint32_t var, bool cumulative, IncConfig &config)
 		: finished_(std::numeric_limits<int>::max())
 		, cumulative_(cumulative)
-		, bind_(bind)
 		, config_(config)
 		, var_(var)
 		, current_(0)
@@ -93,8 +92,7 @@ namespace
 	{
 		if(current_ < config_.incEnd)
 		{
-			if(bind_) { grounder->val(var_, Val::create(Val::NUM, current_++), binder); }
-			else      { current_ = config_.incEnd; }
+			grounder->val(var_, Val::create(Val::NUM, current_++), binder);
 			return std::make_pair(true, hasNew());
 		}
 		else { return std::make_pair(false, false); }
@@ -108,8 +106,16 @@ void IncLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 	VarVec bind;
 	var_->vars(vars);
 	std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_insert_iterator<VarVec>(bind));
-	gr->instantiator()->append(new IncIndex(var_->index(), cumulative_, bind.size() > 0, config_));
-	bound.insert(bind.begin(), bind.end());
+	if(bind.size() > 0)
+	{
+		gr->instantiator()->append(new IncIndex(var_->index(), cumulative_, config_));
+		bound.insert(bind.begin(), bind.end());
+	}
+	else
+	{
+		gr->instantiator()->append(new MatchIndex(this));
+	}
+
 }
 
 void IncLit::accept(::Printer *v)
