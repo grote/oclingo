@@ -59,6 +59,9 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	double score(Grounder *) const;
 	Lit *clone() const;
+	const IncConfig &config() const { return config_; }
+	const VarTerm *var() const { return var_.get(); }
+	bool cumulative() const { return cumulative_; }
 	~IncLit();
 private:
 	IncConfig         &config_;
