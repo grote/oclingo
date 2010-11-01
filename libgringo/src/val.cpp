@@ -24,13 +24,14 @@ void Val::print(Storage *sto, std::ostream &out) const
 {
 	switch(type)
 	{
-		case ID:    { out << sto->string(index); break; }
-		case NUM:   { out << num; break; }
-		case FUNC:  { sto->func(index).print(sto, out); break; }
-		case INF:   { out << "#infimum"; break; }
-		case SUP:   { out << "#supremum"; break; }
-		case UNDEF: { assert(false); break; }
-		default:    { return sto->print(out, type, index); }
+		case ID:     { out << sto->string(index); break; }
+		case STRING: { out << '"' << sto->string(index) << '"'; break; }
+		case NUM:    { out << num; break; }
+		case FUNC:   { sto->func(index).print(sto, out); break; }
+		case INF:    { out << "#infimum"; break; }
+		case SUP:    { out << "#supremum"; break; }
+		case UNDEF:  { assert(false); break; }
+		default:     { return sto->print(out, type, index); }
 	}
 }
 
@@ -39,12 +40,13 @@ int Val::compare(const Val &v, Storage *s) const
 	if(type != v.type) return type < v.type ? -1 : 1;
 	switch(type)
 	{
-		case ID:    { return s->string(index).compare(s->string(v.index)); }
-		case NUM:   { return num - v.num; }
-		case FUNC:  { return s->func(index).compare(s->func(v.index), s); }
+		case ID:
+		case STRING: { return s->string(index).compare(s->string(v.index)); }
+		case NUM:    { return num - v.num; }
+		case FUNC:   { return s->func(index).compare(s->func(v.index), s); }
 		case INF:
-		case SUP:   { return 0; }
-		case UNDEF: { assert(false); break; }
+		case SUP:    { return 0; }
+		case UNDEF:  { assert(false); break; }
 	}
 	return s->compare(type, index, v.index);
 }
