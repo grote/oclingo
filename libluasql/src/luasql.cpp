@@ -1,6 +1,6 @@
 /*
 ** $Id: luasql.c,v 1.23 2007/10/29 20:58:23 carregal Exp $
-** See Copyright Notice in license.html
+** See Copyright Notice in COPYING
 */
 
 #include <string.h>

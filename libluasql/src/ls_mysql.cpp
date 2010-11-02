@@ -1,7 +1,7 @@
 /*
 ** LuaSQL, MySQL driver
 ** Authors:  Eduardo Quintao
-** See Copyright Notice in license.html
+** See Copyright Notice in COPYING
 ** $Id: ls_mysql.c,v 1.24 2007/08/22 18:37:06 tomas Exp $
 */
 

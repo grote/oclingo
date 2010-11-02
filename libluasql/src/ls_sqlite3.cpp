@@ -1,7 +1,7 @@
 /*
 ** LuaSQL, SQLite driver
 ** Author: Tiago Dionizio, Eduardo Quintao
-** See Copyright Notice in license.html
+** See Copyright Notice in COPYING
 
 ** $Id: ls_sqlite3.c,v 1.7 2007/10/16 15:36:08 carregal Exp $
 */

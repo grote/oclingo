@@ -2,7 +2,7 @@
 ** LuaSQL, PostgreSQL driver
 ** Authors: Pedro Rabinovitch, Roberto Ierusalimschy, Carlos Cassino
 ** Tomas Guisasola, Eduardo Quintao
-** See Copyright Notice in license.html
+** See Copyright Notice in COPYING
 ** $Id: ls_postgres.c,v 1.9 2007/06/18 01:22:45 tomas Exp $
 */
 
