@@ -25,8 +25,8 @@
 #include <clasp/clasp_facade.h>
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
-#include "oclingo/oclingo_options.h"
 
+enum Mode { CLASP, CLINGO, ICLINGO, OCLINGO };
 
 struct iClingoConfig : public Clasp::IncrementalControl
 {

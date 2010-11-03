@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-//#include "clingo/clingo_app.h"
 #include "oclingo/oclingo_app.h"
 
 int main(int argc, char **argv)

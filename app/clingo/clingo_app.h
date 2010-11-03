@@ -77,7 +77,7 @@ protected:
 		return cmdOpts_.validateOptions(v, m)
 			&& GringoApp::validateOptions(v, m)
 			&& clingo.validateOptions(v, GringoApp::gringo, m)
-			&& (M != OCLINGO || oclingo.validateOptions(v, clingo.claspMode, clingo.clingoMode, clingo.mode, m));
+			&& (M != OCLINGO || oclingo.validateOptions(v, clingo.claspMode, clingo.clingoMode, clingo.mode, clingo.inc, m));
 	}
 	// ---------------------------------------------------------------------------------------
 

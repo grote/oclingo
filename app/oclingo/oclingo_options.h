@@ -18,13 +18,10 @@
 
 #pragma once
 
-//#include <string>
-//#include <utility>
 #include <program_opts/app_options.h>
 #include <clasp/clasp_facade.h>
 #include <program_opts/value.h>
-
-enum Mode { CLASP, CLINGO, ICLINGO, OCLINGO };
+#include "clingo/clingo_options.h"
 
 struct oClingoConfig : public Clasp::IncrementalControl
 {
@@ -54,7 +51,7 @@ struct oClingoOptions
 {
 	oClingoOptions();
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
-	bool validateOptions(ProgramOptions::OptionValues& values, bool claspMode, bool clingoMode, Mode& mode, Messages&);
+	bool validateOptions(ProgramOptions::OptionValues& values, bool claspMode, bool clingoMode, Mode& mode, iClingoConfig& iconfig, Messages&);
 	void addDefaults(std::string& def);
 
 	bool iclingoMode;
@@ -76,14 +73,14 @@ void oClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOp
 		root.addOptions(online_opts);
 
 		OptionGroup basic("Basic Options");
-		basic.addOptions()("iclingo",    bool_switch(&iclingoMode),  "Run in iClingo mode");
+		basic.addOptions()("iclingo", bool_switch(&iclingoMode), "Run in iClingo mode");
 		root.addOptions(basic,true);
 	}
 }
 
 
 template <Mode M>
-bool oClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, bool claspMode, bool clingoMode, Mode& mode, Messages& m)
+bool oClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, bool claspMode, bool clingoMode, Mode& mode, iClingoConfig& iconfig, Messages& m)
 {
 	(void)values;
 
@@ -102,6 +99,12 @@ bool oClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, bo
 
 	if(iclingoMode) mode = ICLINGO;
 	else if(!claspMode && !clingoMode) mode = OCLINGO;
+
+	online.iQuery        = iconfig.iQuery;
+	online.keepHeuristic = iconfig.keepHeuristic;
+	online.keepLearnt    = iconfig.keepLearnt;
+	online.maxSteps      = iconfig.maxSteps;
+	online.minSteps      = iconfig.minSteps;
 
 	return true;
 }
