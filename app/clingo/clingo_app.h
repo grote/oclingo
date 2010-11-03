@@ -324,7 +324,7 @@ void ClingoApp<M>::luaInit(Grounder &g, ClaspOutput &o)
 template <Mode M>
 bool ClingoApp<M>::luaLocked()
 {
-	return luaImpl->locked();
+	return luaImpl.get() ? luaImpl->locked() : false;
 }
 
 template <Mode M>

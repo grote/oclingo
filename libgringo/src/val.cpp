@@ -25,7 +25,7 @@ void Val::print(Storage *sto, std::ostream &out) const
 	switch(type)
 	{
 		case ID:     { out << sto->string(index); break; }
-		case STRING: { out << '"' << sto->string(index) << '"'; break; }
+		case STRING: { out << '"' << sto->quote(sto->string(index)) << '"'; break; }
 		case NUM:    { out << num; break; }
 		case FUNC:   { sto->func(index).print(sto, out); break; }
 		case INF:    { out << "#infimum"; break; }

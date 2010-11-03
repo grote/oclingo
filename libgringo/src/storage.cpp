@@ -48,6 +48,64 @@ const std::string &Storage::string(uint32_t i)
 	return strings_.at(i);
 }
 
+std::string Storage::quote(const std::string &str)
+{
+	std::string res;
+	foreach(char c, str)
+	{
+		switch(c)
+		{
+		case '\n':
+			res.push_back('\\');
+			res.push_back('n');
+			break;
+		case '\\':
+			res.push_back('\\');
+			res.push_back('\\');
+			break;
+		case '"':
+			res.push_back('\\');
+			res.push_back('"');
+			break;
+		default:
+			res.push_back(c);
+			break;
+		}
+	}
+	return res;
+}
+
+std::string Storage::unquote(const std::string &str)
+{
+	std::string res;
+	bool slash = false;
+	foreach(char c, str)
+	{
+		if(slash)
+		{
+			switch(c)
+			{
+			case 'n':
+				res.push_back('\n');
+				break;
+			case '\\':
+				res.push_back('\\');
+				break;
+			case '"':
+				res.push_back('"');
+				break;
+			default:
+				assert(false);
+				break;
+			}
+			slash = false;
+		}
+		else if(c == '\\') { slash = true; }
+		else               { res.push_back(c); }
+	}
+	return res;
+}
+
 Domain *Storage::domain(uint32_t nameId, uint32_t arity)
 {
 	Signature sig(nameId, arity);

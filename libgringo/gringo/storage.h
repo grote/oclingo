@@ -40,6 +40,8 @@ private:
 		>
 	> FuncSet;
 public:
+	std::string quote(const std::string &str);
+	std::string unquote(const std::string &str);
 	Storage(Output *output);
 	uint32_t index(const Func &f);
 	const Func &func(uint32_t i);

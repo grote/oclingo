@@ -264,8 +264,8 @@ cmp(res) ::= EQUAL.   { res = RelLit::EQUAL; }
 cmp(res) ::= INEQUAL. { res = RelLit::INEQUAL; }
 
 term(res) ::= VARIABLE(var).  { res = new VarTerm(var.loc(), var.index); }
-term(res) ::= IDENTIFIER(id). { res = pParser->term(id.loc(), id.index); }
-term(res) ::= STRING(id).     { res = pParser->term(id.loc(), id.index); }
+term(res) ::= IDENTIFIER(id). { res = pParser->term(Val::ID, id.loc(), id.index); }
+term(res) ::= STRING(id).     { res = pParser->term(Val::STRING, id.loc(), id.index); }
 term(res) ::= NUMBER(num).    { res = new ConstTerm(num.loc(), Val::create(Val::NUM, num.number)); }
 term(res) ::= ANONYMOUS(var). { res = new VarTerm(var.loc()); }
 term(res) ::= INFIMUM(inf).   { res = new ConstTerm(inf.loc(), Val::create(Val::INF, 0)); }
