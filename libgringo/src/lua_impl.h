@@ -101,7 +101,6 @@ namespace
 	static Val toVal(lua_State *L, int index)
 	{
 		int type = lua_type(L, index);
-		if(type == LUA_TSTRING && lua_isnumber(L, index)) { type = LUA_TNUMBER; }
 		switch(type)
 		{
 			case LUA_TSTRING:
@@ -153,7 +152,6 @@ namespace
 	static int Val_new (lua_State *L)
 	{
 		int type  = luaL_checkinteger(L, 1);
-		if(type == Val::ID && lua_isnumber(L, 2)) { type = Val::NUM; }
 		switch(type)
 		{
 			case Val::STRING:
