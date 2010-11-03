@@ -41,6 +41,10 @@ IF(USE_STATIC_LIBS)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 ENDIF()
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-qualifiers")
+endif()
+
 set(Boost_USE_MULTITHREADED OFF CACHE STRING "Whether to Use multi-threaded boost libraries")
 find_package(Boost REQUIRED filesystem system)
 include_directories(${Boost_INCLUDE_DIRS})
