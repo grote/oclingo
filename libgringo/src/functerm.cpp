@@ -32,7 +32,7 @@ Val FuncTerm::val(Grounder *grounder) const
 {
 	ValVec vals;
 	foreach(const Term &term, args_) vals.push_back(term.val(grounder));
-	return Val::create(Val::FUNC, grounder->storage()->index(Func(name_, vals)));
+	return Val::create(Val::FUNC, grounder->index(Func(grounder, name_, vals)));
 }
 
 void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
@@ -53,7 +53,7 @@ void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 bool FuncTerm::unify(Grounder *grounder, const Val &v, int binder) const
 {
 	if(v.type != Val::FUNC) return false;
-	const Func &f = grounder->storage()->func(v.index);
+	const Func &f = grounder->func(v.index);
 	if(name_ != f.name_) return false;
 	if(args_.size() != f.args_.size()) return false;
 	for(TermPtrVec::size_type i = 0; i < args_.size(); i++)

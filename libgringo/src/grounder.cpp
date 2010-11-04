@@ -25,6 +25,7 @@
 #include <gringo/predindex.h>
 #include <gringo/exceptions.h>
 #include <gringo/luaterm.h>
+#include <gringo/inclit.h>
 
 #ifdef WITH_LUA
 #	include <lua_impl.h>
@@ -43,12 +44,53 @@ public:
 
 #endif
 
-Grounder::Grounder(Output *output, bool debug)
+TermDepthExpansion::TermDepthExpansion(IncConfig &config)
+	: config(config)
+{
+}
+
+bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
+{
+	bool found = false;
+	offset = 0;
+	foreach(const Val &val, rng)
+	{
+		if ( val.type == Val::FUNC )
+		{
+			int32_t depth = g->func(val.index).getDepth();
+			if(depth >= config.incEnd)
+			{
+				if(offset < depth) { offset = depth; }
+				found = true;
+			}
+		}
+	}
+	return found;
+}
+
+void TermDepthExpansion::expand(Grounder *g) const
+{
+	foreach (const DomainMap::const_reference &ref, g->domains())
+	{
+		for(int i = config.incBegin; i < config.incEnd; i++)
+		{
+			const_cast<Domain*>(ref.second)->addOffset(i);
+		}
+	}
+}
+
+TermDepthExpansion::~TermDepthExpansion()
+{
+}
+
+
+Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp)
 	: Storage(output)
 	, internal_(0)
 	, debug_(debug)
 	, initialized_(false)
 	, luaImpl_(new LuaImpl(this))
+	, termExpansion_(exp)
 {
 }
 
@@ -213,11 +255,6 @@ void Grounder::externalStm(uint32_t nameId, uint32_t arity)
 {
 	domain(nameId, arity)->external(true);
 	output()->external(nameId, arity);
-}
-
-Storage *Grounder::storage()
-{
-	return this;
 }
 
 Grounder::~Grounder()

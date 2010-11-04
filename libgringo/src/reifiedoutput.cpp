@@ -197,11 +197,11 @@ size_t ReifiedOutput::symbol(PredLitRep *pred)
 	Val val;
 	if(pred->dom()->arity() > 0)
 	{
-		val = Val::create(Val::FUNC, storage()->index(Func(pred->dom()->nameId(), ValVec(pred->vals().begin(), pred->vals().end()))));
+		val = Val::create(Val::FUNC, storage()->index(Func(storage(), pred->dom()->nameId(), ValVec(pred->vals().begin(), pred->vals().end()))));
 	}
 	else { val = Val::create(Val::ID, pred->dom()->nameId()); }
-	val = Val::create(Val::FUNC, storage()->index(Func(storage()->index("atom"), ValVec(1, val))));
-	val = Val::create(Val::FUNC, storage()->index(Func(storage()->index(pred->sign() ? "neg" : "pos"), ValVec(1, val))));
+	val = Val::create(Val::FUNC, storage()->index(Func(storage(), storage()->index("atom"), ValVec(1, val))));
+	val = Val::create(Val::FUNC, storage()->index(Func(storage(), storage()->index(pred->sign() ? "neg" : "pos"), ValVec(1, val))));
 	return symbol(val);
 }
 

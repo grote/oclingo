@@ -463,7 +463,7 @@ bool ClaspOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages& m
 
 void ClaspOptions::addDefaults(std::string& def) {
 	def += "1 --trans-ext=no --eq=5 --sat-prepro=no --rand-watches=yes\n";
-  def += "  --lookahead=no --heuristic=Berkmin --rand-freq=0.0 --rand-prob=no\n";
+	def += "  --lookahead=no --heuristic=Berkmin --rand-freq=0.0 --rand-prob=no\n";
 	def += "  --restarts=100,1.5 --shuffle=0,0 --deletion=3.0,1.1,3.0\n";
 	def += "  --strengthen=all --loops=common --contraction=250\n";
 }

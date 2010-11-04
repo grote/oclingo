@@ -71,11 +71,11 @@ void AggrLit::add(CondLit *cond)
 	conds_.push_back(cond);
 }
 
-void AggrLit::addDomain(bool fact) 
+void AggrLit::addDomain(Grounder *g, bool fact) 
 { 
 	assert(head());
 	foreach(CondLit &lit, conds_) 
-		lit.addDomain(fact && monotonicity() == MONOTONE);
+		lit.addDomain(g, fact && monotonicity() == MONOTONE);
 }
 
 void AggrLit::finish(Grounder *g) 
@@ -258,12 +258,12 @@ void CondLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-void CondLit::addDomain(bool fact) 
+void CondLit::addDomain(Grounder *g, bool fact) 
 { 
 	for(size_t p = 0; p < weights_.size(); p++)
 	{
 		head_->move(p);
-		head_->addDomain(fact);
+		head_->addDomain(g, fact);
 	}
 }
 

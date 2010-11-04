@@ -45,7 +45,6 @@ private:
 			ArgSet *argSet;
 		};
 		typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
-		ArgSet(const ArgSet &args);
 
 	public:
 		iterator       begin()       { return vals_.begin(); }
@@ -55,15 +54,10 @@ private:
 		uint32_t       size() const  { return valSet_.size(); }
 
 		ArgSet(uint32_t arity);
+		ArgSet(const ArgSet &argSet);
 		const Index &find(const ValVec::const_iterator &v) const;
 		void insert(const ValVec::const_iterator &v, bool fact = false);
-		void extend(ArgSet &other)
-		{
-			foreach(const Index &idx, other.valSet_)
-			{
-				insert(other.vals_.begin() + idx.index, idx.fact);
-			}
-		}
+		void extend(const ArgSet &other);
 
 	private:
 		uint32_t       arity_;
@@ -71,6 +65,8 @@ private:
 		ValSet         valSet_;
 	};
 
+private:
+	typedef std::map<int32_t, ArgSet> OffsetMap;
 public:
 	typedef std::pair<PredIndex*,Groundable*> PredInfo;
 	typedef std::vector<PredInfo> PredInfoVec;
@@ -79,7 +75,7 @@ public:
 public:
 	Domain(uint32_t nameId, uint32_t arity, uint32_t domId);
 	const Index &find(const ValVec::const_iterator &v) const;
-	void insert(const ValVec::const_iterator &v, bool fact = false);
+	void insert(Grounder *g, const ValVec::const_iterator &v, bool fact = false);
 	void enqueue(Grounder *g);
 	void append(Grounder *g, Groundable *gr, PredIndex *i);
 	uint32_t size() const   { return vals_.size(); }
@@ -90,11 +86,13 @@ public:
 	uint32_t arity() const  { return arity_; }
 	uint32_t nameId() const { return nameId_; }
 	uint32_t domId() const  { return domId_; }
+	void addOffset(int32_t offset);
 private:
 	uint32_t       nameId_;
 	uint32_t       arity_;
 	uint32_t       domId_;
 	ArgSet         vals_;
+	OffsetMap      valsLarger_;
 	PredInfoVec    index_;
 	PredIndexVec   completeIndex_;
 	uint32_t       new_;

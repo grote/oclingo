@@ -98,12 +98,12 @@ bool SumAggrLit::match(Grounder *grounder)
 	{
 		std::ostringstream oss;
 		oss << "cannot convert ";
-		val->print(grounder->storage(), oss);
+		val->print(grounder, oss);
 		oss << " to integer";
 		std::string str(oss.str());
 		oss.str("");
-		print(grounder->storage(), oss);
-		throw TypeException(str, StrLoc(grounder->storage(), loc()), oss.str());
+		print(grounder, oss);
+		throw TypeException(str, StrLoc(grounder, loc()), oss.str());
 	}
 	fact_     = false;
 	factOnly_ = true;

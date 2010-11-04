@@ -101,6 +101,7 @@ class WeightLit;
 class IncLit;
 class IncConfig;
 class Streams;
+class TermExpansion;
 
 struct Loc;
 
@@ -127,6 +128,7 @@ typedef boost::iterator_range<ValVec::const_iterator> ValRng;
 typedef boost::iterator_range<StatementPtrVec::iterator> StatementRng;
 typedef std::pair<Loc, uint32_t> VarSig;
 typedef std::vector<VarSig> VarSigVec;
+typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
 
 Term* new_clone(const Term& a);
 VarTerm* new_clone(const VarTerm& a);

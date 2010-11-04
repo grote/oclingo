@@ -183,7 +183,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	}
 	else
 	{
-		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2));
+		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
 		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
 	}
 }
@@ -223,6 +223,7 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 		{
 			config.incBegin = config.incEnd;
 			config.incEnd   = config.incEnd + 1;
+			grounder->termExpansion().expand(grounder.get());
 		}
 		grounder->ground();
 	}

@@ -205,7 +205,7 @@ namespace
 					vals.push_back(toVal(L, -1));
 					lua_pop(L, 1); // pop val
 				}
-				uint32_t index = storage->index(Func(storage->index(std::string(name)), vals));
+				uint32_t index = storage->index(Func(storage, storage->index(std::string(name)), vals));
 				pushVal(L, Val::create(type, index));
 				break;
 			}

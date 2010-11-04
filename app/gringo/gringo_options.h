@@ -20,6 +20,7 @@
 
 #include <string>
 #include <program_opts/app_options.h>
+#include <gringo/gringo.h>
 
 /**
  * Gringo options.
@@ -27,12 +28,16 @@
 class GringoOptions
 {
 public:
+	enum IExpand { IEXPAND_ALL, IEXPAND_DEPTH };
+
+public:
 	GringoOptions();
 
 	// AppOptions interface
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
 	bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
 	void addDefaults(std::string& def);
+	TermExpansionPtr termExpansion(IncConfig &config) const;
 
 	/** The constant assignments in the format "constant=term" */
 	std::vector<std::string> consts;
@@ -53,5 +58,6 @@ public:
 	bool compat;
 	/** whether statistics will be printed to stderr */
 	bool stats;
+	IExpand iexpand;
 };
 

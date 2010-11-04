@@ -30,9 +30,10 @@ public:
 	void unbind(uint32_t index);
 	const Val &val(uint32_t index) const;
 	void val(uint32_t index, const Val &v, int binder);
-	virtual Storage *storage() = 0;
+
 protected:
 	~Context() { }
+
 private:
 	IntVec binder_;
 	ValVec val_;
