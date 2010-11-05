@@ -1,22 +1,17 @@
 file(GLOB_RECURSE LIBLUASQL_SRC *.h)
 set(LIBLUASQL_SRC src/luasql.cpp ${CMAKE_CURRENT_BINARY_DIR}/luasql/luasql.h)
 
-foreach(DRIVER SQLITE3 MYSQL)
+foreach(DRIVER SQLITE3 MYSQL ODBC)
 	find_package(${DRIVER})
 	if(${DRIVER}_FOUND)
 		include_directories(${${DRIVER}_INCLUDE_DIR})
+		add_definitions(${${DRIVER}_DEFINITIONS})
 		string(TOLOWER ${DRIVER} dname)
 		set(LIBLUASQL_SRC ${LIBLUASQL_SRC} src/ls_${dname}.cpp)
 		set(luasql-libs ${luasql-libs} ${${DRIVER}_LIBRARIES})
 		set(WITH_${DRIVER} TRUE)
 	endif()
 endforeach()
-
-if(WIN32)
-	set(luasql-libs ${luasql-libs} -lodbc32)
-	set(LIBLUASQL_SRC ${LIBLUASQL_SRC} src/ls_odbc.cpp)
-	set(WITH_ODBC TRUE)
-endif()
 
 configure_file(luasql/luasql.h.in ${CMAKE_CURRENT_BINARY_DIR}/luasql/luasql.h)
 
