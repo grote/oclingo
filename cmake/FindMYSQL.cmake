@@ -6,7 +6,7 @@ IF(NOT MYSQL_FOUND)
 	SET(mysql-libnames ${mysql-libnames} mysqlclient)
 	IF(MYSQL_USE_STATIC_LIBS OR USE_STATIC_LIBS)
 		SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
-		# static libraries are not yet supported
+		# static libraries are not supported
 		SET(MYSQL_ERROR TRUE)
 	ENDIF()
 
