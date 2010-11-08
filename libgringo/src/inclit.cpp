@@ -117,9 +117,11 @@ void IncLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 
 void IncLit::accept(::Printer *v)
 {
-	assert(!cumulative_);
-	Printer *printer = v->output()->printer<Printer>();
-	printer->print();
+	if(!cumulative_)
+	{
+		Printer *printer = v->output()->printer<Printer>();
+		printer->print();
+	}
 }
 
 void IncLit::visit(PrgVisitor *v)
