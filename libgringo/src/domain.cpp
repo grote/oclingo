@@ -115,6 +115,11 @@ const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
 
 void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 {
+	#pragma message "TODO: add modularity checking for iclingo here!!!"
+	// TODO: an exception could be thrown here
+	//       if the domain already contains an element from a previous incremental step
+	//       this should be as simple as storing an integer!!!
+
 	int32_t offset;
 	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
 	{
