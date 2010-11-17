@@ -28,21 +28,21 @@ typedef struct lua_State lua_State;
 struct TermExpansion
 {
 	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &) const;
-	virtual void expand(Grounder *g) const;
+	virtual void expand(Grounder *g);
 	virtual ~TermExpansion();
 };
 
 typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
 
 inline bool TermExpansion::limit(Grounder *, const ValRng &, int32_t &) const { return false; }
-inline void TermExpansion::expand(Grounder *) const { }
+inline void TermExpansion::expand(Grounder *) { }
 inline TermExpansion::~TermExpansion() { }
 
 struct TermDepthExpansion : public TermExpansion
 {
 	TermDepthExpansion(IncConfig &config);
 	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &offset) const;
-	virtual void expand(Grounder *g) const;
+	virtual void expand(Grounder *g);
 	virtual ~TermDepthExpansion();
 
 	IncConfig &config;
@@ -83,7 +83,7 @@ public:
 	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
-	const TermExpansion &termExpansion() const;
+	TermExpansion &termExpansion() const;
 	~Grounder();
 
 private:
@@ -102,4 +102,4 @@ private:
 
 };
 
-inline const TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }
+inline TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }

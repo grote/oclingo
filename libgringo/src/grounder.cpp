@@ -69,7 +69,7 @@ bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) 
 	return found;
 }
 
-void TermDepthExpansion::expand(Grounder *g) const
+void TermDepthExpansion::expand(Grounder *g)
 {
 	foreach (const DomainMap::const_reference &ref, g->domains())
 	{

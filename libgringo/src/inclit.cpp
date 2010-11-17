@@ -94,7 +94,7 @@ namespace
 		}
 	}
 
-	std::pair<bool,bool> IncIndex::nextMatch(Grounder *grounder, int binder)
+	std::pair<bool,bool> IncIndex::nextMatch(Grounder *, int)
 	{
 		return std::make_pair(false, false);
 	}
