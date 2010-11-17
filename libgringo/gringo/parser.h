@@ -59,7 +59,7 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat);
+	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool iBaseOnly);
 	int lex();
 	int lex_compat();
 	std::string errorToken();
@@ -109,6 +109,7 @@ private:
 	uint32_t     iVar_;
 	Loc          iLoc_;
 	bool         iAdded_;
+	bool         iBaseOnly_;
 	// parsing const directives
 	ConstMap     constMap_;
 	// parsing domain statements

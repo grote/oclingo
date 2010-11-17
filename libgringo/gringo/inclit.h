@@ -23,15 +23,11 @@
 
 struct IncConfig
 {
-	int  incBegin;
-	int  incEnd;
-	bool incBase;
+	int  incStep;
 	bool incVolatile;
 
 	IncConfig()
-		: incBegin(1)
-		, incEnd(1)
-		, incBase(false)
+		: incStep(1)
 		, incVolatile(true)
 	{ }
 };

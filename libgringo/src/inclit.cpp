@@ -44,8 +44,8 @@ bool IncLit::isFalse(Grounder *g)
 {
 	Val v = var_->val(g);
 	if(v.type != Val::NUM)       { return true; }
-	else if(cumulative_)         { return v.num < config_.incBegin || v.num >= config_.incEnd; }
-	else if(config_.incVolatile) { return v.num + 1 != config_.incEnd; }
+	else if(cumulative_)         { return v.num != config_.incStep; }
+	else if(config_.incVolatile) { return v.num != config_.incStep; }
 	else                         { return true; }
 }
 
@@ -58,22 +58,20 @@ namespace
 		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
 		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
 		void reset()  { finished_ = std::numeric_limits<int>::max(); }
-		void finish() { finished_ = lit_->config().incBegin; }
+		void finish() { finished_ = lit_->config().incStep; }
 		bool hasNew() const
 		{
-			return finished_ != lit_->config().incBegin && (lit_->cumulative() || lit_->config().incVolatile);
+			return finished_ != lit_->config().incStep && (lit_->cumulative() || lit_->config().incVolatile);
 		}
 	private:
 		IncLit *lit_;
 		int     finished_;
-		int     current_;
 		bool    bind_;
 	};
 
 	IncIndex::IncIndex(IncLit *lit, bool bind)
 		: lit_(lit)
 		, finished_(std::numeric_limits<int>::max())
-		, current_(0)
 		, bind_(bind)
 	{
 	}
@@ -82,9 +80,12 @@ namespace
 	{
 		if(bind_)
 		{
-			if(lit_->cumulative())  { current_ = lit_->config().incBegin; }
-			else                    { current_ = lit_->config().incEnd - lit_->config().incVolatile; }
-			return nextMatch(grounder, binder);
+			if(lit_->config().incVolatile || lit_->cumulative())
+			{
+				grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
+				return std::make_pair(true, hasNew());
+			}
+			else { return std::make_pair(false, false); }
 		}
 		else
 		{
@@ -95,12 +96,7 @@ namespace
 
 	std::pair<bool,bool> IncIndex::nextMatch(Grounder *grounder, int binder)
 	{
-		if(current_ < lit_->config().incEnd)
-		{
-			grounder->val(lit_->var()->index(), Val::create(Val::NUM, current_++), binder);
-			return std::make_pair(true, hasNew());
-		}
-		else { return std::make_pair(false, false); }
+		return std::make_pair(false, false);
 	}
 }
 
@@ -150,7 +146,7 @@ Lit *IncLit::clone() const
 
 double IncLit::score(Grounder *) const
 {
-	return cumulative_ ? config_.incEnd - config_.incBegin : 1;
+	return 1;
 }
 
 IncLit::~IncLit()

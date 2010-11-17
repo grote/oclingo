@@ -46,6 +46,7 @@ struct TermDepthExpansion : public TermExpansion
 	virtual ~TermDepthExpansion();
 
 	IncConfig &config;
+	int        start;
 };
 
 class Grounder : public Storage, public Context
@@ -82,7 +83,6 @@ public:
 	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
-	
 	const TermExpansion &termExpansion() const;
 	~Grounder();
 
@@ -90,7 +90,6 @@ private:
 	void ground_();
 
 private:
-
 	StatementPtrVec        statements_;
 	GroundableVec          queue_;
 	ComponentVec           components_;

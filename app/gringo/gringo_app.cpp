@@ -75,17 +75,21 @@ int GringoApp::doRun()
 	else
 	{
 		IncConfig config;
-		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
-		Parser    p(&g, config, inputStreams, gringo.compat);
+		config.incStep = 1;
 
-		config.incBegin = 1;
-		config.incEnd   = config.incBegin + gringo.ifixed;
-		config.incBase  = gringo.ibase;
+		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
+		Parser    p(&g, config, inputStreams, gringo.compat, gringo.ibase);
+
+		if(gringo.ibase) { gringo.ifixed = 1; }
 
 		o->initialize();
 		p.parse();
 		g.analyze(gringo.depGraph, gringo.stats);
-		g.ground();
+		for(; config.incStep <= gringo.ifixed; config.incStep++)
+		{
+			config.incVolatile = config.incStep == gringo.ifixed;
+			g.ground();
+		}
 		o->finalize();
 	}
 

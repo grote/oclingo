@@ -41,7 +41,7 @@ Parser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigVec 
 {
 }
 
-Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat)
+Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool iBaseOnly)
 	: g_(g)
 	, config_(config)
 	, streams_(streams)
@@ -52,6 +52,7 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat)
 	, iId_(0)
 	, iVar_(0)
 	, iAdded_(0)
+	, iBaseOnly_(iBaseOnly)
 	, compat_(compat)
 {
 }
@@ -481,8 +482,8 @@ Parser::DomStmRng Parser::domainStm(uint32_t var)
 
 void Parser::add(Statement *s)
 {
-	if(config_.incBase && iPart_ != IPART_BASE) { delete s; }
-	else                                        { last_.push_back(s); }
+	if(iBaseOnly_ && iPart_ != IPART_BASE) { delete s; }
+	else                                   { last_.push_back(s); }
 }
 
 void Parser::add()

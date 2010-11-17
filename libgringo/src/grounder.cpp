@@ -46,6 +46,7 @@ public:
 
 TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 	: config(config)
+	, start(config.incStep)
 {
 }
 
@@ -58,7 +59,7 @@ bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) 
 		if ( val.type == Val::FUNC )
 		{
 			int32_t depth = g->func(val.index).getDepth();
-			if(depth >= config.incEnd)
+			if(depth >= config.incStep)
 			{
 				if(offset < depth) { offset = depth; }
 				found = true;
@@ -72,9 +73,9 @@ void TermDepthExpansion::expand(Grounder *g) const
 {
 	foreach (const DomainMap::const_reference &ref, g->domains())
 	{
-		for(int i = config.incBegin; i < config.incEnd; i++)
+		for( ; start < config.incStep; start++)
 		{
-			const_cast<Domain*>(ref.second)->addOffset(i);
+			const_cast<Domain*>(ref.second)->addOffset(start);
 		}
 	}
 }
@@ -177,6 +178,7 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground()
 {
+	termExpansion().expand(this);
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 		dom.second->complete(false);
