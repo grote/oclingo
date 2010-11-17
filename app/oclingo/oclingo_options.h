@@ -1,3 +1,4 @@
+// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 // Copyright (c) 2009, Benjamin Kaufmann
 //
@@ -141,8 +142,10 @@ void oClingoConfig::initStep(Clasp::ClaspFacade& f)
 
 bool oClingoConfig::nextStep(Clasp::ClaspFacade& f)
 {
-	using Clasp::ClaspFacade;
-	// TODO stopUnsat?
-	ClaspFacade::Result stopRes = stopUnsat ? ClaspFacade::result_unsat : ClaspFacade::result_sat;
-	return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
+	// TODO use stopUnsat?
+	//using Clasp::ClaspFacade;
+	//ClaspFacade::Result stopRes = stopUnsat ? ClaspFacade::result_unsat : ClaspFacade::result_sat;
+	//return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
+	(void) f;
+	return --maxSteps;
 }

@@ -20,6 +20,8 @@
 #pragma once
 
 #include "clingo/clingo_app.h"
+#include "oclingo/oclaspoutput.h"
+#include "oclingo/externalknowledge.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // FromGringo
@@ -29,8 +31,6 @@ template <>
 FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 	: app(a)
 {
-	std::cerr << "This is OCLINGO FromGringo!!!" << std::endl;
-
 	config.incBase  = app.gringo.ibase;
 	config.incBegin = 1;
 	if (app.clingo.mode == CLINGO)
@@ -38,10 +38,16 @@ FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 		config.incEnd   = config.incBegin + app.gringo.ifixed;
 		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
-	else
+	else if (app.clingo.mode == ICLINGO)
 	{
 		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new iClaspOutput(app.gringo.disjShift));
+	}
+	// TODO move into clingo_app ?
+	else
+	{
+		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
+		out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift));
 	}
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
 	{
@@ -58,7 +64,6 @@ FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 template <>
 void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 {
-	std::cerr << "This is OCLINGO getAssumptions!!!" << std::endl;
 	if(app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
@@ -70,7 +75,6 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 template <>
 void FromGringo<OCLINGO>::release()
 {
-	std::cerr << "This is OCLINGO release!!!" << std::endl;
 	if (app.clingo.mode == CLINGO && !app.luaLocked())
 	{
 		grounder.reset(0);
@@ -82,11 +86,11 @@ void FromGringo<OCLINGO>::release()
 template <>
 bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 {
-	std::cerr << "This is OCLINGO read!!!" << std::endl;
 	assert(out.get());
 	out->setProgramBuilder(api);
 	solver = &s;
 	out->initialize();
+
 	if(converter.get())
 	{
 		converter->parse();
@@ -106,7 +110,34 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			config.incBegin = config.incEnd;
 			config.incEnd   = config.incEnd + 1;
 		}
-		grounder->ground();
+
+		ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
+
+		if(app.clingo.mode == OCLINGO) {
+			std::cerr << "read in OCLINGO mode" << std::endl;
+			if(solver->hasConflict()) {
+				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
+			}
+			else {
+				// add new facts and check for termination condition
+				if(!ext.addInput())
+					return false; // exit if received #stop.
+
+				// do new step if there's no model or controller needs new step
+				if(!ext.hasModel() || ext.needsNewStep()) {
+					std::cerr << "preparing new step" << std::endl;
+					grounder->ground();
+					ext.endStep();
+				} else {
+					std::cerr << "preparing new iteration" << std::endl;
+					ext.endIteration();
+				}
+			}
+			std::cerr << "preparing get of new ext knowledge" << std::endl;
+			ext.get();
+		} else {
+			grounder->ground();
+		}
 	}
 	out->finalize();
 	release();
@@ -114,47 +145,13 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClingoApp
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <>
-void ClingoApp<OCLINGO>::configureInOut(Streams& s)
-{
-	std::cerr << "This is OCLINGO configureInOut!!!" << std::endl;
-	using namespace Clasp;
-	in_.reset(0);
-	facade_ = 0;
-	if(clingo.mode == CLASP)
-	{
-		s.open(generic.input);
-		if (generic.input.size() > 1) { messages.warning.push_back("Only first file will be used"); }
-		in_.reset(new StreamInput(s.currentStream(), detectFormat(s.currentStream())));
-	}
-	else
-	{
-		s.open(generic.input, constStream());
-		in_.reset(new FromGringo<OCLINGO>(*this, s));
-	}
-	if(config_.onlyPre)
-	{
-		if(clingo.mode == CLASP || clingo.mode == CLINGO) { generic.verbose = 0; }
-		else { warning("Option '--pre' is ignored in incremental setting!"); config_.onlyPre = false; }
-	}
-	if(in_->format() == Input::SMODELS)
-	{
-		out_.reset(new AspOutput(cmdOpts_.basic.asp09));
-		if(cmdOpts_.basic.asp09) { generic.verbose = 0; }
-	}
-	else if(in_->format() == Input::DIMACS) { out_.reset(new SatOutput()); }
-	else if(in_->format() == Input::OPB)    { out_.reset(new PbOutput(generic.verbose > 1));  }
-}
-
-template <>
 int ClingoApp<OCLINGO>::doRun()
 {
-	std::cerr << "This is OCLINGO doRun!!!" << std::endl;
 	using namespace Clasp;
 	if (gringo.groundOnly) { return GringoApp::doRun(); }
 	if (cmdOpts_.basic.stats > 1) { 
@@ -171,7 +168,9 @@ int ClingoApp<OCLINGO>::doRun()
 		clingo.iStats = false;
 		clasp.solve(*in_, config_, this);
 	}
-	else { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
+	else if(clingo.mode == ICLINGO) { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
+	// TODO move in clingo_app.h ?
+	else { clasp.solveIncremental(*in_, config_, oclingo.online, this); }
 	timer_[0].stop();
 	printResult(reason_end);
 	if      (clasp.result() == ClaspFacade::result_unsat) { return S_UNSATISFIABLE; }
@@ -183,7 +182,6 @@ int ClingoApp<OCLINGO>::doRun()
 
 template <>
 void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
-	std::cerr << "This is OCLINGO state!!!" << std::endl;
 	using namespace Clasp;
 	using namespace std;
 	if (e == ClaspFacade::event_state_enter)
@@ -243,7 +241,6 @@ void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 template <>
 void ClingoApp<OCLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 {
-	std::cerr << "This is OCLINGO event!!!" << std::endl;
 	using namespace std;
 	using namespace Clasp;
 	if (e == ClaspFacade::event_model)
@@ -278,5 +275,19 @@ void ClingoApp<OCLINGO>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 			solver_.strategies().symTab.reset(x);
 		}
 		else { out_->initSolve(solver_, f.api(), f.config()->solve.enumerator()); }
+	}
+
+	// TODO move into own hook function and remove above
+	if(clingo.mode == OCLINGO && e == ClaspFacade::event_model) {
+		// TODO unified model output (also minimize + consequences)
+		string model = "";
+		assert(solver_.strategies().symTab.get());
+		const AtomIndex& index = *solver_.strategies().symTab;
+		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
+			if (solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty()) {
+				model += it->second.name + " ";
+			}
+		}
+		dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().sendModel(model);
 	}
 }
