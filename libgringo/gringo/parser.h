@@ -75,7 +75,7 @@ public:
 	void setUniques(Optimize *o) { if(optimizeSet_) o->uniques(optimizeUniques_); }
 	void incremental(iPart part, uint32_t index = 0);
 	void add(Statement *s);
-	Term *term(const Loc &loc, uint32_t index);
+	Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
 	PredLit *predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign);
 	void constTerm(uint32_t index, Term *term);

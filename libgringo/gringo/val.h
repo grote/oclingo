@@ -25,7 +25,7 @@ class Storage;
 
 struct Val
 {
-	enum Type { INF=0, NUM, ID, FUNC, UNDEF=200, SUP=20000 };
+	enum Type { INF=0, NUM, ID, FUNC, STRING, UNDEF=200, SUP=20000 };
 	static inline Val create();
 	static inline Val create(uint32_t t, int num);
 	static inline Val create(uint32_t t, uint32_t index);

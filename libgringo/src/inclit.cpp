@@ -25,6 +25,7 @@
 #include <gringo/varcollector.h>
 #include <gringo/varterm.h>
 #include <gringo/output.h>
+#include <gringo/exceptions.h>
 
 IncLit::IncLit(const Loc &loc, IncConfig &config, bool cumulative, uint32_t varId)
 	: Lit(loc)
@@ -53,47 +54,50 @@ namespace
 	class IncIndex : public Index
 	{
 	public:
-		IncIndex(uint32_t var, bool cumulative, bool bind, IncConfig &config);
+		IncIndex(IncLit *lit, bool bind);
 		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
 		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
 		void reset()  { finished_ = std::numeric_limits<int>::max(); }
-		void finish() { finished_ = config_.incBegin; }
+		void finish() { finished_ = lit_->config().incBegin; }
 		bool hasNew() const
 		{
-			return finished_ != config_.incBegin &&
-				   (cumulative_ || config_.incVolatile);
+			return finished_ != lit_->config().incBegin && (lit_->cumulative() || lit_->config().incVolatile);
 		}
 	private:
-		int        finished_;
-		bool       cumulative_;
-		bool       bind_;
-		IncConfig &config_;
-		uint32_t   var_;
-		int        current_;
+		IncLit *lit_;
+		int     finished_;
+		int     current_;
+		bool    bind_;
 	};
 
-	IncIndex::IncIndex(uint32_t var, bool cumulative, bool bind, IncConfig &config)
-		: finished_(std::numeric_limits<int>::max())
-		, cumulative_(cumulative)
-		, bind_(bind)
-		, config_(config)
-		, var_(var)
+	IncIndex::IncIndex(IncLit *lit, bool bind)
+		: lit_(lit)
+		, finished_(std::numeric_limits<int>::max())
 		, current_(0)
+		, bind_(bind)
 	{
 	}
 
 	std::pair<bool,bool> IncIndex::firstMatch(Grounder *grounder, int binder)
 	{
-		if(cumulative_)  { current_ = config_.incBegin; }
-		else             { current_ = config_.incEnd - config_.incVolatile; }
-		return nextMatch(grounder, binder);
+		if(bind_)
+		{
+			if(lit_->cumulative())  { current_ = lit_->config().incBegin; }
+			else                    { current_ = lit_->config().incEnd - lit_->config().incVolatile; }
+			return nextMatch(grounder, binder);
+		}
+		else
+		{
+			if(lit_->match(grounder)) { return std::make_pair(true, hasNew()); }
+			else                      { return std::make_pair(false, false); }
+		}
 	}
 
 	std::pair<bool,bool> IncIndex::nextMatch(Grounder *grounder, int binder)
 	{
-		if(current_ < config_.incEnd)
+		if(current_ < lit_->config().incEnd)
 		{
-			if(bind_) { grounder->val(var_, Val::create(Val::NUM, current_++), binder); }
+			grounder->val(lit_->var()->index(), Val::create(Val::NUM, current_++), binder);
 			return std::make_pair(true, hasNew());
 		}
 		else { return std::make_pair(false, false); }
@@ -107,15 +111,17 @@ void IncLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 	VarVec bind;
 	var_->vars(vars);
 	std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_insert_iterator<VarVec>(bind));
-	gr->instantiator()->append(new IncIndex(var_->index(), cumulative_, bind.size() > 0, config_));
+	gr->instantiator()->append(new IncIndex(this, bind.size() > 0));
 	bound.insert(bind.begin(), bind.end());
 }
 
 void IncLit::accept(::Printer *v)
 {
-	assert(!cumulative_);
-	Printer *printer = v->output()->printer<Printer>();
-	printer->print();
+	if(!cumulative_)
+	{
+		Printer *printer = v->output()->printer<Printer>();
+		printer->print();
+	}
 }
 
 void IncLit::visit(PrgVisitor *v)
@@ -140,6 +146,11 @@ void IncLit::normalize(Grounder *g, Expander *expander)
 Lit *IncLit::clone() const
 {
 	return new IncLit(*this);
+}
+
+double IncLit::score(Grounder *) const
+{
+	return cumulative_ ? config_.incEnd - config_.incBegin : 1;
 }
 
 IncLit::~IncLit()

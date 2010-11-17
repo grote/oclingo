@@ -60,6 +60,13 @@ Domain::ArgSet::ArgSet(uint32_t arity)
 {
 }
 
+Domain::ArgSet::ArgSet(const ArgSet &argSet)
+	: arity_(argSet.arity_)
+	, valSet_(0, TupleCmp(this), TupleCmp(this))
+{
+	extend(argSet);
+}
+
 const Domain::Index &Domain::ArgSet::find(const ValVec::const_iterator &v) const
 {
 	Index idx(vals_.size());
@@ -82,6 +89,14 @@ void Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
 	}
 }
 
+void Domain::ArgSet::extend(const ArgSet &other)
+{
+	foreach(const Index &idx, other.valSet_)
+	{
+		insert(other.vals_.begin() + idx.index, idx.fact);
+	}
+}
+
 Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
 	: nameId_(nameId)
 	, arity_(arity)
@@ -98,9 +113,17 @@ const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
 	return vals_.find(v);
 }
 
-void Domain::insert(const ValVec::const_iterator &v, bool fact)
+void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 {
-	vals_.insert(v, fact);
+	int32_t offset;
+	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
+	{
+		vals_.insert(v, fact);
+	}
+	else
+	{
+		valsLarger_.insert( OffsetMap::value_type(offset, ArgSet(arity_)) ).first->second.insert(v, fact);
+	}
 }
 
 void Domain::enqueue(Grounder *g)
@@ -132,3 +155,12 @@ void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
 	else { completeIndex_.push_back(idx); }
 }
 
+void Domain::addOffset(int32_t offset)
+{
+	OffsetMap::iterator valIterator = valsLarger_.find(offset);
+	if (valIterator != valsLarger_.end())
+	{
+		vals_.extend(valIterator->second);
+		valsLarger_.erase(valIterator);
+	}
+}

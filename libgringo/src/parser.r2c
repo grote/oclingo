@@ -64,10 +64,8 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat)
 	IDENTIFIER = "_"*[a-z][A-Za-z0-9_]*;
 	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
-	STRING     = "\"" ([^"\n]|"\\\"")* "\"";
+	STRING     = "\"" ([^\\"\n]|"\\\""|"\\\\"|"\\n")* "\"";
 */
-
-
 
 int Parser::lex()
 {
@@ -100,7 +98,7 @@ start:
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
 		ANONYMOUS        { return PARSER_ANONYMOUS; }
-		STRING           { token_.index = g_->index(string()); return PARSER_STRING; }
+		STRING           { token_.index = g_->index(g_->unquote(string(1,1))); return PARSER_STRING; }
 		"#sum"           { return PARSER_SUM; }
 		"#count"         { return PARSER_COUNT; }
 		"#min"           { return PARSER_MIN; }
@@ -380,19 +378,27 @@ void Parser::incremental(iPart part, uint32_t index)
 	if(part != IPART_BASE) { iVar_ = g_->index("#I"); }
 }
 
-Term *Parser::term(const Loc &loc, uint32_t index)
+Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
-	if(iPart_ != IPART_BASE && index == iId_)
+	if(t == Val::ID)
 	{
-		if(!iAdded_) { iLoc_ = loc; }
-		iAdded_ = true;
-		return new VarTerm(loc, iVar_);
+		if(iPart_ != IPART_BASE && index == iId_)
+		{
+			if(!iAdded_) { iLoc_ = loc; }
+			iAdded_ = true;
+			return new VarTerm(loc, iVar_);
+		}
+		else
+		{
+			ConstMap::const_iterator res = constMap_.find(index);
+			if(res != constMap_.end()) { return res->second->clone(); }
+			else                       { return new ConstTerm(loc, Val::create(Val::ID, index)); }
+		}
 	}
 	else
 	{
-		ConstMap::const_iterator res = constMap_.find(index);
-		if(res != constMap_.end()) { return res->second->clone(); }
-		else                       { return new ConstTerm(loc, Val::create(Val::ID, index)); }
+		assert(t == Val::STRING);
+		return new ConstTerm(loc, Val::create(Val::STRING, index));
 	}
 }
 

@@ -50,7 +50,7 @@ public:
 	bool fact() const;
 	bool isFalse(Grounder *g);
 	Monotonicity monotonicity();
-	void addDomain(bool fact) { return PredLitRep::addDomain(fact); }
+	void addDomain(Grounder *g, bool fact) { return PredLitRep::addDomain(g, fact); }
 	void accept(Printer *v);
 	void finish(Grounder *g);
 	/** \note grounded has to be called before reading top_ or vals_. */

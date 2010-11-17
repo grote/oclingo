@@ -1,6 +1,10 @@
 gringo 3.0.3
 	* added (default) ODBC support in windows version
 	* fixed bug in simplification of #count/#sum aggregates
+	* fixed problem with incremental grounding
+	* changed handling of strings and constants from within lua
+	* added option to limit term depth while grounding incrementally
+	* allow for tuples with only one element
 gringo 3.0.2
 	* improved literal ordering heuristic
 	* fixed parsing problems with @ symbol

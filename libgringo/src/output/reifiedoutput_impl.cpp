@@ -69,8 +69,8 @@ namespace reifiedoutput_impl
 		out() << ",pos(conjunction(" << body << "))).\n";
 		Val val;
 		val = Val::create(Val::NUM, int(body));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("conjunction"), ValVec(1, val))));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("pos"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("conjunction"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("pos"), ValVec(1, val))));
 		size_t conjunction = output_->symbol(val);
 		output_->popSet();
 		output_->addDep(conjunction, 2);
@@ -129,8 +129,8 @@ namespace reifiedoutput_impl
 		vals.push_back(Val::create(Val::NUM, (int)list));
 		vals.push_back(Val::create(Val::NUM, hasUpper_ ? upper_ : max_));
 		Val val;
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("sum"), vals)));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("sum"), vals)));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
 		size_t sum = output_->symbol(val);
 		output_->addToSet(sum);
 		if(!sign_ && !head_)
@@ -193,8 +193,8 @@ namespace reifiedoutput_impl
 		vals.push_back(Val::create(Val::NUM, (int)list));
 		vals.push_back(Val::create(Val::NUM, hasUpper_ ? upper_ : max_));
 		Val val;
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("avg"), vals)));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("avg"), vals)));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
 		size_t avg = output_->symbol(val);
 		output_->addToSet(avg);
 		if(!head_ && !sign_)
@@ -249,8 +249,8 @@ namespace reifiedoutput_impl
 		vals.push_back(Val::create(Val::NUM, (int)list));
 		vals.push_back(hasUpper_ ? upper_ : max_ ? Val::sup() : Val::inf());
 		Val val;
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(max_ ? "max" : "min"), vals)));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(max_ ? "max" : "min"), vals)));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
 		size_t minmax = output_->symbol(val);
 		output_->addToSet(minmax);
 		if(!head_ && !sign_)
@@ -293,8 +293,8 @@ namespace reifiedoutput_impl
 		output_->popList();
 		Val val;
 		val = Val::create(Val::NUM, (int)list);
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(even_ ? "even" : "odd"), ValVec(1, val))));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(even_ ? "even" : "odd"), ValVec(1, val))));
+		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
 		size_t parity = output_->symbol(val);
 		output_->addToSet(parity);
 		if(!head_ && !sign_)
@@ -335,8 +335,8 @@ namespace reifiedoutput_impl
 				output_->popSet();
 				Val val;
 				val = Val::create(Val::NUM, (int)set);
-				val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("disjunction"), ValVec(1, val))));
-				val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage()->index("pos"), ValVec(1, val))));
+				val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("disjunction"), ValVec(1, val))));
+				val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("pos"), ValVec(1, val))));
 				output_->addToSet(output_->symbol(val));
 			}
 			else { output_->popSet(); }

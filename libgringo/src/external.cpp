@@ -49,7 +49,7 @@ void External::ground(Grounder *g)
 bool External::grounded(Grounder *g)
 {
 	head_->grounded(g);
-	head_->addDomain(false);
+	head_->addDomain(g, false);
 	Printer *printer = g->output()->printer<Printer>();
 	printer->print(head_.get());
 	return true;

@@ -6,14 +6,14 @@ IF(NOT MYSQL_FOUND)
 	SET(mysql-libnames ${mysql-libnames} mysqlclient)
 	IF(MYSQL_USE_STATIC_LIBS OR USE_STATIC_LIBS)
 		SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
-		# static libraries are not yet supported
-		SET(ERROR TRUE)
+		# static libraries are not supported
+		SET(MYSQL_ERROR TRUE)
 	ENDIF()
 
 	FIND_PATH(MYSQL_INCLUDE mysql.h HINTS "${MYSQL_ROOT}/include" /usr/include/mysql)
 	FIND_LIBRARY(MYSQL_LIB mysqlclient HINTS ${MYSQL_ROOT}/lib /usr/lib/mysql)
 
-	IF(MYSQL_INCLUDE AND MYSQL_LIB AND NOT ERROR)
+	IF(MYSQL_INCLUDE AND MYSQL_LIB AND NOT MYSQL_ERROR)
 		SET(MYSQL_FOUND TRUE CACHE BOOL "Whether mysql has been found")
 	ENDIF()
 

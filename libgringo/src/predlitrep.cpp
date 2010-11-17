@@ -26,10 +26,10 @@ PredLitRep::PredLitRep(bool sign, Domain *dom)
 {
 }
 
-void PredLitRep::addDomain(bool fact)
+void PredLitRep::addDomain(Grounder *g, bool fact)
 {
 	assert(top_ + dom_->arity() <= vals_.size());
-	dom_->insert(vals_.begin() + top_, fact);
+	dom_->insert(g, vals_.begin() + top_, fact);
 }
 
 ValRng PredLitRep::vals() const

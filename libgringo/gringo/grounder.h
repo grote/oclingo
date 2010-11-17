@@ -25,6 +25,29 @@
 
 typedef struct lua_State lua_State;
 
+struct TermExpansion
+{
+	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &) const;
+	virtual void expand(Grounder *g) const;
+	virtual ~TermExpansion();
+};
+
+typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
+
+inline bool TermExpansion::limit(Grounder *, const ValRng &, int32_t &) const { return false; }
+inline void TermExpansion::expand(Grounder *) const { }
+inline TermExpansion::~TermExpansion() { }
+
+struct TermDepthExpansion : public TermExpansion
+{
+	TermDepthExpansion(IncConfig &config);
+	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &offset) const;
+	virtual void expand(Grounder *g) const;
+	virtual ~TermDepthExpansion();
+
+	IncConfig &config;
+};
+
 class Grounder : public Storage, public Context
 {
 private:
@@ -40,8 +63,9 @@ private:
 	};
 	typedef std::vector<Component> ComponentVec;
 
+
 public:
-	Grounder(Output *out, bool debug);
+	Grounder(Output *out, bool debug, TermExpansionPtr exp);
 	void analyze(const std::string &depGraph = "", bool stats = false);
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
@@ -57,14 +81,16 @@ public:
 	void addToComponent(Domain *dom);
 	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
-	Storage *storage();
 	uint32_t createVar();
+	
+	const TermExpansion &termExpansion() const;
 	~Grounder();
 
 private:
 	void ground_();
 
 private:
+
 	StatementPtrVec        statements_;
 	GroundableVec          queue_;
 	ComponentVec           components_;
@@ -73,5 +99,8 @@ private:
 	bool                   initialized_;
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
+	TermExpansionPtr       termExpansion_;
+
 };
 
+inline const TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }

@@ -18,8 +18,26 @@
 #include <gringo/func.h>
 #include <gringo/storage.h>
 
-Func::Func(uint32_t name, const ValVec& args)
+namespace
+{
+	int32_t termDepth(Storage *s, const ValVec& args)
+	{
+		int32_t maxDepth = 1;
+		foreach(const Val &val, args)
+		{
+			if (val.type == Val::FUNC)
+			{
+				int32_t depth = s->func(val.index).getDepth();
+				if (depth >= maxDepth) { maxDepth = depth + 1; }
+			}
+		}
+		return maxDepth;
+	}
+}
+
+Func::Func(Storage *s, uint32_t name, const ValVec& args)
 	: name_(name)
+	, depth_(termDepth(s, args))
 	, args_(args)
 {
 }
@@ -69,4 +87,3 @@ void Func::print(Storage *sto, std::ostream& out) const
 	}
 	out << ")";
 }
-

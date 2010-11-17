@@ -18,9 +18,22 @@
 
 #include "gringo/gringo_options.h"
 #include <program_opts/value.h>
+#include <gringo/grounder.h>
 
 using namespace ProgramOptions;
 using namespace std;
+
+namespace ProgramOptions
+{
+template<>
+bool parseValue(const std::string&s, GringoOptions::IExpand& exp, double)
+{
+	std::string temp = toLower(s);
+	if (temp == "all")        { exp = GringoOptions::IEXPAND_ALL;   return true; }
+	else if (temp == "depth") { exp = GringoOptions::IEXPAND_DEPTH; return true; }
+	return false;
+}
+}
 
 bool parsePositional(const std::string& t, std::string& out)
 {
@@ -41,7 +54,19 @@ GringoOptions::GringoOptions()
 	, disjShift(false)
 	, compat(false)
 	, stats(false)
+	, iexpand(IEXPAND_ALL)
 { }
+
+TermExpansionPtr GringoOptions::termExpansion(IncConfig &config) const
+{
+	switch(iexpand)
+	{
+		case IEXPAND_ALL:   { return TermExpansionPtr(new TermExpansion()); }
+		case IEXPAND_DEPTH: { return TermExpansionPtr(new TermDepthExpansion(config)); }
+	}
+	assert(false);
+	return TermExpansionPtr(0);
+}
 
 void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden)
 {
@@ -60,6 +85,12 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("shift"    , bool_switch(&disjShift),         "Shift disjunctions into the body")
 		("ifixed"   , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
 		("ibase"    , bool_switch(&ibase),             "Process base program only")
+		("iexpand"  , storeTo(iexpand),
+			"Limits the expansion of terms\n"
+			"      Default: All\n"
+			"      Valid:   All, Depth\n"
+			"        All   : Do not limit term expansion\n"
+			"        Depth : Limit according to term depth\n")
 	;
 	OptionGroup basic("Basic Options");
 	root.addOptions(gringo);

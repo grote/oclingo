@@ -54,7 +54,7 @@ public:
 	virtual Monotonicity monotonicity() { return NONMONOTONE; }
 	virtual void normalize(Grounder *g, Expander *expander);
 	virtual tribool accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*) = 0;
-	void addDomain(bool fact);
+	void addDomain(Grounder *g, bool fact);
 	void finish(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void grounded(Grounder *grounder) { (void)grounder; }
@@ -104,7 +104,7 @@ public:
 	WeightLit(const Loc &loc, Term *weight);
 	bool fact() const { return true; }
 	bool match(Grounder *grounder) { (void)grounder; return true; }
-	void addDomain(bool fact) { (void)fact; assert(false); }
+	void addDomain(Grounder *grounder, bool fact) { (void)grounder; (void)fact; assert(false); }
 	void index(Grounder *grounder, Groundable *gr, VarSet &bound) { (void)grounder; (void)gr; (void)bound; }
 	bool edbFact() const { return false; }
 	void normalize(Grounder *grounder, Expander *expander) { (void)grounder; (void)expander; assert(false); }
@@ -139,7 +139,7 @@ public:
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(AggrLit::Printer *v);
-	void addDomain(bool fact) ;
+	void addDomain(Grounder *g, bool fact) ;
 	void finish(Grounder *g);
 	~CondLit();
 private:
