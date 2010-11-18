@@ -74,6 +74,7 @@ public:
 	void optimizeSet(bool set) { optimizeSet_ = set; if(set) optimizeUniques_.reset(new PredLitSet()); }
 	void setUniques(Optimize *o) { if(optimizeSet_) o->uniques(optimizeUniques_); }
 	void incremental(iPart part, uint32_t index = 0);
+	void invPart();
 	void add(Statement *s);
 	Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
@@ -106,6 +107,7 @@ private:
 	// parsing the incremental part
 	bool            inc_;
 	iPart           iPart_;
+	iPart           invPart_;
 	uint32_t        iId_;
 	uint32_t        iVar_;
 	// parsing const directives

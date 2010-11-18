@@ -51,12 +51,12 @@ struct IncConfig
 
 	IncConfig()
 		: incStep(std::numeric_limits<int>::min())
-		, incVolatile(true)
+		, incVolatile(false)
 	{ }
 
 	bool curBase() const
 	{
-		assert(incStep == std::numeric_limits<int>::min() && !incVolatile);
+		assert(incStep != std::numeric_limits<int>::min() || !incVolatile);
 		return incStep == std::numeric_limits<int>::min();
 	}
 
@@ -67,7 +67,7 @@ struct IncConfig
 
 	bool curVolatile() const
 	{
-		assert(incVolatile && !curBase());
+		assert(!incVolatile || !curBase());
 		return incVolatile;
 	}
 

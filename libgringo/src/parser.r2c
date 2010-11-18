@@ -51,6 +51,7 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bo
 	, include_(std::numeric_limits<uint32_t>::max())
 	, inc_(inc)
 	, iPart_(IPART_BASE)
+	, invPart_(IPART_BASE)
 	, iId_(0)
 	, iVar_(0)
 	, compat_(compat)
@@ -377,6 +378,12 @@ void Parser::incremental(iPart part, uint32_t index)
 	iPart_ = part;
 	iId_   = index;
 	if(part != IPART_BASE) { iVar_ = g_->index("#I"); }
+}
+
+void Parser::invPart()
+{
+	assert(iPart_ == IPART_BASE || invPart_ == IPART_BASE);
+	std::swap(iPart_, invPart_);
 }
 
 Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)

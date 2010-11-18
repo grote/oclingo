@@ -200,13 +200,6 @@ program ::= program line DOT.
 
 line ::= INCLUDE STRING(file).                         { pParser->include(file.index); }
 line ::= rule(r).                                      { pParser->add(r); }
-line ::= HIDE.                                         { OUT->show(false); }
-line ::= SHOW.                                         { OUT->show(true); }
-line ::= HIDE signed(id) SLASH NUMBER(num).            { OUT->show(id.index, num.number, false); }
-line ::= HIDE(tok) predicate(pred) cond(list).         { pParser->add(new Display(tok.loc(), false, pred, *list)); delete list; }
-line ::= SHOW signed(id) SLASH NUMBER(num).            { OUT->show(id.index, num.number, true); }
-line ::= SHOW(tok) predicate(pred) cond(list).         { pParser->add(new Display(tok.loc(), true, pred, *list)); delete list; }
-line ::= CONST IDENTIFIER(id) ASSIGN term(term).       { pParser->constTerm(id.index, term); }
 line ::= DOMAIN signed(id) LBRAC var_list(vars) RBRAC. { pParser->domainStm(id.loc(), id.index, *vars); del(vars); }
 line ::= EXTERNAL(tok) predicate(pred) cond(list).     { pParser->add(new External(tok.loc(), pred, *list)); delete list; }
 line ::= EXTERNAL signed(id) SLASH NUMBER(num).        { GRD->externalStm(id.index, num.number); }
@@ -215,6 +208,17 @@ line ::= VOLATILE IDENTIFIER(id).                      { pParser->incremental(Pa
 line ::= BASE.                                         { pParser->incremental(Parser::IPART_BASE); }
 line ::= optimize.
 line ::= compute.
+line ::= meta inv_part.
+
+meta ::= HIDE      inv_part.                                  { OUT->show(false); }
+meta ::= SHOW      inv_part.                                  { OUT->show(true); }
+meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OUT->show(id.index, num.number, false); }
+meta ::= SHOW      inv_part signed(id) SLASH NUMBER(num).     { OUT->show(id.index, num.number, true); }
+meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), false, pred, *list)); delete list; }
+meta ::= SHOW(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), true, pred, *list)); delete list; }
+meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
+
+inv_part ::= . { pParser->invPart(); }
 
 signed(res) ::= IDENTIFIER(id).              { res = id; }
 signed(res) ::= MINUS(minus) IDENTIFIER(id). { res = minus; res.index = GRD->index(std::string("-") + GRD->string(id.index)); }
