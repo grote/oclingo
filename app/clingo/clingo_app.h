@@ -164,6 +164,7 @@ template <Mode M>
 FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
+	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO);
 	if (app.clingo.mode == CLINGO)
 	{
 		out.reset(new ClaspOutput(app.gringo.disjShift));
@@ -179,8 +180,9 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	}
 	else
 	{
+		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
 		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
-		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
+		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, inc));
 	}
 }
 
@@ -211,15 +213,32 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 		if (parser.get())
 		{
 			parser->parse();
+
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
 			grounder->ground(); // ground base part
-			config.incStep = 1;
+			if(app.clingo.mode == CLINGO)
+			{
+				for(config.incStep = 1; config.incStep <= app.gringo.ifixed; config.incStep++)
+				{
+					config.incVolatile = config.incStep == app.gringo.ifixed;
+					grounder->ground();
+				}
+			}
+			else
+			{
+				config.incStep = 1;
+				grounder->ground();
+			}
 		}
-		else { config.incStep++; }
+		else
+		{
+			config.incStep++;
+			grounder->ground();
+		}
 		config.incVolatile = config.incStep >= app.clingo.inc.iQuery;
-		grounder->ground();
+
 	}
 	out->finalize();
 	release();
@@ -368,11 +387,6 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			{
 				cout << "=============== step " << f.step()+1 << " ===============" << endl;
 			}
-			STATUS(2, cout << "Reading      : ");
-		}
-		else if (f.state() == ClaspFacade::state_preprocess)
-		{
-			STATUS(2, cout << "Preprocessing: ");
 		}
 		else if (f.state() == ClaspFacade::state_solve)
 		{
@@ -386,8 +400,17 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	else if (e == ClaspFacade::event_state_exit)
 	{
 		timer_[f.state()].stop();
-		if (generic.verbose > 1 && (f.state() == ClaspFacade::state_read || f.state() == ClaspFacade::state_preprocess))
-			cout << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl;
+		if (generic.verbose > 1)
+		{
+			if(f.state() == ClaspFacade::state_read)
+			{
+				STATUS(2, cout << "Reading      : " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+			else if(f.state() == ClaspFacade::state_preprocess)
+			{
+				STATUS(2, cout << "Preprocessing: " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+		}
 		if (f.state() == ClaspFacade::state_solve)
 		{
 			stats_.accu(solver_.stats.solve);

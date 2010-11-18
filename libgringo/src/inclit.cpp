@@ -42,7 +42,7 @@ bool IncLit::match(Grounder *grounder)
 
 bool IncLit::isFalse(Grounder *g)
 {
-	if(type_ == BASE)            { return config_.incBase(); }
+	if(type_ == BASE)            { return !config_.incBase(); }
 	else if(config_.incBase())   { return true; }
 	else if(type_ == UNBOUND)    { return false; }
 	Val v = var_->val(g);
@@ -71,19 +71,20 @@ namespace
 
 	IncIndex::IncIndex(IncLit *lit, bool bind)
 		: lit_(lit)
-		, finished_(std::numeric_limits<int>::max())
 		, bind_(bind)
-	{
-		reset();
-	}
-
-	void IncIndex::reset()
 	{
 		if(lit_->type() == IncLit::VOLATILE || lit_->type() == IncLit::CUMULATIVE)
 		{
 			finished_ = std::numeric_limits<int>::max();
 		}
-		else if(finished_ != 2) { finished_ = false; }
+		else { finished_ = false; }
+	}
+
+	void IncIndex::reset()
+	{
+		// only called for nested structures!
+		// inc lits may not be nested
+		assert(false);
 	}
 
 	void IncIndex::finish()
@@ -92,34 +93,37 @@ namespace
 		{
 			finished_ = lit_->config().incStep;
 		}
-		else if(lit_->type() == IncLit::UNBOUND && !lit_->config().incBase())
+		else if(lit_->type() == IncLit::UNBOUND)
 		{
-			// an UNBOUND inc lit stays finished to prevent regrounding
-			finished_ = 2;
+			// unbound inc literals provide a new binding only once
+			if(!lit_->config().incBase()) { finished_ = true; }
 		}
 		else { finished_ = true; }
 	}
 
 	bool IncIndex::hasNew() const
 	{
-		if(lit_->type() == IncLit::VOLATILE || lit_->type() == IncLit::CUMULATIVE)
+		if(lit_->type() == IncLit::CUMULATIVE)
 		{
-			return finished_ != lit_->config().incStep;
+			return finished_ != lit_->config().incStep && !lit_->config().incBase();
+		}
+		else if(lit_->type() == IncLit::VOLATILE)
+		{
+			return finished_ != lit_->config().incStep && !lit_->config().incBase() && lit_->config().incVolatile;
+		}
+		else if(lit_->type() == IncLit::UNBOUND)
+		{
+			return !finished_ && !lit_->config().incBase();
 		}
 		else { return !finished_; }
 	}
 
 	std::pair<bool,bool> IncIndex::firstMatch(Grounder *grounder, int binder)
 	{
-		if(lit_->config().incBase())
-		{
-			if(lit_->type() == IncLit::BASE)  { return std::make_pair(true, hasNew()); }
-			else                              { return std::make_pair(false, false); }
-		}
-		else if(lit_->type() == IncLit::BASE) { return std::make_pair(false, false); }
 		if(bind_)
 		{
 			assert(lit_->type() != IncLit::UNBOUND);
+			assert(lit_->type() != IncLit::BASE);
 			if(lit_->config().incVolatile || lit_->type() == IncLit::CUMULATIVE)
 			{
 				grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
