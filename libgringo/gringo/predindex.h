@@ -35,7 +35,7 @@ private:
 	typedef std::vector<uint32_t> BindSet;
 	typedef std::vector<BindSet> BindSets;
 public:
-	PredIndex(const TermPtrVec &terms, const VarVec &index, const VarVec &bind);
+	PredIndex(Domain *dom, Groundable *groundable, const TermPtrVec &terms, const VarVec &index, const VarVec &bind);
 	void bind(Grounder *grounder, int binder);
 	bool extend(Grounder *grounder, ValVec::const_iterator vals);
 	std::pair<bool, bool> firstMatch(Grounder *grounder, int binder);
@@ -44,6 +44,8 @@ public:
 	void finish();
 	bool hasNew() const;
 private:
+	Domain     *dom_;
+	Groundable *groundable_;
 	IndexMap map_;
 	BindSets sets_;
 	VarVec index_;

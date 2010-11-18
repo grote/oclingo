@@ -182,9 +182,7 @@ void PredLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 		std::set_intersection(bound.begin(), bound.end(), vars.begin(), vars.end(), std::back_insert_iterator<VarVec>(index));
 		std::set_difference(vars.begin(), vars.end(), index.begin(), index.end(), std::back_insert_iterator<VarVec>(bind));
 		bound.insert(vars.begin(), vars.end());
-		PredIndex *p = new PredIndex(terms_, index, bind);
-		dom_->append(g, gr, p);
-		gr->instantiator()->append(p);
+		gr->instantiator()->append(new PredIndex(dom_, gr, terms_, index, bind));
 	}
 }
 
