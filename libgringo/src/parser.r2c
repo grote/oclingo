@@ -405,7 +405,7 @@ namespace
 	{
 	public:
 		IncVarFinder(uint32_t var);
-		bool find(Statement *s);
+		void find(Statement *s);
 
 	private:
 		void visit(VarTerm *var, bool bind);
@@ -426,7 +426,7 @@ namespace
 	{
 	}
 	
-	bool IncVarFinder::find(Statement *s)
+	void IncVarFinder::find(Statement *s)
 	{
 		s->visit(this);
 		if(found_)
