@@ -22,6 +22,7 @@
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
 #include <gringo/grounder.h>
+#include <gringo/exceptions.h>
 
 Domain::ArgSet::TupleCmp::TupleCmp(ArgSet *argSet) :
 	argSet(argSet)
@@ -77,7 +78,7 @@ const Domain::Index &Domain::ArgSet::find(const ValVec::const_iterator &v) const
 	else return invalid;
 }
 
-void Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
+const Domain::Index &Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
 {
 	Index idx(vals_.size(), fact);
 	vals_.insert(vals_.end(), v, v + arity_);
@@ -87,6 +88,7 @@ void Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
 		vals_.resize(idx.index);
 		if(fact) res.first->fact = fact;
 	}
+	return *res.first;
 }
 
 void Domain::ArgSet::extend(const ArgSet &other)
@@ -103,6 +105,7 @@ Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
 	, domId_(domId)
 	, vals_(arity)
 	, new_(0)
+	, lastInsertPos_(0)
 	, complete_(false)
 	, external_(false)
 {
@@ -115,15 +118,26 @@ const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
 
 void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 {
-	#pragma message "TODO: add modularity checking for iclingo here!!!"
-	// TODO: an exception could be thrown here
-	//       if the domain already contains an element from a previous incremental step
-	//       this should be as simple as storing an integer!!!
-
 	int32_t offset;
 	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
 	{
-		vals_.insert(v, fact);
+		uint32_t pos = vals_.insert(v, fact);
+		if(pos < lastInsertPos_)
+		{
+			std::stringstream ss;
+			ss << g->string(nameId_);
+			if(arity_ > 0)
+			{
+				ss << "(";
+				for(ValVec::const_iterator it = v; it != v + arity_; it++)
+				{
+					if(it != v) { ss << ","; }
+					it->print(g, ss);
+				}
+				ss << ")";
+			}
+			throw AtomRedefinedException(ss.str());
+		}
 	}
 	else
 	{

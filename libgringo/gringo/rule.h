@@ -44,6 +44,8 @@ public:
 	bool edbFact() const;
 	~Rule();
 private:
+	void addDomain(Grounder *g, bool fact);
+private:
 	std::auto_ptr<Lit> head_;
 	LitPtrVec          body_;
 	bool               grounded_;

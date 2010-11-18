@@ -56,7 +56,7 @@ private:
 		ArgSet(uint32_t arity);
 		ArgSet(const ArgSet &argSet);
 		const Index &find(const ValVec::const_iterator &v) const;
-		void insert(const ValVec::const_iterator &v, bool fact = false);
+		const Index &insert(const ValVec::const_iterator &v, bool fact = false);
 		void extend(const ArgSet &other);
 
 	private:
@@ -79,6 +79,7 @@ public:
 	void enqueue(Grounder *g);
 	void append(Grounder *g, Groundable *gr, PredIndex *i);
 	uint32_t size() const   { return vals_.size(); }
+	void fix()              { lastInsertPos_ = vals_.size(); }
 	bool complete() const   { return complete_ && !external_; }
 	void complete(bool c)   { complete_ = c; }
 	void external(bool e)   { external_ = e; }
@@ -96,6 +97,7 @@ private:
 	PredInfoVec    index_;
 	PredIndexVec   completeIndex_;
 	uint32_t       new_;
+	uint32_t       lastInsertPos_;
 	bool           complete_;
 	bool           external_;
 };

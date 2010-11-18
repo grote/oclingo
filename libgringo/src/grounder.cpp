@@ -181,7 +181,10 @@ void Grounder::ground()
 	termExpansion().expand(this);
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+	{
+		dom.second->fix();
 		dom.second->complete(false);
+	}
 	foreach(Component &component, components_)
 	{
 		foreach(Statement *statement, component.statements)

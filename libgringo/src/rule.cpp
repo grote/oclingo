@@ -23,6 +23,7 @@
 #include <gringo/litdep.h>
 #include <gringo/grounder.h>
 #include <gringo/output.h>
+#include <gringo/exceptions.h>
 
 Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
 	: Statement(loc)
@@ -146,12 +147,33 @@ void Rule::ground(Grounder *g)
 	if(head_.get()) head_->finish(g);
 }
 
+void Rule::addDomain(Grounder *g, bool fact)
+{
+	if(head_.get())
+	{
+		try
+		{
+			head_->addDomain(g, fact);
+		}
+		catch(const AtomRedefinedException &ex)
+		{
+			std::stringstream ss;
+			print(g, ss);
+			throw ModularityException(StrLoc(g, loc()), ss.str(), ex.what());
+		}
+	}
+}
+
 bool Rule::grounded(Grounder *g)
 {
 	if(head_.get())
 	{
 		head_->grounded(g);
-		if(head_->fact()) return true;
+		if(head_->fact())
+		{
+			addDomain(g, true);
+			return true;
+		}
 	}
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin();
@@ -168,7 +190,7 @@ bool Rule::grounded(Grounder *g)
 		}
 		else if(lit.forcePrint()) { lit.accept(printer); }
 	}
-	if(head_.get()) head_->addDomain(g, fact);
+	if(head_.get()) { addDomain(g, fact); }
 	printer->end();
 	return true;
 }
