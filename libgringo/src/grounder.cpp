@@ -53,7 +53,7 @@ TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
 {
 	bool found = false;
-	if(!config.incBase())
+	if(!config.curBase())
 	{
 		offset = 0;
 		foreach(const Val &val, rng)

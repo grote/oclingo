@@ -42,14 +42,12 @@ bool IncLit::match(Grounder *grounder)
 
 bool IncLit::isFalse(Grounder *g)
 {
-	if(type_ == BASE)            { return !config_.incBase(); }
-	else if(config_.incBase())   { return true; }
-	else if(type_ == UNBOUND)    { return false; }
+	if(type_ == BASE)            { return !config_.curBase(); }
+	else if(type_ == UNBOUND)    { return !config_.curCumulative(); }
 	Val v = var_->val(g);
 	if(v.type != Val::NUM)       { return true; }
-	else if(type_ == CUMULATIVE) { return v.num != config_.incStep; }
-	else if(config_.incVolatile) { return v.num != config_.incStep; }
-	else                         { return true; }
+	else if(type_ == CUMULATIVE) { return !config_.curCumulative() || v.num != config_.incStep; }
+	else                         { return !config_.curVolatile() || v.num != config_.incStep; }
 }
 
 namespace
@@ -89,33 +87,37 @@ namespace
 
 	void IncIndex::finish()
 	{
-		if(lit_->type() == IncLit::VOLATILE || lit_->type() == IncLit::CUMULATIVE)
+		if(lit_->type() == IncLit::VOLATILE)
 		{
-			finished_ = lit_->config().incStep;
+			if(lit_->config().curVolatile()) { finished_ = lit_->config().incStep; }
+		}
+		else if(lit_->type() == IncLit::CUMULATIVE)
+		{
+			if(lit_->config().curCumulative()) { finished_ = lit_->config().incStep; }
 		}
 		else if(lit_->type() == IncLit::UNBOUND)
 		{
-			// unbound inc literals provide a new binding only once
-			if(!lit_->config().incBase()) { finished_ = true; }
+			if(lit_->config().curCumulative()) { finished_ = true; }
 		}
-		else { finished_ = true; }
+		else
+		{
+			if(lit_->config().curBase()) {  finished_ = true; }
+		}
 	}
 
 	bool IncIndex::hasNew() const
 	{
-		if(lit_->type() == IncLit::CUMULATIVE)
+		switch(lit_->type())
 		{
-			return finished_ != lit_->config().incStep && !lit_->config().incBase();
+			case IncLit::CUMULATIVE:
+				return finished_ != lit_->config().incStep && lit_->config().curCumulative();
+			case IncLit::VOLATILE:
+				return finished_ != lit_->config().incStep && lit_->config().curVolatile();
+			case IncLit::UNBOUND:
+				return !finished_ && lit_->config().curCumulative();
+			default:
+				return !finished_ && lit_->config().curBase();
 		}
-		else if(lit_->type() == IncLit::VOLATILE)
-		{
-			return finished_ != lit_->config().incStep && !lit_->config().incBase() && lit_->config().incVolatile;
-		}
-		else if(lit_->type() == IncLit::UNBOUND)
-		{
-			return !finished_ && !lit_->config().incBase();
-		}
-		else { return !finished_; }
 	}
 
 	std::pair<bool,bool> IncIndex::firstMatch(Grounder *grounder, int binder)
@@ -124,7 +126,11 @@ namespace
 		{
 			assert(lit_->type() != IncLit::UNBOUND);
 			assert(lit_->type() != IncLit::BASE);
-			if((lit_->config().incVolatile || lit_->type() == IncLit::CUMULATIVE) && !lit_->config().incBase())
+			if
+			(
+				(lit_->config().curVolatile()   && lit_->type() == IncLit::VOLATILE) ||
+				(lit_->config().curCumulative() && lit_->type() == IncLit::CUMULATIVE)
+			)
 			{
 				grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
 				return std::make_pair(true, hasNew());

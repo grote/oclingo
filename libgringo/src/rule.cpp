@@ -190,8 +190,8 @@ bool Rule::grounded(Grounder *g)
 		}
 		else if(lit.forcePrint()) { lit.accept(printer); }
 	}
-	if(head_.get()) { addDomain(g, fact); }
 	printer->end();
+	if(head_.get()) { addDomain(g, fact); }
 	return true;
 }
 
