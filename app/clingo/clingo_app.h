@@ -217,28 +217,13 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
-			grounder->ground(); // ground base part
-			if(app.clingo.mode == CLINGO)
-			{
-				for(config.incStep = 1; config.incStep <= app.gringo.ifixed; config.incStep++)
-				{
-					config.incVolatile = config.incStep == app.gringo.ifixed;
-					grounder->ground();
-				}
-			}
-			else
-			{
-				config.incStep = 1;
-				grounder->ground();
-			}
+			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 		}
 		else
 		{
 			config.incStep++;
-			grounder->ground();
+			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 		}
-		config.incVolatile = config.incStep >= app.clingo.inc.iQuery;
-
 	}
 	out->finalize();
 	release();

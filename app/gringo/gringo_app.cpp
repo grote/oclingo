@@ -58,6 +58,31 @@ Streams::StreamPtr GringoApp::constStream() const
 	return Streams::StreamPtr(constants.release());
 }
 
+void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
+{
+	cfg.incStep     = step;
+	cfg.incVolatile = goal <= step;
+	if(generic.verbose > 2)
+	{
+		std::cerr << "% grounding incremental step " << cfg.incStep;
+		if(cfg.incVolatile) { std::cerr << " with volatile "; }
+		std::cerr << "..." << std::endl;
+	}
+	g.ground();
+
+}
+
+void GringoApp::groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal)
+{
+	if(generic.verbose > 2)
+	{
+		std::cerr << "% grounding base ..." << std::endl;
+	}
+	g.ground(); // ground the base part
+	goal = std::max(end, goal);
+	for(int i = 1; i <= end; i++) { groundStep(g, cfg, i, goal); }
+}
+
 int GringoApp::doRun()
 {
 	std::auto_ptr<Output> o(output());
@@ -81,12 +106,7 @@ int GringoApp::doRun()
 		o->initialize();
 		p.parse();
 		g.analyze(gringo.depGraph, gringo.stats);
-		g.ground(); // ground the base part
-		for(config.incStep = 1; config.incStep <= gringo.ifixed; config.incStep++)
-		{
-			config.incVolatile = config.incStep == gringo.ifixed;
-			g.ground();
-		}
+		groundBase(g, config, 1, gringo.ifixed, gringo.ifixed);
 		o->finalize();
 	}
 

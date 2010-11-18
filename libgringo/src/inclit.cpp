@@ -124,7 +124,7 @@ namespace
 		{
 			assert(lit_->type() != IncLit::UNBOUND);
 			assert(lit_->type() != IncLit::BASE);
-			if(lit_->config().incVolatile || lit_->type() == IncLit::CUMULATIVE)
+			if((lit_->config().incVolatile || lit_->type() == IncLit::CUMULATIVE) && !lit_->config().incBase())
 			{
 				grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
 				return std::make_pair(true, hasNew());
