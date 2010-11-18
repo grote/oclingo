@@ -27,6 +27,7 @@
 #include <gringo/grounder.h>
 #include <gringo/statement.h>
 #include <gringo/exceptions.h>
+#include <gringo/display.h>
 #include "parser_impl.h"
 
 void *parserAlloc(void *(*mallocProc)(size_t));
@@ -528,9 +529,10 @@ void Parser::add()
 {
 	while(!last_.empty())
 	{
+		bool display = dynamic_cast<Display*>(&last_.back()); 
 		// always add incremental literal to non base statements
-		if(iPart_ == IPART_CUMULATIVE)    { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::UNBOUND, iVar_)); }
-		else if(iPart_ == IPART_VOLATILE) { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); }
+		if(!display && iPart_ == IPART_CUMULATIVE)    { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::UNBOUND, iVar_)); }
+		else if(!display && iPart_ == IPART_VOLATILE) { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); }
 		StatementRng rng(grounder()->add(last_.pop_back().release()));
 		foreach(Statement &statement, rng)
 		{
@@ -539,7 +541,7 @@ void Parser::add()
 		}
 		// add incremental literal to non-edb base statements
 		// optimization: if no incremental grounding requested this can be skipped
-		if(inc_ && iPart_ == IPART_BASE)
+		if(!display && inc_ && iPart_ == IPART_BASE)
 		{
 			foreach(Statement &statement, rng)
 			{
@@ -547,7 +549,7 @@ void Parser::add()
 			}
 		}
 		// bind the incremetal literal if the incremental constant occurs in the statement
-		if(iPart_ == IPART_CUMULATIVE)
+		if(!display && iPart_ == IPART_CUMULATIVE)
 		{
 			foreach(Statement &statement, rng)
 			{
