@@ -59,7 +59,7 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool iBaseOnly);
+	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat);
 	int lex();
 	int lex_compat();
 	std::string errorToken();
@@ -99,24 +99,21 @@ private:
 	ErrorVec        errors_;
 	StatementPtrVec last_;
 	// parsing optimize statements
-	int          level_;
-	bool         maximize_;
-	bool         optimizeSet_;
-	PredLitSetPtr optimizeUniques_;
+	int             level_;
+	bool            maximize_;
+	bool            optimizeSet_;
+	PredLitSetPtr   optimizeUniques_;
 	// parsing the incremental part
-	iPart        iPart_;
-	uint32_t     iId_;
-	uint32_t     iVar_;
-	Loc          iLoc_;
-	bool         iAdded_;
-	bool         iBaseOnly_;
+	iPart           iPart_;
+	uint32_t        iId_;
+	uint32_t        iVar_;
 	// parsing const directives
-	ConstMap     constMap_;
+	ConstMap        constMap_;
 	// parsing domain statements
-	DomStmList   domStmList_;
-	DomStmMap    domStmMap_;
+	DomStmList      domStmList_;
+	DomStmMap       domStmMap_;
 	// Lua
-	Loc          luaBegin_;
-	bool         compat_;
+	Loc             luaBegin_;
+	bool            compat_;
 };
 

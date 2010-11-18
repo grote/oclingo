@@ -27,9 +27,14 @@ struct IncConfig
 	bool incVolatile;
 
 	IncConfig()
-		: incStep(1)
+		: incStep(std::numeric_limits<int>::min())
 		, incVolatile(true)
 	{ }
+
+	bool incBase() const
+	{
+		return incStep == std::numeric_limits<int>::min();
+	}
 };
 
 class IncLit : public Lit
@@ -41,26 +46,28 @@ public:
 		virtual void print() { }
 		virtual ~Printer() { }
 	};
+	enum Type { BASE, UNBOUND, CUMULATIVE, VOLATILE };
 
 public:
-	IncLit(const Loc &loc, IncConfig &config_, bool cumulative, uint32_t varId);
+	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId);
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const { return true; }
 	bool isFalse(Grounder *g);
-	bool forcePrint() { return !cumulative_; }
+	bool forcePrint() { return type_ == VOLATILE; }
 	void accept(::Printer *v);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
+	void bind();
 	double score(Grounder *) const;
 	Lit *clone() const;
 	const IncConfig &config() const { return config_; }
 	const VarTerm *var() const { return var_.get(); }
-	bool cumulative() const { return cumulative_; }
+	Type type() const { return type_; }
 	~IncLit();
 private:
 	IncConfig         &config_;
-	bool               cumulative_;
+	Type               type_;
 	clone_ptr<VarTerm> var_;
 };

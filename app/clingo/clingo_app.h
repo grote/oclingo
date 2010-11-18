@@ -164,7 +164,6 @@ template <Mode M>
 FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
-	config.incStep = 1;
 	if (app.clingo.mode == CLINGO)
 	{
 		out.reset(new ClaspOutput(app.gringo.disjShift));
@@ -181,7 +180,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	else
 	{
 		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
-		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, app.gringo.ibase));
+		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
 	}
 }
 
@@ -215,6 +214,8 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			grounder->ground(); // ground base part
+			config.incStep = 1;
 		}
 		else { config.incStep++; }
 		config.incVolatile = config.incStep >= app.clingo.inc.iQuery;

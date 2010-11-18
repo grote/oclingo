@@ -53,16 +53,19 @@ TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
 {
 	bool found = false;
-	offset = 0;
-	foreach(const Val &val, rng)
+	if(!config.incBase())
 	{
-		if ( val.type == Val::FUNC )
+		offset = 0;
+		foreach(const Val &val, rng)
 		{
-			int32_t depth = g->func(val.index).getDepth();
-			if(depth >= config.incStep)
+			if ( val.type == Val::FUNC )
 			{
-				if(offset < depth) { offset = depth; }
-				found = true;
+				int32_t depth = g->func(val.index).getDepth();
+				if(depth >= config.incStep)
+				{
+					if(offset < depth) { offset = depth; }
+					found = true;
+				}
 			}
 		}
 	}

@@ -41,7 +41,7 @@ Parser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigVec 
 {
 }
 
-Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool iBaseOnly)
+Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat)
 	: g_(g)
 	, config_(config)
 	, streams_(streams)
@@ -51,8 +51,6 @@ Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bo
 	, iPart_(IPART_BASE)
 	, iId_(0)
 	, iVar_(0)
-	, iAdded_(0)
-	, iBaseOnly_(iBaseOnly)
 	, compat_(compat)
 {
 }
@@ -385,8 +383,6 @@ Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 	{
 		if(iPart_ != IPART_BASE && index == iId_)
 		{
-			if(!iAdded_) { iLoc_ = loc; }
-			iAdded_ = true;
 			return new VarTerm(loc, iVar_);
 		}
 		else
@@ -408,19 +404,59 @@ namespace
 	class IncVarFinder : public PrgVisitor
 	{
 	public:
-		IncVarFinder(uint32_t var) : var_(var), found_(false) { }
-		bool find(Statement *s) { s->visit(this); return found_; }
+		IncVarFinder(uint32_t var);
+		bool find(Statement *s);
 
 	private:
-		void visit(VarTerm *var, bool bind)      { (void)bind; found_ = var_ == var->nameId(); }
-		void visit(Term* term, bool bind)        { if(!found_) term->visit(this, bind); }
-		void visit(Lit *lit, bool domain)        { (void)domain; if(!found_) lit->visit(this); }
-		void visit(Groundable *grd, bool choice) { (void)choice; if(!found_) grd->visit(this); }
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(Lit *lit, bool domain);
+		void visit(Groundable *grd, bool choice);
 
 	private:
 		uint32_t var_;
 		bool     found_;
+		IncLit  *incLit_;
 	};
+
+	IncVarFinder::IncVarFinder(uint32_t var)
+		: var_(var)
+		, found_(false)
+		, incLit_(0) 
+	{
+	}
+	
+	bool IncVarFinder::find(Statement *s)
+	{
+		s->visit(this);
+		if(found_)
+		{
+			assert(incLit_ && incLit_->type() == IncLit::UNBOUND);
+			incLit_->bind();
+		}
+	}
+	
+	void IncVarFinder::visit(VarTerm *var, bool)      
+	{
+		if(!found_) { found_ = var_ == var->nameId(); }
+	}
+	
+	void IncVarFinder::visit(Term* term, bool bind)
+	{
+		if(!found_) { term->visit(this, bind); }
+	}
+	
+	void IncVarFinder::visit(Lit *lit, bool)
+	{
+		IncLit *incLit = dynamic_cast<IncLit*>(lit);  
+		if(incLit)       { incLit_ = incLit; }
+		else if(!found_) { lit->visit(this); }
+	}
+	
+	void IncVarFinder::visit(Groundable *grd, bool)
+	{
+		if(!found_) { grd->visit(this); }
+	}
 }
 
 void Parser::constTerm(uint32_t index, Term *term)
@@ -482,39 +518,40 @@ Parser::DomStmRng Parser::domainStm(uint32_t var)
 
 void Parser::add(Statement *s)
 {
-	if(iBaseOnly_ && iPart_ != IPART_BASE) { delete s; }
-	else                                   { last_.push_back(s); }
+	last_.push_back(s);
 }
 
 void Parser::add()
 {
 	while(!last_.empty())
 	{
+		// always add incremental literal to non base statements
+		if(iPart_ == IPART_CUMULATIVE)    { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::UNBOUND, iVar_)); }
+		else if(iPart_ == IPART_VOLATILE) { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); }
 		StatementRng rng(grounder()->add(last_.pop_back().release()));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
 			domAdder.add(&statement);
 		}
-		if(iPart_ == IPART_CUMULATIVE && iAdded_)
+		// add incremental literal to non-edb base statements
+		// TODO: this is not necessary if we are not grounding incrementally
+		if(iPart_ == IPART_BASE)
+		{
+			foreach(Statement &statement, rng)
+			{
+				statement.append(new IncLit(statement.loc(), config_, IncLit::BASE, iVar_));
+			}
+		}
+		// bind the incremetal literal if the incremental constant occurs in the statement
+		if(iPart_ == IPART_CUMULATIVE)
 		{
 			foreach(Statement &statement, rng)
 			{
 				IncVarFinder finder(iVar_);
-				if(finder.find(&statement))
-				{
-					statement.append(new IncLit(iLoc_, config_, true, iVar_));
-				}
+				finder.find(&statement);
 			}
 		}
-		else if(iPart_ == IPART_VOLATILE)
-		{
-			foreach(Statement &statement, rng)
-			{
-				statement.append(new IncLit(iLoc_, config_, false, iVar_));
-			}
-		}
-		iAdded_ = false;
 	}
 }
 

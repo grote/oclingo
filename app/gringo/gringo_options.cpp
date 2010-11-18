@@ -48,8 +48,7 @@ GringoOptions::GringoOptions()
 	, textOut(false)
 	, metaOut(false)
 	, groundOnly(false)
-	, ifixed(1)
-	, ibase(false)
+	, ifixed(std::numeric_limits<int>::min())
 	, groundInput(false)
 	, disjShift(false)
 	, compat(false)
@@ -84,7 +83,6 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("ground,g" , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
 		("shift"    , bool_switch(&disjShift),         "Shift disjunctions into the body")
 		("ifixed"   , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
-		("ibase"    , bool_switch(&ibase),             "Process base program only")
 		("iexpand"  , storeTo(iexpand),
 			"Limits the expansion of terms\n"
 			"      Default: All\n"
