@@ -1,4 +1,6 @@
 #!/bin/bash
+export BOOST_ROOT=${HOME}/local/mingw32/opt/boost
+export SQLITE3_ROOT=${HOME}/local/mingw32/opt/sqlite3
 svn update
 make release -j5
 make mingw32 target=all -j5

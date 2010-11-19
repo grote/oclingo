@@ -48,7 +48,7 @@
 #include "gringo/luaterm.h"
 
 #define GRD pParser->grounder()
-#define OUT pParser->grounder()->output()
+#define OTP pParser->grounder()->output()
 #define ONE(loc) new ConstTerm(loc, Val::create(Val::NUM, 1))
 #define ZERO(loc) new ConstTerm(loc, Val::create(Val::NUM, 0))
 #define MINUSONE(loc) new ConstTerm(loc, Val::create(Val::NUM, -1))
@@ -210,10 +210,10 @@ line ::= optimize.
 line ::= compute.
 line ::= meta inv_part.
 
-meta ::= HIDE      inv_part.                                  { OUT->show(false); }
-meta ::= SHOW      inv_part.                                  { OUT->show(true); }
-meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OUT->show(id.index, num.number, false); }
-meta ::= SHOW      inv_part signed(id) SLASH NUMBER(num).     { OUT->show(id.index, num.number, true); }
+meta ::= HIDE      inv_part.                                  { OTP->show(false); }
+meta ::= SHOW      inv_part.                                  { OTP->show(true); }
+meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
+meta ::= SHOW      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, true); }
 meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), false, pred, *list)); delete list; }
 meta ::= SHOW(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), true, pred, *list)); delete list; }
 meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }

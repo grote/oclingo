@@ -20,6 +20,8 @@ files=$(ls -d {lib{gringo,clasp,lua,luasql,program_opts},lemon,cmake,app,CMakeLi
 cpus=$[$(cat /proc/cpuinfo| grep processor | wc -l)+1]
 make -j${cpus} release  target=all
 make -j${cpus} static32 target=all
+export BOOST_ROOT=${HOME}/local/mingw32/opt/boost
+export SQLITE3_ROOT=${HOME}/local/mingw32/opt/sqlite3
 make -j${cpus} mingw32  target=all
 gringo_gen=$(ls build/static32/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
 rm -rf build/dist
