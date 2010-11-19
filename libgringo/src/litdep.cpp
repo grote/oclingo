@@ -164,6 +164,7 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 		if(lit.done()) queue.push(&lit);
 	}
 	VarSet bound(b);
+	uint32_t position = 0;
 	while(!queue.empty())
 	{
 		LitNode *lit = queue.top();
@@ -171,6 +172,7 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 		lit->lit()->init(g, bound);
 		lit->lit()->index(g, groundable_, bound);
 		lit->check(queue);
+		lit->lit()->position = position++;
 	}
 }
 

@@ -87,7 +87,7 @@ void GringoApp::groundBase(Grounder &g, IncConfig &cfg, int start, int end, int 
 	cfg.incVolatile = false;
 	g.ground(); // ground the base part
 	goal = std::max(end, goal);
-	for(int i = 1; i <= end; i++) { groundStep(g, cfg, i, goal); }
+	for(int i = start; i <= end; i++) { groundStep(g, cfg, i, goal); }
 }
 
 int GringoApp::doRun()

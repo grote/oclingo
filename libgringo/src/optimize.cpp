@@ -240,10 +240,13 @@ void Optimize::print(Storage *sto, std::ostream &out) const
 	head_->print(sto, out);
 	out << "=";
 	prio_->print(sto, out);
-	foreach(const Lit &lit, body_) 
+	std::vector<const Lit*> body;
+	foreach(const Lit &lit, body_) { body.push_back(&lit); }
+	std::sort(body.begin(), body.end(), Lit::cmpPos);
+	foreach(const Lit *lit, body)
 	{
 		out << ":";
-		lit.print(sto, out);
+		lit->print(sto, out);
 	}
 	out << (set_ ? "}" : "]");
 }

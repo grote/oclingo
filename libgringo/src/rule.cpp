@@ -208,16 +208,19 @@ void Rule::visit(PrgVisitor *v)
 
 void Rule::print(Storage *sto, std::ostream &out) const
 {
-	if(head_.get()) head_->print(sto, out);
+	if(head_.get()) { head_->print(sto, out); }
 	if(body_.size() > 0)
 	{
+		std::vector<const Lit*> body;
+		foreach(const Lit &lit, body_) { body.push_back(&lit); }
+		std::sort(body.begin(), body.end(), Lit::cmpPos);
 		out << ":-";
 		bool comma = false;
-		foreach(const Lit &lit, body_)
+		foreach(const Lit *lit, body)
 		{
 			if(comma) out << ",";
 			else comma = true;
-			lit.print(sto, out);
+			lit->print(sto, out);
 		}
 	}
 	out << ".";

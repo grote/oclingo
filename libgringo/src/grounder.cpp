@@ -192,13 +192,13 @@ void Grounder::ground()
 	{
 		foreach(Statement *statement, component.statements)
 		{
+			if(!initialized_) { statement->init(this, VarSet()); }
 			if(debug_)
 			{
 				std::cerr << "% ";
 				statement->print(this, std::cerr);
 				std::cerr << std::endl;
 			}
-			if(!initialized_) { statement->init(this, VarSet()); }
 			statement->enqueued(false);
 			enqueue(statement);
 			ground_();
