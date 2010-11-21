@@ -244,7 +244,7 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 	else
 	{
 		double score = std::pow(dom()->size(), 1.0 / terms_.size());
-		std::vector<double> scores(terms_.size());
+		double sum   = 0;
 		VarSet curBound(bound);
 		for(size_t i = 0; i < terms_.size(); i++)
 		{
@@ -252,13 +252,11 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 			terms_[i].vars(vars);
 			VarVec diff;
 			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
-			if(diff.size() == 0) { scores[i] = 1; }
-			else                 { scores[i] = std::pow(score, diff.size() / (double)vars.size()); }
+			if(diff.empty()) { sum += 0; }
+			else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
 			curBound.insert(vars.begin(), vars.end());
 		}
-		score = 0;
-		foreach(double s, scores) { score+= s; }
-		return score / terms_.size();
+		return sum / terms_.size();
 	}
 }
 
