@@ -253,7 +253,7 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 			VarVec diff;
 			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
 			if(diff.size() == 0) { scores[i] = 1; }
-			else                 { scores[i] = std::pow(score, diff.size() / vars.size()); }
+			else                 { scores[i] = std::pow(score, diff.size() / (double)vars.size()); }
 			curBound.insert(vars.begin(), vars.end());
 		}
 		score = 0;
