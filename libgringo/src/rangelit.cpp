@@ -167,8 +167,9 @@ void RangeLit::normalize(Grounder *g, Expander *expander)
 	b_->normalize(this, Term::PtrRef(b_), g, expander, false);
 }
 
-double RangeLit::score(Grounder *g) const
+double RangeLit::score(Grounder *g, VarSet &bound) const
 {
+	if(bound.find(var_->index()) != bound.end()) { return Lit::score(g, bound); }
 	if(a_->constant() && b_->constant())
 	{
 		Val l = a_->val(g);
@@ -177,9 +178,9 @@ double RangeLit::score(Grounder *g) const
 		{
 			int diff = u.num - l.num;
 			if(diff >= 0) { return diff; }
-			else          { return Lit::score(g); }
+			else          { return Lit::score(g, bound); }
 		}
-		else { return Lit::score(g); }
+		else { return Lit::score(g, bound); }
 	}
 	else { return 0; }
 }

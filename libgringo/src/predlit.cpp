@@ -238,10 +238,28 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
-double PredLit::score(Grounder *g) const
+double PredLit::score(Grounder *g, VarSet &bound) const
 {
-	if(sign() || terms_.size() == 0) { return Lit::score(g); }
-	else                             { return std::pow(dom()->size(), 1.0 / terms_.size()); }
+	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
+	else
+	{
+		double score = std::pow(dom()->size(), 1.0 / terms_.size());
+		std::vector<double> scores(terms_.size());
+		VarSet curBound(bound);
+		for(size_t i = 0; i < terms_.size(); i++)
+		{
+			VarSet vars;
+			terms_[i].vars(vars);
+			VarVec diff;
+			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
+			if(diff.size() == 0) { scores[i] = 1; }
+			else                 { scores[i] = std::pow(score, diff.size() / vars.size()); }
+			curBound.insert(vars.begin(), vars.end());
+		}
+		score = 0;
+		foreach(double s, scores) { score+= s; }
+		return score / terms_.size();
+	}
 }
 
 Lit *PredLit::clone() const

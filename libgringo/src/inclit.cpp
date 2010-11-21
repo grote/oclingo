@@ -223,7 +223,7 @@ Lit *IncLit::clone() const
 	return new IncLit(*this);
 }
 
-double IncLit::score(Grounder *) const
+double IncLit::score(Grounder *, VarSet &) const
 {
 	return -1;
 }

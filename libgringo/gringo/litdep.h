@@ -28,12 +28,10 @@ namespace LitDep
 		bool operator()(LitNode *a, LitNode *b);
 	};
 
-	typedef std::priority_queue<LitNode*, std::vector<LitNode*>, LitNodeCmp> LitQueue;
+	typedef std::vector<LitNode*> LitNodeVec;
 
 	class VarNode
 	{
-	private:
-		typedef std::vector<LitNode*> LitNodeVec;
 	public:
 		VarNode(VarTerm *var);
 		VarTerm *var() const;
@@ -41,7 +39,7 @@ namespace LitDep
 		void provide(LitNode *litNode);
 		void reset();
 		bool done();
-		void propagate(LitQueue &queue);
+		void propagate(LitNodeVec &queue);
 	private:
 		bool       done_;
 		VarTerm    *var_;
@@ -57,8 +55,8 @@ namespace LitDep
 		void depend(VarNode *varNode);
 		void provide(VarNode *varNode);
 		void reset();
-		void check(LitQueue &queue);
-		void propagate(LitQueue &queue);
+		void check(LitNodeVec &queue);
+		void propagate(LitNodeVec &queue);
 		bool done();
 		void score(double score) { score_ = score; }
 		double score() const { return score_; }
@@ -74,7 +72,7 @@ namespace LitDep
 	class GrdNode
 	{
 	private:
-		typedef boost::ptr_vector<LitNode> LitNodeVec;
+		typedef boost::ptr_vector<LitNode> LitNodePtrVec;
 		typedef boost::ptr_vector<VarNode> VarNodeVec;
 	public:
 		GrdNode(Groundable *groundable);
@@ -84,9 +82,9 @@ namespace LitDep
 		bool check(VarTermVec &terms);
 		void order(Grounder *g, const VarSet &bound);
 	private:
-		Groundable *groundable_;
-		LitNodeVec  litNodes_;
-		VarNodeVec  varNodes_;
+		Groundable   *groundable_;
+		LitNodePtrVec litNodes_;
+		VarNodeVec    varNodes_;
 	};
 
 	class Builder : public PrgVisitor

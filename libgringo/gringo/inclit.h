@@ -96,7 +96,7 @@ public:
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
 	void bind();
-	double score(Grounder *) const;
+	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
 	const IncConfig &config() const { return config_; }
 	const VarTerm *var() const { return var_.get(); }

@@ -31,7 +31,7 @@ public:
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
-	double score(Grounder *g) const;
+	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
 	~RangeLit();
 private:

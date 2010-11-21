@@ -66,7 +66,7 @@ public:
 	virtual void pop() { }
 	virtual void move(size_t p) { (void)p; }
 	virtual void clear() { }
-	virtual double score(Grounder *) const { return std::numeric_limits<double>::min(); }
+	virtual double score(Grounder *, VarSet &) const { return std::numeric_limits<double>::min(); }
 	virtual bool isFalse(Grounder *grounder) { (void)grounder; assert(false); return false; }
 	virtual ~Lit() { }
 
