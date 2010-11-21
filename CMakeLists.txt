@@ -22,6 +22,7 @@ include(cmake/re2c.cmake)
 include(cmake/lemon.cmake)
 include(cmake/macros.cmake)
 include(cmake/PCHSupport.cmake)
+include(CheckCXXCompilerFlag)
 
 ENSURE_OUT_OF_SOURCE_BUILD("you have to create an out-of-source build")
 
@@ -41,7 +42,8 @@ IF(USE_STATIC_LIBS)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
 ENDIF()
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+CHECK_CXX_COMPILER_FLAG("-Wno-ignored-qualifiers" HAS_WARN_NO_IGNORED_QUALIFIERS)
+if(HAS_WARN_NO_IGNORED_QUALIFIERS)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-qualifiers")
 endif()
 
