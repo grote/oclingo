@@ -243,7 +243,7 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
 	else
 	{
-		double score = std::pow(dom()->size(), 1.0 / terms_.size());
+		double score = std::pow(dom()->size(), 1.0 / terms_.size()) + 1;
 		double sum   = 0;
 		VarSet curBound(bound);
 		for(size_t i = 0; i < terms_.size(); i++)
