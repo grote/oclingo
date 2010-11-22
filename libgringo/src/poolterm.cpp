@@ -50,19 +50,25 @@ void PoolTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 {
 	if(b_.get())
 	{
-		a_->normalize(parent, PtrRef(a_), g, expander, unify);
-		b_->normalize(parent, PtrRef(b_), g, expander, unify);
 		clone_ = false;
 		expander->expand(parent->clone(), Expander::POOL);
+		clone_ = true;
+		Term *b = b_.get();
 		ref.reset(b_.release());
+		b->normalize(parent, ref, g, expander, unify);
 	}
-	else ref.reset(a_.release());
+	else
+	{
+		Term *a = a_.get();
+		ref.reset(a_.release());
+		a->normalize(parent, ref, g, expander, unify);
+	}
 }
 
 Term *PoolTerm::clone() const
 {
-	if(clone_) return new PoolTerm(*this);
-	else return new PoolTerm(loc(), a_.release());
+	if(clone_) { return new PoolTerm(*this); }
+	else       { return new PoolTerm(loc(), a_.release()); }
 }
 
 PoolTerm::~PoolTerm()
