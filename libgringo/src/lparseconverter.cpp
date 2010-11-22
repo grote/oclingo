@@ -134,8 +134,8 @@ void LparseConverter::printSymbolTable()
 			if(newSymbols_.size() <= domId) newSymbols_.resize(domId + 1);
 			foreach(AtomRef &j, newSymbols_[domId])
 			{
-				if((globShow && (hidden == atomsHidden_.end() || hidden->second.find(j.first) == hidden->second.end())) ||
-				   (!globShow && shown != atomsShown_.end() && shown->second.find(j.first) != shown->second.end()))
+				if((globShow && (hidden == atomsHidden_.end() || hidden->second.find(j.symbol) == hidden->second.end())) ||
+				   (!globShow && shown != atomsShown_.end() && shown->second.find(j.symbol) != shown->second.end()))
 				{
 					printSymbolTableEntry(j, arity, name);
 				}
@@ -161,7 +161,7 @@ void LparseConverter::printExternalTable()
 				const std::string &name = s_->string(nameId);
 				foreach(AtomRef &j, newSymbols_[domId])
 				{
-					if(globExt || ext->second.find(j.first) != ext->second.end())
+					if(globExt || ext->second.find(j.symbol) != ext->second.end())
 						printExternalTableEntry(j, arity, name);
 				}
 			}

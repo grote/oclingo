@@ -43,10 +43,19 @@ protected:
 		WeightVec wPos;
 		WeightVec wNeg;
 	};
+	struct AtomRef
+	{
+		AtomRef(uint32_t symbol, uint32_t offset)
+			: flag(0)
+			, symbol(symbol)
+			, offset(offset) { }
+		uint32_t flag   : 1;
+		uint32_t symbol : 31;
+		uint32_t offset;
+	};
 	typedef std::map<int32_t, Minimize> PrioMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > DisplayMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > ExternalMap;
-	typedef std::pair<uint32_t, uint32_t> AtomRef;
 	typedef std::vector<std::vector<AtomRef> > NewSymbols;
 public:
 	LparseConverter(std::ostream *out, bool shiftDisj);
