@@ -46,10 +46,8 @@ protected:
 	struct AtomRef
 	{
 		AtomRef(uint32_t symbol, uint32_t offset)
-			: flag(0)
-			, symbol(symbol)
+			: symbol(symbol)
 			, offset(offset) { }
-		uint32_t flag   : 1;
 		uint32_t symbol : 31;
 		uint32_t offset;
 	};
@@ -57,6 +55,8 @@ protected:
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > DisplayMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > ExternalMap;
 	typedef std::vector<std::vector<AtomRef> > NewSymbols;
+	typedef std::vector<const Domain*> DomainVec;
+	typedef std::vector<bool> BoolVec;
 public:
 	LparseConverter(std::ostream *out, bool shiftDisj);
 	void addDomain(Domain *d);
@@ -65,6 +65,7 @@ public:
 	void hideAtom(PredLitRep *l);
 	uint32_t symbol(PredLitRep *l);
 	virtual void initialize();
+	virtual void endGround();
 	void finalize();
 	void externalAtom(PredLitRep *l);
 	void printSymbolTable();
@@ -94,6 +95,9 @@ protected:
 	ValVec       vals_;
 	uint32_t     false_;
 	NewSymbols   newSymbols_;
+	DomainVec    domains_;
+	BoolVec      undefined_;
+	std::vector<uint32_t> newSymbolsDone_;
 	bool         shiftDisjunctions_;
 	std::vector<int32_t> computePos_;
 	std::vector<int32_t> computeNeg_;

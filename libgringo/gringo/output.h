@@ -29,6 +29,7 @@ private:
 public:
 	Output(std::ostream *out);
 	virtual void initialize() { }
+	virtual void endGround() { }
 	virtual void finalize() { }
 	virtual void addDomain(Domain *d) { (void)d; }
 	std::ostream &out() const { return *out_; }

@@ -71,6 +71,8 @@ void LparseConverter::initialize()
 void LparseConverter::addDomain(Domain *d)
 {
 	symTab_.push_back(SymbolMap(0, ValCmp(&vals_, d->arity()), ValCmp(&vals_, d->arity())));
+	domains_.push_back(d);
+
 }
 
 uint32_t LparseConverter::symbol(PredLitRep *l)
@@ -86,7 +88,19 @@ uint32_t LparseConverter::symbol(PredLitRep *l)
 		if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
 		newSymbols_[domId].push_back(AtomRef(sym, size));
 	}
-	else vals_.resize(size);
+	else
+	{
+		// spend a new symbol if the symbol itself did not occur in a head yet
+		uint32_t sym = res.first->second;
+		if(sym < undefined_.size() && undefined_[sym])
+		{
+			sym = symbol();
+			res.first->second = sym;
+			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
+			newSymbols_[domId].push_back(AtomRef(sym, res.first->first));
+		}
+		vals_.resize(size);
+	}
 	return res.first->second;
 }
 
@@ -180,17 +194,33 @@ void LparseConverter::addCompute(PredLitRep *l)
 	else computePos_.push_back(symbol(l));
 }
 
+void LparseConverter::endGround()
+{
+	newSymbolsDone_.resize(newSymbols_.size());
+	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
+	{
+		const Domain *dom = domains_[domId];
+		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin() + newSymbolsDone_[domId]; it != newSymbols_[domId].end(); it++)
+		{
+			// mark symbols that do not appear in any head
+			if(!dom->find(vals_.begin() + it->offset).valid())
+			{
+				if(undefined_.size() <= it->symbol) { undefined_.resize(it->symbol + 1, false); }
+				undefined_[it->symbol] = true;
+			}
+		}
+	}
+}
+
 void LparseConverter::finalize()
 {
 	foreach(PrioMap::value_type &min, prioMap_)
+	{
 		printMinimizeRule(min.second.pos, min.second.neg, min.second.wPos, min.second.wNeg);
+	}
 	doFinalize();
-	// TODO: loop over new symbols
-	//       if a new symbol does not occur in a head mark it
-	//       as candidate for a new id
-	//       if later symbol for such an atom is called
-	//       give it a new id and remove the flag
 	newSymbols_.clear();
+	newSymbolsDone_.clear();
 }
 
 LparseConverter::~LparseConverter()

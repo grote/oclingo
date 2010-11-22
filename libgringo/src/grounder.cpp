@@ -207,6 +207,7 @@ void Grounder::ground()
 	}
 	initialized_ = true;
 	//debug_ = false;
+	output()->endGround();
 }
 
 void Grounder::ground_()
