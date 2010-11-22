@@ -185,6 +185,11 @@ void LparseConverter::finalize()
 	foreach(PrioMap::value_type &min, prioMap_)
 		printMinimizeRule(min.second.pos, min.second.neg, min.second.wPos, min.second.wNeg);
 	doFinalize();
+	// TODO: loop over new symbols
+	//       if a new symbol does not occur in a head mark it
+	//       as candidate for a new id
+	//       if later symbol for such an atom is called
+	//       give it a new id and remove the flag
 	newSymbols_.clear();
 }
 
