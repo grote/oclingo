@@ -384,7 +384,7 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	}
 	else if (e == ClaspFacade::event_state_exit)
 	{
-		timer_[f.state()].stop();
+		timer_[f.state()].lap();
 		if (generic.verbose > 1)
 		{
 			if(f.state() == ClaspFacade::state_read)
@@ -401,14 +401,13 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			stats_.accu(solver_.stats.solve);
 			if (clingo.iStats)
 			{
-				timer_[0].stop();
+				timer_[0].lap();
 				cout << "\nModels   : " << solver_.stats.solve.models << "\n"
-						 << "Time     : " << fixed << setprecision(3) << timer_[0].current() << " (g: " << timer_[ClaspFacade::state_read].current()
-						 << ", p: " << timer_[ClaspFacade::state_preprocess].current() << ", s: " << timer_[ClaspFacade::state_solve].current() << ")\n"
+						 << "Time     : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
+						 << ", p: " << timer_[ClaspFacade::state_preprocess].elapsed() << ", s: " << timer_[ClaspFacade::state_solve].elapsed() << ")\n"
 						 << "Rules    : " << f.api()->stats.rules[0] << "\n"
 						 << "Choices  : " << solver_.stats.solve.choices   << "\n"
 						 << "Conflicts: " << solver_.stats.solve.conflicts << "\n";
-				timer_[0].start();
 			}
 			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();
@@ -534,10 +533,10 @@ void ClingoApp<M>::printResult(ReasonEnd end)
 		{
 			cout << c << setw(w) << "Total Steps" <<": " << facade_->step()+1 << endl;
 		}
-		cout << c << setw(w) << "Time" << ": " << fixed << setprecision(3) << timer_[0].elapsed() << endl;
-		cout << c << setw(w) << "  Prepare" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_read].elapsed() << endl;
-		cout << c << setw(w) << "  Prepro." << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_preprocess].elapsed() << endl;
-		cout << c << setw(w) << "  Solving" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_solve].elapsed() << endl;
+		cout << c << setw(w) << "Time" << ": " << fixed << setprecision(3) << timer_[0].total() << endl;
+		cout << c << setw(w) << "  Prepare" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_read].total() << endl;
+		cout << c << setw(w) << "  Prepro." << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_preprocess].total() << endl;
+		cout << c << setw(w) << "  Solving" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_solve].total() << endl;
 	}
 	if (cmdOpts_.basic.stats) { out_->printStats(s.stats, en); }
 }

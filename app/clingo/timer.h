@@ -24,30 +24,32 @@
 #ifdef _MSC_VER
 #pragma once
 #endif
+#include <clasp/util/platform.h> // uint64
 
 class Timer {
 public:
-	Timer() : start_(0), last_(0), elapsed_(0) {}
-	void   start()   { start_    = clockStamp(); }
-	void   stop()    { last_ = clockStamp() - start_; elapsed_ += last_; }
+	Timer() : started_(false), start_(0), split_(0), total_(0) {}
+	void   start()   { started_ = true; start_ = clockStamp(); }
+	void   stop()    { split(clockStamp()); }
 	void   reset()   { *this  = Timer(); }
-	double current() const 
-	{ 
-		return last_ / ticksPerSec();
-	}
+	//! same as stop(), start();
+	void   lap()     { uint64 t; split(t = clockStamp()); start_ = t; }
+	//! elapsed time (in seconds) for last start-stop cycle
 	double elapsed() const { 
-		return elapsed_ / ticksPerSec();
+		return split_ / double(ticksPerSec());
 	}
-	static double clockStamp();
-	static double ticksPerSec();
-	operator double() const
-	{
-		return elapsed();
+	//! total elapsed time for all start-stop cycles 
+	double total()   const {
+		return total_ / double(ticksPerSec());
 	}
+	static uint64 clockStamp();
+	static uint64 ticksPerSec();
 private:
-	double start_;
-	double last_;
-	double elapsed_;
+	void split(uint64 t) { if(started_) { total_ += (split_ = t-start_); } }
+	bool   started_;
+	uint64 start_;
+	uint64 split_;
+	uint64 total_;
 };
 
 #endif

@@ -17,14 +17,14 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#include "clingo/timer.h"
+#include "timer.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN // exclude APIs such as Cryptography, DDE, RPC, Shell, and Windows Sockets.
 #define NOMINMAX            // do not let windows.h define macros min and max
 #include <windows.h>        // GetProcessTimes, GetCurrentProcess, FILETIME
 
-double Timer::clockStamp() {
+uint64 Timer::clockStamp() {
 	FILETIME ignoreStart, ignoreExit;
 	union Convert {
 		FILETIME time;
@@ -34,20 +34,21 @@ double Timer::clockStamp() {
 	return user.asUint + system.asUint;
 }
 
-double Timer::ticksPerSec() {
+uint64 Timer::ticksPerSec() {
 	return 10000000;
 }
+
 #else
 #include <sys/times.h>  // times()
 #include <unistd.h>     // sysconf()			
 
-double Timer::clockStamp() {
+uint64 Timer::clockStamp() {
   struct tms nowTimes;
 	times(&nowTimes);
 	return nowTimes.tms_utime + nowTimes.tms_stime;
 }
 
-double Timer::ticksPerSec() {
+uint64 Timer::ticksPerSec() {
 	return sysconf(_SC_CLK_TCK);
 }
 
