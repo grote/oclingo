@@ -384,7 +384,7 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	}
 	else if (e == ClaspFacade::event_state_exit)
 	{
-		timer_[f.state()].lap();
+		timer_[f.state()].stop();
 		if (generic.verbose > 1)
 		{
 			if(f.state() == ClaspFacade::state_read)

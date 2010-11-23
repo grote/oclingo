@@ -28,9 +28,9 @@
 
 class Timer {
 public:
-	Timer() : started_(false), start_(0), split_(0), total_(0) {}
-	void   start()   { started_ = true; start_ = clockStamp(); }
-	void   stop()    { split(clockStamp()); }
+	Timer() : running_(false), start_(0), split_(0), total_(0) {}
+	void   start()   { running_ = true;  start_ = clockStamp(); }
+	void   stop()    { split(clockStamp()); running_ = false; }
 	void   reset()   { *this  = Timer(); }
 	//! same as stop(), start();
 	void   lap()     { uint64 t; split(t = clockStamp()); start_ = t; }
@@ -45,8 +45,8 @@ public:
 	static uint64 clockStamp();
 	static uint64 ticksPerSec();
 private:
-	void split(uint64 t) { if(started_) { total_ += (split_ = t-start_); } }
-	bool   started_;
+	void split(uint64 t) { if(running_) { total_ += (split_ = t-start_); } }
+	bool   running_;
 	uint64 start_;
 	uint64 split_;
 	uint64 total_;
