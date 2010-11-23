@@ -185,7 +185,6 @@ void Grounder::ground()
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
-		dom.second->fix();
 		dom.second->complete(false);
 	}
 	foreach(Component &component, components_)
@@ -208,6 +207,11 @@ void Grounder::ground()
 	initialized_ = true;
 	//debug_ = false;
 	output()->endGround();
+	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+	{
+		dom.second->fix();
+	}
+
 }
 
 void Grounder::ground_()
