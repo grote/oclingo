@@ -37,16 +37,12 @@ Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
 
 void Display::ground(Grounder *g)
 {
-	head_->clear();
-	if(inst_.get())
-	{
-		inst_->reset();
-		inst_->ground(g);
-	}
+	if(inst_.get()) inst_->ground(g);
 	else if(!grounded_)
 	{
 		grounded_ = true;
-		if(head_->match(g)) grounded(g);
+		head_->match(g);
+		grounded(g);
 	}
 }
 
