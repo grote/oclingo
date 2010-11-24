@@ -123,7 +123,6 @@ void External::init(Grounder *g, const VarSet &b)
 	}
 	else head_->init(g, b);
 	litDep_.reset(0);
-	//g->enqueue(this);
 }
 
 void External::visit(PrgVisitor *visitor)
