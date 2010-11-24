@@ -26,6 +26,15 @@ ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
 	return *ext_;
 }
 
+void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+{
+	std::cerr << "printExternalTableEntry for " << name << std::endl;
+
+	(void)atom;
+	(void)arity;
+	(void)name;
+}
+
 /*
 void oClaspOutput::initialize()
 {

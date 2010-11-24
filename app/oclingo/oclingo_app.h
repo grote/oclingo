@@ -31,22 +31,18 @@ template <>
 FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 	: app(a)
 {
-	config.incBase  = app.gringo.ibase;
-	config.incBegin = 1;
+	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO);
 	if (app.clingo.mode == CLINGO)
 	{
-		config.incEnd   = config.incBegin + app.gringo.ifixed;
 		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
 	else if (app.clingo.mode == ICLINGO)
 	{
-		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new iClaspOutput(app.gringo.disjShift));
 	}
 	// TODO move into clingo_app ?
 	else
 	{
-		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift));
 	}
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
@@ -56,8 +52,9 @@ FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 	}
 	else
 	{
-		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2));
-		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
+		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
+		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
+		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, inc));
 	}
 }
 
@@ -90,7 +87,6 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 	out->setProgramBuilder(api);
 	solver = &s;
 	out->initialize();
-
 	if(converter.get())
 	{
 		converter->parse();
@@ -101,14 +97,15 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 		if (parser.get())
 		{
 			parser->parse();
+
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 		}
 		else
 		{
-			config.incBegin = config.incEnd;
-			config.incEnd   = config.incEnd + 1;
+			config.incStep++;
 		}
 
 		ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
@@ -126,7 +123,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
 					std::cerr << "preparing new step" << std::endl;
-					grounder->ground();
+					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 				} else {
 					std::cerr << "preparing new iteration" << std::endl;
@@ -136,7 +133,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			std::cerr << "preparing get of new ext knowledge" << std::endl;
 			ext.get();
 		} else {
-			grounder->ground();
+			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 		}
 	}
 	out->finalize();
@@ -197,11 +194,6 @@ void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 			{
 				cout << "=============== step " << f.step()+1 << " ===============" << endl;
 			}
-			STATUS(2, cout << "Reading      : ");
-		}
-		else if (f.state() == ClaspFacade::state_preprocess)
-		{
-			STATUS(2, cout << "Preprocessing: ");
 		}
 		else if (f.state() == ClaspFacade::state_solve)
 		{
@@ -215,27 +207,34 @@ void ClingoApp<OCLINGO>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& 
 	else if (e == ClaspFacade::event_state_exit)
 	{
 		timer_[f.state()].stop();
-		if (generic.verbose > 1 && (f.state() == ClaspFacade::state_read || f.state() == ClaspFacade::state_preprocess))
-			cout << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl;
+		if (generic.verbose > 1)
+		{
+			if(f.state() == ClaspFacade::state_read)
+			{
+				STATUS(2, cout << "Reading      : " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+			else if(f.state() == ClaspFacade::state_preprocess)
+			{
+				STATUS(2, cout << "Preprocessing: " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+		}
 		if (f.state() == ClaspFacade::state_solve)
 		{
 			stats_.accu(solver_.stats.solve);
 			if (clingo.iStats)
 			{
-				timer_[0].stop();
+				timer_[0].lap();
 				cout << "\nModels   : " << solver_.stats.solve.models << "\n"
-						 << "Time     : " << fixed << setprecision(3) << timer_[0].current() << " (g: " << timer_[ClaspFacade::state_read].current()
-						 << ", p: " << timer_[ClaspFacade::state_preprocess].current() << ", s: " << timer_[ClaspFacade::state_solve].current() << ")\n"
+						 << "Time     : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
+						 << ", p: " << timer_[ClaspFacade::state_preprocess].elapsed() << ", s: " << timer_[ClaspFacade::state_solve].elapsed() << ")\n"
 						 << "Rules    : " << f.api()->stats.rules[0] << "\n"
 						 << "Choices  : " << solver_.stats.solve.choices   << "\n"
 						 << "Conflicts: " << solver_.stats.solve.conflicts << "\n";
-				timer_[0].start();
 			}
 			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();
 		}
 	}
-
 }
 
 template <>
