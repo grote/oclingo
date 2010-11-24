@@ -30,19 +30,20 @@ External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
 	: Statement(loc)
 	, head_(head)
 	, body_(body.release())
+	, grounded_(false)
 {
 	head_->head(true);
 }
 
 void External::ground(Grounder *g)
 {
-	head_->clear();
-	if(inst_.get())
+	if(inst_.get()) inst_->ground(g);
+	else if(!grounded_)
 	{
-		inst_->reset();
-		inst_->ground(g);
+		grounded_ = true;
+		if(head_.get()) head_->match(g);
+		grounded(g);
 	}
-	else if(head_->match(g)) grounded(g);
 	head_->finish(g);
 }
 
@@ -122,7 +123,6 @@ void External::init(Grounder *g, const VarSet &b)
 	}
 	else head_->init(g, b);
 	litDep_.reset(0);
-	g->enqueue(this);
 }
 
 void External::visit(PrgVisitor *visitor)
