@@ -97,6 +97,26 @@ private:
 	mutable std::string msg_;
 };
 
+class AtomRedefinedException : public std::exception
+{
+public:
+	AtomRedefinedException(const std::string &atom);
+	const char *what() const throw();
+	~AtomRedefinedException() throw() { }
+private:
+	const std::string   atom_;
+};
+
+class ModularityException : public std::exception
+{
+public:
+	ModularityException(const StrLoc &stmLoc, const std::string &stmStr, const std::string &atom);
+	const char *what() const throw();
+	~ModularityException() throw() { }
+private:
+	std::string msg_;
+};
+
 template<class Stream>
 Stream &operator<<(Stream &stream, const StrLoc &loc)
 {

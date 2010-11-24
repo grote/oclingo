@@ -34,7 +34,7 @@ class Lit : public Locateable
 public:
 	enum Monotonicity { MONOTONE, ANTIMONOTONE, NONMONOTONE };
 public:
-	Lit(const Loc &loc) : Locateable(loc), head_(false) { }
+	Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
 	virtual void normalize(Grounder *g, Expander *expander) = 0;
 	virtual Monotonicity monotonicity() { return MONOTONE; }
 	virtual bool fact() const = 0;
@@ -66,11 +66,21 @@ public:
 	virtual void pop() { }
 	virtual void move(size_t p) { (void)p; }
 	virtual void clear() { }
-	virtual double score(Grounder *) const { return std::numeric_limits<double>::min(); }
+	virtual double score(Grounder *, VarSet &) const { return std::numeric_limits<double>::min(); }
 	virtual bool isFalse(Grounder *grounder) { (void)grounder; assert(false); return false; }
 	virtual ~Lit() { }
+
+public:
+	static bool cmpPos(const Lit *a, const Lit *b)
+	{
+		return a->position < b->position;
+	}
+
 private:
-	bool head_;
+	uint32_t head_ : 1;
+
+public:
+	uint32_t position : 31;
 };
 
 inline Lit* new_clone(const Lit& a)

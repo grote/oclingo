@@ -19,37 +19,51 @@
 
 Context::Context()
 {
+	contextStack_.push_back(ContextVec::value_type());
 }
 
 void Context::reserve(uint32_t vars)
 {
-	if(binder_.size() < vars)
+	if(contextStack_.back().first.size() < vars)
 	{
-		binder_.resize(vars, -1);
-		val_.resize(vars);
+		contextStack_.back().first.resize(vars, -1);
+		contextStack_.back().second.resize(vars);
 	}
 }
 
 const Val &Context::val(uint32_t index) const
 {
-	assert(binder_[index] != -1);
-	return val_[index];
+	assert(contextStack_.back().first[index] != -1);
+	return contextStack_.back().second[index];
 }
 
 void Context::val(uint32_t index, const Val &v, int binder)
 {
-	binder_[index] = binder;
-	val_[index] = v;
+	contextStack_.back().first[index] = binder;
+	contextStack_.back().second[index] = v;
 }
 
 int Context::binder(uint32_t index) const
 {
-	assert(index < binder_.size());
-	return binder_[index];
+	assert(index < contextStack_.back().first.size());
+	return contextStack_.back().first[index];
 }
 
 void Context::unbind(uint32_t index)
 {
-	binder_[index] = -1;
+	contextStack_.back().first[index] = -1;
+}
+
+void Context::pushContext()
+{
+	contextStack_.push_back(ContextVec::value_type(contextStack_.back().first, contextStack_.back().second));
+	for(size_t i = 0; i < contextStack_.back().first.size(); i++)
+		this->unbind(i);
+}
+
+void Context::popContext()
+{
+	assert(contextStack_.size() > 0);
+	contextStack_.pop_back();
 }
 

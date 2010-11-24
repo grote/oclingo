@@ -23,6 +23,7 @@
 #include <gringo/litdep.h>
 #include <gringo/grounder.h>
 #include <gringo/output.h>
+#include <gringo/exceptions.h>
 
 Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
 	: Statement(loc)
@@ -146,12 +147,33 @@ void Rule::ground(Grounder *g)
 	if(head_.get()) head_->finish(g);
 }
 
+void Rule::addDomain(Grounder *g, bool fact)
+{
+	if(head_.get())
+	{
+		try
+		{
+			head_->addDomain(g, fact);
+		}
+		catch(const AtomRedefinedException &ex)
+		{
+			std::stringstream ss;
+			print(g, ss);
+			throw ModularityException(StrLoc(g, loc()), ss.str(), ex.what());
+		}
+	}
+}
+
 bool Rule::grounded(Grounder *g)
 {
 	if(head_.get())
 	{
 		head_->grounded(g);
-		if(head_->fact()) return true;
+		if(head_->fact())
+		{
+			addDomain(g, true);
+			return true;
+		}
 	}
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin();
@@ -168,8 +190,8 @@ bool Rule::grounded(Grounder *g)
 		}
 		else if(lit.forcePrint()) { lit.accept(printer); }
 	}
-	if(head_.get()) head_->addDomain(g, fact);
 	printer->end();
+	if(head_.get()) { addDomain(g, fact); }
 	return true;
 }
 
@@ -186,16 +208,19 @@ void Rule::visit(PrgVisitor *v)
 
 void Rule::print(Storage *sto, std::ostream &out) const
 {
-	if(head_.get()) head_->print(sto, out);
+	if(head_.get()) { head_->print(sto, out); }
 	if(body_.size() > 0)
 	{
+		std::vector<const Lit*> body;
+		foreach(const Lit &lit, body_) { body.push_back(&lit); }
+		std::sort(body.begin(), body.end(), Lit::cmpPos);
 		out << ":-";
 		bool comma = false;
-		foreach(const Lit &lit, body_)
+		foreach(const Lit *lit, body)
 		{
 			if(comma) out << ",";
 			else comma = true;
-			lit.print(sto, out);
+			lit->print(sto, out);
 		}
 	}
 	out << ".";

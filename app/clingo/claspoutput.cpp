@@ -108,7 +108,7 @@ void ClaspOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, con
 	ss << name;
 	if(arity > 0)
 	{
-		ValVec::const_iterator k = vals_.begin() + atom.second;
+		ValVec::const_iterator k = vals_.begin() + atom.offset;
 		ValVec::const_iterator end = k + arity;
 		ss << "(";
 		k->print(s_, ss);
@@ -119,8 +119,8 @@ void ClaspOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, con
 		}
 		ss << ")";
 	}
-	b_->setAtomName(atom.first, ss.str().c_str());
-	atomUnnamed_[atom.first - lastUnnamed_] = false;
+	b_->setAtomName(atom.symbol, ss.str().c_str());
+	atomUnnamed_[atom.symbol - lastUnnamed_] = false;
 }
 
 void ClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)

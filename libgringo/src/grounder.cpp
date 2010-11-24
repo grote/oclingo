@@ -46,35 +46,39 @@ public:
 
 TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 	: config(config)
+	, start(config.incStep)
 {
 }
 
 bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
 {
 	bool found = false;
-	offset = 0;
-	foreach(const Val &val, rng)
+	if(!config.curBase())
 	{
-		if ( val.type == Val::FUNC )
+		offset = 0;
+		foreach(const Val &val, rng)
 		{
-			int32_t depth = g->func(val.index).getDepth();
-			if(depth >= config.incEnd)
+			if ( val.type == Val::FUNC )
 			{
-				if(offset < depth) { offset = depth; }
-				found = true;
+				int32_t depth = g->func(val.index).getDepth();
+				if(depth >= config.incStep)
+				{
+					if(offset < depth) { offset = depth; }
+					found = true;
+				}
 			}
 		}
 	}
 	return found;
 }
 
-void TermDepthExpansion::expand(Grounder *g) const
+void TermDepthExpansion::expand(Grounder *g)
 {
 	foreach (const DomainMap::const_reference &ref, g->domains())
 	{
-		for(int i = config.incBegin; i < config.incEnd; i++)
+		for( ; start < config.incStep; start++)
 		{
-			const_cast<Domain*>(ref.second)->addOffset(i);
+			const_cast<Domain*>(ref.second)->addOffset(start);
 		}
 	}
 }
@@ -177,20 +181,23 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground()
 {
+	termExpansion().expand(this);
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+	{
 		dom.second->complete(false);
+	}
 	foreach(Component &component, components_)
 	{
 		foreach(Statement *statement, component.statements)
 		{
+			if(!initialized_) { statement->init(this, VarSet()); }
 			if(debug_)
 			{
 				std::cerr << "% ";
 				statement->print(this, std::cerr);
 				std::cerr << std::endl;
 			}
-			if(!initialized_) { statement->init(this, VarSet()); }
 			statement->enqueued(false);
 			enqueue(statement);
 			ground_();
@@ -199,6 +206,12 @@ void Grounder::ground()
 	}
 	initialized_ = true;
 	//debug_ = false;
+	output()->endGround();
+	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+	{
+		dom.second->fix();
+	}
+
 }
 
 void Grounder::ground_()

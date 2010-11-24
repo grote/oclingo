@@ -23,6 +23,10 @@ class Context
 {
 private:
 	typedef std::vector<int> IntVec;
+	/*! \typedef ContextVec
+	  Provides a list of contexts. Every context is a pair of binders and values.
+	*/
+	typedef std::vector<std::pair<IntVec,ValVec> > ContextVec;
 public:
 	Context();
 	void reserve(uint32_t vars);
@@ -30,12 +34,15 @@ public:
 	void unbind(uint32_t index);
 	const Val &val(uint32_t index) const;
 	void val(uint32_t index, const Val &v, int binder);
+	//! Push a new context onto the stack
+	void pushContext();
+	//! Remove the current context from the stack
+	void popContext();
 
 protected:
 	~Context() { }
 
 private:
-	IntVec binder_;
-	ValVec val_;
+	ContextVec contextStack_;
 };
 

@@ -169,16 +169,13 @@ template <Mode M>
 FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
-	config.incBase  = app.gringo.ibase;
-	config.incBegin = 1;
+	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO);
 	if (app.clingo.mode == CLINGO)
 	{
-		config.incEnd   = config.incBegin + app.gringo.ifixed;
 		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
 	else if(M == ICLINGO)
 	{
-		config.incEnd   = config.incBegin + app.clingo.inc.iQuery;
 		out.reset(new iClaspOutput(app.gringo.disjShift));
 	}
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
@@ -188,8 +185,9 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	}
 	else
 	{
+		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
 		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
-		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat));
+		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, inc));
 	}
 }
 
@@ -220,17 +218,17 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 		if (parser.get())
 		{
 			parser->parse();
+
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 		}
 		else
 		{
-			config.incBegin = config.incEnd;
-			config.incEnd   = config.incEnd + 1;
-			grounder->termExpansion().expand(grounder.get());
+			config.incStep++;
+			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 		}
-		grounder->ground();
 	}
 	out->finalize();
 	release();
@@ -379,11 +377,6 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			{
 				cout << "=============== step " << f.step()+1 << " ===============" << endl;
 			}
-			STATUS(2, cout << "Reading      : ");
-		}
-		else if (f.state() == ClaspFacade::state_preprocess)
-		{
-			STATUS(2, cout << "Preprocessing: ");
 		}
 		else if (f.state() == ClaspFacade::state_solve)
 		{
@@ -397,21 +390,29 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	else if (e == ClaspFacade::event_state_exit)
 	{
 		timer_[f.state()].stop();
-		if (generic.verbose > 1 && (f.state() == ClaspFacade::state_read || f.state() == ClaspFacade::state_preprocess))
-			cout << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl;
+		if (generic.verbose > 1)
+		{
+			if(f.state() == ClaspFacade::state_read)
+			{
+				STATUS(2, cout << "Reading      : " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+			else if(f.state() == ClaspFacade::state_preprocess)
+			{
+				STATUS(2, cout << "Preprocessing: " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
+			}
+		}
 		if (f.state() == ClaspFacade::state_solve)
 		{
 			stats_.accu(solver_.stats.solve);
 			if (clingo.iStats)
 			{
-				timer_[0].stop();
+				timer_[0].lap();
 				cout << "\nModels   : " << solver_.stats.solve.models << "\n"
-						 << "Time     : " << fixed << setprecision(3) << timer_[0].current() << " (g: " << timer_[ClaspFacade::state_read].current()
-						 << ", p: " << timer_[ClaspFacade::state_preprocess].current() << ", s: " << timer_[ClaspFacade::state_solve].current() << ")\n"
+						 << "Time     : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
+						 << ", p: " << timer_[ClaspFacade::state_preprocess].elapsed() << ", s: " << timer_[ClaspFacade::state_solve].elapsed() << ")\n"
 						 << "Rules    : " << f.api()->stats.rules[0] << "\n"
 						 << "Choices  : " << solver_.stats.solve.choices   << "\n"
 						 << "Conflicts: " << solver_.stats.solve.conflicts << "\n";
-				timer_[0].start();
 			}
 			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();
@@ -537,10 +538,10 @@ void ClingoApp<M>::printResult(ReasonEnd end)
 		{
 			cout << c << setw(w) << "Total Steps" <<": " << facade_->step()+1 << endl;
 		}
-		cout << c << setw(w) << "Time" << ": " << fixed << setprecision(3) << timer_[0].elapsed() << endl;
-		cout << c << setw(w) << "  Prepare" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_read].elapsed() << endl;
-		cout << c << setw(w) << "  Prepro." << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_preprocess].elapsed() << endl;
-		cout << c << setw(w) << "  Solving" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_solve].elapsed() << endl;
+		cout << c << setw(w) << "Time" << ": " << fixed << setprecision(3) << timer_[0].total() << endl;
+		cout << c << setw(w) << "  Prepare" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_read].total() << endl;
+		cout << c << setw(w) << "  Prepro." << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_preprocess].total() << endl;
+		cout << c << setw(w) << "  Solving" << ": " << fixed << setprecision(3) << timer_[ClaspFacade::state_solve].total() << endl;
 	}
 	if (cmdOpts_.basic.stats) { out_->printStats(s.stats, en); }
 }

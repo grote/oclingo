@@ -138,11 +138,6 @@ bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, Gri
 			m.error = "Options '--clingo' and '--clasp' are mutually exclusive";
 			return false;
 		}
-		if(opts.ibase)
-		{
-			inc.minSteps = 1;
-			inc.maxSteps = 1;
-		}
 	}
 	if(claspMode)        mode = CLASP;
 	else if(clingoMode)  mode = CLINGO;

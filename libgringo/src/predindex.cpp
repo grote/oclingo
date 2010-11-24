@@ -36,13 +36,15 @@ bool PredIndex::ValCmp::operator()(uint32_t a, uint32_t b) const
 	return std::equal(vals->begin() + a, vals->begin() + a + size, vals->begin() + b);
 }
 
-PredIndex::PredIndex(const TermPtrVec &terms, const VarVec &index, const VarVec &bind) :
-	map_(0, ValCmp(&indexVec_, index.size()), ValCmp(&indexVec_, index.size())),
-	index_(index),
-	bind_(bind),
-	indexVec_(index.size()),
-	finished_(0),
-	terms_(terms)
+PredIndex::PredIndex(Domain *dom, Groundable *groundable, const TermPtrVec &terms, const VarVec &index, const VarVec &bind)
+	: dom_(dom)
+	, groundable_(groundable)
+	, map_(0, ValCmp(&indexVec_, index.size()), ValCmp(&indexVec_, index.size()))
+	, index_(index)
+	, bind_(bind)
+	, indexVec_(index.size())
+	, finished_(0)
+	, terms_(terms)
 {
 }
 
@@ -91,6 +93,14 @@ void PredIndex::bind(Grounder *grounder, int binder)
 
 std::pair<bool, bool> PredIndex::firstMatch(Grounder *grounder, int binder)
 {
+	if(dom_)
+	{
+		grounder->pushContext();
+		dom_->append(grounder, groundable_, this);
+		grounder->popContext();
+		dom_        = 0;
+		groundable_ = 0;
+	}
 	uint32_t find = indexVec_.size() - index_.size();
 	ValVec::iterator j = indexVec_.begin() + find;
 	foreach(uint32_t var, index_)
@@ -130,6 +140,6 @@ void PredIndex::finish()
 
 bool PredIndex::hasNew() const 
 {
-	return finished_ < bindVec_.size();
+	return finished_ < bindVec_.size() || dom_ != 0;
 }
 

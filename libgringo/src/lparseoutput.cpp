@@ -91,10 +91,10 @@ void LparseOutput::printComputeRule(int models, const AtomVec &pos, const AtomVe
 
 void LparseOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
 {
-	*out_ << atom.first << " " << name;
+	*out_ << atom.symbol << " " << name;
 	if(arity > 0)
 	{
-		ValVec::const_iterator k = vals_.begin() + atom.second;
+		ValVec::const_iterator k = vals_.begin() + atom.offset;
 		ValVec::const_iterator end = k + arity;
 		*out_ << "(";
 		k->print(s_, *out_);
@@ -117,7 +117,7 @@ void LparseOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, 
 		*out_ << "E\n";
 		hasExternal_ = true;
 	}
-	*out_ << atom.first << "\n";
+	*out_ << atom.symbol << "\n";
 }
 
 uint32_t LparseOutput::symbol()

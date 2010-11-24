@@ -66,7 +66,7 @@ public:
 	void pop();
 	void move(size_t p);
 	void clear();
-	double score(Grounder *g) const;
+	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
 private:
 	void vars(VarSet &vars) const;

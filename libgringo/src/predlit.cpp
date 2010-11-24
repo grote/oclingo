@@ -182,9 +182,7 @@ void PredLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 		std::set_intersection(bound.begin(), bound.end(), vars.begin(), vars.end(), std::back_insert_iterator<VarVec>(index));
 		std::set_difference(vars.begin(), vars.end(), index.begin(), index.end(), std::back_insert_iterator<VarVec>(bind));
 		bound.insert(vars.begin(), vars.end());
-		PredIndex *p = new PredIndex(terms_, index, bind);
-		dom_->append(g, gr, p);
-		gr->instantiator()->append(p);
+		gr->instantiator()->append(new PredIndex(dom_, gr, terms_, index, bind));
 	}
 }
 
@@ -240,10 +238,26 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
-double PredLit::score(Grounder *g) const
+double PredLit::score(Grounder *g, VarSet &bound) const
 {
-	if(sign() || terms_.size() == 0) { return Lit::score(g); }
-	else                             { return std::pow(dom()->size(), 1.0 / terms_.size()); }
+	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
+	else
+	{
+		double score = std::pow(dom()->size(), 1.0 / terms_.size()) + 1;
+		double sum   = 0;
+		VarSet curBound(bound);
+		for(size_t i = 0; i < terms_.size(); i++)
+		{
+			VarSet vars;
+			terms_[i].vars(vars);
+			VarVec diff;
+			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
+			if(diff.empty()) { sum += 0; }
+			else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
+			curBound.insert(vars.begin(), vars.end());
+		}
+		return sum / terms_.size();
+	}
 }
 
 Lit *PredLit::clone() const

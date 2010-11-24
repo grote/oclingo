@@ -59,7 +59,7 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat);
+	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool inc);
 	int lex();
 	int lex_compat();
 	std::string errorToken();
@@ -74,6 +74,7 @@ public:
 	void optimizeSet(bool set) { optimizeSet_ = set; if(set) optimizeUniques_.reset(new PredLitSet()); }
 	void setUniques(Optimize *o) { if(optimizeSet_) o->uniques(optimizeUniques_); }
 	void incremental(iPart part, uint32_t index = 0);
+	void invPart();
 	void add(Statement *s);
 	Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
@@ -99,23 +100,23 @@ private:
 	ErrorVec        errors_;
 	StatementPtrVec last_;
 	// parsing optimize statements
-	int          level_;
-	bool         maximize_;
-	bool         optimizeSet_;
-	PredLitSetPtr optimizeUniques_;
+	int             level_;
+	bool            maximize_;
+	bool            optimizeSet_;
+	PredLitSetPtr   optimizeUniques_;
 	// parsing the incremental part
-	iPart        iPart_;
-	uint32_t     iId_;
-	uint32_t     iVar_;
-	Loc          iLoc_;
-	bool         iAdded_;
+	bool            inc_;
+	iPart           iPart_;
+	iPart           invPart_;
+	uint32_t        iId_;
+	uint32_t        iVar_;
 	// parsing const directives
-	ConstMap     constMap_;
+	ConstMap        constMap_;
 	// parsing domain statements
-	DomStmList   domStmList_;
-	DomStmMap    domStmMap_;
+	DomStmList      domStmList_;
+	DomStmMap       domStmMap_;
 	// Lua
-	Loc          luaBegin_;
-	bool         compat_;
+	Loc             luaBegin_;
+	bool            compat_;
 };
 

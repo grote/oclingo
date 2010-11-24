@@ -27,7 +27,7 @@ namespace LitDep
 
 bool LitNodeCmp::operator()(LitNode *a, LitNode *b)
 {
-	return a->score() > b->score();
+	return a->score() < b->score();
 }
 
 VarNode::VarNode(VarTerm *var) 
@@ -61,7 +61,7 @@ bool VarNode::done()
 	return done_;
 }
 
-void VarNode::propagate(LitQueue &queue)
+void VarNode::propagate(LitNodeVec &queue)
 {
 	if(!done_)
 	{
@@ -95,15 +95,15 @@ void LitNode::reset()
 	done_ = depend_;
 }
 
-void LitNode::check(LitQueue &queue)
+void LitNode::check(LitNodeVec &queue)
 {
 	foreach(VarNode *var, provide_) var->propagate(queue);
 }
 
-void LitNode::propagate(LitQueue &queue)
+void LitNode::propagate(LitNodeVec &queue)
 {
 	assert(done_ > 0);
-	if(--done_ == 0) queue.push(this);
+	if(--done_ == 0) queue.push_back(this);
 }
 
 bool LitNode::done()
@@ -135,42 +135,49 @@ void GrdNode::reset()
 bool GrdNode::check(VarTermVec &terms)
 {
 	reset();
-	LitQueue queue;
+	LitNodeVec queue;
 	foreach(LitNode &lit, litNodes_)
-		if(lit.done()) queue.push(&lit);
+	{
+		if(lit.done()) { queue.push_back(&lit); }
+	}
 	while(!queue.empty())
 	{
-		LitNode *lit = queue.top();
-		queue.pop();
+		LitNode *lit = queue.back();
+		queue.pop_back();
 		lit->check(queue);
 	}
 	bool res = true;
 	foreach(VarNode &var, varNodes_)
+	{
 		if(!var.done()) 
 		{
 			terms.push_back(var.var());
 			res = false;
 		}
+	}
 	return res;
 }
 
 void GrdNode::order(Grounder *g, const VarSet &b)
 {
 	reset();
-	LitQueue queue;
+	LitNodeVec queue;
 	foreach(LitNode &lit, litNodes_)
 	{
-		lit.score(lit.lit()->score(g));
-		if(lit.done()) queue.push(&lit);
+		if(lit.done()) { queue.push_back(&lit); }
 	}
 	VarSet bound(b);
+	uint32_t position = 0;
 	while(!queue.empty())
 	{
-		LitNode *lit = queue.top();
-		queue.pop();
+		foreach(LitNode *lit, queue) { lit->score(lit->lit()->score(g, bound)); }
+		LitNodeVec::iterator min = std::min_element(queue.begin(), queue.end(), LitNodeCmp());
+		LitNode *lit = *min;
+		queue.erase(min);
 		lit->lit()->init(g, bound);
 		lit->lit()->index(g, groundable_, bound);
 		lit->check(queue);
+		lit->lit()->position = position++;
 	}
 }
 

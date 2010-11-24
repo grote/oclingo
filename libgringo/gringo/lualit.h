@@ -34,7 +34,7 @@ public:
 	Lit *clone() const;
 	int index() const;
 	const TermPtrVec &args() const;
-	double score(Grounder *) const { return 0; }
+	double score(Grounder *, VarSet &) const { return 0; }
 	~LuaLit();
 private:
 	clone_ptr<VarTerm> var_;

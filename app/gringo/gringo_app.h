@@ -28,6 +28,8 @@ class GringoApp : public MainApp
 public:
 	/** returns a singleton instance */
 	static GringoApp& instance();
+	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
+	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
 
 private:
 	GringoApp(const GringoApp&);
