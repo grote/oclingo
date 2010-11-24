@@ -48,7 +48,7 @@ protected:
 		AtomRef(uint32_t symbol, uint32_t offset)
 			: symbol(symbol)
 			, offset(offset) { }
-		uint32_t symbol : 31;
+		uint32_t symbol;
 		uint32_t offset;
 	};
 	typedef std::map<int32_t, Minimize> PrioMap;
