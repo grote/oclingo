@@ -64,6 +64,21 @@ namespace
 		return val;
 	}
 
+	static Val *getVal(lua_State *L)
+	{
+		void *p = lua_touserdata(L, 1);
+		if(p && lua_getmetatable(L, 1))
+		{
+			lua_getfield(L, LUA_REGISTRYINDEX, VAL);
+			if (lua_rawequal(L, -1, -2))
+			{
+				lua_pop(L, 2);
+				return (Val*)p;
+			}
+		}
+		return 0;
+	}
+
 	static Storage* checkStorage(lua_State *L)
 	{
 		lua_pushliteral(L, "Val.storage");
@@ -149,6 +164,48 @@ namespace
 		}
 	}
 
+	static int Val_isFunc (lua_State *L)
+	{
+		Val *val = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::FUNC);
+		return 1;
+	}
+
+	static int Val_isId (lua_State *L)
+	{
+		Val *val = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::ID);
+		return 1;
+	}
+
+	static int Val_isSup (lua_State *L)
+	{
+		Val *val = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::SUP);
+		return 1;
+	}
+
+	static int Val_isInf (lua_State *L)
+	{
+		Val *val = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::INF);
+		return 1;
+	}
+
+	static int Val_isNum (lua_State *L)
+	{
+		int type = lua_type(L, 1);
+		lua_pushboolean(L, type == LUA_TNUMBER);
+		return 1;
+	}
+
+	static int Val_isString (lua_State *L)
+	{
+		int type = lua_type(L, 1);
+		lua_pushboolean(L, type == LUA_TSTRING);
+		return 1;
+	}
+
 	static int Val_new (lua_State *L)
 	{
 		int type  = luaL_checkinteger(L, 1);
@@ -216,6 +273,31 @@ namespace
 			}
 		}
 		return 1;
+	}
+
+	// convienience functions
+	static int Val_func (lua_State *L)
+	{
+		lua_pushinteger(L, Val::FUNC); lua_insert(L, 1);
+		return Val_new(L);
+	}
+
+	static int Val_id (lua_State *L)
+	{
+		lua_pushinteger(L, Val::ID); lua_insert(L, 1);
+		return Val_new(L);
+	}
+
+	static int Val_sup (lua_State *L)
+	{
+		lua_pushinteger(L, Val::SUP); lua_insert(L, 1);
+		return Val_new(L);
+	}
+
+	static int Val_inf (lua_State *L)
+	{
+		lua_pushinteger(L, Val::INF); lua_insert(L, 1);
+		return Val_new(L);
 	}
 
 	static int Val_type (lua_State *L)
@@ -307,11 +389,21 @@ namespace
 
 	static const luaL_reg Val_methods[] =
 	{
-		{"new",  Val_new},
-		{"cmp",  Val_cmp},
-		{"type", Val_type},
-		{"name", Val_name},
-		{"args", Val_args},
+		{"new",      Val_new },
+		{"func",     Val_func },
+		{"id",       Val_id },
+		{"sup",      Val_sup },
+		{"inf",      Val_inf },
+		{"isFunc",   Val_isFunc },
+		{"isId",     Val_isId },
+		{"isSup",    Val_isSup },
+		{"isInf",    Val_isInf },
+		{"isNum",    Val_isNum },
+		{"isString", Val_isString },
+		{"cmp",      Val_cmp },
+		{"type",     Val_type },
+		{"name",     Val_name },
+		{"args",     Val_args },
 		{0, 0}
 	};
 

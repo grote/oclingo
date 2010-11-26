@@ -5,7 +5,7 @@ REV=$(svn status -v | grep -o "^ *[0-9]* *[0-9]*" | head -n1 | grep -o "[0-9]*$"
 cpus=$[$(cat /proc/cpuinfo| grep processor | wc -l)+1]
 make debug release static target=all -j${cpus} || exit 1
 
-prefix=/home/wv/bin/linux/32
+prefix=/home/wv/bin/linux/64
 public_html=${HOME}/public_html/gringo/gringo-x86-linux
 rm -rf $public_html
 mkdir -p $public_html
@@ -17,7 +17,7 @@ do
 	do
 		case $variant in
 			debug)
-				rm -f /home/wv/bin/linux/32/$target-dbg*
+				rm -f /home/wv/bin/linux/64/$target-dbg*
 				cp build/$variant/bin/$target $prefix/$target-dbg-r$REV
 				chmod g+w $prefix/$target-dbg-r$REV
 				(cd $prefix; rm -f $target-dbg-banane; ln -s $target-dbg-r$REV $target-dbg-banane)
@@ -29,8 +29,8 @@ do
 				(
 					cd $public_html
 					cd ..
-					rm -f gringo-x86-linux.tar.bz2
-					tar -cjf gringo-x86-linux.tar.bz2 gringo-x86-linux
+					#rm -f gringo-x86-linux.tar.bz2
+					#tar -cjf gringo-x86-linux.tar.bz2 gringo-x86-linux
 				)
 				name=$target-r$REV
 				cp build/$variant/bin/$target $prefix/$name
