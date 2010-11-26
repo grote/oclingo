@@ -42,6 +42,32 @@ static32:
 		${cmake_options} && \
 	$(MAKE) $(target)
 
+cross32:
+	@[ -x build/release/bin/lemon ] || (echo "error: make release first" && false)
+	mkdir -p build/cross32/bin
+	cd build/cross32 && \
+	cmake ../.. \
+		-DCMAKE_CROSSCOMPILING=True \
+		-DCMAKE_CXX_FLAGS="-m32" \
+		-DIMPORT_LEMON="$(PWD)/build/release/import_lemon.cmake" \
+		-DCMAKE_BUILD_TYPE=release \
+		-DUSE_STATIC_LIBS=ON \
+		${cmake_options} && \
+	$(MAKE) $(target)
+
+cross64:
+	@[ -x build/release/bin/lemon ] || (echo "error: make release first" && false)
+	mkdir -p build/cross64/bin
+	cd build/cross64 && \
+	cmake ../.. \
+		-DCMAKE_CROSSCOMPILING=True \
+		-DCMAKE_CXX_FLAGS="-m64" \
+		-DIMPORT_LEMON="$(PWD)/build/release/import_lemon.cmake" \
+		-DCMAKE_BUILD_TYPE=release \
+		-DUSE_STATIC_LIBS=ON \
+		${cmake_options} && \
+	$(MAKE) $(target)
+
 mingw32:
 	@[ -x build/release/bin/lemon ] || (echo "error: make release first" && false)
 	mkdir -p build/mingw32/bin
