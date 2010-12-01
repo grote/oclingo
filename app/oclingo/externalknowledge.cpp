@@ -17,10 +17,12 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "externalknowledge.h"
+#include "oclaspoutput.h"
 #include <gringo/grounder.h>
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, Clasp::Solver* solver) {
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver) {
 	grounder_ = grounder;
+	output_ = output;
 	solver_ = solver;
 
 //	externals_per_step_.push_back(IntSet());
@@ -166,13 +168,11 @@ bool ExternalKnowledge::addInput() {
 		new_input_ = false;
 
 		std::istream is(&b_);
-/*
-		OnlineParser parser(grounder_, &is);
 
-		if(!parser.parse(output_))
-			throw std::exception("Parsing failed.");
+		OnlineParser parser(output_, &is);
+		parser.parse();
 
-		if(parser.isTerminated()) {
+/*		if(parser.isTerminated()) {
 			socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 			return false;
 		}

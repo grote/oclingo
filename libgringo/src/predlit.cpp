@@ -166,7 +166,7 @@ bool PredLit::match(Grounder *grounder)
 	else return dom_->find(vals_.begin() + top_).valid();
 }
 
-void PredLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 {
 	if(sign() || head() || dom()->external())
 	{

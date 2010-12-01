@@ -28,6 +28,7 @@ public:
 	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj);
 	ExternalKnowledge& getExternalKnowledge();
 protected:
+	void doFinalize();
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 private:
 	ExternalKnowledge* ext_;

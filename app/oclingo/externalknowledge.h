@@ -20,16 +20,20 @@
 #include <gringo/gringo.h>
 #include <gringo/val.h>
 
+#include "olexer.h"
+
 #include <clasp/solver.h>
 #include <clasp/constraint.h>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+class oClaspOutput;
+
 class ExternalKnowledge
 {
 public:
-	ExternalKnowledge(Grounder* grounder, Clasp::Solver* solver);
+	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver);
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
@@ -67,6 +71,7 @@ protected:
 
 private:
 	Grounder* grounder_;
+	oClaspOutput* output_;
 	Clasp::Solver* solver_;
 
 	// external fact handling

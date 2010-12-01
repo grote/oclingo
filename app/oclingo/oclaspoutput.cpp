@@ -19,20 +19,24 @@
 #include "oclaspoutput.h"
 
 oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj) : iClaspOutput(shiftDisj) {
-	ext_ = new ExternalKnowledge(grounder, solver);
+	ext_ = new ExternalKnowledge(grounder, this, solver);
 }
 
 ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
+	assert(ext_);
 	return *ext_;
+}
+
+void oClaspOutput::doFinalize()
+{
+	ClaspOutput::doFinalize();
+	printExternalTable();
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
 {
-	std::cerr << "printExternalTableEntry for " << name << std::endl;
-
-	(void)atom;
-	(void)arity;
-	(void)name;
+	std::cerr << "printExternalTableEntry for " << name << "/" << arity;
+	std::cerr << "   Symbol: " << atom.symbol << " Offset: " << atom.offset << std::endl;
 }
 
 /*

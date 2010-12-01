@@ -1,0 +1,152 @@
+// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
+//
+// This file is part of gringo.
+//
+// GrinGo is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// GrinGo is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <oclingo/olexer.h>
+#include <gringo/storage.h>
+#include <gringo/exceptions.h>
+#include <gringo/streams.h>
+#include "oparser_impl.h"
+#include <oclingo/oclaspoutput.h>
+
+void *onlineParserAlloc(void *(*mallocProc)(size_t));
+void onlineParserFree(void *p, void (*freeProc)(void*));
+void onlineParser(void *yyp, int yymajor, OnlineParser::Token yyminor, OnlineParser *pParser);
+
+OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
+	: GroundProgramBuilder(output)
+	, parser_(onlineParserAlloc(malloc))
+	, error_(false)
+{
+	in_ = in;
+}
+
+/*!re2c
+	NUMBER     = "0"|([1-9][0-9]*);
+	ANY        = [\000-\377];
+	WS         = [\t\r ]*;
+	NL         = "\n";
+	IDENTIFIER = "_"*[a-z][A-Za-z0-9_]*;
+	STRING     = "\"" ([^"\n]|"\\\"")* "\"";
+*/
+
+int OnlineParser::lex()
+{
+start:
+	int bc = 0;
+	start();
+	token_.line   = line();
+	token_.column = column();
+	/*!re2c
+		WS            { goto start; }
+		NL            { if(eof()) return 0; step(); goto start; }
+		"not"         { return OPARSER_NOT; }
+		IDENTIFIER    { token_.index  = storage()->index(string()); return OPARSER_IDENTIFIER; }
+		NUMBER        { token_.number = integer(); return OPARSER_NUMBER; }
+		STRING        { token_.index = storage()->index(string()); return OPARSER_STRING; }
+		"#step"       { return OPARSER_STEP; }
+		"#endstep"    { return OPARSER_ENDSTEP; }
+		"#forget"     { return OPARSER_FORGET; }
+		"#stop"       { return OPARSER_STOP; }
+		"#cumulative" { return OPARSER_CUMULATIVE; }
+		"#volatile"   { return OPARSER_VOLATILE; }
+		"."           { return OPARSER_DOT; }
+		":-"          { return OPARSER_IF; }
+		","           { return OPARSER_COMMA; }
+		"-"           { return OPARSER_MINUS; }
+		"("           { return OPARSER_LBRAC; }
+		")"           { return OPARSER_RBRAC; }
+		"%*"          { bc++; goto blockcomment; }
+		"%"           { goto comment; }
+		ANY           { syntaxError(); goto start; }
+	*/
+blockcomment:
+	/*!re2c
+		"*%" { if(--bc == 0) goto start; goto blockcomment; }
+		"%*" { bc++; goto blockcomment; }
+		"%"  { goto comment; }
+		NL   { if(eof()) { syntaxError(); return 0; } step(); goto blockcomment; }
+		ANY  { goto blockcomment; }
+	*/
+comment: { }
+	/*!re2c
+		NL   { if(eof()) { if(bc > 0) syntaxError(); return 0; } step(); if(bc > 0) goto blockcomment; goto start; }
+		ANY  { goto comment; }
+	*/
+}
+
+void OnlineParser::parseError()
+{
+	error_ = true;
+}
+
+std::string OnlineParser::errorToken()
+{
+	if(eof()) return "<EOF>";
+	else return string();
+}
+
+void OnlineParser::syntaxError()
+{
+	errors_.push_back(ErrorTok(token_.loc(), errorToken()));
+	error_ = true;
+}
+
+void OnlineParser::parse(std::istream &in)
+{
+	//token_.file = storage()->index(streams_.currentFilename());
+	reset(&in);
+	int token;
+	do
+	{
+		token = lex();
+		//converter(parser_, token, token_, this);
+	}
+	while(token != 0);
+}
+
+void OnlineParser::parse()
+{
+	level_ = 1;
+	parse(*in_);
+	if(error_)
+	{
+		ParseException ex;
+		foreach(ErrorTok &tok, errors_)
+			ex.add(StrLoc(storage(), tok.first), tok.second);
+		throw ex;
+	}
+}
+
+void OnlineParser::addSigned(uint32_t index, bool sign)
+{
+	if(sign) { index = storage()->index(std::string("-") + storage()->string(index)); }
+	return addVal(Val::create(Val::ID, index));
+}
+
+
+void OnlineParser::setStep(int step) { }
+void OnlineParser::forget(int step) { }
+void OnlineParser::terminate() { }
+void OnlineParser::setCumulative() { }
+void OnlineParser::setVolatile() { }
+
+
+OnlineParser::~OnlineParser()
+{
+	onlineParserFree(parser_, free);
+}

@@ -33,7 +33,7 @@ MACRO(LEMON VAR)
                 DEPENDS lemon "${CMAKE_CURRENT_BINARY_DIR}/${DST}/lempar.c"
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${DST}"
             )
-            SET(${VAR} ${${VAR}} "${DST}/${NAME}.cpp" "${DST}/${NAME}.h")
+			SET(${VAR} ${${VAR}} "${CMAKE_CURRENT_BINARY_DIR}/${DST}/${NAME}.cpp" "${CMAKE_CURRENT_BINARY_DIR}/${DST}/${NAME}.h")
             INCLUDE_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/${DST}")
         ENDIF()
     ENDFOREACH()
