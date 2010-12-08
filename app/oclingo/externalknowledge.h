@@ -20,7 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/val.h>
 
-#include "olexer.h"
+#include "onlineparser.h"
 
 #include <clasp/solver.h>
 #include <clasp/constraint.h>

@@ -172,11 +172,10 @@ bool ExternalKnowledge::addInput() {
 		OnlineParser parser(output_, &is);
 		parser.parse();
 
-/*		if(parser.isTerminated()) {
+		if(parser.isTerminated()) {
 			socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 			return false;
 		}
-*/
 	}
 	return true;
 }
@@ -294,10 +293,9 @@ void ExternalKnowledge::endStep() {
 
 	externals_old_.insert(externals_.begin(), externals_.end());
 	externals_.clear();
-
-	step_++;
-	externals_per_step_.push_back(IntSet());
 */
+	step_++;
+//	externals_per_step_.push_back(IntSet());
 }
 
 void ExternalKnowledge::forgetExternals(int step) {

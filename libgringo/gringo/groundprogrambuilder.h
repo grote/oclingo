@@ -55,7 +55,7 @@ public:
 		META_EXTERNAL
 	};
 
-private:
+protected:
 	struct Lit
 	{
 		static Lit create(Type type, uint32_t offset, uint32_t n)
@@ -87,16 +87,20 @@ public:
 	void addSign();
 	Storage *storage();
 
-private:
-	void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
+protected:
 	void printLit(Printer *printer, uint32_t offset, bool head);
-	PredLitRep *predLitRep(Lit &a);
 	void pop(uint32_t n);
 
-private:
+protected:
 	Output       *output_;
 	LitVec        lits_;
-	LitVec        aggrLits_;
 	ValVec        vals_;
+
+private:
+	void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
+	PredLitRep *predLitRep(Lit &a);
+
+private:
+	LitVec        aggrLits_;
 	Literal       lit_;
 };

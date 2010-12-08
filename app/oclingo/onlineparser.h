@@ -1,3 +1,4 @@
+// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
 // This file is part of gringo.
@@ -51,11 +52,9 @@ public:
 	void syntaxError();
 	void parseError();
 	void parse();
-	int  level() const { return level_; }
-	void nextLevel() { level_ ++; }
-	bool maximize() const { return maximize_; }
-	void maximize(bool maximize) { maximize_ = maximize; }
 	void addSigned(uint32_t index, bool sign);
+
+	void add(Type type, uint32_t n = 0);
 
 	void setStep(int step);
 	void forget(int step);
@@ -63,7 +62,14 @@ public:
 	void setCumulative();
 	void setVolatile();
 
+	bool isTerminated();
+
 	~OnlineParser();
+
+protected:
+	Output    *output_;
+	LitVec     lits_;
+	ValVec     vals_;
 
 private:
 	void parse(std::istream &sin);
@@ -74,7 +80,7 @@ private:
 	Token      token_;
 	bool       error_;
 	ErrorVec   errors_;
-	int        level_;
-	bool       maximize_;
+
+	bool terminated_;
 };
 
