@@ -181,112 +181,108 @@ void GroundProgramBuilder::pop(uint32_t n)
 void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head)
 {
 	Lit &a = lits_[offset];
-	if(a.type == LIT) { printer->print(predLitRep(a)); }
-	else
+	switch(a.type)
 	{
-		switch(a.type)
+		case AGGR_SUM:
+		case AGGR_COUNT:
 		{
-			case AGGR_SUM:
-			case AGGR_COUNT:
+			SumAggrLit::Printer *aggrPrinter = output_->printer<SumAggrLit::Printer>();
+			aggrPrinter->begin(head, a.sign, a.type == AGGR_COUNT);
+			Val lower;
+			Val upper;
+			if(a.n == 0)
 			{
-				SumAggrLit::Printer *aggrPrinter = output_->printer<SumAggrLit::Printer>();
-				aggrPrinter->begin(head, a.sign, a.type == AGGR_COUNT);
-				Val lower;
-				Val upper;
-				if(a.n == 0)
-				{
-					lower = vals_[a.offset];
-					upper = vals_[a.offset + 1];
-				}
-				else
-				{
-					Lit &first = aggrLits_[a.offset];
-					Lit &last  = aggrLits_[a.offset + a.n - 1];
-					lower = vals_[first.offset - 1];
-					upper = vals_[last.offset + last.n + 1 + (a.type == AGGR_SUM)];
-				}
-				if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
-				if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
-				printAggrLits(aggrPrinter, a, a.type == AGGR_SUM);
-				aggrPrinter->end();
-				break;
+				lower = vals_[a.offset];
+				upper = vals_[a.offset + 1];
 			}
-			case AGGR_AVG:
+			else
 			{
-				AvgAggrLit::Printer *aggrPrinter = output_->printer<AvgAggrLit::Printer>();
-				aggrPrinter->begin(head, a.sign);
-				Val lower;
-				Val upper;
-				if(a.n == 0)
-				{
-					lower = vals_[a.offset];
-					upper = vals_[a.offset + 1];
-				}
-				else
-				{
-					Lit &first = aggrLits_[a.offset];
-					Lit &last  = aggrLits_[a.offset + a.n - 1];
-					lower = vals_[first.offset - 1];
-					upper = vals_[last.offset + last.n + 2];
-				}
-				if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
-				if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
-				printAggrLits(aggrPrinter, a, true);
-				aggrPrinter->end();
-				break;
+				Lit &first = aggrLits_[a.offset];
+				Lit &last  = aggrLits_[a.offset + a.n - 1];
+				lower = vals_[first.offset - 1];
+				upper = vals_[last.offset + last.n + 1 + (a.type == AGGR_SUM)];
 			}
-			case AGGR_MIN:
-			case AGGR_MAX:
+			if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
+			if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
+			printAggrLits(aggrPrinter, a, a.type == AGGR_SUM);
+			aggrPrinter->end();
+			break;
+		}
+		case AGGR_AVG:
+		{
+			AvgAggrLit::Printer *aggrPrinter = output_->printer<AvgAggrLit::Printer>();
+			aggrPrinter->begin(head, a.sign);
+			Val lower;
+			Val upper;
+			if(a.n == 0)
 			{
-				MinMaxAggrLit::Printer *aggrPrinter = output_->printer<MinMaxAggrLit::Printer>();
-				aggrPrinter->begin(head, a.sign, a.type == AGGR_MAX);
-				Val lower;
-				Val upper;
-				if(a.n == 0)
-				{
-					lower = vals_[a.offset];
-					upper = vals_[a.offset + 1];
-				}
-				else
-				{
-					Lit &first = aggrLits_[a.offset];
-					Lit &last  = aggrLits_[a.offset + a.n - 1];
-					lower = vals_[first.offset - 1];
-					upper = vals_[last.offset + last.n + 2];
-				}
-				if(lower.type != Val::UNDEF) { aggrPrinter->lower(lower); }
-				if(upper.type != Val::UNDEF) { aggrPrinter->upper(upper); }
-				printAggrLits(aggrPrinter, a, true);
-				aggrPrinter->end();
-				break;
+				lower = vals_[a.offset];
+				upper = vals_[a.offset + 1];
 			}
-			case AGGR_EVEN:
-			case AGGR_EVEN_SET:
-			case AGGR_ODD:
-			case AGGR_ODD_SET:
+			else
 			{
-				ParityAggrLit::Printer *aggrPrinter = output_->printer<ParityAggrLit::Printer>();
-				bool even = (a.type == AGGR_EVEN || a.type == AGGR_EVEN_SET);
-				bool set = (a.type == AGGR_EVEN_SET || a.type == AGGR_ODD_SET);
-				aggrPrinter->begin(head, a.sign, even, set);
-				printAggrLits(aggrPrinter, a, !set);
-				aggrPrinter->end();
-				break;
+				Lit &first = aggrLits_[a.offset];
+				Lit &last  = aggrLits_[a.offset + a.n - 1];
+				lower = vals_[first.offset - 1];
+				upper = vals_[last.offset + last.n + 2];
 			}
-			case AGGR_DISJUNCTION:
+			if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
+			if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
+			printAggrLits(aggrPrinter, a, true);
+			aggrPrinter->end();
+			break;
+		}
+		case AGGR_MIN:
+		case AGGR_MAX:
+		{
+			MinMaxAggrLit::Printer *aggrPrinter = output_->printer<MinMaxAggrLit::Printer>();
+			aggrPrinter->begin(head, a.sign, a.type == AGGR_MAX);
+			Val lower;
+			Val upper;
+			if(a.n == 0)
 			{
-				JunctionAggrLit::Printer *aggrPrinter = output_->printer<JunctionAggrLit::Printer>();
-				aggrPrinter->begin(head);
-				printAggrLits(aggrPrinter, a, false);
-				aggrPrinter->end();
-				break;
+				lower = vals_[a.offset];
+				upper = vals_[a.offset + 1];
 			}
-			default:
+			else
 			{
-				assert(a.type == LIT);
-				printer->print(predLitRep(a));
-				break;
+				Lit &first = aggrLits_[a.offset];
+				Lit &last  = aggrLits_[a.offset + a.n - 1];
+				lower = vals_[first.offset - 1];
+				upper = vals_[last.offset + last.n + 2];
 			}
+			if(lower.type != Val::UNDEF) { aggrPrinter->lower(lower); }
+			if(upper.type != Val::UNDEF) { aggrPrinter->upper(upper); }
+			printAggrLits(aggrPrinter, a, true);
+			aggrPrinter->end();
+			break;
+		}
+		case AGGR_EVEN:
+		case AGGR_EVEN_SET:
+		case AGGR_ODD:
+		case AGGR_ODD_SET:
+		{
+			ParityAggrLit::Printer *aggrPrinter = output_->printer<ParityAggrLit::Printer>();
+			bool even = (a.type == AGGR_EVEN || a.type == AGGR_EVEN_SET);
+			bool set = (a.type == AGGR_EVEN_SET || a.type == AGGR_ODD_SET);
+			aggrPrinter->begin(head, a.sign, even, set);
+			printAggrLits(aggrPrinter, a, !set);
+			aggrPrinter->end();
+			break;
+		}
+		case AGGR_DISJUNCTION:
+		{
+			JunctionAggrLit::Printer *aggrPrinter = output_->printer<JunctionAggrLit::Printer>();
+			aggrPrinter->begin(head);
+			printAggrLits(aggrPrinter, a, false);
+			aggrPrinter->end();
+			break;
+		}
+		default:
+		{
+			assert(a.type == LIT);
+			printer->print(predLitRep(a));
+			break;
 		}
 	}
 }

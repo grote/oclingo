@@ -164,7 +164,7 @@ void AspOutput::printStats(const SolverStatistics& stats, const Enumerator&) {
 			, percent(ps.constraints[2], ps.constraints[0])
 			, percent(other, ps.constraints[0]));
 
-		uint64 learntSum = std::accumulate(st.learnts, st.learnts+Constraint_t::max_value, uint64(0));
+		uint64 learntSum = std::accumulate(st.learnts, st.learnts+Constraint_t::max_learnt_type, uint64(0));
 		printf("%-12s: %-6"PRIu64" (Binary:%5.1f%% Ternary:%5.1f%% Other:%5.1f%%)\n", "Lemmas"
 			, learntSum
 			, percent(st.binary, learntSum)

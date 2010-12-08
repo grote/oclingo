@@ -48,6 +48,7 @@ void Compute::ground(Grounder *g)
 		if(head_->match(g)) grounded(g);
 	}
 	else return;
+	// TODO: bring in line with external/compute
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin();
 	printer->print(head_.get());

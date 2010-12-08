@@ -41,7 +41,7 @@ void External::ground(Grounder *g)
 	else if(!grounded_)
 	{
 		grounded_ = true;
-		if(head_.get()) head_->match(g);
+		head_->match(g);
 		grounded(g);
 	}
 	head_->finish(g);
