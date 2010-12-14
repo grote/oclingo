@@ -21,6 +21,35 @@
 #include <gringo/lit.h>
 #include <gringo/predlitrep.h>
 
+typedef std::map<int32_t, boost::unordered_set<Val> > VarDomains;
+
+class BodyOrderHeuristic
+{
+public:
+	virtual ~BodyOrderHeuristic() {}
+	//! Estimates the number of possible instantiations for a term
+	/** \param score literal score
+	  * \param vars variables in the literal
+	  * \param free variables that are not bound
+	  * \param varDoms possible values for each variable
+	  */
+	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const = 0;
+};
+
+class BasicBodyOrderHeuristic : public BodyOrderHeuristic
+{
+public:
+	virtual ~BasicBodyOrderHeuristic() {}
+	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const;
+};
+
+class UnifyBodyOrderHeuristic : public BodyOrderHeuristic
+{
+public:
+	virtual ~UnifyBodyOrderHeuristic() {}
+	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const;
+};
+
 class PredLitSet
 {
 private:
@@ -68,9 +97,11 @@ public:
 	void clear();
 	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
-private:
+public:
+	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
 private:
 	TermPtrVec terms_;
+	mutable VarDomains varDoms_;
 };
 

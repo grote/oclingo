@@ -22,6 +22,19 @@
 #include <program_opts/app_options.h>
 #include <gringo/gringo.h>
 
+namespace ProgramOptions
+{
+
+struct HeuristicOptions {
+	static bool mapHeuristic(const std::string& s, HeuristicOptions &options);
+	BodyOrderHeuristicPtr  heuristic;
+	HeuristicOptions() : heuristic(0) {	}
+	HeuristicOptions &operator=(const HeuristicOptions &) { assert(false); }
+};
+
+bool parseValue(const std::string&, HeuristicOptions&, int);
+}
+
 /**
  * Gringo options.
  */
@@ -58,5 +71,6 @@ public:
 	/** whether statistics will be printed to stderr */
 	bool stats;
 	IExpand iexpand;
+	ProgramOptions::HeuristicOptions heuristics;
 };
 

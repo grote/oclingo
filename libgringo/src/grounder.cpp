@@ -88,13 +88,14 @@ TermDepthExpansion::~TermDepthExpansion()
 }
 
 
-Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp)
+Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic)
 	: Storage(output)
 	, internal_(0)
 	, debug_(debug)
 	, initialized_(false)
 	, luaImpl_(new LuaImpl(this))
 	, termExpansion_(exp)
+	, heuristic_(heuristic)
 {
 }
 
@@ -268,6 +269,11 @@ void Grounder::externalStm(uint32_t nameId, uint32_t arity)
 {
 	domain(nameId, arity)->external(true);
 	output()->external(nameId, arity);
+}
+
+const BodyOrderHeuristic& Grounder::heuristic() const
+{
+	return *heuristic_;
 }
 
 Grounder::~Grounder()

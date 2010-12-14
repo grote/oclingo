@@ -26,6 +26,24 @@
 #include "gringo/litdep.h"
 #include "gringo/varcollector.h"
 
+double BasicBodyOrderHeuristic::score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const
+{
+	(void)varDoms;
+	return std::pow(score, free.size() / (double)vars.size());
+}
+
+double UnifyBodyOrderHeuristic::score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const
+{
+	(void)score;
+	(void)vars;
+	uint32_t tsum = 0;
+	foreach(uint32_t var, free)
+	{
+		tsum += varDoms.find(var)->second.size();
+	}
+	return tsum / free.size();
+}
+
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
 	: vals_(vals)
 {
@@ -243,6 +261,10 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
 	else
 	{
+		if(terms_.size() > 0 && varDoms_.empty())
+		{
+			dom()->allVals(g, this, varDoms_);
+		}
 		double score = std::pow(dom()->size(), 1.0 / terms_.size()) + 1;
 		double sum   = 0;
 		VarSet curBound(bound);
@@ -253,7 +275,7 @@ double PredLit::score(Grounder *g, VarSet &bound) const
 			VarVec diff;
 			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
 			if(diff.empty()) { sum += 0; }
-			else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
+			else             { sum += g->heuristic().score(score, vars, diff, varDoms_); }
 			curBound.insert(vars.begin(), vars.end());
 		}
 		return sum / terms_.size();
