@@ -48,19 +48,17 @@ double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, const PredLit *
 double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, const PredLit *pred) const
 {
 	const VarDomains &varDoms = pred->allVals(g);
-	VarSet vars;
-	pred->vars(vars);
 	uint32_t tsum = 0;
 	uint32_t free = 0;
-	foreach(uint32_t var, vars)
+	foreach(VarDomains::const_reference ref, varDoms)
 	{
-		if(bound.find(var) == bound.end())
+		if(bound.find(ref.first) == bound.end())
 		{
 			free++;
-			tsum += varDoms.find(var)->second.size();
+			tsum += ref.second.size();
 		}
 	}
-	return tsum / free;
+	return free == 0 ? 0 : tsum / free;
 }
 
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
