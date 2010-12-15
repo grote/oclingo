@@ -80,12 +80,26 @@ private:
 		Literal() : PredLitRep(false, 0) { }
 	};
 
+	struct Statement
+	{
+		Type          type;
+		uint32_t      n;
+		LitVec        lits;
+		LitVec        aggrLits;
+		ValVec        vals;
+	};
+
+	typedef std::auto_ptr<Statement> StatementPtr;
+
 public:
 	GroundProgramBuilder(Output *output);
 	void add(Type type, uint32_t n = 0);
+	void add();
 	void addVal(const Val &val);
 	void addSign();
 	Storage *storage();
+	void setCurrent(StatementPtr stm);
+	StatementPtr getCurrent();
 
 private:
 	void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
@@ -95,8 +109,6 @@ private:
 
 private:
 	Output       *output_;
-	LitVec        lits_;
-	LitVec        aggrLits_;
-	ValVec        vals_;
+	StatementPtr  stm_;
 	Literal       lit_;
 };

@@ -32,27 +32,47 @@
 
 GroundProgramBuilder::GroundProgramBuilder(Output *output)
 	: output_(output)
+	, stm_(new Statement())
 {
+}
+
+GroundProgramBuilder::StatementPtr GroundProgramBuilder::getCurrent()
+{
+	StatementPtr ret = stm_;
+	stm_.reset(new Statement());
+	return ret;
+}
+
+void GroundProgramBuilder::setCurrent(StatementPtr stm)
+{
+	stm_ = stm;
 }
 
 void GroundProgramBuilder::add(Type type, uint32_t n)
 {
-	switch(type)
+	stm_->n    = n;
+	stm_->type = type;
+	add();
+}
+
+void GroundProgramBuilder::add()
+{
+	switch(stm_->type)
 	{
 		case LIT:
 		{
-			lits_.push_back(Lit::create(type, vals_.size() - n - 1, n));
+			stm_->lits.push_back(Lit::create(stm_->type, stm_->vals.size() - stm_->n - 1, stm_->n));
 			break;
 		}
 		case TERM:
 		{
-			if(n > 0)
+			if(stm_->n > 0)
 			{
 				ValVec vals;
-				std::copy(vals_.end() - n, vals_.end(), std::back_inserter(vals));
-				vals_.resize(vals_.size() - n);
-				uint32_t name = vals_.back().index;
-				vals_.back()  = Val::create(Val::FUNC, storage()->index(Func(storage(), name, vals)));
+				std::copy(stm_->vals.end() - stm_->n, stm_->vals.end(), std::back_inserter(vals));
+				stm_->vals.resize(stm_->vals.size() - stm_->n);
+				uint32_t name = stm_->vals.back().index;
+				stm_->vals.back()  = Val::create(Val::FUNC, storage()->index(Func(storage(), name, vals)));
 			}
 			break;
 		}
@@ -67,10 +87,10 @@ void GroundProgramBuilder::add(Type type, uint32_t n)
 		case AGGR_ODD_SET:
 		case AGGR_DISJUNCTION:
 		{
-			assert(type != AGGR_DISJUNCTION || n > 0);
-			std::copy(lits_.end() - n, lits_.end(), std::back_inserter(aggrLits_));
-			lits_.resize(lits_.size() - n);
-			lits_.push_back(Lit::create(type, n ? aggrLits_.size() - n : vals_.size() - 2, n));
+			assert(stm_->type != AGGR_DISJUNCTION || stm_->n > 0);
+			std::copy(stm_->lits.end() - stm_->n, stm_->lits.end(), std::back_inserter(stm_->aggrLits));
+			stm_->lits.resize(stm_->lits.size() - stm_->n);
+			stm_->lits.push_back(Lit::create(stm_->type, stm_->n ? stm_->aggrLits.size() - stm_->n : stm_->vals.size() - 2, stm_->n));
 			break;
 		}
 		case STM_RULE:
@@ -78,25 +98,25 @@ void GroundProgramBuilder::add(Type type, uint32_t n)
 		{
 			Rule::Printer *printer = output_->printer<Rule::Printer>();
 			printer->begin();
-			if(type == STM_RULE)             { printLit(printer, lits_.size() - n - 1, true); }
+			if(stm_->type == STM_RULE)             { printLit(printer, stm_->lits.size() - stm_->n - 1, true); }
 			printer->endHead();
-			for(uint32_t i = n; i >= 1; i--) { printLit(printer, lits_.size() - i, false); }
+			for(uint32_t i = stm_->n; i >= 1; i--) { printLit(printer, stm_->lits.size() - i, false); }
 			printer->end();
-			pop(n + (type == STM_RULE));
+			pop(stm_->n + (stm_->type == STM_RULE));
 			break;
 		}
 		case STM_SHOW:
 		case STM_HIDE:
 		{
 			Display::Printer *printer = output_->printer<Display::Printer>();
-			printLit(printer, lits_.size() - 1, type == STM_SHOW);
+			printLit(printer, stm_->lits.size() - 1, stm_->type == STM_SHOW);
 			pop(1);
 			break;
 		}
 		case STM_EXTERNAL:
 		{
 			External::Printer *printer = output_->printer<External::Printer>();
-			printLit(printer, lits_.size() - 1, true);
+			printLit(printer, stm_->lits.size() - 1, true);
 			pop(1);
 			break;
 		}
@@ -106,53 +126,53 @@ void GroundProgramBuilder::add(Type type, uint32_t n)
 		case STM_MAXIMIZE_SET:
 		{
 			Optimize::Printer *printer = output_->printer<Optimize::Printer>();
-			bool maximize = (type == STM_MAXIMIZE || type == STM_MAXIMIZE_SET);
-			bool set = (type == STM_MINIMIZE_SET || type == STM_MAXIMIZE_SET);
+			bool maximize = (stm_->type == STM_MAXIMIZE || stm_->type == STM_MAXIMIZE_SET);
+			bool set = (stm_->type == STM_MINIMIZE_SET || stm_->type == STM_MAXIMIZE_SET);
 			printer->begin(maximize, set);
-			for(uint32_t i = n; i >= 1; i--)
+			for(uint32_t i = stm_->n; i >= 1; i--)
 			{
 
-				Lit &a     = lits_[lits_.size() - i];
-				Val prio   = vals_[a.offset + a.n + 2];
-				Val weight = vals_[a.offset + a.n + 1];
+				Lit &a     = stm_->lits[stm_->lits.size() - i];
+				Val prio   = stm_->vals[a.offset + a.n + 2];
+				Val weight = stm_->vals[a.offset + a.n + 1];
 				printer->print(predLitRep(a), weight.num, prio.num);
 			}
 			printer->end();
-			pop(n);
+			pop(stm_->n);
 			break;
 		}
 		case STM_COMPUTE:
 		{
 			Compute::Printer *printer = output_->printer<Compute::Printer>();
 			printer->begin();
-			for(uint32_t i = n; i >= 1; i--)
+			for(uint32_t i = stm_->n; i >= 1; i--)
 			{
-				Lit &a = lits_[lits_.size() - i];
+				Lit &a = stm_->lits[stm_->lits.size() - i];
 				printer->print(predLitRep(a));
 			}
 			printer->end();
-			pop(n);
+			pop(stm_->n);
 			break;
 		}
 		case META_SHOW:
 		case META_HIDE:
 		case META_EXTERNAL:
 		{
-			Val num = vals_.back();
-			vals_.pop_back();
-			Val id  = vals_.back();
-			vals_.pop_back();
+			Val num = stm_->vals.back();
+			stm_->vals.pop_back();
+			Val id  = stm_->vals.back();
+			stm_->vals.pop_back();
 			assert(id.type == Val::ID);
 			assert(num.type == Val::NUM);
 			storage()->domain(id.index, num.num);
-			if(type == META_EXTERNAL) { output_->external(id.index, num.num); }
-			else { output_->show(id.index, num.num, type == META_SHOW); }
+			if(stm_->type == META_EXTERNAL) { output_->external(id.index, num.num); }
+			else { output_->show(id.index, num.num, stm_->type == META_SHOW); }
 			break;
 		}
 		case META_GLOBALSHOW:
 		case META_GLOBALHIDE:
 		{
-			output_->show(type == META_GLOBALSHOW);
+			output_->show(stm_->type == META_GLOBALSHOW);
 			break;
 		}
 	}
@@ -162,25 +182,25 @@ void GroundProgramBuilder::pop(uint32_t n)
 {
 	if(n > 0)
 	{
-		Lit &a = *(lits_.end() - n);
-		if(a.type == LIT) { vals_.resize(a.offset); }
+		Lit &a = *(stm_->lits.end() - n);
+		if(a.type == LIT) { stm_->vals.resize(a.offset); }
 		else
 		{
 			if(a.n > 0)
 			{
-				Lit &b = aggrLits_[a.offset];
-				aggrLits_.resize(a.offset);
-				vals_.resize(b.offset - (a.type != AGGR_DISJUNCTION));
+				Lit &b = stm_->aggrLits[a.offset];
+				stm_->aggrLits.resize(a.offset);
+				stm_->vals.resize(b.offset - (a.type != AGGR_DISJUNCTION));
 			}
-			else { vals_.resize(a.offset); }
+			else { stm_->vals.resize(a.offset); }
 		}
-		lits_.resize(lits_.size() - n);
+		stm_->lits.resize(stm_->lits.size() - n);
 	}
 }
 
 void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head)
 {
-	Lit &a = lits_[offset];
+	Lit &a = stm_->lits[offset];
 	switch(a.type)
 	{
 		case AGGR_SUM:
@@ -192,15 +212,15 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			Val upper;
 			if(a.n == 0)
 			{
-				lower = vals_[a.offset];
-				upper = vals_[a.offset + 1];
+				lower = stm_->vals[a.offset];
+				upper = stm_->vals[a.offset + 1];
 			}
 			else
 			{
-				Lit &first = aggrLits_[a.offset];
-				Lit &last  = aggrLits_[a.offset + a.n - 1];
-				lower = vals_[first.offset - 1];
-				upper = vals_[last.offset + last.n + 1 + (a.type == AGGR_SUM)];
+				Lit &first = stm_->aggrLits[a.offset];
+				Lit &last  = stm_->aggrLits[a.offset + a.n - 1];
+				lower = stm_->vals[first.offset - 1];
+				upper = stm_->vals[last.offset + last.n + 1 + (a.type == AGGR_SUM)];
 			}
 			if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
 			if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
@@ -216,15 +236,15 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			Val upper;
 			if(a.n == 0)
 			{
-				lower = vals_[a.offset];
-				upper = vals_[a.offset + 1];
+				lower = stm_->vals[a.offset];
+				upper = stm_->vals[a.offset + 1];
 			}
 			else
 			{
-				Lit &first = aggrLits_[a.offset];
-				Lit &last  = aggrLits_[a.offset + a.n - 1];
-				lower = vals_[first.offset - 1];
-				upper = vals_[last.offset + last.n + 2];
+				Lit &first = stm_->aggrLits[a.offset];
+				Lit &last  = stm_->aggrLits[a.offset + a.n - 1];
+				lower = stm_->vals[first.offset - 1];
+				upper = stm_->vals[last.offset + last.n + 2];
 			}
 			if(lower.type != Val::UNDEF) { assert(lower.type == Val::NUM); aggrPrinter->lower(lower.num); }
 			if(upper.type != Val::UNDEF) { assert(upper.type == Val::NUM); aggrPrinter->upper(upper.num); }
@@ -241,15 +261,15 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			Val upper;
 			if(a.n == 0)
 			{
-				lower = vals_[a.offset];
-				upper = vals_[a.offset + 1];
+				lower = stm_->vals[a.offset];
+				upper = stm_->vals[a.offset + 1];
 			}
 			else
 			{
-				Lit &first = aggrLits_[a.offset];
-				Lit &last  = aggrLits_[a.offset + a.n - 1];
-				lower = vals_[first.offset - 1];
-				upper = vals_[last.offset + last.n + 2];
+				Lit &first = stm_->aggrLits[a.offset];
+				Lit &last  = stm_->aggrLits[a.offset + a.n - 1];
+				lower = stm_->vals[first.offset - 1];
+				upper = stm_->vals[last.offset + last.n + 2];
 			}
 			if(lower.type != Val::UNDEF) { aggrPrinter->lower(lower); }
 			if(upper.type != Val::UNDEF) { aggrPrinter->upper(upper); }
@@ -291,10 +311,10 @@ void GroundProgramBuilder::printAggrLits(AggrLit::Printer *printer, Lit &a, bool
 {
 	if(a.n > 0)
 	{
-		foreach(Lit &b, boost::iterator_range<LitVec::iterator>(aggrLits_.begin() + a.offset, aggrLits_.begin() + a.offset + a.n))
+		foreach(Lit &b, boost::iterator_range<LitVec::iterator>(stm_->aggrLits.begin() + a.offset, stm_->aggrLits.begin() + a.offset + a.n))
 		{
 			printer->print(predLitRep(b));
-			if(weight) { printer->weight(vals_[b.offset + b.n + 1]); }
+			if(weight) { printer->weight(stm_->vals[b.offset + b.n + 1]); }
 			else       { printer->weight(Val::create(Val::NUM, 1)); }
 		}
 	}
@@ -302,22 +322,22 @@ void GroundProgramBuilder::printAggrLits(AggrLit::Printer *printer, Lit &a, bool
 
 PredLitRep *GroundProgramBuilder::predLitRep(Lit &a)
 {
-	Domain *dom = storage()->domain(vals_[a.offset].index, a.n);
+	Domain *dom = storage()->domain(stm_->vals[a.offset].index, a.n);
 	lit_.dom_   = dom;
 	lit_.sign_  = a.sign;
 	lit_.vals_.resize(a.n);
-	std::copy(vals_.begin() + a.offset + 1, vals_.begin() + a.offset + 1 + a.n, lit_.vals_.begin());
+	std::copy(stm_->vals.begin() + a.offset + 1, stm_->vals.begin() + a.offset + 1 + a.n, lit_.vals_.begin());
 	return &lit_;
 }
 
 void GroundProgramBuilder::addVal(const Val &val)
 {
-	vals_.push_back(val);
+	stm_->vals.push_back(val);
 }
 
 void GroundProgramBuilder::addSign()
 {
-	lits_.back().sign = true;
+	stm_->lits.back().sign = true;
 }
 
 Storage *GroundProgramBuilder::storage()
