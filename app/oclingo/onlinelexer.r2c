@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "oparser_impl.h"
 #include <oclingo/onlineparser.h>
 #include <gringo/storage.h>
+#include "onlineparser_impl.h"
 
 /*!re2c
 	NUMBER     = "0"|([1-9][0-9]*);
@@ -44,11 +44,11 @@ start:
 		NUMBER        { token_.number = integer(); return OPARSER_NUMBER; }
 		STRING        { token_.index = storage()->index(string()); return OPARSER_STRING; }
 		"#step"       { return OPARSER_STEP; }
-		"#endstep"    { return OPARSER_ENDSTEP; }
 		"#forget"     { return OPARSER_FORGET; }
 		"#stop"       { return OPARSER_STOP; }
 		"#cumulative" { return OPARSER_CUMULATIVE; }
 		"#volatile"   { return OPARSER_VOLATILE; }
+		"#endstep"    { return OPARSER_ENDSTEP; }
 		"."           { return OPARSER_DOT; }
 		":-"          { return OPARSER_IF; }
 		","           { return OPARSER_COMMA; }

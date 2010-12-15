@@ -22,10 +22,9 @@
 #include "oclingo/onlineparser.h"
 #include "gringo/converter.h"
 #include "gringo/storage.h"
-
 }
 
-%name onlineParser
+%name onlineparser
 %stack_size       0
 %parse_failure    { onlineParser->parseError(); }
 %syntax_error     { onlineParser->syntaxError(); }
@@ -49,7 +48,7 @@ line ::= rule.
 line ::= CUMULATIVE.         { onlineParser->setCumulative(); }
 line ::= VOLATILE.           { onlineParser->setVolatile(); }
 line ::= FORGET NUMBER(num). { onlineParser->forget(num.number); }
-line ::= ENDSTEP.            { std::cerr << "READ ENDSTEP!!!" << std::endl; }
+line ::= ENDSTEP.
 line ::= STOP.               { onlineParser->terminate(); }
 
 id ::= IDENTIFIER(id). { onlineParser->addSigned(id.index, false); }
@@ -73,7 +72,6 @@ predicate ::= MINUS IDENTIFIER(id).                         { onlineParser->addS
 
 term ::= id.                                       { onlineParser->add(Converter::TERM, 0); }
 term ::= string.                                   { onlineParser->add(Converter::TERM, 0); }
-//term ::= empty LBRAC termlist(n) COMMA term RBRAC. { onlineParser->add(Converter::TERM, n+1); }
 term ::= id LBRAC termlist(n) RBRAC.               { onlineParser->add(Converter::TERM, n); }
 term ::= numterm.
 
@@ -81,7 +79,6 @@ termlist(res) ::= term.                   { res = 1; }
 termlist(res) ::= termlist(n) COMMA term. { res = n + 1; }
 
 string    ::= STRING(id).        { onlineParser->addVal(Val::create(Val::ID, id.index)); }
-//empty     ::= .                  { onlineParser->addVal(Val::create(Val::ID, onlineParser->storage()->index(""))); }
 numterm   ::= number.            { onlineParser->add(Converter::TERM, 0); }
 number    ::= MINUS NUMBER(num). { onlineParser->addVal(Val::create(Val::NUM, -num.number)); }
 number    ::= posnumber.
