@@ -33,21 +33,21 @@ public:
 	  * \param free variables that are not bound
 	  * \param varDoms possible values for each variable
 	  */
-	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const = 0;
+	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const = 0;
 };
 
 class BasicBodyOrderHeuristic : public BodyOrderHeuristic
 {
 public:
 	virtual ~BasicBodyOrderHeuristic() {}
-	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const;
+	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const;
 };
 
 class UnifyBodyOrderHeuristic : public BodyOrderHeuristic
 {
 public:
 	virtual ~UnifyBodyOrderHeuristic() {}
-	virtual double score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const;
+	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const;
 };
 
 class PredLitSet
@@ -98,6 +98,7 @@ public:
 	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
 public:
+	const VarDomains &allVals(Grounder *g) const;
 	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
 private:

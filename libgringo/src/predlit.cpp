@@ -26,22 +26,41 @@
 #include "gringo/litdep.h"
 #include "gringo/varcollector.h"
 
-double BasicBodyOrderHeuristic::score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const
+double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, const PredLit *pred) const
 {
-	(void)varDoms;
-	return std::pow(score, free.size() / (double)vars.size());
+	double score = std::pow(pred->dom()->size(), 1.0 / pred->terms().size()) + 1;
+	double sum   = 0;
+	VarSet curBound(bound);
+	for(size_t i = 0; i < pred->terms().size(); i++)
+	{
+		VarSet vars;
+		pred->terms()[i].vars(vars);
+		VarVec diff;
+		std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
+		if(diff.empty()) { sum += 0; }
+		else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
+		curBound.insert(vars.begin(), vars.end());
+	}
+	return sum / pred->terms().size();
+
 }
 
-double UnifyBodyOrderHeuristic::score(double score, const VarSet &vars, const VarVec &free, const VarDomains &varDoms) const
+double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, const PredLit *pred) const
 {
-	(void)score;
-	(void)vars;
+	const VarDomains &varDoms = pred->allVals(g);
+	VarSet vars;
+	pred->vars(vars);
 	uint32_t tsum = 0;
-	foreach(uint32_t var, free)
+	uint32_t free = 0;
+	foreach(uint32_t var, vars)
 	{
-		tsum += varDoms.find(var)->second.size();
+		if(bound.find(var) == bound.end())
+		{
+			free++;
+			tsum += varDoms.find(var)->second.size();
+		}
 	}
-	return tsum / free.size();
+	return tsum / free;
 }
 
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
@@ -259,27 +278,7 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 double PredLit::score(Grounder *g, VarSet &bound) const
 {
 	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
-	else
-	{
-		if(terms_.size() > 0 && varDoms_.empty())
-		{
-			dom()->allVals(g, this, varDoms_);
-		}
-		double score = std::pow(dom()->size(), 1.0 / terms_.size()) + 1;
-		double sum   = 0;
-		VarSet curBound(bound);
-		for(size_t i = 0; i < terms_.size(); i++)
-		{
-			VarSet vars;
-			terms_[i].vars(vars);
-			VarVec diff;
-			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
-			if(diff.empty()) { sum += 0; }
-			else             { sum += g->heuristic().score(score, vars, diff, varDoms_); }
-			curBound.insert(vars.begin(), vars.end());
-		}
-		return sum / terms_.size();
-	}
+	else                             { return g->heuristic().score(g, bound, this); }
 }
 
 Lit *PredLit::clone() const
@@ -287,3 +286,11 @@ Lit *PredLit::clone() const
 	return new PredLit(*this);
 }
 
+const VarDomains &PredLit::allVals(Grounder *g) const
+{
+	if(terms_.size() > 0 && varDoms_.empty())
+	{
+		dom()->allVals(g, this, varDoms_);
+	}
+	return varDoms_;
+}
