@@ -185,18 +185,15 @@ void Domain::addOffset(int32_t offset)
 	}
 }
 
-void Domain::allVals(Grounder *g, const PredLit *pred, VarDomains &varDoms)
+void Domain::allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms)
 {
 	VarSet vars;
-	pred->vars(vars);
-	foreach(uint32_t var, vars)
-		varDoms[var] = boost::unordered_set<Val>();
-
+	foreach(const Term &term, terms) { term.vars(vars); }
 	ValVec::const_iterator k = vals_.begin();
 	for(uint32_t i = 0; i < new_; ++i)
 	{
 		bool unified = true;
-		foreach(const Term &term, pred->terms())
+		foreach(const Term &term, terms)
 		{
 			if(!term.unify(g, *k++, 0))
 			{

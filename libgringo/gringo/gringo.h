@@ -131,6 +131,7 @@ typedef std::pair<Loc, uint32_t> VarSig;
 typedef std::vector<VarSig> VarSigVec;
 typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
 typedef std::auto_ptr<BodyOrderHeuristic> BodyOrderHeuristicPtr;
+typedef std::map<uint32_t, boost::unordered_set<Val> > VarDomains;
 
 Term* new_clone(const Term& a);
 VarTerm* new_clone(const VarTerm& a);

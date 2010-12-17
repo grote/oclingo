@@ -23,6 +23,7 @@
 				* internally
 					* h :- p(X), #uid(X).
 					* #uid(X) :- #global(X), l { q(X,Y) : r(Y) }.
+					* (#uid(X) :- l { q(X,Y) : r(Y) : #global(X,Y) }.)
 				* #global is filled during instantiation of the rule
 				* instantiation of second statement as usual
 					* probably global is moved into each conditional

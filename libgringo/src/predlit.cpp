@@ -288,7 +288,7 @@ const VarDomains &PredLit::allVals(Grounder *g) const
 {
 	if(terms_.size() > 0 && varDoms_.empty())
 	{
-		dom()->allVals(g, this, varDoms_);
+		dom()->allVals(g, terms_, varDoms_);
 	}
 	return varDoms_;
 }

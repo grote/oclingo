@@ -21,8 +21,6 @@
 #include <gringo/lit.h>
 #include <gringo/predlitrep.h>
 
-typedef std::map<int32_t, boost::unordered_set<Val> > VarDomains;
-
 class BodyOrderHeuristic
 {
 public:
