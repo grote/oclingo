@@ -9,13 +9,12 @@
 				* [ ] ...
 			* [ ] move ground/enqueue/enqueued from groundable to instantiator
 			* [ ] simplify the stmdep/litdep code
-		* [ ] improve aggregate code
-			* [ ] support dlv style aggregates
-			* [ ] create domains/indices for aggregates
+		* [ ] improve aggregate code RecursiveAggregates
 	* Medium Priority
 	* Low Priority
 		* [ ] val throws itself atm this should be changed into something different indication what went wrong
 		* [ ] put everything in the namspace bingo
 		* [ ] use boost range for valvec ranges!!!
 		* [ ] improve incremental grounding
+			* [ ] properly support modules!
 			* [ ] add a commit/rollback mechanism to properly support volatile parts

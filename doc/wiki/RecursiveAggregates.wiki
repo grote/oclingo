@@ -1,0 +1,44 @@
+= RecursiveAggregates =
+	* Implementation
+		* generic clean-up
+			* simplify the finish mechanism in indices
+				* the default implementation should be: do nothing
+				* literals that are non-recursive should work with that implementation
+					* relations
+					* inclits
+					* negative predicates (careful with incremental grounding)
+					* all matchonly stuff
+				* initially mark all rules as queued but do not put them into the queue
+				* when grounding components
+					* put marked groundables into queue
+					* ignore unmarked groundables
+		* aggregate specific
+			* create special indices for aggregates
+				* such an index is assigned to an aggregate that has to be grounded separately
+				* register global variables with index
+				* match later as the aggregate potentially matches
+			* grounding an aggregate
+				* example
+					* h :- p(X), l { q(X,Y) : r(Y) }.
+				* internally
+					* h :- p(X), #uid(X).
+					* #uid(X) :- #global(X), l { q(X,Y) : r(Y) }.
+				* #global is filled during instantiation of the rule
+				* instantiation of second statement as usual
+					* probably global is moved into each conditional
+					* an aggregate can match only if all conditionals have been grounded, i.e., none is enqueued!
+					* a conditional is enqueued as soon as possible
+						* a new #global enqueues all conditionals (with global variables)
+						* a conditional is enqueued ass soon as there is a new instantiation for a literal in it
+					* if an aggregate matched #uid(X) will be derived
+					* #global is of course invisible in the output
+			* grounding conditionals
+				* affects lparse output only
+				* introduce a new symbol for sets of conditionals
+				* example
+					* h :- 1 { a(X,Y) : b(X) : c(Y) }.
+				* output
+					* #uid(a(a,b)) :- a(a,b), b(X), c(Y).
+					* h :- 1 { #uid(a(a,b)) }.
+				* not necessary for singular sets
+
