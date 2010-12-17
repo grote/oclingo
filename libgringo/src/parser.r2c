@@ -214,7 +214,7 @@ start:
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
 		ANONYMOUS        { return PARSER_ANONYMOUS; }
-		STRING           { token_.index = g_->index(string()); return PARSER_STRING; }
+		STRING           { token_.index = g_->index(g_->unquote(string())); return PARSER_STRING; }
 		"#sum"           { return PARSER_SUM; }
 		"#count"         { return PARSER_COUNT; }
 		"#min"           { return PARSER_MIN; }

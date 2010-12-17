@@ -29,7 +29,7 @@ struct HeuristicOptions {
 	static bool mapHeuristic(const std::string& s, HeuristicOptions &options);
 	BodyOrderHeuristicPtr  heuristic;
 	HeuristicOptions() : heuristic(0) {	}
-	HeuristicOptions &operator=(const HeuristicOptions &) { assert(false); }
+	HeuristicOptions &operator=(const HeuristicOptions &) { assert(false); return *this; }
 };
 
 bool parseValue(const std::string&, HeuristicOptions&, int);
