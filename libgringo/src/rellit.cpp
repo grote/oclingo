@@ -56,43 +56,29 @@ bool RelLit::isFalse(Grounder *g)
 
 namespace
 {
-	class AssignIndex : public Index
+	class AssignIndex : public NewOnceIndex
 	{
 	public:
 		AssignIndex(Term *a, Term *b, const VarVec &bind);
-		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-		void reset() { finished_ = false; }
-		void finish() { finished_ = true; }
-		bool hasNew() const { return !finished_; }
+		bool first(Grounder *grounder, int binder);
 	private:
-		bool   finished_;
 		Term  *a_;
 		Term  *b_;
 		VarVec bind_;
 	};
 
 	AssignIndex::AssignIndex(Term *a, Term *b, const VarVec &bind)
-		: finished_(false)
-		, a_(a)
+		: a_(a)
 		, b_(b)
 		, bind_(bind)
 	{
 	}
 
-	std::pair<bool,bool> AssignIndex::firstMatch(Grounder *grounder, int binder)
+	bool AssignIndex::first(Grounder *grounder, int binder)
 	{
 		foreach(uint32_t var, bind_) grounder->unbind(var);
-		return std::make_pair(a_->unify(grounder, b_->val(grounder), binder), !finished_);
+		return a_->unify(grounder, b_->val(grounder), binder);
 	}
-
-	std::pair<bool,bool> AssignIndex::nextMatch(Grounder *grounder, int binder)
-	{
-		(void)grounder;
-		(void)binder;
-		return std::make_pair(false, false);
-	}
-
 }
 
 void RelLit::index(Grounder *g, Groundable *gr, VarSet &bound)

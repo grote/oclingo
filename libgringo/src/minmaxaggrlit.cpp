@@ -27,17 +27,13 @@
 
 namespace
 {
-	class MinMaxIndex : public Index
+	class MinMaxIndex : public NewOnceIndex
 	{
 	public:
 		MinMaxIndex(MinMaxAggrLit *lit_, const VarVec &bind);
-		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-		void reset() { finished_ = false; }
-		void finish() { finished_ = true; }
-		bool hasNew() const { return !finished_; }
+		bool first(Grounder *grounder, int binder);
+		bool next(Grounder *grounder, int binder);
 	private:
-		bool           finished_;
 		MinMaxAggrLit *lit_;
 		VarVec         bind_;
 		//! whether the supremum (true) or infimum (false) should be included
@@ -47,21 +43,20 @@ namespace
 	};
 
 	MinMaxIndex::MinMaxIndex(MinMaxAggrLit *lit, const VarVec &bind)
-		: finished_(false)
-		, lit_(lit)
+		: lit_(lit)
 		, bind_(bind)
 	{
 	}
 
-	std::pair<bool,bool> MinMaxIndex::firstMatch(Grounder *grounder, int binder)
+	bool MinMaxIndex::first(Grounder *grounder, int binder)
 	{
 		vals_.clear();
 		lit_->matchAssign(grounder, vals_);
 		current_ = vals_.begin();
-		return nextMatch(grounder, binder);
+		return next(grounder, binder);
 	}
 
-	std::pair<bool,bool> MinMaxIndex::nextMatch(Grounder *grounder, int binder)
+	bool MinMaxIndex::next(Grounder *grounder, int binder)
 	{
 		while(current_ != vals_.end())
 		{
@@ -69,10 +64,10 @@ namespace
 			foreach(uint32_t var, bind_) grounder->unbind(var);
 			if(lit_->assign()->unify(grounder, *current_++, binder))
 			{
-				return std::make_pair(true, !finished_);
+				return true;
 			}
 		}
-		return std::make_pair(false, false);
+		return false;
 	}
 }
 

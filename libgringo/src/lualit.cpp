@@ -43,17 +43,13 @@ bool LuaLit::match(Grounder *grounder)
 
 namespace
 {
-	class LuaIndex : public Index
+	class LuaIndex : public NewOnceIndex
 	{
 	public:
 		LuaIndex(uint32_t var, LuaLit *lit, const VarVec &bind);
-		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-		void reset() { finished_ = false; }
-		void finish() { finished_ = true; }
-		bool hasNew() const { return !finished_; }
+		bool first(Grounder *grounder, int binder);
+		bool next(Grounder *grounder, int binder);
 	private:
-		bool             finished_;
 		uint32_t         var_;
 		ValVec           vals_;
 		ValVec::iterator current_;
@@ -62,31 +58,30 @@ namespace
 	};
 
 	LuaIndex::LuaIndex(uint32_t var, LuaLit *lit, const VarVec &bind)
-		: finished_(false)
-		, var_(var)
+		: var_(var)
 		, lit_(lit)
 		, bind_(bind)
 	{
 	}
 
-	std::pair<bool,bool> LuaIndex::firstMatch(Grounder *grounder, int binder)
+	bool LuaIndex::first(Grounder *grounder, int binder)
 	{
 		ValVec args;
 		vals_.clear();
 		foreach(const Term &term, lit_->args()) { args.push_back(term.val(grounder)); }
 		grounder->luaCall(lit_, args, vals_);
 		current_ = vals_.begin();
-		return nextMatch(grounder, binder);
+		return next(grounder, binder);
 	}
 
-	std::pair<bool,bool> LuaIndex::nextMatch(Grounder *grounder, int binder)
+	bool LuaIndex::next(Grounder *grounder, int binder)
 	{
 		if(current_ != vals_.end())
 		{
 			grounder->val(var_, *current_++, binder);
-			return std::make_pair(true, !finished_);
+			return true;
 		}
-		else return std::make_pair(false, false);
+		else { return false; }
 	}
 }
 

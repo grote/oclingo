@@ -22,25 +22,67 @@
 class Index
 {
 public:
-	virtual std::pair<bool,bool> firstMatch(Grounder *grounder, int binder) = 0;
-	virtual std::pair<bool,bool> nextMatch(Grounder *grounder, int binder) = 0;
+	typedef std::pair<bool, bool> Match;
+public:
+	virtual Match firstMatch(Grounder *grounder, int binder) = 0;
+	virtual Match nextMatch(Grounder *grounder, int binder) = 0;
 	virtual void reset() = 0;
 	virtual void finish() = 0;
 	virtual bool hasNew() const = 0;
 	virtual ~Index() { }
 };
 
-class MatchIndex : public Index
+class NewOnceIndex : public Index
+{
+public:
+	NewOnceIndex();
+	virtual bool first(Grounder *grounder, int binder) = 0;
+	virtual bool next(Grounder *grounder, int binder);
+	Match firstMatch(Grounder *grounder, int binder);
+	Match nextMatch(Grounder *grounder, int binder);
+	void reset();
+	void finish();
+	bool hasNew() const;
+	virtual ~NewOnceIndex() { }
+private:
+	bool finished_;
+};
+
+class MatchIndex : public NewOnceIndex
 {
 public:
 	MatchIndex(Lit *lit);
-	std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-	std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-	void reset() { finished_ = false; }
-	void finish() { finished_ = true; }
-	bool hasNew() const { return !finished_; }
+	bool first(Grounder *grounder, int binder);
 private:
-	bool finished_;
 	Lit *lit_;
 };
+
+// ========================= NewOnceIndex =========================
+inline NewOnceIndex::NewOnceIndex()
+	: finished_(false)
+{
+}
+
+bool inline NewOnceIndex::next(Grounder *, int) { return false; }
+
+Index::Match inline NewOnceIndex::firstMatch(Grounder *grounder, int binder)
+{
+	bool match = first(grounder, binder);
+	return Match(match, !finished_ && match);
+}
+
+Index::Match inline NewOnceIndex::nextMatch(Grounder *grounder, int binder)
+{
+	bool match = next(grounder, binder);
+	return Match(match, !finished_ && match);
+}
+
+void inline NewOnceIndex::reset()        { finished_ = false; }
+void inline NewOnceIndex::finish()       { finished_ = true; }
+bool inline NewOnceIndex::hasNew() const { return !finished_; }
+
+// ========================= MatchIndex =========================
+inline MatchIndex::MatchIndex(Lit *lit) : lit_(lit)
+{
+}
 
