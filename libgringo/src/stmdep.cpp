@@ -172,6 +172,7 @@ void StmNode::addToComponent(Grounder *g)
 	//       this should be easily possible with a visitor
 	g->addToComponent(stm_);
 	foreach(PredNode *pred, provide_)
+		// FIXME: do the counting for predicates not for domains
 		if(pred->complete()) g->addToComponent(pred->pred()->dom());
 }
 
@@ -211,27 +212,10 @@ Builder::Builder(Grounder *g)
 
 void Builder::visit(PredLit *pred)
 {
-	// TODO: do not use dom here but create a unique node for every predlit
-	//       if in body then 
-	//         push predlit + metainfo into a todo vector
-	//       else
-	//         create a prednode
-	//         need a map from domid into prednodes
-	//       modules: 
-	//         there has to be some partial order among modules
-	//         statements only depend on predlits in the transitive closure 
-	//         of the module dependency
-	//       todo vector:
-	//         unify predlits with prednodes and check module dependency
-	//         create an edge as below if necessary
-	//         
-	
 	if(domain_) { todo_.push_back(Todo(&stmNodes_.back(), pred, Node::DOM)); }
 	else if(head_)
 	{
 		Domain *dom = pred->dom();
-		// TODO: is that needed?
-		//if(predNodes_.size() <= dom->domId()) { predNodes_.resize(dom->domId() + 1); }
 		PredNode *node = new PredNode();
 		predNodes_[dom->domId()].push_back(node);
 		node->pred(pred);
@@ -396,6 +380,7 @@ void Builder::analyze(Grounder *g)
 		}
 	}
 	// TODO: warnings should be communicated in a different way!!!
+	// FIXME: this doesn't work anylonger move to the loop above
 	g->beginComponent();
 	foreach(PredNodeVec &preds, predNodes_)
 	{
