@@ -109,10 +109,19 @@ namespace StmDep
 	class Builder : public PrgVisitor
 	{
 	private:
-		typedef boost::ptr_vector<StmNode> StmNodeVec;
+		struct Todo
+		{
+			Todo(StmNode *stm, PredLit *lit, Node::Type type);
+			StmNode   *stm;
+			PredLit   *lit;
+			Node::Type type;
+		};
+		typedef boost::ptr_vector<StmNode>  StmNodeVec;
 		typedef boost::ptr_vector<PredNode> PredNodeVec;
+		typedef std::vector<PredNodeVec>    PredNodeMap;
+		typedef std::vector<Todo>           TodoVec;
 	public:
-		Builder();
+		Builder(Grounder *g);
 		void visit(PredLit *pred);
 		void visit(Lit *lit, bool domain);
 		void visit(Groundable *grd, bool choice);
@@ -126,8 +135,16 @@ namespace StmDep
 		bool        head_;
 		bool        choice_;
 		StmNodeVec  stmNodes_;
-		PredNodeVec predNodes_;
+		PredNodeMap predNodes_;
+		TodoVec     todo_;
 	};
+	
+	inline Builder::Todo::Todo(StmNode *stm, PredLit* lit, Node::Type type)
+		: stm(stm)
+		, lit(lit)
+		, type(type)
+	{
+	}
 
 }
 

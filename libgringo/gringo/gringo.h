@@ -22,6 +22,7 @@
 
 #include <gringo/val.h>
 #include <gringo/clone_ptr.h>
+#include <gringo/util.h>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>

@@ -123,7 +123,7 @@ bool PredNode::empty() const
 void PredNode::print(Storage *sto, std::ostream &out) const
 {
 	assert(!isNull());
-	out << sto->string(pred_->dom()->nameId()) << "/" << pred_->dom()->arity();
+	pred_->print(sto, out);
 }
 
 const Loc &PredNode::loc() const
@@ -168,6 +168,8 @@ Node *StmNode::next()
 
 void StmNode::addToComponent(Grounder *g)
 {
+	// TODO: nested groundables have to be added to the component too
+	//       this should be easily possible with a visitor
 	g->addToComponent(stm_);
 	foreach(PredNode *pred, provide_)
 		if(pred->complete()) g->addToComponent(pred->pred()->dom());
@@ -198,28 +200,45 @@ const Loc &StmNode::loc() const
 	return stm_->loc();
 }
 
-Builder::Builder()
+Builder::Builder(Grounder *g)
 	: domain_(false)
 	, monotonicity_(Lit::MONOTONE)
 	, head_(true)
 	, choice_(false)
+	, predNodes_(g->domains().size())
 {
 }
 
 void Builder::visit(PredLit *pred)
 {
-	Domain *dom = pred->dom();
-	if(predNodes_.size() <= dom->domId())
-		predNodes_.resize(dom->domId() + 1);
-	PredNode *node = &predNodes_[dom->domId()];
-	node->pred(pred);
-	if(domain_) stmNodes_.back().depend(node, Node::DOM);
+	// TODO: do not use dom here but create a unique node for every predlit
+	//       if in body then 
+	//         push predlit + metainfo into a todo vector
+	//       else
+	//         create a prednode
+	//         need a map from domid into prednodes
+	//       modules: 
+	//         there has to be some partial order among modules
+	//         statements only depend on predlits in the transitive closure 
+	//         of the module dependency
+	//       todo vector:
+	//         unify predlits with prednodes and check module dependency
+	//         create an edge as below if necessary
+	//         
+	
+	if(domain_) { todo_.push_back(Todo(&stmNodes_.back(), pred, Node::DOM)); }
 	else if(head_)
 	{
-		if(monotonicity_ != Lit::MONOTONE || choice_) stmNodes_.back().depend(node, Node::NEG);
-		if(monotonicity_ != Lit::ANTIMONOTONE) node->depend(&stmNodes_.back());
+		Domain *dom = pred->dom();
+		// TODO: is that needed?
+		//if(predNodes_.size() <= dom->domId()) { predNodes_.resize(dom->domId() + 1); }
+		PredNode *node = new PredNode();
+		predNodes_[dom->domId()].push_back(node);
+		node->pred(pred);
+		if(monotonicity_ != Lit::MONOTONE || choice_) { stmNodes_.back().depend(node, Node::NEG); }
+		if(monotonicity_ != Lit::ANTIMONOTONE) { node->depend(&stmNodes_.back()); }
 	}
-	else stmNodes_.back().depend(node, monotonicity_ != Lit::MONOTONE ? Node::NEG : Node::POS);
+	else { todo_.push_back(Todo(&stmNodes_.back(), pred, monotonicity_ != Lit::MONOTONE ? Node::NEG : Node::POS)); }
 }
 
 void Builder::visit(Lit *lit, bool domain)
@@ -365,19 +384,35 @@ void Tarjan::start(Grounder *g, Node *n)
 
 void Builder::analyze(Grounder *g)
 {
+	foreach(Todo &todo, todo_)
+	{
+		foreach(PredNode &node, predNodes_[todo.lit->dom()->domId()])
+		{
+			if(node.pred()->compatible(todo.lit))
+			{
+				// TODO: need module check
+				todo.stm->depend(&node, todo.type);
+			}
+		}
+	}
 	// TODO: warnings should be communicated in a different way!!!
 	g->beginComponent();
-	foreach(PredNode &pred, predNodes_)
-		if(!pred.isNull() && pred.edbFact())
+	foreach(PredNodeVec &preds, predNodes_)
+	{
+		foreach(PredNode &pred, preds)
 		{
-			if(pred.empty() && !pred.pred()->dom()->external())
+			if(!pred.isNull() && pred.edbFact())
 			{
-				std::cerr << "% warning: ";
-				pred.print(g, std::cerr);
-				std::cerr << " is never defined" << std::endl;
+				if(pred.empty() && !pred.pred()->dom()->external())
+				{
+					std::cerr << "% warning: ";
+					pred.print(g, std::cerr);
+					std::cerr << " is never defined" << std::endl;
+				}
+				g->addToComponent(pred.pred()->dom());
 			}
-			g->addToComponent(pred.pred()->dom());
 		}
+	}
 	g->endComponent(true);
 	Tarjan t;
 	foreach(StmNode &stm, stmNodes_) t.start(g, &stm);
@@ -397,15 +432,18 @@ void Builder::toDot(Grounder *g, std::ostream &out)
 		stm.print(g, out);
 		out << "\", shape=box]\n";
 	}
-	foreach(PredNode &pred, predNodes_)
+	foreach(PredNodeVec &preds, predNodes_)
 	{
-		if(!pred.isNull())
+		foreach(PredNode &pred, preds)
 		{
-			int id = stmMap.size() + predMap.size();
-			predMap[&pred] = id;
-			out << id << "[label=\"";
-			pred.print(g, out);
-			out << "\", shape=ellipse]\n";
+			if(!pred.isNull())
+			{
+				int id = stmMap.size() + predMap.size();
+				predMap[&pred] = id;
+				out << id << "[label=\"";
+				pred.print(g, out);
+				out << "\", shape=ellipse]\n";
+			}
 		}
 	}
 	foreach(StmNode &stm, stmNodes_)
@@ -418,9 +456,16 @@ void Builder::toDot(Grounder *g, std::ostream &out)
 			out << ";\n";
 		}
 	}
-	foreach(PredNode &pred, predNodes_)
-		foreach(StmNode *stm, pred.depend_)
-			out << stmMap[stm] << " -> " << predMap[&pred] << ";\n";
+	foreach(PredNodeVec &preds, predNodes_)
+	{
+		foreach(PredNode &pred, preds)
+		{
+			foreach(StmNode *stm, pred.depend_)
+			{
+				out << stmMap[stm] << " -> " << predMap[&pred] << ";\n";
+			}
+		}
+	}
 	out << "}\n";
 }
 

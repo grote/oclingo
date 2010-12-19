@@ -28,6 +28,7 @@ public:
 	MathTerm(const Loc &loc, const Func &f, Term *a, Term *b = 0);
 	Val val(Grounder *grounder) const;
 	void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
+	AbsTerm::Ref* abstract(Substitution& subst) const;
 	bool unify(Grounder *grounder, const Val &v, int binder) const;
 	void vars(VarSet &v) const;
 	void visit(PrgVisitor *visitor, bool bind);

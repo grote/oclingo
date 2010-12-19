@@ -147,7 +147,7 @@ StatementRng Grounder::add(Statement *s)
 void Grounder::analyze(const std::string &depGraph, bool stats)
 {
 	// build dependency graph
-	StmDep::Builder prgDep;
+	StmDep::Builder prgDep(this);
 	foreach(Statement &s, statements_) prgDep.visit(&s);
 	prgDep.analyze(this);
 	if(!depGraph.empty())
@@ -155,6 +155,9 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 		std::ofstream out(depGraph.c_str());
 		prgDep.toDot(this, out);
 	}
+	
+	// TODO: remove me
+	_exit(1);
 
 	// generate input statistics
 	if(stats)
@@ -183,6 +186,7 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 void Grounder::ground()
 {
 	termExpansion().expand(this);
+	// TODO: only do this initially
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
@@ -199,9 +203,13 @@ void Grounder::ground()
 				statement->print(this, std::cerr);
 				std::cerr << std::endl;
 			}
-			statement->enqueued(false);
-			enqueue(statement);
-			ground_();
+			// TODO: only consider enqueued statements
+			//if(statement->enqueued())
+			//{
+				statement->enqueued(false);
+				enqueue(statement);
+				ground_();
+			//}
 		}
 		foreach(Domain *dom, component.domains) { dom->complete(true); }
 	}

@@ -30,6 +30,7 @@ public:
 	void vars(VarSet &vars) const;
 	void visit(PrgVisitor *visitor, bool bind);
 	void print(Storage *sto, std::ostream &out) const;
+    AbsTerm::Ref* abstract(Substitution& subst) const;
 	bool constant() const { return true; }
 	Term *clone() const;
 private:

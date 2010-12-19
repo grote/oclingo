@@ -50,6 +50,13 @@ void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 	}
 }
 
+AbsTerm::Ref* FuncTerm::abstract(Substitution& subst) const
+{
+	AbsTerm::Children children;
+	foreach(const Term &t, args_) { children.push_back(t.abstract(subst)); }
+	return subst.addTerm(new AbsTerm(Val::create(Val::ID, name_), children));
+}
+
 bool FuncTerm::unify(Grounder *grounder, const Val &v, int binder) const
 {
 	if(v.type != Val::FUNC) return false;

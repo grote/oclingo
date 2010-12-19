@@ -30,6 +30,7 @@ public:
 	void vars(VarSet &v) const { (void)v; assert(false); }
 	void visit(PrgVisitor *visitor, bool bind) { (void)visitor; (void)bind; assert(false); }
 	void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
+	AbsTerm::Ref* abstract(Substitution&) const { assert(false); return 0; }
 	void print(Storage *sto, std::ostream &out) const;
 	Term *clone() const;
 	~PoolTerm();

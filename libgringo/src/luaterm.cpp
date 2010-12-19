@@ -40,6 +40,11 @@ void LuaTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expa
 	ref.reset(new VarTerm(loc(), var));
 }
 
+AbsTerm::Ref* LuaTerm::abstract(Substitution& subst) const
+{
+	return subst.anyVar();
+}
+
 void LuaTerm::print(Storage *sto, std::ostream &out) const
 {
 	out << "@" << sto->string(name_);

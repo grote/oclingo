@@ -95,10 +95,10 @@ public:
 	void clear();
 	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
-public:
 	const VarDomains &allVals(Grounder *g) const;
 	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
+    bool compatible(PredLit* pred);
 private:
 	TermPtrVec terms_;
 	mutable VarDomains varDoms_;

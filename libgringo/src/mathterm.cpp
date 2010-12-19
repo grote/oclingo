@@ -148,6 +148,11 @@ void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 	}
 }
 
+AbsTerm::Ref* MathTerm::abstract(Substitution& subst) const
+{
+	return subst.anyVar();
+}
+
 Term *MathTerm::clone() const
 {
 	return new MathTerm(*this);

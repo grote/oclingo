@@ -292,3 +292,19 @@ const VarDomains &PredLit::allVals(Grounder *g) const
 	}
 	return varDoms_;
 }
+
+bool PredLit::compatible(PredLit* pred)
+{
+	Substitution subst;
+	std::vector<AbsTerm::Ref*> a, b;
+	foreach(const Term &term, terms_)       { a.push_back(term.abstract(subst)); }
+	subst.clearMap();
+	foreach(const Term &term, pred->terms_) { b.push_back(term.abstract(subst)); }
+	
+	typedef boost::tuple<AbsTerm::Ref*, AbsTerm::Ref*> TermPair;
+	foreach(const TermPair &tuple, _boost::combine(a, b))
+	{
+		if(!AbsTerm::unify(*tuple.get<0>(), *tuple.get<1>())) { return false; }
+	}
+	return true;
+}

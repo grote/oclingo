@@ -58,6 +58,11 @@ bool VarTerm::unify(Grounder *grounder, const Val &v, int binder) const
 	}
 }
 
+AbsTerm::Ref* VarTerm::abstract(Substitution& subst) const
+{
+	return subst.mapVar(nameId_);
+}
+
 void VarTerm::visit(PrgVisitor *v, bool bind)
 {
 	v->visit(this, bind);

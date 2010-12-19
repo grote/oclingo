@@ -32,6 +32,7 @@ public:
 	void vars(VarSet &v) const { (void)v; assert(false); }
 	void visit(PrgVisitor *visitor, bool bind) { (void)visitor; (void)bind; assert(false); }
 	void print(Storage *sto, std::ostream &out) const;
+	AbsTerm::Ref* abstract(Substitution&) const { assert(false); return 0; }
 	Term *clone() const;
 	~ArgTerm();
 private:

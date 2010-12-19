@@ -30,6 +30,7 @@ public:
 	uint32_t index() const { return index_; }
 	uint32_t level() const { return level_; }
 	void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
+	AbsTerm::Ref* abstract(Substitution& subst) const;
 	void index(uint32_t index, uint32_t level, bool local) { level_ = level; index_ = index; local_ = local; }
 	Val val(Grounder *grounder) const;
 	bool constant() const { return false; }

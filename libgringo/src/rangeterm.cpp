@@ -45,6 +45,11 @@ void RangeTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *ex
 	ref.reset(new VarTerm(loc(), var));
 }
 
+AbsTerm::Ref* RangeTerm::abstract(Substitution& subst) const
+{
+	return subst.anyVar();
+}
+
 Term *RangeTerm::clone() const
 {
 	return new RangeTerm(*this);

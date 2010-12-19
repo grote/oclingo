@@ -57,3 +57,7 @@ Term *ConstTerm::clone() const
 	return new ConstTerm(*this);
 }
 
+AbsTerm::Ref* ConstTerm::abstract(Substitution& subst) const
+{
+	return subst.addTerm(new AbsTerm(val_));
+}
