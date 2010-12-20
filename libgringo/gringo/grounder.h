@@ -77,7 +77,6 @@ public:
 	void enqueue(Groundable *g);
 	void beginComponent();
 	void addToComponent(Statement *stm);
-	void addToComponent(PredLit *pred);
 	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();

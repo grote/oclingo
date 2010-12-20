@@ -248,12 +248,6 @@ void Grounder::addToComponent(Statement *stm)
 	components_.back().statements.push_back(stm);
 }
 
-void Grounder::addToComponent(PredLit *pred)
-{
-	// FIXME: implement me properly
-	//components_.back().domains.push_back(dom);
-}
-
 void Grounder::endComponent(bool positive)
 {
 	(void)positive;
