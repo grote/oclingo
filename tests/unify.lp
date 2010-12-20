@@ -1,5 +1,5 @@
 h(a(1)).
-{ h(b(X)), h(c(X)) } :- h(a(X)).
+{ h(b(X)), h(c(X)) : r, not h(n(X)) } :- h(a(X)).
 h(d(X)) :- h(b(X)), h(c(X)).
 
 a(X,X,X) :- h(a(X)), c.

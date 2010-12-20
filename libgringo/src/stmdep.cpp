@@ -226,12 +226,19 @@ void Builder::visit(PredLit *pred)
 	if(domain_) { todo_.push_back(Todo(&stmNodes_.back(), pred, Node::DOM)); }
 	else if(head_)
 	{
-		Domain *dom = pred->dom();
-		PredNode *node = new PredNode();
-		predNodes_[dom->domId()].push_back(node);
-		node->pred(pred);
-		if(monotonicity_ != Lit::MONOTONE || choice_) { stmNodes_.back().depend(node, Node::NEG); }
-		if(monotonicity_ != Lit::ANTIMONOTONE) { node->depend(&stmNodes_.back()); }
+		if(monotonicity_ == Lit::ANTIMONOTONE)
+		{
+			todo_.push_back(Todo(&stmNodes_.back(), pred, Node::NEG));
+		}
+		else
+		{
+			Domain *dom = pred->dom();
+			PredNode *node = new PredNode();
+			predNodes_[dom->domId()].push_back(node);
+			node->pred(pred);
+			if(monotonicity_ != Lit::MONOTONE || choice_) { stmNodes_.back().depend(node, Node::NEG); }
+			node->depend(&stmNodes_.back());
+		}
 	}
 	else { todo_.push_back(Todo(&stmNodes_.back(), pred, monotonicity_ != Lit::MONOTONE ? Node::NEG : Node::POS)); }
 }
