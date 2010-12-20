@@ -80,8 +80,6 @@ public:
 	void append(Grounder *g, Groundable *gr, PredIndex *i);
 	uint32_t size() const   { return vals_.size(); }
 	void fix()              { lastInsertPos_ = vals_.size(); }
-	bool complete() const   { return complete_ && !external_; }
-	void complete(bool c)   { complete_ = c; }
 	void external(bool e)   { external_ = e; }
 	bool external() const   { return external_; }
 	uint32_t arity() const  { return arity_; }
@@ -100,7 +98,6 @@ private:
 	PredIndexVec   completeIndex_;
 	uint32_t       new_;
 	uint32_t       lastInsertPos_;
-	bool           complete_;
 	bool           external_;
 };
 

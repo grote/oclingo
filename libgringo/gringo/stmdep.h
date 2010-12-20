@@ -39,7 +39,7 @@ namespace StmDep
 		virtual Type type(uint32_t i) = 0;
 		virtual Node *next() = 0;
 		virtual bool root() = 0;
-		virtual void addToComponent(Grounder *g) { (void)g; }
+		virtual void addToComponent(Grounder *g);
 		virtual void print(Storage *sto, std::ostream &out) const = 0;
 		virtual const Loc &loc() const = 0;
 		void mark() { visited_ = 1; }
@@ -53,13 +53,16 @@ namespace StmDep
 		uint32_t visited_;
 		uint32_t component_;
 	};
-
+	
+	class Todo;
 	class StmNode;
 	class PredNode : public Node
 	{
-		friend class Builder;
 	private:
+		friend class Builder;
 		typedef std::vector<StmNode*> DependVec;
+	public:
+		typedef std::vector<Todo*> TodoVec;
 	public:
 		PredNode();
 		Node *node(uint32_t i);
@@ -70,16 +73,17 @@ namespace StmDep
 		void depend(StmNode *stm);
 		bool edbFact() const;
 		bool empty() const;
-		bool complete();
 		bool isNull() const { return pred_ == 0; }
 		PredLit *pred() const { return pred_; }
 		void print(Storage *sto, std::ostream &out) const;
 		const Loc &loc() const;
+		void provide(Todo &todo);
+		TodoVec &provide();
 	private:
 		PredLit  *pred_;
 		DependVec depend_;
+		TodoVec   provide_;
 		uint32_t  next_;
-		uint32_t  complete_;
 	};
 
 	class StmNode : public Node
@@ -106,16 +110,17 @@ namespace StmDep
 		uint32_t   next_;
 	};
 
+	struct Todo
+	{
+		Todo(StmNode *stm, PredLit *lit, Node::Type type);
+		StmNode   *stm;
+		PredLit   *lit;
+		Node::Type type;
+		uint32_t   provided;
+	};
+
 	class Builder : public PrgVisitor
 	{
-	private:
-		struct Todo
-		{
-			Todo(StmNode *stm, PredLit *lit, Node::Type type);
-			StmNode   *stm;
-			PredLit   *lit;
-			Node::Type type;
-		};
 		typedef boost::ptr_vector<StmNode>  StmNodeVec;
 		typedef boost::ptr_vector<PredNode> PredNodeVec;
 		typedef std::vector<PredNodeVec>    PredNodeMap;
@@ -139,10 +144,13 @@ namespace StmDep
 		TodoVec     todo_;
 	};
 	
-	inline Builder::Todo::Todo(StmNode *stm, PredLit* lit, Node::Type type)
+	inline void Node::addToComponent(Grounder *) { }
+	
+	inline Todo::Todo(StmNode *stm, PredLit* lit, Node::Type type)
 		: stm(stm)
 		, lit(lit)
 		, type(type)
+		, provided(0)
 	{
 	}
 

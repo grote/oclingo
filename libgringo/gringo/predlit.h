@@ -86,8 +86,8 @@ public:
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool edbFact() const;
-	bool complete(bool complete);
-	bool complete() const;
+	bool complete(bool complete) { complete_ = complete; }
+	bool complete() const { return complete_; }
 	void print(Storage *sto, std::ostream &out) const;
 	void push();
 	bool testUnique(PredLitSet &set, Val val=Val::create());
@@ -103,5 +103,6 @@ public:
 private:
 	TermPtrVec terms_;
 	mutable VarDomains varDoms_;
+	bool complete_;
 };
 

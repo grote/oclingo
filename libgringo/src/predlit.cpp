@@ -112,6 +112,7 @@ PredLit::PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms)
 	: Lit(loc)
 	, PredLitRep(false, dom)
 	, terms_(terms.release())
+	, complete_(false)
 {
 	vals_.reserve(terms_.size());
 }
@@ -121,7 +122,7 @@ bool PredLit::fact() const
 	assert(top_ + dom_->arity() <= vals_.size());
 	if(sign())
 	{
-		if(dom_->complete()) return !dom_->find(vals_.begin() + top_).valid();
+		if(complete()) return !dom_->find(vals_.begin() + top_).valid();
 		else return false;
 	}
 	else return dom_->find(vals_.begin() + top_).fact;
@@ -133,7 +134,7 @@ bool PredLit::isFalse(Grounder *grounder)
 	assert(top_ + dom_->arity() <= vals_.size());
 	if(!sign())
 	{
-		if(dom_->complete()) return !dom_->find(vals_.begin() + top_).valid();
+		if(complete()) return !dom_->find(vals_.begin() + top_).valid();
 		else return false;
 	}
 	else return dom_->find(vals_.begin() + top_).fact;
@@ -158,11 +159,6 @@ void PredLit::visit(PrgVisitor *v)
 void PredLit::vars(VarSet &vars) const
 {
 	foreach(const Term &a, terms_) a.vars(vars);
-}
-
-bool PredLit::complete() const
-{
-	return dom()->complete();
 }
 
 void PredLit::push()
@@ -244,6 +240,8 @@ bool PredLit::edbFact() const
 
 void PredLit::print(Storage *sto, std::ostream &out) const
 {
+	// TODO: remove the *???
+	if(complete()) out << "*";
 	if(sign()) out << "not ";
 	out << sto->string(dom_->nameId());
 	if(terms_.size() > 0)
@@ -258,6 +256,7 @@ void PredLit::print(Storage *sto, std::ostream &out) const
 		}
 		out << ")";
 	}
+	if(complete()) out << "*";
 }
 
 void PredLit::normalize(Grounder *g, Expander *expander)

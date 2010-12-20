@@ -64,19 +64,12 @@ Node::Node()
 PredNode::PredNode()
 	: pred_(0)
 	, next_(0)
-	, complete_(0)
 { }
 
 void PredNode::depend(StmNode *stm)
 {
 	depend_.push_back(stm);
-	complete_++;
 	stm->provide(this);
-}
-
-bool PredNode::complete()
-{
-	return --complete_ == 0;
 }
 
 Node *PredNode::node(uint32_t i)
@@ -132,6 +125,17 @@ const Loc &PredNode::loc() const
 	return pred_->loc();
 }
 
+void PredNode::provide(Todo &todo)
+{
+	todo.provided++;
+	provide_.push_back(&todo);
+}
+
+PredNode::TodoVec &PredNode::provide()
+{
+	return provide_;
+}
+
 StmNode::StmNode(Statement *stm)
 	: stm_(stm)
 	, next_(0)
@@ -171,6 +175,16 @@ void StmNode::addToComponent(Grounder *g)
 	// TODO: nested groundables have to be added to the component too
 	//       this should be easily possible with a visitor
 	g->addToComponent(stm_);
+	foreach(PredNode *pred, provide_)
+	{
+		foreach(Todo *todo, pred->provide())
+		{
+			if(--todo->provided == 0)
+			{
+				todo->provided = component();
+			}
+		}
+	}
 }
 
 bool StmNode::root()
@@ -374,9 +388,7 @@ void Builder::analyze(Grounder *g)
 		{
 			if(node.pred()->compatible(todo.lit))
 			{
-				//node.pred()->provides(todo.lit);
-				// if all predlits providing another predlit have been grounded, i.e.,
-				// occurred in a previous! component, then mark this predlit as complete
+				node.provide(todo);
 				// TODO: need module check
 				todo.stm->depend(&node, todo.type);
 				hasInput = true;
@@ -402,6 +414,14 @@ void Builder::analyze(Grounder *g)
 	g->endComponent(true);
 	Tarjan t;
 	foreach(StmNode &stm, stmNodes_) t.start(g, &stm);
+	foreach(Todo &todo, todo_)
+	{
+		if(todo.provided < todo.stm->component())
+		{
+			todo.lit->complete(true);
+		}
+	}
+	// TODO: predlits have to inform associated predlits
 }
 
 void Builder::toDot(Grounder *g, std::ostream &out)

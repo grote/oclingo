@@ -107,7 +107,6 @@ Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
 	, vals_(arity)
 	, new_(0)
 	, lastInsertPos_(0)
-	, complete_(false)
 	, external_(false)
 {
 }
@@ -148,6 +147,8 @@ void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 
 void Domain::enqueue(Grounder *g)
 {
+	// TODO: needs rewrite!!!
+	/*
 	uint32_t end = vals_.size();
 	foreach(const PredInfo &info, index_)
 	{
@@ -164,15 +165,19 @@ void Domain::enqueue(Grounder *g)
 			idx->extend(g, k);
 	}
 	new_ = end;
+	*/
 }
 
 void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
 {
+	// TODO: needs rewrite!!!
+	/*
 	ValVec::const_iterator j = vals_.begin();
 	for(uint32_t i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
 	assert(!complete_ || new_ == vals_.size());
 	if(!complete_) { index_.push_back(PredInfo(idx, gr)); }
 	else { completeIndex_.push_back(idx); }
+	*/
 }
 
 void Domain::addOffset(int32_t offset)
