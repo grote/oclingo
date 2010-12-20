@@ -307,3 +307,8 @@ bool PredLit::compatible(PredLit* pred)
 	}
 	return true;
 }
+
+void PredLit::provide(PredLit *pred)
+{
+	provide_.push_back(pred);
+}

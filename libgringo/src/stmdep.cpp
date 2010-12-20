@@ -421,7 +421,19 @@ void Builder::analyze(Grounder *g)
 			todo.lit->complete(true);
 		}
 	}
-	// TODO: predlits have to inform associated predlits
+	foreach(PredNodeVec &preds, predNodes_)
+	{
+		foreach(PredNode &pred, preds)
+		{
+			foreach(Todo *todo, pred.provide())
+			{
+				if(!todo->lit->complete())
+				{
+					pred.pred()->provide(todo->lit);
+				}
+			}
+		}
+	}
 }
 
 void Builder::toDot(Grounder *g, std::ostream &out)

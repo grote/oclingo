@@ -71,6 +71,8 @@ private:
 
 class PredLit : public Lit, public PredLitRep
 {
+private:
+	typedef std::vector<PredLit*> PredLitVec;
 public:
 	PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms);
 	void normalize(Grounder *g, Expander *expander);
@@ -100,9 +102,11 @@ public:
 	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
     bool compatible(PredLit* pred);
+	void provide(PredLit *pred);
 private:
-	TermPtrVec terms_;
+	TermPtrVec         terms_;
 	mutable VarDomains varDoms_;
-	bool complete_;
+	PredLitVec         provide_;
+	bool               complete_;
 };
 
