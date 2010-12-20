@@ -171,9 +171,6 @@ void StmNode::addToComponent(Grounder *g)
 	// TODO: nested groundables have to be added to the component too
 	//       this should be easily possible with a visitor
 	g->addToComponent(stm_);
-	foreach(PredNode *pred, provide_)
-		// FIXME: do the counting for predicates not for domains
-		if(pred->complete()) g->addToComponent(pred->pred()->dom());
 }
 
 bool StmNode::root()
@@ -368,34 +365,38 @@ void Tarjan::start(Grounder *g, Node *n)
 
 void Builder::analyze(Grounder *g)
 {
+	bool warned = false;
+	g->beginComponent();
 	foreach(Todo &todo, todo_)
 	{
+		bool hasInput = false;
 		foreach(PredNode &node, predNodes_[todo.lit->dom()->domId()])
 		{
 			if(node.pred()->compatible(todo.lit))
 			{
+				//node.pred()->provides(todo.lit);
+				// if all predlits providing another predlit have been grounded, i.e.,
+				// occurred in a previous! component, then mark this predlit as complete
 				// TODO: need module check
 				todo.stm->depend(&node, todo.type);
+				hasInput = true;
 			}
 		}
-	}
-	// TODO: warnings should be communicated in a different way!!!
-	// FIXME: this doesn't work anylonger move to the loop above
-	g->beginComponent();
-	foreach(PredNodeVec &preds, predNodes_)
-	{
-		foreach(PredNode &pred, preds)
+		if(!hasInput && !todo.lit->dom()->external())
 		{
-			if(!pred.isNull() && pred.edbFact())
+			if(!todo.lit->dom()->size())
 			{
-				if(pred.empty() && !pred.pred()->dom()->external())
+				// TODO: warnings should be communicated in a different way!!!
+				if(!warned)
 				{
-					std::cerr << "% warning: ";
-					pred.print(g, std::cerr);
-					std::cerr << " is never defined" << std::endl;
+					std::cerr << "WARNING: predicate cannot match:" << std::endl;
+					warned = true;
 				}
-				g->addToComponent(pred.pred()->dom());
+				std::cerr << "\t" << StrLoc(g, todo.lit->loc()) << ": ";
+				todo.lit->print(g, std::cerr);
+				std::cerr << std::endl;
 			}
+			todo.lit->complete(true);
 		}
 	}
 	g->endComponent(true);

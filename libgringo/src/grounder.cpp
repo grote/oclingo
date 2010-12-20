@@ -188,10 +188,6 @@ void Grounder::ground()
 	termExpansion().expand(this);
 	// TODO: only do this initially
 	foreach(Statement &statement, statements_) { statement.enqueued(true); }
-	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
-	{
-		dom.second->complete(false);
-	}
 	foreach(Component &component, components_)
 	{
 		foreach(Statement *statement, component.statements)
@@ -211,11 +207,11 @@ void Grounder::ground()
 				ground_();
 			//}
 		}
-		foreach(Domain *dom, component.domains) { dom->complete(true); }
 	}
 	initialized_ = true;
 	//debug_ = false;
 	output()->endGround();
+	// TODO: remove that
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
 		dom.second->fix();
@@ -254,15 +250,16 @@ void Grounder::addToComponent(Statement *stm)
 	components_.back().statements.push_back(stm);
 }
 
-void Grounder::addToComponent(Domain *dom)
+void Grounder::addToComponent(PredLit *pred)
 {
-	components_.back().domains.push_back(dom);
+	// FIXME: implement me properly
+	//components_.back().domains.push_back(dom);
 }
 
 void Grounder::endComponent(bool positive)
 {
 	(void)positive;
-	foreach(Domain *dom, components_.back().domains) dom->complete(true);
+	//foreach(Domain *dom, components_.back().domains) dom->complete(true);
 }
 
 uint32_t Grounder::createVar()

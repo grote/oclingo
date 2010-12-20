@@ -86,6 +86,7 @@ public:
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool edbFact() const;
+	bool complete(bool complete);
 	bool complete() const;
 	void print(Storage *sto, std::ostream &out) const;
 	void push();

@@ -57,10 +57,8 @@ private:
 	struct Component
 	{
 		typedef std::vector<Statement*> StatementVec;
-		typedef std::vector<Domain*> DomainVec;
 		Component() { }
 		StatementVec statements;
-		DomainVec    domains;
 	};
 	typedef std::vector<Component> ComponentVec;
 
@@ -79,7 +77,7 @@ public:
 	void enqueue(Groundable *g);
 	void beginComponent();
 	void addToComponent(Statement *stm);
-	void addToComponent(Domain *dom);
+	void addToComponent(PredLit *pred);
 	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
