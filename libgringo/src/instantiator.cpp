@@ -50,11 +50,11 @@ void Instantiator::ground(Grounder *g)
 	
 	for(;;)
 	{
-		if(!matched.first || (!numNew && l > lastNew))
+		if(!matched.first || (!numNew && l >= lastNew))
 		{
-			numNew -= new_[l];
 			if(--l == -1) { break; }
 			matched = indices_[l].nextMatch(g, l);
+			numNew -= new_[l];
 			new_[l] = matched.second;
 			numNew += matched.second;
 		}
@@ -69,7 +69,7 @@ void Instantiator::ground(Grounder *g)
 			{
 				matched = indices_[l].firstMatch(g, l);
 				new_[l] = matched.second;
-				numNew += matched.second;
+				numNew += matched.first && matched.second;
 			}
 		}
 	}

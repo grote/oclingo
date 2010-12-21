@@ -42,7 +42,6 @@ double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, const PredLit *
 		curBound.insert(vars.begin(), vars.end());
 	}
 	return sum / pred->terms().size();
-
 }
 
 double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, const PredLit *pred) const

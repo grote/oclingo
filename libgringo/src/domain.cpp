@@ -89,7 +89,7 @@ std::pair<const Domain::Index&, bool> Domain::ArgSet::insert(const ValVec::const
 		vals_.resize(idx.index);
 		if(fact) res.first->fact = fact;
 	}
-	return std::make_pair(*res.first, res.second);
+	return std::pair<const Domain::Index&, bool>(*res.first, res.second);
 }
 
 void Domain::ArgSet::extend(const ArgSet &other)
@@ -152,7 +152,7 @@ bool Domain::extend(Grounder *g, PredIndex *idx, uint32_t offset)
 {
 	bool modified = false;
 	ValVec::const_iterator k = vals_.begin() + arity_ * offset;
-	for(uint32_t i = 0; i < size(); i++, k+= arity_)
+	for(uint32_t i = offset; i < size(); i++, k+= arity_)
 	{
 		modified = idx->extend(g, k) || modified;
 	}

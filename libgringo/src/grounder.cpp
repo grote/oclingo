@@ -178,16 +178,28 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground()
 {
-	// TODO: garbage
 	termExpansion().expand(this);
 	foreach(Component &component, components_)
 	{
-		// NOTE: this adds statements into the grounding queue
-		foreach(Statement *statement, component.statements)
+		if(component.statements.size() > 0)
 		{
-			statement->init(this, VarSet());
+			if(debug_)
+			{
+				std::cerr << "% begin component (" << component.statements.size() << ")" << std::endl;
+			}
+			foreach(Statement *statement, component.statements)
+			{
+				// NOTE: this adds statements into the grounding queue
+				statement->init(this, VarSet());
+				if(debug_)
+				{
+					std::cerr << "% ";
+					statement->print(this, std::cerr);
+					std::cerr << std::endl;
+				}
+				ground_();
+			}
 		}
-		ground_();
 	}
 	output()->endGround();
 	// TODO: remove that
@@ -201,18 +213,10 @@ void Grounder::ground_()
 {
 	while(!queue_.empty())
 	{
+		std::random_shuffle(queue_.begin(), queue_.end());
 		Groundable *g = queue_.front();
 		queue_.pop_front();
 		g->enqueued(false);
-		#pragma message "re-add verbose output"
-		/*
-		if(debug_)
-		{
-			std::cerr << "% ";
-			g->print(this, std::cerr);
-			std::cerr << std::endl;
-		}
-		*/
 		g->ground(this);
 	}
 }
