@@ -41,9 +41,9 @@ public:
 	virtual bool forcePrint() { return false; }
 	virtual bool match(Grounder *grounder) = 0;
 	virtual void addDomain(Grounder *grounder, bool fact) { (void)grounder; (void)fact; assert(false); }
-	virtual void finish(Grounder *grounder) { (void)grounder; }
 	virtual void grounded(Grounder *grounder) { (void)grounder; }
 	virtual bool complete() const { return true; }
+	virtual void finish(Grounder *) { }
 
 	/** whether the literal is the head of a rule. */
 	virtual bool head() const { return head_; }

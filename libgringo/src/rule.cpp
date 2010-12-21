@@ -29,7 +29,6 @@ Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
 	: Statement(loc)
 	, head_(head)
 	, body_(body.release())
-	, grounded_(false)
 {
 	if(head) head->head(true);
 }
@@ -108,7 +107,8 @@ void Rule::normalize(Grounder *g)
 
 void Rule::init(Grounder *g, const VarSet &b)
 {
-	if(body_.size() > 0)
+	#pragma message "handle recreation of indices"
+	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
 		if(vars_.size() > 0) litDep_->order(g, b);
@@ -127,7 +127,7 @@ void Rule::init(Grounder *g, const VarSet &b)
 			}
 		}
 	}
-	else if(head_.get()) head_->init(g, b);
+	inst_->enqueue(g);
 }
 
 bool Rule::edbFact() const
@@ -138,12 +138,11 @@ bool Rule::edbFact() const
 void Rule::ground(Grounder *g)
 {
 	if(inst_.get()) inst_->ground(g);
-	else if(!grounded_)
+	else
 	{
-		grounded_ = true;
 		if(head_.get()) head_->match(g);
 		grounded(g);
-	}	
+	}
 	if(head_.get()) head_->finish(g);
 }
 

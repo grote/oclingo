@@ -79,9 +79,8 @@ public:
 	bool fact() const;
 	bool isFalse(Grounder *g);
 	Monotonicity monotonicity();
-	void addDomain(Grounder *g, bool fact) { return PredLitRep::addDomain(g, fact); }
+	void addDomain(Grounder *g, bool fact);
 	void accept(Printer *v);
-	void finish(Grounder *g);
 	/** \note grounded has to be called before reading top_ or vals_. */
 	void grounded(Grounder *grounder);
 	bool match(Grounder *grounder);
@@ -90,6 +89,7 @@ public:
 	bool edbFact() const;
 	void complete(bool complete) { complete_ = complete; }
 	bool complete() const { return complete_; }
+	void finish(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
 	void push();
 	bool testUnique(PredLitSet &set, Val val=Val::create());
@@ -108,5 +108,8 @@ private:
 	mutable VarDomains varDoms_;
 	PredLitVec         provide_;
 	bool               complete_;
+	uint32_t           startNew_;
+	PredIndex         *index_;
+	Groundable        *parent_;
 };
 

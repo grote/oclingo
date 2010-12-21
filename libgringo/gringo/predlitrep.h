@@ -23,7 +23,7 @@ class PredLitRep
 {
 public:
 	PredLitRep(bool sign, Domain *dom);
-	void addDomain(Grounder *g, bool fact);
+	bool addDomain(Grounder *g, bool fact);
 	void sign(bool s) { sign_ = s; }
 	//! whether the literal has a sign
 	bool sign() const { return sign_; }

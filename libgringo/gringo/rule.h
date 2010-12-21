@@ -48,6 +48,5 @@ private:
 private:
 	std::auto_ptr<Lit> head_;
 	LitPtrVec          body_;
-	bool               grounded_;
 };
 

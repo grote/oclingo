@@ -56,7 +56,7 @@ private:
 		ArgSet(uint32_t arity);
 		ArgSet(const ArgSet &argSet);
 		const Index &find(const ValVec::const_iterator &v) const;
-		const Index &insert(const ValVec::const_iterator &v, bool fact = false);
+		std::pair<const Domain::Index&, bool> insert(const ValVec::const_iterator &v, bool fact = false);
 		void extend(const ArgSet &other);
 
 	private:
@@ -75,9 +75,7 @@ public:
 public:
 	Domain(uint32_t nameId, uint32_t arity, uint32_t domId);
 	const Index &find(const ValVec::const_iterator &v) const;
-	void insert(Grounder *g, const ValVec::const_iterator &v, bool fact = false);
-	void enqueue(Grounder *g);
-	void append(Grounder *g, Groundable *gr, PredIndex *i);
+	bool insert(Grounder *g, const ValVec::const_iterator &v, bool fact = false);
 	uint32_t size() const   { return vals_.size(); }
 	void fix()              { lastInsertPos_ = vals_.size(); }
 	void external(bool e)   { external_ = e; }
@@ -86,6 +84,7 @@ public:
 	uint32_t nameId() const { return nameId_; }
 	uint32_t domId() const  { return domId_; }
 	void addOffset(int32_t offset);
+	bool extend(Grounder *g, PredIndex *idx, uint32_t offset);
 	//! creates a map of all possible values for every variable in the literal
 	void allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms);
 private:

@@ -50,5 +50,4 @@ private:
 	clone_ptr<PredLit> head_;
 	LitPtrVec          body_;
 	bool               show_;
-	bool               grounded_;
 };

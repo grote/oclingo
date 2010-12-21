@@ -111,6 +111,9 @@ PredLit::PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms)
 	, PredLitRep(false, dom)
 	, terms_(terms.release())
 	, complete_(false)
+	, startNew_(0)
+	, index_(0)
+	, parent_(0)
 {
 	vals_.reserve(terms_.size());
 }
@@ -136,11 +139,6 @@ bool PredLit::isFalse(Grounder *grounder)
 		else return false;
 	}
 	else return dom_->find(vals_.begin() + top_).fact;
-}
-
-void PredLit::finish(Grounder *g)
-{
-	dom_->enqueue(g);
 }
 
 Lit::Monotonicity PredLit::monotonicity()
@@ -197,10 +195,12 @@ bool PredLit::match(Grounder *grounder)
 
 void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 {
+	parent_ = gr;
 	if(sign() || head() || dom()->external())
 	{
 		match_ = true;
 		gr->instantiator()->append(new MatchIndex(this));
+		index_ = 0;
 	}
 	else
 	{
@@ -211,7 +211,8 @@ void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 		std::set_intersection(bound.begin(), bound.end(), vars.begin(), vars.end(), std::back_insert_iterator<VarVec>(index));
 		std::set_difference(vars.begin(), vars.end(), index.begin(), index.end(), std::back_insert_iterator<VarVec>(bind));
 		bound.insert(vars.begin(), vars.end());
-		gr->instantiator()->append(new PredIndex(dom_, gr, terms_, index, bind));
+		index_ = new PredIndex(dom_, terms_, index, bind);
+		gr->instantiator()->append(index_);
 	}
 }
 
@@ -309,4 +310,25 @@ bool PredLit::compatible(PredLit* pred)
 void PredLit::provide(PredLit *pred)
 {
 	provide_.push_back(pred);
+}
+
+void PredLit::addDomain(Grounder *g, bool fact)
+{
+    bool res = PredLitRep::addDomain(g, fact);
+	if(res && !startNew_) { startNew_ = dom_->size(); }
+}
+
+void PredLit::finish(Grounder *g)
+{
+	if(startNew_)
+	{
+		foreach(PredLit *pred, provide_)
+		{
+			// NOTE: atm pred->index_ might be zero for e.g. negative literals
+			//       I think that I'll need indices for negative predicates too
+			//       during incremnetal grounding
+			if(pred->index_ && dom_->extend(g, pred->index_, startNew_ - 1)) { g->enqueue(pred->parent_); }
+		}
+		startNew_ = 0;
+	}
 }

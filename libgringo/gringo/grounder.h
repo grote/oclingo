@@ -62,7 +62,6 @@ private:
 	};
 	typedef std::vector<Component> ComponentVec;
 
-
 public:
 	Grounder(Output *out, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic);
 	void analyze(const std::string &depGraph = "", bool stats = false);
@@ -77,7 +76,6 @@ public:
 	void enqueue(Groundable *g);
 	void beginComponent();
 	void addToComponent(Statement *stm);
-	void endComponent(bool positive);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
 	TermExpansion &termExpansion() const;
@@ -93,7 +91,6 @@ private:
 	ComponentVec           components_;
 	uint32_t               internal_;
 	bool                   debug_;
-	bool                   initialized_;
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
 	TermExpansionPtr       termExpansion_;

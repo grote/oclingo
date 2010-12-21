@@ -36,20 +36,21 @@ bool PredIndex::ValCmp::operator()(uint32_t a, uint32_t b) const
 	return std::equal(vals->begin() + a, vals->begin() + a + size, vals->begin() + b);
 }
 
-PredIndex::PredIndex(Domain *dom, Groundable *groundable, const TermPtrVec &terms, const VarVec &index, const VarVec &bind)
-	: dom_(dom)
-	, groundable_(groundable)
-	, map_(0, ValCmp(&indexVec_, index.size()), ValCmp(&indexVec_, index.size()))
+PredIndex::PredIndex(Domain *dom, const TermPtrVec &terms, const VarVec &index, const VarVec &bind)
+	: map_(0, ValCmp(&indexVec_, index.size()), ValCmp(&indexVec_, index.size()))
+	, dom_(dom)
+	, terms_(terms)
 	, index_(index)
 	, bind_(bind)
 	, indexVec_(index.size())
 	, finished_(0)
-	, terms_(terms)
+	, lastExtend_(0)
 {
 }
 
 bool PredIndex::extend(Grounder *grounder, ValVec::const_iterator vals)
 {
+	lastExtend_  = dom_->size();
 	bool unified = true;
 	foreach(const Term &term, terms_)
 		if(!term.unify(grounder, *vals++, 0))
@@ -93,14 +94,7 @@ void PredIndex::bind(Grounder *grounder, int binder)
 
 std::pair<bool, bool> PredIndex::firstMatch(Grounder *grounder, int binder)
 {
-	if(dom_)
-	{
-		grounder->pushContext();
-		dom_->append(grounder, groundable_, this);
-		grounder->popContext();
-		dom_        = 0;
-		groundable_ = 0;
-	}
+	#pragma message "re-add on-demand index creation?"
 	uint32_t find = indexVec_.size() - index_.size();
 	ValVec::iterator j = indexVec_.begin() + find;
 	foreach(uint32_t var, index_)
@@ -140,6 +134,12 @@ void PredIndex::finish()
 
 bool PredIndex::hasNew() const 
 {
-	return finished_ < bindVec_.size() || dom_ != 0;
+	return finished_ < bindVec_.size();
 }
 
+bool PredIndex::init(Grounder *g)
+{
+	#pragma message "redundant work here"
+	dom_->extend(g, this, lastExtend_);
+	return hasNew();
+}

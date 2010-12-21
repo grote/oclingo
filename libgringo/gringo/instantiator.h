@@ -22,22 +22,23 @@
 class Instantiator
 {
 private:
-	typedef std::vector<int> IntVec;
+	typedef std::vector<int> BoolVec;
 public:
 	Instantiator(Groundable *g);
 	void append(Index *i);
 	void ground(Grounder *g);
 	void reset();
+	void enqueue(Grounder *g);
 	~Instantiator();
 private:
 	Groundable *groundable_;
 	IndexPtrVec indices_;
-	IntVec new_;
+	BoolVec     new_;
+	bool        grounded_;
 };
    
-inline Instantiator* new_clone(const Instantiator& a)
+inline Instantiator* new_clone(const Instantiator&)
 {
-	(void)a;
 	return 0;
 }
 

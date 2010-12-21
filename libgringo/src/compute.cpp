@@ -30,7 +30,6 @@ Compute::Compute(const Loc &loc, PredLit *head, LitPtrVec &body)
 	: Statement(loc)
 	, head_(head)
 	, body_(body.release())
-	, grounded_(false)
 {
 }
 
@@ -42,12 +41,7 @@ void Compute::ground(Grounder *g)
 		inst_->reset();
 		inst_->ground(g);
 	}
-	else if(!grounded_)
-	{
-		grounded_ = true;
-		if(head_->match(g)) grounded(g);
-	}
-	else return;
+	else if(head_->match(g)) { grounded(g); }
 	// TODO: bring in line with external/compute
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin();

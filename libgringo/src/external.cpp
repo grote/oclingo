@@ -30,7 +30,6 @@ External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
 	: Statement(loc)
 	, head_(head)
 	, body_(body.release())
-	, grounded_(false)
 {
 	head_->head(true);
 }
@@ -38,13 +37,11 @@ External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
 void External::ground(Grounder *g)
 {
 	if(inst_.get()) inst_->ground(g);
-	else if(!grounded_)
+	else
 	{
-		grounded_ = true;
 		head_->match(g);
 		grounded(g);
 	}
-	head_->finish(g);
 }
 
 bool External::grounded(Grounder *g)

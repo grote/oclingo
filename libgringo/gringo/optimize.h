@@ -66,7 +66,6 @@ private:
 	bool               maximize_;
 	//! whether the optimize occurs in a set (or else multiset)
 	bool               set_;
-	bool               grounded_;
 	//! set for uniqueness check when set_ is true
 	PredLitSetPtr      uniques_;
 };

@@ -92,7 +92,6 @@ Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp, BodyOrderHe
 	: Storage(output)
 	, internal_(0)
 	, debug_(debug)
-	, initialized_(false)
 	, luaImpl_(new LuaImpl(this))
 	, termExpansion_(exp)
 	, heuristic_(heuristic)
@@ -155,10 +154,6 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 		std::ofstream out(depGraph.c_str());
 		prgDep.toDot(this, out);
 	}
-	
-	// TODO: remove me
-	_exit(1);
-
 	// generate input statistics
 	if(stats)
 	{
@@ -183,38 +178,23 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground()
 {
+	// TODO: garbage
 	termExpansion().expand(this);
-	// TODO: only do this initially
-	foreach(Statement &statement, statements_) { statement.enqueued(true); }
 	foreach(Component &component, components_)
 	{
+		// NOTE: this adds statements into the grounding queue
 		foreach(Statement *statement, component.statements)
 		{
-			if(!initialized_) { statement->init(this, VarSet()); }
-			if(debug_)
-			{
-				std::cerr << "% ";
-				statement->print(this, std::cerr);
-				std::cerr << std::endl;
-			}
-			// TODO: only consider enqueued statements
-			//if(statement->enqueued())
-			//{
-				statement->enqueued(false);
-				enqueue(statement);
-				ground_();
-			//}
+			statement->init(this, VarSet());
 		}
+		ground_();
 	}
-	initialized_ = true;
-	//debug_ = false;
 	output()->endGround();
 	// TODO: remove that
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
 		dom.second->fix();
 	}
-
 }
 
 void Grounder::ground_()
@@ -224,6 +204,15 @@ void Grounder::ground_()
 		Groundable *g = queue_.front();
 		queue_.pop_front();
 		g->enqueued(false);
+		#pragma message "re-add verbose output"
+		/*
+		if(debug_)
+		{
+			std::cerr << "% ";
+			g->print(this, std::cerr);
+			std::cerr << std::endl;
+		}
+		*/
 		g->ground(this);
 	}
 }
@@ -246,12 +235,6 @@ void Grounder::addToComponent(Statement *stm)
 {
 	stm->check(this);
 	components_.back().statements.push_back(stm);
-}
-
-void Grounder::endComponent(bool positive)
-{
-	(void)positive;
-	//foreach(Domain *dom, components_.back().domains) dom->complete(true);
 }
 
 uint32_t Grounder::createVar()

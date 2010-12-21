@@ -172,8 +172,6 @@ Node *StmNode::next()
 
 void StmNode::addToComponent(Grounder *g)
 {
-	// TODO: nested groundables have to be added to the component too
-	//       this should be easily possible with a visitor
 	g->addToComponent(stm_);
 	foreach(PredNode *pred, provide_)
 	{
@@ -289,6 +287,7 @@ public:
 	Tarjan();
 	void component(Grounder *g, Node *root);
 	void start(Grounder *g, Node *n);
+	void checkDom(Grounder *g, uint32_t i, Node *x, Node *y);
 private:
 	uint32_t     index_;
 	ComponentVec components_;
@@ -300,6 +299,19 @@ Tarjan::Tarjan()
 	: index_(0)
 	, components_(0)
 {
+}
+
+void Tarjan::checkDom(Grounder *g, uint32_t i, Node *x, Node *y)
+{
+	if(x->type(i) == Node::DOM)
+	{
+		std::ostringstream oss;
+		x->print(g, oss);
+		std::string stmStr = oss.str();
+		oss.str("");
+		y->print(g, oss);
+		throw UnstratifiedException(StrLoc(g, x->loc()), stmStr, StrLoc(g, y->loc()), oss.str());
+	}
 }
 
 void Tarjan::component(Grounder *g, Node *root)
@@ -323,15 +335,7 @@ void Tarjan::component(Grounder *g, Node *root)
 				if(!components_[y->component()])
 				{
 					components_.back() = false;
-					if(x->type(i) == StmNode::DOM)
-					{
-						std::ostringstream oss;
-						x->print(g, oss);
-						std::string stmStr = oss.str();
-						oss.str("");
-						y->print(g, oss);
-						throw UnstratifiedException(StrLoc(g, x->loc()), stmStr, StrLoc(g, y->loc()), oss.str());
-					}
+					checkDom(g, i, x, y);
 				}
 			}
 			else
@@ -344,19 +348,10 @@ void Tarjan::component(Grounder *g, Node *root)
 					y->addToComponent(g);
 				}
 				if(x->type(i) == Node::NEG) components_.back() = false;
-				if(x->type(i) == Node::DOM)
-				{
-					std::ostringstream oss;
-					x->print(g, oss);
-					std::string stmStr = oss.str();
-					oss.str("");
-					y->print(g, oss);
-					throw UnstratifiedException(StrLoc(g, x->loc()), stmStr, StrLoc(g, y->loc()), oss.str());
-				}
+				checkDom(g, i, x, y);
 			}
 		}
 	}
-	g->endComponent(components_.back());
 }
 
 void Tarjan::start(Grounder *g, Node *n)
@@ -405,7 +400,7 @@ void Builder::analyze(Grounder *g)
 		{
 			if(!todo.lit->dom()->size())
 			{
-				// TODO: warnings should be communicated in a different way!!!
+				#pragma message "properly handle warning"
 				if(!warned)
 				{
 					std::cerr << "WARNING: predicate cannot match:" << std::endl;
@@ -418,7 +413,6 @@ void Builder::analyze(Grounder *g)
 			todo.lit->complete(true);
 		}
 	}
-	g->endComponent(true);
 	Tarjan t;
 	foreach(StmNode &stm, stmNodes_) t.start(g, &stm);
 	foreach(Todo &todo, todo_)

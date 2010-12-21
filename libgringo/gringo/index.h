@@ -29,6 +29,7 @@ public:
 	virtual void reset() = 0;
 	virtual void finish() = 0;
 	virtual bool hasNew() const = 0;
+	virtual bool init(Grounder* g);
 	virtual ~Index() { }
 };
 
@@ -56,6 +57,13 @@ public:
 private:
 	Lit *lit_;
 };
+
+// ========================= Index =========================
+
+bool inline Index::init(Grounder*)
+{
+	return hasNew();
+}
 
 // ========================= NewOnceIndex =========================
 inline NewOnceIndex::NewOnceIndex()

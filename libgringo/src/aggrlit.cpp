@@ -237,6 +237,7 @@ void CondLit::ground(Grounder *g)
 
 void CondLit::visit(PrgVisitor *visitor)
 {
+	#pragma message "this will be no longer needed in the new aggregate implementation"
 	if(head_->complete() && aggr_->optimizeComplete()) head_->head(false);
 	visitor->visit(head_.get(), false);
 	visitor->visit(weight_.get(), false);
@@ -272,7 +273,6 @@ void CondLit::addDomain(Grounder *g, bool fact)
 
 void CondLit::finish(Grounder *g)
 {
-	head_->finish(g);
 }
 
 void CondLit::init(Grounder *g, const VarSet &b)

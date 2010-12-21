@@ -79,7 +79,7 @@ const Domain::Index &Domain::ArgSet::find(const ValVec::const_iterator &v) const
 	else return invalid;
 }
 
-const Domain::Index &Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
+std::pair<const Domain::Index&, bool> Domain::ArgSet::insert(const ValVec::const_iterator &v, bool fact)
 {
 	Index idx(vals_.size(), fact);
 	vals_.insert(vals_.end(), v, v + arity_);
@@ -89,7 +89,7 @@ const Domain::Index &Domain::ArgSet::insert(const ValVec::const_iterator &v, boo
 		vals_.resize(idx.index);
 		if(fact) res.first->fact = fact;
 	}
-	return *res.first;
+	return std::make_pair(*res.first, res.second);
 }
 
 void Domain::ArgSet::extend(const ArgSet &other)
@@ -116,12 +116,13 @@ const Domain::Index &Domain::find(const ValVec::const_iterator &v) const
 	return vals_.find(v);
 }
 
-void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
+bool Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 {
 	int32_t offset;
 	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
 	{
-		uint32_t pos = vals_.insert(v, fact);
+		std::pair<const Index&,bool> res = vals_.insert(v, fact);
+		uint32_t pos = res.first;
 		if(pos < lastInsertPos_)
 		{
 			std::stringstream ss;
@@ -138,17 +139,30 @@ void Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 			}
 			throw AtomRedefinedException(ss.str());
 		}
+		return res.second;
 	}
 	else
 	{
 		valsLarger_.insert( OffsetMap::value_type(offset, ArgSet(arity_)) ).first->second.insert(v, fact);
+		return false;
 	}
 }
 
+bool Domain::extend(Grounder *g, PredIndex *idx, uint32_t offset)
+{
+	bool modified = false;
+	ValVec::const_iterator k = vals_.begin() + arity_ * offset;
+	for(uint32_t i = 0; i < size(); i++, k+= arity_)
+	{
+		modified = idx->extend(g, k) || modified;
+	}
+	return modified;
+}
+
+/*
 void Domain::enqueue(Grounder *g)
 {
 	// TODO: needs rewrite!!!
-	/*
 	uint32_t end = vals_.size();
 	foreach(const PredInfo &info, index_)
 	{
@@ -165,20 +179,22 @@ void Domain::enqueue(Grounder *g)
 			idx->extend(g, k);
 	}
 	new_ = end;
-	*/
 }
+*/
 
+
+
+/*
 void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
 {
 	// TODO: needs rewrite!!!
-	/*
 	ValVec::const_iterator j = vals_.begin();
 	for(uint32_t i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
 	assert(!complete_ || new_ == vals_.size());
 	if(!complete_) { index_.push_back(PredInfo(idx, gr)); }
 	else { completeIndex_.push_back(idx); }
-	*/
 }
+*/
 
 void Domain::addOffset(int32_t offset)
 {

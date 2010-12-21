@@ -31,16 +31,14 @@ Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
 	, head_(head)
 	, body_(body.release())
 	, show_(show)
-	, grounded_(false)
 {
 }
 
 void Display::ground(Grounder *g)
 {
 	if(inst_.get()) inst_->ground(g);
-	else if(!grounded_)
+	else
 	{
-		grounded_ = true;
 		head_->match(g);
 		grounded(g);
 	}

@@ -69,7 +69,6 @@ Optimize::Optimize(const Loc &loc, PredLit *head, Term *weight, Term *prio, LitP
 	, body_(body.release())
 	, maximize_(maximize)
 	, set_(false)
-	, grounded_(false)
 {
 }
 
@@ -92,12 +91,7 @@ void Optimize::ground(Grounder *g)
 		inst_->reset();
 		inst_->ground(g);
 	}
-	else if(!grounded_)
-	{
-		grounded_ = true;
-		if(head_->match(g)) grounded(g);
-	}
-	else return;
+	else if(head_->match(g)) { grounded(g); }
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin(maximize_, set_);
 	size_t p = 0;

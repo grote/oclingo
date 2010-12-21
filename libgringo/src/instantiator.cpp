@@ -20,8 +20,10 @@
 #include <gringo/index.h>
 #include <gringo/grounder.h>
 
-Instantiator::Instantiator(Groundable *g) :
-	groundable_(g)
+Instantiator::Instantiator(Groundable *g)
+	: groundable_(g)
+	, new_(1, false)
+	, grounded_(g)
 {
 }
 
@@ -29,72 +31,74 @@ void Instantiator::append(Index *i)
 {
 	assert(i);
 	indices_.push_back(i);
-	new_.push_back(0);
+	new_.push_back(false);
 }
 
 void Instantiator::ground(Grounder *g)
 {
-	typedef std::vector<bool> BoolVec;
-
-	assert(indices_.size() > 0);
-	int numNew = 0;
-	for(IndexPtrVec::size_type i = 0; i < indices_.size(); ++i)
+	int lastNew = -1;
+	int numNew  = !grounded_;
+	
+	for(int i = 0; i < (int)indices_.size(); ++i)
 	{
-		new_[i] = 2 * indices_[i].hasNew();
-		if(new_[i]) ++numNew;
+		if(indices_[i].hasNew()) { lastNew = i; }
+		new_[i] = false;
 	}
-	BoolVec ord(new_.size(), true);
-	int l = 0;
-	std::pair<bool, bool> matched(true, false);
-	while(l >= 0)
+	
+	int l                         = -1;
+	std::pair<bool, bool> matched = std::make_pair(true, false);
+	
+	for(;;)
 	{
-		if(matched.first)
-			matched = indices_[l].firstMatch(g, l);
-		else
+		if(!matched.first || (!numNew && l > lastNew))
+		{
+			numNew -= new_[l];
+			if(--l == -1) { break; }
 			matched = indices_[l].nextMatch(g, l);
-		if(matched.first && !matched.second && new_[l] == 2)
-		{
-			new_[l] = 1;
-			--numNew;
+			new_[l] = matched.second;
+			numNew += matched.second;
 		}
-		assert(ord[l] || !matched.second);
-		if(!matched.second)
-			ord[l] = false;
-		if(matched.first && numNew > 0)
+		else
 		{
-			if(l + 1 == static_cast<int>(indices_.size()))
+			if(++l == static_cast<int>(indices_.size()))
 			{
-				if(!groundable_->grounded(g)) break;
+				if(!groundable_->grounded(g)) { break; }
 				matched.first = false;
 			}
 			else
-				++l;
-		}
-		else
-		{
-			ord[l] = true;
-			matched.first = false;
-			if(new_[l] == 1)
 			{
-				++numNew;
-				new_[l] = 2;
+				matched = indices_[l].firstMatch(g, l);
+				new_[l] = matched.second;
+				numNew += matched.second;
 			}
-			--l;
 		}
 	}
 	foreach(uint32_t var, groundable_->vars())
 		g->unbind(var);
 	foreach(Index &idx, indices_)
 		idx.finish();
+	grounded_ = true;
 }
 
 void Instantiator::reset()
 {
-	foreach(Index &index, indices_) index.reset();
-	
+	#pragma message "remove this function"
+	foreach(Index &index, indices_) { index.reset(); }
+}
+
+void Instantiator::enqueue(Grounder *g)
+{
+	// NOTE: this can only happen for the empty integrity constraint
+	if(!grounded_ && indices_.empty()) { g->enqueue(groundable_); }
+	else
+	{
+		foreach(Index &idx, indices_)
+		{
+			if(idx.init(g)) { g->enqueue(groundable_); }
+		}
+	}
 }
 
 Instantiator::~Instantiator()
 {
 }
-
