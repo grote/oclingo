@@ -59,7 +59,7 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool inc);
+	Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc);
 	int lex();
 	int lex_compat();
 	std::string errorToken();
@@ -91,6 +91,10 @@ private:
 
 private:
 	Grounder       *g_;
+	Module         *current_;
+	Module         *base_;
+	Module         *cumulative_;
+	Module         *volatile_;
 	IncConfig      &config_;
 	Streams        &streams_;
 	void           *parser_;
@@ -106,8 +110,7 @@ private:
 	PredLitSetPtr   optimizeUniques_;
 	// parsing the incremental part
 	bool            inc_;
-	iPart           iPart_;
-	iPart           invPart_;
+	Module         *invCurrent_;
 	uint32_t        iId_;
 	uint32_t        iVar_;
 	// parsing const directives

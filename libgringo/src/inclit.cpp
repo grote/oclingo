@@ -42,12 +42,9 @@ bool IncLit::match(Grounder *grounder)
 
 bool IncLit::isFalse(Grounder *g)
 {
-	if(type_ == BASE)            { return !config_.curBase(); }
-	else if(type_ == UNBOUND)    { return !config_.curCumulative(); }
 	Val v = var_->val(g);
-	if(v.type != Val::NUM)       { return true; }
-	else if(type_ == CUMULATIVE) { return !config_.curCumulative() || v.num != config_.incStep; }
-	else                         { return !config_.curVolatile() || v.num != config_.incStep; }
+	if(v.type != Val::NUM) { return true; }
+	else                   { return v.num != config_.incStep; }
 }
 
 namespace
@@ -55,7 +52,7 @@ namespace
 	class IncIndex : public Index
 	{
 	public:
-		IncIndex(IncLit *lit, bool bind);
+		IncIndex(IncLit *lit);
 		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
 		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
 		void reset();
@@ -64,18 +61,12 @@ namespace
 	private:
 		IncLit *lit_;
 		int     finished_;
-		bool    bind_;
 	};
 
-	IncIndex::IncIndex(IncLit *lit, bool bind)
+	IncIndex::IncIndex(IncLit *lit)
 		: lit_(lit)
-		, bind_(bind)
 	{
-		if(lit_->type() == IncLit::VOLATILE || lit_->type() == IncLit::CUMULATIVE)
-		{
-			finished_ = std::numeric_limits<int>::max();
-		}
-		else { finished_ = false; }
+		finished_ = std::numeric_limits<int>::max();
 	}
 
 	void IncIndex::reset()
@@ -87,61 +78,18 @@ namespace
 
 	void IncIndex::finish()
 	{
-		if(lit_->type() == IncLit::VOLATILE)
-		{
-			if(lit_->config().curVolatile()) { finished_ = lit_->config().incStep; }
-		}
-		else if(lit_->type() == IncLit::CUMULATIVE)
-		{
-			if(lit_->config().curCumulative()) { finished_ = lit_->config().incStep; }
-		}
-		else if(lit_->type() == IncLit::UNBOUND)
-		{
-			if(lit_->config().curCumulative()) { finished_ = true; }
-		}
-		else
-		{
-			if(lit_->config().curBase()) {  finished_ = true; }
-		}
+		finished_ = lit_->config().incStep;
 	}
 
 	bool IncIndex::hasNew() const
 	{
-		switch(lit_->type())
-		{
-			case IncLit::CUMULATIVE:
-				return finished_ != lit_->config().incStep && lit_->config().curCumulative();
-			case IncLit::VOLATILE:
-				return finished_ != lit_->config().incStep && lit_->config().curVolatile();
-			case IncLit::UNBOUND:
-				return !finished_ && lit_->config().curCumulative();
-			default:
-				return !finished_ && lit_->config().curBase();
-		}
+		return finished_ != lit_->config().incStep;
 	}
 
 	std::pair<bool,bool> IncIndex::firstMatch(Grounder *grounder, int binder)
 	{
-		if(bind_)
-		{
-			assert(lit_->type() != IncLit::UNBOUND);
-			assert(lit_->type() != IncLit::BASE);
-			if
-			(
-				(lit_->config().curVolatile()   && lit_->type() == IncLit::VOLATILE) ||
-				(lit_->config().curCumulative() && lit_->type() == IncLit::CUMULATIVE)
-			)
-			{
-				grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
-				return std::make_pair(true, hasNew());
-			}
-			else { return std::make_pair(false, false); }
-		}
-		else
-		{
-			if(lit_->match(grounder)) { return std::make_pair(true, hasNew()); }
-			else                      { return std::make_pair(false, false); }
-		}
+		grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
+		return std::make_pair(true, hasNew());
 	}
 
 	std::pair<bool,bool> IncIndex::nextMatch(Grounder *, int)
@@ -154,9 +102,9 @@ void IncLit::index(Grounder *, Groundable *gr, VarSet &bound)
 {
 	VarSet vars;
 	VarVec bind;
-	if(type_ == VOLATILE || type_ == CUMULATIVE) { var_->vars(vars); }
+	var_->vars(vars);
 	std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_insert_iterator<VarVec>(bind));
-	gr->instantiator()->append(new IncIndex(this, bind.size() > 0));
+	gr->instantiator()->append(new IncIndex(this));
 	bound.insert(bind.begin(), bind.end());
 }
 
@@ -171,26 +119,13 @@ void IncLit::accept(::Printer *v)
 
 void IncLit::visit(PrgVisitor *v)
 {
-	if(type_ == VOLATILE || type_ == CUMULATIVE)
-	{
-		v->visit(var_.get(), true);
-	}
+	v->visit(var_.get(), true);
 }
 
 void IncLit::print(Storage *sto, std::ostream &out) const
 {
 	switch(type_)
 	{
-		case BASE:
-		{
-			out << "#base";
-			break;
-		}
-		case UNBOUND:
-		{
-			out << "#unbound";
-			break;
-		}
 		case CUMULATIVE:
 		{
 			out << "#cumulative(";
@@ -210,12 +145,6 @@ void IncLit::print(Storage *sto, std::ostream &out) const
 
 void IncLit::normalize(Grounder *, Expander *)
 {
-}
-
-void IncLit::bind()
-{
-	assert(type_ == UNBOUND);
-	type_ = CUMULATIVE;
 }
 
 Lit *IncLit::clone() const

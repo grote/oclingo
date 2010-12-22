@@ -61,20 +61,18 @@ Streams::StreamPtr GringoApp::constStream() const
 void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 {
 	cfg.incStep     = step;
-	cfg.incVolatile = false;
 	if(generic.verbose > 2)
 	{
 		std::cerr << "% grounding cumulative " << cfg.incStep << " ..." << std::endl;
 	}
-	g.ground();
+	g.ground(*cumulative_);
 	if(goal <= step)
 	{
 		if(generic.verbose > 2)
 		{
 			std::cerr << "% grounding volatile " << cfg.incStep << " ..." << std::endl;
 		}
-		cfg.incVolatile = true;
-		g.ground();
+		g.ground(*volatile_);
 	}
 }
 
@@ -84,10 +82,18 @@ void GringoApp::groundBase(Grounder &g, IncConfig &cfg, int start, int end, int 
 	{
 		std::cerr << "% grounding base ..." << std::endl;
 	}
-	cfg.incVolatile = false;
-	g.ground(); // ground the base part
+	g.ground(*base_);
 	goal = std::max(end, goal);
 	for(int i = start; i <= end; i++) { groundStep(g, cfg, i, goal); }
+}
+
+void GringoApp::createModules(Grounder &g)
+{
+	base_       = g.createModule();
+	cumulative_ = g.createModule();
+	volatile_   = g.createModule();
+	volatile_->parent(cumulative_);
+	cumulative_->parent(base_);
 }
 
 int GringoApp::doRun()
@@ -108,7 +114,8 @@ int GringoApp::doRun()
 	{
 		IncConfig config;
 		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config), gringo.heuristics.heuristic);
-		Parser    p(&g, config, inputStreams, gringo.compat, gringo.ifixed > 0);
+		createModules(g);
+		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
 
 		o->initialize();
 		p.parse();
@@ -128,7 +135,7 @@ ProgramOptions::PosOption GringoApp::getPositionalParser() const
 void GringoApp::handleSignal(int sig)
 {
 	(void)sig;
-	printf("\n*** INTERRUPTED! ***\n");
+	std::printf("\n*** INTERRUPTED! ***\n");
 	_exit(S_UNKNOWN);
 }
 

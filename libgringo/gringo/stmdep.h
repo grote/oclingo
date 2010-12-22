@@ -34,7 +34,7 @@ namespace StmDep
 	public:
 		enum Type { DOM, POS, NEG };
 	public:
-		Node();
+		Node(Module *module);
 		virtual Node *node(uint32_t i) = 0;
 		virtual Type type(uint32_t i) = 0;
 		virtual Node *next() = 0;
@@ -49,7 +49,9 @@ namespace StmDep
 		bool hasComponent() { return component_ > 0; }
 		void component(uint32_t component) { component_ = component + 1; }
 		uint32_t component() const { return component_ - 1; }
+		Module *module() const { return module_; }
 	private:
+		Module  *module_;
 		uint32_t visited_;
 		uint32_t component_;
 	};
@@ -64,16 +66,14 @@ namespace StmDep
 	public:
 		typedef std::vector<Todo*> TodoVec;
 	public:
-		PredNode();
+		PredNode(Module *module, PredLit *pred);
 		Node *node(uint32_t i);
 		Type type(uint32_t i) { (void)i; return POS; }
 		Node *next();
 		bool root();
-		void pred(PredLit *pred) { pred_ = pred; }
 		void depend(StmNode *stm);
 		bool edbFact() const;
 		bool empty() const;
-		bool isNull() const { return pred_ == 0; }
 		PredLit *pred() const { return pred_; }
 		void print(Storage *sto, std::ostream &out) const;
 		const Loc &loc() const;
@@ -93,7 +93,7 @@ namespace StmDep
 		typedef std::vector<std::pair<PredNode*, Type> > DependVec;
 		typedef std::vector<PredNode*> ProvideVec;
 	public:
-		StmNode(Statement *stm);
+		StmNode(Module *module, Statement *stm);
 		Node *node(uint32_t i);
 		Type type(uint32_t i);
 		Node *next();
@@ -131,6 +131,7 @@ namespace StmDep
 		void visit(Lit *lit, bool domain);
 		void visit(Groundable *grd, bool choice);
 		void visit(Statement *stm);
+		void visit(Module *module);
 		void analyze(Grounder *g);
 		void toDot(Grounder *g, std::ostream &out);
 		~Builder();
@@ -142,6 +143,7 @@ namespace StmDep
 		StmNodeVec  stmNodes_;
 		PredNodeMap predNodes_;
 		TodoVec     todo_;
+		Module     *module_;
 	};
 	
 	inline void Node::addToComponent(Grounder *) { }

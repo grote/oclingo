@@ -42,16 +42,19 @@ Parser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigVec 
 {
 }
 
-Parser::Parser(Grounder *g, IncConfig &config, Streams &streams, bool compat, bool inc)
+Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
 	: g_(g)
+	, current_(base)
+	, base_(base)
+	, cumulative_(cum)
+	, volatile_(vol)
 	, config_(config)
 	, streams_(streams)
 	, parser_(parserAlloc(malloc))
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
 	, inc_(inc)
-	, iPart_(IPART_BASE)
-	, invPart_(IPART_BASE)
+	, invCurrent_(base)
 	, iId_(0)
 	, iVar_(0)
 	, compat_(compat)
@@ -368,29 +371,46 @@ void Parser::parse()
 			LitPtrVec body;
 			body.push_back(new PredLit(loc, grounder()->domain(pos, val.first.second), t1));
 			body.push_back(new PredLit(loc, grounder()->domain(val.first.first, val.first.second), t2));
-			grounder()->add(new Rule(loc, 0, body));
+			base_->add(g_, new Rule(loc, 0, body));
 		}
 	}
 }
 
 void Parser::incremental(iPart part, uint32_t index)
 {
-	iPart_ = part;
+	switch(part)
+	{
+		case IPART_BASE:       
+		{
+			current_ = base_;
+			break;
+		}
+		case IPART_CUMULATIVE:
+		{
+			current_ = cumulative_;
+			break;
+		}
+		case IPART_VOLATILE:
+		{
+			current_ = volatile_;
+			break;
+		}
+	}
 	iId_   = index;
-	if(part != IPART_BASE) { iVar_ = g_->index("#I"); }
+	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
 void Parser::invPart()
 {
-	assert(iPart_ == IPART_BASE || invPart_ == IPART_BASE);
-	std::swap(iPart_, invPart_);
+	assert(current_ == base_ || invCurrent_ == base_);
+	std::swap(current_, invCurrent_);
 }
 
 Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
 	if(t == Val::ID)
 	{
-		if(iPart_ != IPART_BASE && index == iId_)
+		if(current_ != base_ && index == iId_)
 		{
 			return new VarTerm(loc, iVar_);
 		}
@@ -405,66 +425,6 @@ Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 	{
 		assert(t == Val::STRING);
 		return new ConstTerm(loc, Val::create(Val::STRING, index));
-	}
-}
-
-namespace
-{
-	class IncVarFinder : public PrgVisitor
-	{
-	public:
-		IncVarFinder(uint32_t var);
-		void find(Statement *s);
-
-	private:
-		void visit(VarTerm *var, bool bind);
-		void visit(Term* term, bool bind);
-		void visit(Lit *lit, bool domain);
-		void visit(Groundable *grd, bool choice);
-
-	private:
-		uint32_t var_;
-		bool     found_;
-		IncLit  *incLit_;
-	};
-
-	IncVarFinder::IncVarFinder(uint32_t var)
-		: var_(var)
-		, found_(false)
-		, incLit_(0) 
-	{
-	}
-	
-	void IncVarFinder::find(Statement *s)
-	{
-		s->visit(this);
-		if(found_)
-		{
-			assert(incLit_ && incLit_->type() == IncLit::UNBOUND);
-			incLit_->bind();
-		}
-	}
-	
-	void IncVarFinder::visit(VarTerm *var, bool)      
-	{
-		if(!found_) { found_ = var_ == var->nameId(); }
-	}
-	
-	void IncVarFinder::visit(Term* term, bool bind)
-	{
-		if(!found_) { term->visit(this, bind); }
-	}
-	
-	void IncVarFinder::visit(Lit *lit, bool)
-	{
-		IncLit *incLit = dynamic_cast<IncLit*>(lit);  
-		if(incLit)       { incLit_ = incLit; }
-		else if(!found_) { lit->visit(this); }
-	}
-	
-	void IncVarFinder::visit(Groundable *grd, bool)
-	{
-		if(!found_) { grd->visit(this); }
 	}
 }
 
@@ -528,8 +488,69 @@ Parser::DomStmRng Parser::domainStm(uint32_t var)
 void Parser::add(Statement *s)
 {
 	// we do not need anything else than the base part if we are grounding non-incremental  
-	if(!inc_ && iPart_ != IPART_BASE) { delete s; }
-	else                              { last_.push_back(s); }
+	if(!inc_ && current_ != base_) { delete s; }
+	else                           { last_.push_back(s); }
+}
+
+namespace
+{
+	class IncVarAdder : public PrgVisitor
+	{
+	public:
+		IncVarAdder(uint32_t var);
+		void add(Statement *s, IncConfig &config);
+
+	private:
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(Lit *lit, bool domain);
+		void visit(Groundable *grd, bool choice);
+
+	private:
+		uint32_t var_;
+		bool     found_;
+		Loc      loc_;
+		
+	};
+
+	IncVarAdder::IncVarAdder(uint32_t var)
+		: var_(var)
+		, found_(false)
+	{
+	}
+	
+	void IncVarAdder::add(Statement *s, IncConfig &config)
+	{
+		s->visit(this);
+		if(found_)
+		{
+			s->append(new IncLit(loc_, config, IncLit::CUMULATIVE, var_));
+		}
+	}
+	
+	void IncVarAdder::visit(VarTerm *var, bool)      
+	{
+		if(!found_ && var_ == var->nameId()) 
+		{
+			found_ = true;
+			loc_   = var->loc();
+		}
+	}
+	
+	void IncVarAdder::visit(Term* term, bool bind)
+	{
+		if(!found_) { term->visit(this, bind); }
+	}
+	
+	void IncVarAdder::visit(Lit *lit, bool)
+	{
+		if(!found_) { lit->visit(this); }
+	}
+	
+	void IncVarAdder::visit(Groundable *grd, bool)
+	{
+		if(!found_) { grd->visit(this); }
+	}
 }
 
 void Parser::add()
@@ -537,31 +558,23 @@ void Parser::add()
 	while(!last_.empty())
 	{
 		bool display = dynamic_cast<Display*>(&last_.back()); 
-		// always add incremental literal to non base statements
-		if(!display && iPart_ == IPART_CUMULATIVE)    { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::UNBOUND, iVar_)); }
-		else if(!display && iPart_ == IPART_VOLATILE) { last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); }
-		StatementRng rng(grounder()->add(last_.pop_back().release()));
+		if(!display && current_ == volatile_)
+		{
+			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); 
+		}
+		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
 			domAdder.add(&statement);
 		}
-		// add incremental literal to non-edb base statements
-		// optimization: if no incremental grounding requested this can be skipped
-		if(!display && inc_ && iPart_ == IPART_BASE)
-		{
-			foreach(Statement &statement, rng)
-			{
-				statement.append(new IncLit(statement.loc(), config_, IncLit::BASE, iVar_));
-			}
-		}
 		// bind the incremetal literal if the incremental constant occurs in the statement
-		if(!display && iPart_ == IPART_CUMULATIVE)
+		if(!display && current_ == cumulative_)
 		{
 			foreach(Statement &statement, rng)
 			{
-				IncVarFinder finder(iVar_);
-				finder.find(&statement);
+				IncVarAdder adder(iVar_);
+				adder.add(&statement, config_);
 			}
 		}
 	}

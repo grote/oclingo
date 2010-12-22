@@ -21,56 +21,13 @@
 #include <gringo/printer.h>
 #include <gringo/lit.h>
 
-/********************************************************
- * TODO: i am not satisfied with the way the
- * (incremental) grounding algorithm works right now
- * the semi-naive evaluation itself should be used to trigger grounding
- * this carries over to changing the overall grounding algorithm
- * the domains associated to indices should guide the grounding
- * at no point the ground method of a rule should be called directly
- * algorithm:
- * loop over components:
- *   loop over domains in component:
- *     if domain changed:
- *       domain should enqueue rules from active component
- * datastructures:
- *   abstract from domain
- *   incremental literals have a special associated domain
- *   all rules need to be grounded initially
- *     pseudo domain that enqueues every rule once
- *     the instantiator initially ignores hasNew values
- *       it is implicit that first match is new
- *       no need to implement this function for match only
- *       and related indices anymore
- */
-
 struct IncConfig
 {
 	int  incStep;
-	bool incVolatile;
 
 	IncConfig()
 		: incStep(std::numeric_limits<int>::min())
-		, incVolatile(false)
 	{ }
-
-	bool curBase() const
-	{
-		assert(incStep != std::numeric_limits<int>::min() || !incVolatile);
-		return incStep == std::numeric_limits<int>::min();
-	}
-
-	bool curCumulative() const
-	{
-		return !incVolatile && !curBase();
-	}
-
-	bool curVolatile() const
-	{
-		assert(!incVolatile || !curBase());
-		return incVolatile;
-	}
-
 };
 
 class IncLit : public Lit
@@ -82,7 +39,7 @@ public:
 		virtual void print() { }
 		virtual ~Printer() { }
 	};
-	enum Type { BASE, UNBOUND, CUMULATIVE, VOLATILE };
+	enum Type { CUMULATIVE, VOLATILE };
 
 public:
 	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId);
@@ -95,7 +52,6 @@ public:
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
-	void bind();
 	double score(Grounder *g, VarSet &bound) const;
 	Lit *clone() const;
 	const IncConfig &config() const { return config_; }

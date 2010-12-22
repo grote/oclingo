@@ -64,8 +64,6 @@ private:
 public: // added by grounder
 	//! Number of SCCs
 	size_t numScc;
-	//! Number of non-trivial SCCs (|SCC| > 1)
-	size_t numSccNonTrivial;
 	//! Number of predicates
 	size_t numPred;
 	//! Number of visible predicates

@@ -31,12 +31,7 @@ struct TermExpansion
 	virtual void expand(Grounder *g);
 	virtual ~TermExpansion();
 };
-
 typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
-
-inline bool TermExpansion::limit(Grounder *, const ValRng &, int32_t &) const { return false; }
-inline void TermExpansion::expand(Grounder *) { }
-inline TermExpansion::~TermExpansion() { }
 
 struct TermDepthExpansion : public TermExpansion
 {
@@ -49,11 +44,10 @@ struct TermDepthExpansion : public TermExpansion
 	int        start;
 };
 
-class Grounder : public Storage, public Context
+class Module
 {
+	friend class Grounder;
 private:
-	class LuaImpl;
-	typedef std::deque<Groundable*> GroundableVec;
 	struct Component
 	{
 		typedef std::vector<Statement*> StatementVec;
@@ -61,41 +55,79 @@ private:
 		StatementVec statements;
 	};
 	typedef std::vector<Component> ComponentVec;
+	typedef std::vector<Module*> ModuleVec;
+public:
+	StatementRng add(Grounder *g, Statement *s, bool optimizeEdb = true);
+	void beginComponent();
+	void addToComponent(Grounder *g, Statement *stm);
+	void endComponent();
+	bool compatible(Module *module);
+	void parent(Module *module);
+	StatementPtrVec &statements();
+	~Module();
+private:
+	bool reachable(Module *module);
+private:
+	ModuleVec        parent_;
+	ComponentVec     components_;
+	StatementPtrVec  statements_;
+};
+
+class Grounder : public Storage, public Context
+{
+	friend class Module;
+private:
+	class LuaImpl;
+	typedef std::deque<Groundable*> GroundableVec;
+	typedef boost::ptr_vector<Module> ModuleVec;
 
 public:
 	Grounder(Output *out, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic);
 	void analyze(const std::string &depGraph = "", bool stats = false);
+	void ground(Module &module);
+	void enqueue(Groundable *g);
+	void externalStm(uint32_t nameId, uint32_t arity);
+	uint32_t createVar();
+	TermExpansion &termExpansion() const;
+	const BodyOrderHeuristic& heuristic() const;
+	Module *createModule();
+	void addInternal(Statement *stm);
+	
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
 	int luaIndex(const LuaTerm *term);
 	lua_State *luaState();
 	void luaPushVal(const Val &val);
-	void ground();
-	StatementRng add(Statement *s);
-	void addInternal(Statement *stm);
-	void enqueue(Groundable *g);
-	void beginComponent();
-	void addToComponent(Statement *stm);
-	void endComponent();
-	void externalStm(uint32_t nameId, uint32_t arity);
-	uint32_t createVar();
-	TermExpansion &termExpansion() const;
-	const BodyOrderHeuristic& heuristic() const;
+	
 	~Grounder();
-
 private:
 	void ground_();
+	void setModule(Module *module, bool optimizeEdb);
 
 private:
-	StatementPtrVec        statements_;
+	ModuleVec              modules_;
 	GroundableVec          queue_;
-	ComponentVec           components_;
 	uint32_t               internal_;
 	bool                   debug_;
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
 	TermExpansionPtr       termExpansion_;
 	BodyOrderHeuristicPtr  heuristic_;
+	Module                *current_;
+	bool                   optimizeEdb_;
 };
+
+// ========================== TermExpansion ==========================
+
+inline bool TermExpansion::limit(Grounder *, const ValRng &, int32_t &) const { return false; }
+inline void TermExpansion::expand(Grounder *) { }
+inline TermExpansion::~TermExpansion() { }
+
+// ========================== Module ==========================
+
+inline bool Module::compatible(Module *module) { return module->reachable(this); }
+inline StatementPtrVec &Module::statements() { return statements_; }
+
+// ========================== Grounder ==========================
 
 inline TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }

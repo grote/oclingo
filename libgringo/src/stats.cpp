@@ -30,7 +30,7 @@ Stats::Stats()
 	, numAggr_(0), numAggrCount_(0), numAggrSum_(0), numAggrAvg_(0), numAggrEven_(0), numAggrMinmax_(0)
 	, numLit_(0), numLitRel_(0)
 	, numTerm_(0), numTermVar_(0), numTermRestr_(0), numTermConst_(0)
-	, numScc(0), numSccNonTrivial(0)
+	, numScc(0)
 	, numPred(0), numPredVisible(0), avgPredParams(0.0), numPredPos_(0), numPredNeg_(0), numPredAggr_(0)
 	, integrityConstraint_(false), inAggregate_(false)
 {
@@ -118,7 +118,6 @@ void Stats::print(std::ostream &out)
 
 	// dependency graph
 	out << "components              : " << std::setw(5) << numScc << std::endl;
-	out << " non-trivial            : " << std::setw(5) << numSccNonTrivial << std::endl << std::endl;
 
 	// predicates
 	out << "predicates              : " << std::setw(5) << numPred << std::endl;

@@ -30,13 +30,18 @@ public:
 	static GringoApp& instance();
 	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
 	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
+	void createModules(Grounder &g);
 
 private:
 	GringoApp(const GringoApp&);
 	const GringoApp& operator=(const GringoApp&);
-
+	
 protected:
-	GringoApp() {}
+	GringoApp()
+		: base_(0)
+		, cumulative_(0)
+		, volatile_(0)
+	{ }
 	Output *output() const;
 	/** returns a stream of constants provided through the command-line.
 	  * \returns input stream containing the constant definitions in ASP
@@ -63,4 +68,8 @@ protected:
 
 public:
 	GringoOptions gringo;
+	Module *base_;
+	Module *cumulative_;
+	Module *volatile_;
+
 };

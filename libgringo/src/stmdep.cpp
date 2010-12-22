@@ -55,14 +55,16 @@ Remember<T>::~Remember()
 
 }
 
-Node::Node()
-	: visited_(0)
+Node::Node(Module *module)
+	: module_(module)
+	, visited_(0)
 	, component_(0)
 {
 }
 
-PredNode::PredNode()
-	: pred_(0)
+PredNode::PredNode(Module *module, PredLit *pred)
+	: Node(module)
+	, pred_(pred)
 	, next_(0)
 { }
 
@@ -103,25 +105,21 @@ bool PredNode::root()
 
 bool PredNode::edbFact() const
 {
-	assert(!isNull());
 	return depend_.empty();
 }
 
 bool PredNode::empty() const
 {
-	assert(!isNull());
 	return pred_->dom()->size() == 0;
 }
 
 void PredNode::print(Storage *sto, std::ostream &out) const
 {
-	assert(!isNull());
 	pred_->print(sto, out);
 }
 
 const Loc &PredNode::loc() const
 {
-	assert(!isNull());
 	return pred_->loc();
 }
 
@@ -136,8 +134,9 @@ PredNode::TodoVec &PredNode::provide()
 	return provide_;
 }
 
-StmNode::StmNode(Statement *stm)
-	: stm_(stm)
+StmNode::StmNode(Module *module, Statement *stm)
+	: Node(module)
+	, stm_(stm)
 	, next_(0)
 { }
 
@@ -172,7 +171,7 @@ Node *StmNode::next()
 
 void StmNode::addToComponent(Grounder *g)
 {
-	g->addToComponent(stm_);
+	module()->addToComponent(g, stm_);
 	foreach(PredNode *pred, provide_)
 	{
 		foreach(Todo *todo, pred->provide())
@@ -216,6 +215,7 @@ Builder::Builder(Grounder *g)
 	, head_(true)
 	, choice_(false)
 	, predNodes_(g->domains().size())
+	, module_(0)
 {
 }
 
@@ -231,9 +231,8 @@ void Builder::visit(PredLit *pred)
 		else
 		{
 			Domain *dom = pred->dom();
-			PredNode *node = new PredNode();
+			PredNode *node = new PredNode(module_, pred);
 			predNodes_[dom->domId()].push_back(node);
-			node->pred(pred);
 			if(monotonicity_ != Lit::MONOTONE || choice_) { stmNodes_.back().depend(node, Node::NEG); }
 			node->depend(&stmNodes_.back());
 		}
@@ -271,8 +270,15 @@ void Builder::visit(Groundable *grd, bool choice)
 void Builder::visit(Statement *stm)
 {
 	choice_ = stm->choice();
-	stmNodes_.push_back(new StmNode(stm));
+	stmNodes_.push_back(new StmNode(module_, stm));
 	stm->visit(this);
+}
+
+void Builder::visit(Module *module)
+{
+	module_ = module;
+	foreach(Statement &stm, module->statements()) { visit(&stm); }
+	module_ = 0;
 }
 
 namespace
@@ -316,11 +322,11 @@ void Tarjan::checkDom(Grounder *g, uint32_t i, Node *x, Node *y)
 
 void Tarjan::component(Grounder *g, Node *root)
 {
-	g->beginComponent();
 	uint32_t component = components_.size();
 	components_.push_back(true);
 	sccStack_.push_back(root);
 	assert(!root->hasComponent());
+	root->module()->beginComponent();
 	root->component(component);
 	root->addToComponent(g);
 	while(!sccStack_.empty())
@@ -343,6 +349,7 @@ void Tarjan::component(Grounder *g, Node *root)
 				assert(y->visited() >= root->visited());
 				if(!y->hasComponent())
 				{
+					assert(y->module() == root->module());
 					y->component(component);
 					sccStack_.push_back(y);
 					y->addToComponent(g);
@@ -352,7 +359,7 @@ void Tarjan::component(Grounder *g, Node *root)
 			}
 		}
 	}
-	g->endComponent();
+	root->module()->endComponent();
 }
 
 void Tarjan::start(Grounder *g, Node *n)
@@ -388,10 +395,9 @@ void Builder::analyze(Grounder *g)
 		bool hasInput = false;
 		foreach(PredNode &node, predNodes_[todo.lit->dom()->domId()])
 		{
-			if(node.pred()->compatible(todo.lit))
+			if(node.module()->compatible(todo.stm->module()) && node.pred()->compatible(todo.lit))
 			{
 				node.provide(todo);
-				// TODO: need module check
 				todo.stm->depend(&node, todo.type);
 				hasInput = true;
 			}
@@ -455,14 +461,11 @@ void Builder::toDot(Grounder *g, std::ostream &out)
 	{
 		foreach(PredNode &pred, preds)
 		{
-			if(!pred.isNull())
-			{
-				int id = stmMap.size() + predMap.size();
-				predMap[&pred] = id;
-				out << id << "[label=\"";
-				pred.print(g, out);
-				out << "\", shape=ellipse]\n";
-			}
+			int id = stmMap.size() + predMap.size();
+			predMap[&pred] = id;
+			out << id << "[label=\"";
+			pred.print(g, out);
+			out << "\", shape=ellipse]\n";
 		}
 	}
 	foreach(StmNode &stm, stmNodes_)

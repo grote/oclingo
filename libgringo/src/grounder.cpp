@@ -28,6 +28,8 @@
 #include <gringo/inclit.h>
 #include <gringo/predlit.h>
 
+// ========================== LuaImpl ==========================
+
 #ifdef WITH_LUA
 #	include <lua_impl.h>
 #else
@@ -45,6 +47,8 @@ public:
 
 #endif
 
+// ========================== TermDepthExpansion ==========================
+
 TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 	: config(config)
 	, start(config.incStep)
@@ -54,19 +58,16 @@ TermDepthExpansion::TermDepthExpansion(IncConfig &config)
 bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
 {
 	bool found = false;
-	if(!config.curBase())
+	offset = 0;
+	foreach(const Val &val, rng)
 	{
-		offset = 0;
-		foreach(const Val &val, rng)
+		if ( val.type == Val::FUNC )
 		{
-			if ( val.type == Val::FUNC )
+			int32_t depth = g->func(val.index).getDepth();
+			if(depth >= config.incStep)
 			{
-				int32_t depth = g->func(val.index).getDepth();
-				if(depth >= config.incStep)
-				{
-					if(offset < depth) { offset = depth; }
-					found = true;
-				}
+				if(offset < depth) { offset = depth; }
+				found = true;
 			}
 		}
 	}
@@ -88,6 +89,57 @@ TermDepthExpansion::~TermDepthExpansion()
 {
 }
 
+// ========================== Module ==========================
+
+StatementRng Module::add(Grounder *g, Statement *s, bool optimizeEdb)
+{
+	size_t offset = statements_.size();
+	g->setModule(this, optimizeEdb);
+	g->addInternal(s);
+	g->setModule(0, true);
+	return StatementRng(statements_.begin() + offset, statements_.end());
+}
+
+void Module::beginComponent()
+{
+	components_.push_back(Component());
+}
+
+void Module::addToComponent(Grounder *g, Statement *stm)
+{
+	stm->check(g);
+	components_.back().statements.push_back(stm);
+}
+
+void Module::endComponent()
+{
+	if(components_.back().statements.empty())
+	{
+		components_.pop_back();
+	}
+}
+
+void Module::parent(Module *module)
+{
+	assert(!module->reachable(this));
+	parent_.push_back(module);
+}
+
+bool Module::reachable(Module *module)
+{
+	if(module == this) { return true; }
+	foreach(Module *parent, parent_) 
+	{
+		if(parent->reachable(module)) { return true; }
+	}
+	return false;
+}
+
+Module::~Module()
+{
+}
+
+// ========================== Grounder ==========================
 
 Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic)
 	: Storage(output)
@@ -96,6 +148,8 @@ Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp, BodyOrderHe
 	, luaImpl_(new LuaImpl(this))
 	, termExpansion_(exp)
 	, heuristic_(heuristic)
+	, current_(0)
+	, optimizeEdb_(true)
 {
 }
 
@@ -124,31 +178,11 @@ void Grounder::luaPushVal(const Val &val)
 	return luaImpl_->pushVal(val);
 }
 
-void Grounder::addInternal(Statement *s)
-{
-	s->normalize(this);
-	if(s->edbFact())
-	{
-		s->ground(this);
-		delete s;
-		stats_.addFact();
-	}
-	else { statements_.push_back(s); }
-}
-
-StatementRng Grounder::add(Statement *s)
-{
-	size_t offset = statements_.size();
-	internal_     = 0;
-	addInternal(s);
-	return StatementRng(statements_.begin() + offset, statements_.end());
-}
-
 void Grounder::analyze(const std::string &depGraph, bool stats)
 {
 	// build dependency graph
 	StmDep::Builder prgDep(this);
-	foreach(Statement &s, statements_) prgDep.visit(&s);
+	foreach(Module &module, modules_) { prgDep.visit(&module); }
 	prgDep.analyze(this);
 	if(!depGraph.empty())
 	{
@@ -158,8 +192,12 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 	// generate input statistics
 	if(stats)
 	{
-		foreach(Statement &s, statements_) stats_.visit(&s);
-		stats_.numScc = components_.size();
+		foreach(Module &module, modules_) 
+		{
+			foreach(Statement &s, module.statements()) { stats_.visit(&s); }
+			stats_.numScc+= module.components_.size();
+		}
+		
 		stats_.numPred = domains().size();
 		size_t paramCount = 0;
 		foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
@@ -168,13 +206,11 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 			stats_.numPredVisible += output()->show(dom.second->nameId(),dom.second->arity());
 		}
 		stats_.avgPredParams = (stats_.numPred == 0) ? 0 : paramCount*1.0 / stats_.numPred;
-
-		stats_.numSccNonTrivial = components_.size();
 		stats_.print(std::cerr);
 	}
 }
 
-void Grounder::ground()
+void Grounder::ground(Module &module)
 {
 	/* module wise grounding:
 	 *  - add rules into modules
@@ -189,7 +225,7 @@ void Grounder::ground()
 	 *  - need to propagate false atoms back from clasp
 	 */
 	termExpansion().expand(this);
-	foreach(Component &component, components_)
+	foreach(Module::Component &component, module.components_)
 	{
 		if(debug_)
 		{
@@ -236,25 +272,6 @@ void Grounder::enqueue(Groundable *g)
 	}
 }
 
-void Grounder::beginComponent()
-{
-	components_.push_back(Component());
-}
-
-void Grounder::addToComponent(Statement *stm)
-{
-	stm->check(this);
-	components_.back().statements.push_back(stm);
-}
-
-void Grounder::endComponent()
-{
-	if(components_.back().statements.empty())
-	{
-		components_.pop_back();
-	}
-}
-
 uint32_t Grounder::createVar()
 {
 	std::ostringstream oss;
@@ -272,6 +289,31 @@ void Grounder::externalStm(uint32_t nameId, uint32_t arity)
 const BodyOrderHeuristic& Grounder::heuristic() const
 {
 	return *heuristic_;
+}
+
+void Grounder::addInternal(Statement *s)
+{
+	s->normalize(this);
+	if(optimizeEdb_ && s->edbFact())
+	{
+		s->ground(this);
+		delete s;
+		stats_.addFact();
+	}
+	else { current_->statements_.push_back(s); }
+}
+
+void Grounder::setModule(Module *module, bool optimizeEdb)
+{
+	internal_    = 0;
+	optimizeEdb_ = optimizeEdb;
+	current_     = module;
+}
+
+Module *Grounder::createModule()
+{
+	modules_.push_back(new Module());
+	return &modules_.back();
 }
 
 Grounder::~Grounder()
