@@ -420,7 +420,14 @@ void Builder::analyze(Grounder *g)
 		}
 	}
 	Tarjan t;
-	foreach(StmNode &stm, stmNodes_) t.start(g, &stm);
+	foreach(StmNode &stm, stmNodes_) { t.start(g, &stm); }
+	foreach(PredNodeVec &preds, predNodes_)
+	{
+		foreach(PredNode &pred, preds)
+		{
+			t.start(g, &pred);
+		}
+	}
 	foreach(Todo &todo, todo_)
 	{
 		if(todo.provided < todo.stm->component())
@@ -443,31 +450,72 @@ void Builder::analyze(Grounder *g)
 	}
 }
 
+namespace
+{
+	struct ComponentMap
+	{
+		std::vector<StmNode*>  stms;
+		std::vector<PredNode*> preds;
+	};
+	
+	struct ModuleMap
+	{
+		ModuleMap(uint32_t id) : id(id) { }
+		uint32_t id;
+		std::map<uint32_t, ComponentMap> comps;
+	};
+}
+
 void Builder::toDot(Grounder *g, std::ostream &out)
 {
 	std::map<StmNode*,  int>  stmMap;
 	std::map<PredNode*, int> predMap;
 
-	out << "digraph {\n";
-	foreach(StmNode &stm, stmNodes_)
-	{
-		int id = stmMap.size() + predMap.size();
-		stmMap[&stm] = id;
-		out << id << "[label=\"";
-		stm.print(g, out);
-		out << "\", shape=box]\n";
+	std::map<Module*, ModuleMap> modules;
+	
+	foreach(StmNode &stm, stmNodes_) 
+	{ 
+		modules.insert(std::make_pair(stm.module(), ModuleMap(modules.size()))).first->second.comps[stm.component()].stms.push_back(&stm);
 	}
 	foreach(PredNodeVec &preds, predNodes_)
 	{
 		foreach(PredNode &pred, preds)
 		{
-			int id = stmMap.size() + predMap.size();
-			predMap[&pred] = id;
-			out << id << "[label=\"";
-			pred.print(g, out);
-			out << "\", shape=ellipse]\n";
+			modules.insert(std::make_pair(pred.module(), ModuleMap(modules.size()))).first->second.comps[pred.component()].preds.push_back(&pred);
 		}
 	}
+	
+	out << "digraph {\n";
+	typedef std::pair<const Module*, ModuleMap> ModuleId;
+	foreach(const ModuleId &module, modules)
+	{
+		out << "subgraph cluster_module_" << module.second.id << " {\n";
+		typedef std::pair<uint32_t, ComponentMap> CompId;
+		foreach(const CompId &comp, module.second.comps)
+		{
+			out << "subgraph cluster_component_" << comp.first << " {\n";
+			out << "style=dashed\n";
+			foreach(StmNode *stm, comp.second.stms)
+			{
+				int id = stmMap.size() + predMap.size();
+				stmMap[stm] = id;
+				out << id << "[label=\"";
+				stm->print(g, out);
+				out << "\", shape=box]\n";
+			}
+			foreach(PredNode *pred, comp.second.preds)
+			{
+				int id = stmMap.size() + predMap.size();
+				predMap[pred] = id;
+				out << id << "[label=\"";
+				pred->print(g, out);
+				out << "\", shape=ellipse]\n";
+			}
+			out << "}\n";
+		}
+		out << "}\n";
+	}
+	
 	foreach(StmNode &stm, stmNodes_)
 	{
 		typedef std::pair<PredNode*, Node::Type> Pred;
