@@ -26,6 +26,7 @@
 #include <gringo/exceptions.h>
 #include <gringo/luaterm.h>
 #include <gringo/inclit.h>
+#include <gringo/predlit.h>
 
 #ifdef WITH_LUA
 #	include <lua_impl.h>
