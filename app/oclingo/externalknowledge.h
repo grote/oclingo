@@ -37,7 +37,7 @@ public:
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
-//	void addExternal(GroundAtom external, int uid);
+	void addExternal(uint32_t symbol);
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -46,13 +46,14 @@ public:
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
+	void addHead(uint32_t symbol);
 //	bool checkFact(Object* object);
 //	void addNewFact(NS_OUTPUT::Atom* atom, int line);
 //	void addNewAtom(NS_OUTPUT::Object* object, int line);
 //	void addPrematureFact(NS_OUTPUT::Atom* atom);
 	bool needsNewStep();
 	bool controllerNeedsNewStep();
-//	IntSet getAssumptions();
+	VarVec& getAssumptions();
 	void endIteration();
 	void endStep();
 	void forgetExternals(int step);
@@ -74,16 +75,15 @@ private:
 	oClaspOutput* output_;
 	Clasp::Solver* solver_;
 
-	// external fact handling
-/*
-	UidValueMap externals_;
-	UidValueMap externals_old_;
-	std::vector<IntSet> externals_per_step_;
+	// external head handling
+	VarVec heads_;
+	VarVec externals_;
+	VarVec externals_old_;
+/*	std::vector<IntSet> externals_per_step_;
 	IntSet facts_;
 	IntSet facts_old_;
 	std::vector<NS_OUTPUT::Atom*> premature_facts_;
 */
-
 	// socket stuff
 	boost::asio::io_service io_service_;
 	boost::asio::ip::tcp::socket* socket_;

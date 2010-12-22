@@ -55,7 +55,7 @@ public:
 		META_EXTERNAL
 	};
 
-private:
+protected:
 	struct Lit
 	{
 		static Lit create(Type type, uint32_t offset, uint32_t n)
@@ -77,6 +77,7 @@ private:
 	struct Literal : public PredLitRep
 	{
 		friend class GroundProgramBuilder;
+		friend class OnlineParser;
 		Literal() : PredLitRep(false, 0) { }
 	};
 

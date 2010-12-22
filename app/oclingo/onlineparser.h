@@ -66,21 +66,20 @@ public:
 
 	~OnlineParser();
 
-protected:
-	Output    *output_;
-	LitVec     lits_;
-	ValVec     vals_;
-
 private:
 	void parse(std::istream &sin);
+	PredLitRep *predLitRep(GroundProgramBuilder::StackPtr &stack, Lit &a);
 
 private:
 	std::istream* in_;
-	void      *parser_;
-	Token      token_;
-	bool       error_;
-	ErrorVec   errors_;
+	void*         parser_;
+	Token         token_;
+	bool          error_;
+	ErrorVec      errors_;
+	Literal       lit_;
 
+	oClaspOutput* output_;
 	bool terminated_;
+	bool got_step_;
 };
 

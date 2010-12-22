@@ -27,6 +27,7 @@ class oClaspOutput : public iClaspOutput
 public:
 	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj);
 	ExternalKnowledge& getExternalKnowledge();
+	void unfreezeAtom(uint32_t symbol);
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);

@@ -53,7 +53,7 @@ FromGringo<OCLINGO>::FromGringo(ClingoApp<OCLINGO> &a, Streams& str)
 	else
 	{
 		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
-		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
+		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config), app.gringo.heuristics.heuristic));
 		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, inc));
 	}
 }
@@ -65,6 +65,17 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 		a.push_back(i.find(out->getIncAtom())->lit);
+
+		if(app.clingo.mode == OCLINGO) {
+			VarVec& ass = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().getAssumptions();
+
+			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl;
+
+			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
+				std::cerr << "ASSUMING " << *lit << " FALSE" << std::endl;
+				a.push_back(i.find(*lit)->lit);
+			}
+		}
 	}
 }
 

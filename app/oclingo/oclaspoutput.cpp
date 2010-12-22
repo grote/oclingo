@@ -27,16 +27,31 @@ ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
 	return *ext_;
 }
 
+void oClaspOutput::unfreezeAtom(uint32_t symbol) {
+	std::cerr << "UNFREEZE " << symbol << std::endl;
+	std::cerr.flush();
+	b_->unfreeze(symbol);
+}
+
 void oClaspOutput::doFinalize()
 {
+	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
+	{
+		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin(); it != newSymbols_[domId].end(); it++)
+		{
+			std::cerr << "NEW SYMBOL: " << it->symbol << std::endl;
+		}
+	}
+
 	ClaspOutput::doFinalize();
 	printExternalTable();
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
 {
-	std::cerr << "printExternalTableEntry for " << name << "/" << arity;
-	std::cerr << "   Symbol: " << atom.symbol << " Offset: " << atom.offset << std::endl;
+	ext_->addExternal(atom.symbol);
+	std::cerr << "FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
+	b_->freeze(atom.symbol);
 }
 
 /*

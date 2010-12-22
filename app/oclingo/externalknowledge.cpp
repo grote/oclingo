@@ -20,11 +20,11 @@
 #include "oclaspoutput.h"
 #include <gringo/grounder.h>
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver) {
-	grounder_ = grounder;
-	output_ = output;
-	solver_ = solver;
-
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver)
+	: grounder_(grounder)
+	, output_(output)
+	, solver_(solver)
+{
 //	externals_per_step_.push_back(IntSet());
 //	externals_per_step_.push_back(IntSet());
 
@@ -62,12 +62,12 @@ void ExternalKnowledge::removePostPropagator() {
 	solver_->removePost(post_);
 	my_post_ = true;
 }
-/*
-void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
-	externals_.insert(std::make_pair(external, uid));
-	externals_per_step_.at(step_).insert(uid);
+
+void ExternalKnowledge::addExternal(uint32_t symbol) {
+	externals_.push_back(symbol);
+	//externals_per_step_.at(step_).insert(uid);
 }
-*/
+
 void ExternalKnowledge::startSocket(int port) {
 	using boost::asio::ip::tcp;
 
@@ -179,7 +179,13 @@ bool ExternalKnowledge::addInput() {
 	}
 	return true;
 }
+
+void ExternalKnowledge::addHead(uint32_t symbol) {
+	heads_.push_back(symbol);
+}
+
 /*
+// checks if fact-atom has been defined as external
 bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
 	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
 	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
@@ -236,18 +242,17 @@ bool ExternalKnowledge::needsNewStep() {
 bool ExternalKnowledge::controllerNeedsNewStep() {
 	return controller_step_ >= step_;
 }
-/*
-IntSet ExternalKnowledge::getAssumptions() {
-	IntSet result;
 
-	for(UidValueMap::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
-		result.insert(i->second);
-	}
-
-	return result;
+VarVec& ExternalKnowledge::getAssumptions() {
+	//return externals_old_;
+	return externals_;
 }
-*/
+
 void ExternalKnowledge::endIteration() {
+	for(VarVec::iterator i = heads_.begin(); i != heads_.end(); ++i) {
+		output_->unfreezeAtom(*i);
+	}
+	heads_.clear();
 /*
 	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
 		if(eraseUidFromExternals(&externals_old_, *i) > 0) {
@@ -285,14 +290,14 @@ void ExternalKnowledge::endStep() {
 	}
 
 	endIteration();
+
+	externals_old_.swap(externals_);
+	externals_.clear();
 /*
 	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
 		// freeze new external atoms, facts have been deleted already in addNewAtom()
 		output_->printExternalRule(i->second, i->first.first);
 	}
-
-	externals_old_.insert(externals_.begin(), externals_.end());
-	externals_.clear();
 */
 	step_++;
 //	externals_per_step_.push_back(IntSet());

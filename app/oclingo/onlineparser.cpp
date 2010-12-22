@@ -30,12 +30,13 @@ void onlineparser(void *yyp, int yymajor, OnlineParser::Token yyminor, OnlinePar
 
 OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	: GroundProgramBuilder(output)
+	, in_(in)
 	, parser_(onlineparserAlloc(malloc))
 	, error_(false)
+	, output_(output)
 	, terminated_(false)
-{
-	in_ = in;
-}
+	, got_step_(false)
+{ }
 
 OnlineParser::~OnlineParser()
 {
@@ -70,7 +71,6 @@ void OnlineParser::parse(std::istream &in)
 		token = lex();
 		onlineparser(parser_, token, token_, this);
 	}
-	//while(token != 0);
 	// stop at ENDSTEP because socket stream will not return EOI
 	while(token != OPARSER_ENDSTEP);
 }
@@ -83,8 +83,6 @@ void OnlineParser::parse()
 		ParseException ex;
 		foreach(ErrorTok &tok, errors_) {
 			std::cerr << "THROW ERROR!! ";
-			std::cerr << "lits_.size(): " << lits_.size();
-			std::cerr << " vals_.size(): " << vals_.size();
 			ex.add(StrLoc(storage(), tok.first), tok.second);
 		}
 		throw ex;
@@ -97,52 +95,57 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 	addVal(Val::create(Val::ID, index));
 }
 
-
-void OnlineParser::add(Type type, uint32_t n)
+PredLitRep *OnlineParser::predLitRep(GroundProgramBuilder::StackPtr &stack, Lit &a)
 {
+	Domain *dom = storage()->domain(stack->vals[a.offset].index, a.n);
+	lit_.dom_  = dom;
+	lit_.sign_ = a.sign;
+	lit_.vals_.resize(a.n);
+	std::copy(stack->vals.begin() + a.offset + 1, stack->vals.begin() + a.offset + 1 + a.n, lit_.vals_.begin());
+	return &lit_;
+}
+
+void OnlineParser::add(Type type, uint32_t n) {
 	switch(type)
 	{
-		case LIT:
-		{
-			lits_.push_back(Lit::create(type, vals_.size() - n - 1, n));
-			break;
-		}
-		case TERM:
-		{
-			if(n > 0)
-			{
-				ValVec vals;
-				std::copy(vals_.end() - n, vals_.end(), std::back_inserter(vals));
-				vals_.resize(vals_.size() - n);
-				uint32_t name = vals_.back().index;
-				vals_.back()  = Val::create(Val::FUNC, storage()->index(Func(storage(), name, vals)));
-			}
-			break;
-		}
 		case STM_RULE:
-		case STM_CONSTRAINT:
 		{
-			// TODO add Printer
-			/*Rule::Printer *printer = output_->printer<Rule::Printer>();
-			printer->begin();
-			if(type == STM_RULE)             { printLit(printer, lits_.size() - n - 1, true); }
-			printer->endHead();
-			for(uint32_t i = n; i >= 1; i--) { printLit(printer, lits_.size() - i, false); }
-			printer->end();
-			*/GroundProgramBuilder::pop(n + (type == STM_RULE));
+			GroundProgramBuilder::StackPtr stack = get(type, n);
+
+			LitVec &litVec = stack->lits;
+			Lit &lit = litVec.at(litVec.size() - n - 1);
+			uint32_t head = dynamic_cast<LparseConverter*>(output_)->symbol(predLitRep(stack, lit));
+			output_->getExternalKnowledge().addHead(head);
+
+			GroundProgramBuilder::add(stack);
 			break;
 		}
 		default:
-			break;
+		{
+			GroundProgramBuilder::add(type, n);
+		}
 	}
 }
 
+void OnlineParser::setStep(int step) {
+	if(got_step_) {
+		std::stringstream warning_msg;
+		warning_msg << "Warning: New '#step " << step << ".' without prior '#endstep.' encountered. Ignoring....\n";
 
-void OnlineParser::setStep(int step) { (void) step; }
+		std::cerr << warning_msg.str() << std::endl;
+		output_->getExternalKnowledge().sendToClient(warning_msg.str());
+	} else {
+		got_step_ = true;
+		output_->getExternalKnowledge().setControllerStep(step);
+	}
+}
+
 void OnlineParser::forget(int step) { (void) step; }
+
 void OnlineParser::terminate() {
 	terminated_ = true;
 }
+
 void OnlineParser::setCumulative() { }
 void OnlineParser::setVolatile() { }
 
