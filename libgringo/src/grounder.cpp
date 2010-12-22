@@ -212,18 +212,6 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground(Module &module)
 {
-	/* module wise grounding:
-	 *  - add rules into modules
-	 *  - modules depend on each other there has to be some non-cyclic order
-	 *    - base ---> cumulative ------> cumulative -------> ...
-	 *                    \                  \
-	 *                     --> volatile *     --> volatile *
-	 *  - import works along the arks
-	 *  - possibly drop #external { ... }
-	 *  - in theory need an #internal (better not tell anyone)
-	 *  - clean semantics needs brave consequences for each module
-	 *  - need to propagate false atoms back from clasp
-	 */
 	termExpansion().expand(this);
 	foreach(Module::Component &component, module.components_)
 	{
