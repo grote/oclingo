@@ -168,41 +168,46 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 		}
 		stats_.avgPredParams = (stats_.numPred == 0) ? 0 : paramCount*1.0 / stats_.numPred;
 
-		foreach(Component &component, components_)
-		{
-			if(component.statements.size() > 1) stats_.numSccNonTrivial ++;
-		}
+		stats_.numSccNonTrivial = components_.size();
 		stats_.print(std::cerr);
 	}
 }
 
 void Grounder::ground()
 {
+	/* module wise grounding:
+	 *  - add rules into modules
+	 *  - modules depend on each other there has to be some non-cyclic order
+	 *    - base ---> cumulative ------> cumulative -------> ...
+	 *                    \                  \
+	 *                     --> volatile *     --> volatile *
+	 *  - import works along the arks
+	 *  - possibly drop #external { ... }
+	 *  - in theory need an #internal (better not tell anyone)
+	 *  - clean semantics needs brave consequences for each module
+	 *  - need to propagate false atoms back from clasp
+	 */
 	termExpansion().expand(this);
 	foreach(Component &component, components_)
 	{
-		if(component.statements.size() > 0)
+		if(debug_)
 		{
+			std::cerr << "% begin component (" << component.statements.size() << ")" << std::endl;
+		}
+		foreach(Statement *statement, component.statements)
+		{
+			// NOTE: this adds statements into the grounding queue
+			statement->init(this, VarSet());
 			if(debug_)
 			{
-				std::cerr << "% begin component (" << component.statements.size() << ")" << std::endl;
+				std::cerr << "% ";
+				statement->print(this, std::cerr);
+				std::cerr << std::endl;
 			}
-			foreach(Statement *statement, component.statements)
-			{
-				// NOTE: this adds statements into the grounding queue
-				statement->init(this, VarSet());
-				if(debug_)
-				{
-					std::cerr << "% ";
-					statement->print(this, std::cerr);
-					std::cerr << std::endl;
-				}
-				ground_();
-			}
+			ground_();
 		}
 	}
 	output()->endGround();
-	// TODO: remove that
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
 		dom.second->fix();
@@ -239,6 +244,14 @@ void Grounder::addToComponent(Statement *stm)
 {
 	stm->check(this);
 	components_.back().statements.push_back(stm);
+}
+
+void Grounder::endComponent()
+{
+	if(components_.back().statements.empty())
+	{
+		components_.pop_back();
+	}
 }
 
 uint32_t Grounder::createVar()

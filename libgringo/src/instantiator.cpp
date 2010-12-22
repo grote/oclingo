@@ -42,7 +42,6 @@ void Instantiator::ground(Grounder *g)
 	for(int i = 0; i < (int)indices_.size(); ++i)
 	{
 		if(indices_[i].hasNew()) { lastNew = i; }
-		new_[i] = false;
 	}
 	
 	int l                         = -1;

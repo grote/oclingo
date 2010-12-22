@@ -352,6 +352,7 @@ void Tarjan::component(Grounder *g, Node *root)
 			}
 		}
 	}
+	g->endComponent();
 }
 
 void Tarjan::start(Grounder *g, Node *n)
@@ -382,7 +383,6 @@ void Tarjan::start(Grounder *g, Node *n)
 void Builder::analyze(Grounder *g)
 {
 	bool warned = false;
-	g->beginComponent();
 	foreach(Todo &todo, todo_)
 	{
 		bool hasInput = false;
