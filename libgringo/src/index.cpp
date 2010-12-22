@@ -18,22 +18,7 @@
 #include <gringo/index.h>
 #include <gringo/lit.h>
 
-MatchIndex::MatchIndex(Lit *lit) : finished_(false), lit_(lit)
+bool MatchIndex::first(Grounder *grounder, int)
 {
+	return lit_->match(grounder);
 }
-
-std::pair<bool,bool> MatchIndex::firstMatch(Grounder *grounder, int binder)
-{
-	(void)binder;
-	bool r = lit_->match(grounder);
-	if(r) return std::make_pair(true, !finished_);
-	else return std::make_pair(false, false);
-}
-
-std::pair<bool,bool> MatchIndex::nextMatch(Grounder *grounder, int binder)
-{
-	(void)grounder;
-	(void)binder;
-	return std::make_pair(false, false);
-}
-

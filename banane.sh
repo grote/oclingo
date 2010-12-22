@@ -2,7 +2,7 @@
 
 # warning this script is intended to be run on MY machine!!!
 
-#svn update
+svn update
 rev=$(svn status -v 2>/dev/null | grep -o "^ *[0-9]* *[0-9]*" | head -n1 | grep -o "[0-9]*$")
 cpus=$[$(cat /proc/cpuinfo| grep processor | wc -l)+1]
 sqlite="sqlite3"

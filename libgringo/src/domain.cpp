@@ -18,6 +18,7 @@
 #include <gringo/domain.h>
 #include <gringo/val.h>
 #include <gringo/predindex.h>
+#include <gringo/term.h>
 #include <gringo/grounder.h>
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
@@ -181,5 +182,33 @@ void Domain::addOffset(int32_t offset)
 	{
 		vals_.extend(valIterator->second);
 		valsLarger_.erase(valIterator);
+	}
+}
+
+void Domain::allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms)
+{
+	VarSet vars;
+	foreach(const Term &term, terms) { term.vars(vars); }
+	ValVec::const_iterator k = vals_.begin();
+	for(uint32_t i = 0; i < new_; ++i)
+	{
+		bool unified = true;
+		foreach(const Term &term, terms)
+		{
+			if(!term.unify(g, *k++, 0))
+			{
+				unified = false;
+				break;
+			}
+		}
+		if(unified)
+		{
+			foreach(uint32_t var, vars)
+			{
+				varDoms[var].insert(g->val(var));
+			}
+		}
+		foreach(uint32_t var, vars)
+			g->unbind(var);
 	}
 }

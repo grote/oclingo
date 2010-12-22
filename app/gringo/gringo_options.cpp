@@ -19,12 +19,21 @@
 #include "gringo/gringo_options.h"
 #include <program_opts/value.h>
 #include <gringo/grounder.h>
+#include <gringo/predlit.h>
 
 using namespace ProgramOptions;
 using namespace std;
 
 namespace ProgramOptions
 {
+bool HeuristicOptions::mapHeuristic(const std::string& s, HeuristicOptions &options)
+{
+	std::string temp = toLower(s);
+	if (temp == "basic")      { options.heuristic.reset(new BasicBodyOrderHeuristic()); return true; }
+	else if (temp == "unify") { options.heuristic.reset(new UnifyBodyOrderHeuristic()); return true; }
+	return false;
+}
+
 template<>
 bool parseValue(const std::string&s, GringoOptions::IExpand& exp, double)
 {
@@ -33,6 +42,8 @@ bool parseValue(const std::string&s, GringoOptions::IExpand& exp, double)
 	else if (temp == "depth") { exp = GringoOptions::IEXPAND_DEPTH; return true; }
 	return false;
 }
+
+bool parseValue(const std::string&, HeuristicOptions&, int) { return false; }
 }
 
 bool parsePositional(const std::string& t, std::string& out)
@@ -54,7 +65,9 @@ GringoOptions::GringoOptions()
 	, compat(false)
 	, stats(false)
 	, iexpand(IEXPAND_ALL)
-{ }
+{
+	heuristics.heuristic.reset(new BasicBodyOrderHeuristic());
+}
 
 TermExpansionPtr GringoOptions::termExpansion(IncConfig &config) const
 {
@@ -73,17 +86,26 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	OptionGroup gringo("Gringo Options");
 
 	gringo.addOptions()
-		("const,c"  , storeTo(consts)->setComposing(), "Replace constant <c> by value <v>\n", "<c>=<v>")
-		("gstats"   , bool_switch(&stats),             "Print extended statistics")
-		("dep-graph", storeTo(depGraph),               "Dump program dependency graph to file", "<file>")
-		("text,t"   , bool_switch(&textOut),           "Print plain text format")
-		("reify"    , bool_switch(&metaOut),           "Print reified text format")
-		("lparse,l" , bool_switch(&smodelsOut),        "Print Lparse format")
-		("compat"   , bool_switch(&compat),            "Improve compatibility with lparse")
-		("ground,g" , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
-		("shift"    , bool_switch(&disjShift),         "Shift disjunctions into the body")
-		("ifixed"   , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
-		("iexpand"  , storeTo(iexpand),
+		("const,c"   , storeTo(consts)->setComposing(), "Replace constant <c> by value <v>\n", "<c>=<v>")
+		("gstats"    , bool_switch(&stats),             "Print extended statistics")
+		("dep-graph" , storeTo(depGraph),               "Dump program dependency graph to file", "<file>")
+
+		("text,t"    , bool_switch(&textOut),           "Print plain text format")
+		("reify"     , bool_switch(&metaOut),           "Print reified text format")
+		("lparse,l"  , bool_switch(&smodelsOut),        "Print Lparse format")
+
+		("compat"    , bool_switch(&compat),            "Improve compatibility with lparse")
+		("ground,g"  , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
+		("shift"     , bool_switch(&disjShift),         "Shift disjunctions into the body")
+		("body-order", storeTo(heuristics)->parser(&HeuristicOptions::mapHeuristic)->setImplicit(),
+			"Configure body order heuristic\n"
+			"      Default: basic\n"
+			"      Valid:   basic, unify\n"
+			"        basic: basic heuristic\n"
+			"        unify: unify to estimate domain sizes")
+
+		("ifixed"    , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
+		("iexpand"   , storeTo(iexpand),
 			"Limits the expansion of terms\n"
 			"      Default: All\n"
 			"      Valid:   All, Depth\n"

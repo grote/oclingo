@@ -88,6 +88,8 @@ public:
 	uint32_t nameId() const { return nameId_; }
 	uint32_t domId() const  { return domId_; }
 	void addOffset(int32_t offset);
+	//! creates a map of all possible values for every variable in the literal
+	void allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms);
 private:
 	uint32_t       nameId_;
 	uint32_t       arity_;

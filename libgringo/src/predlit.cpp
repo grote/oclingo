@@ -26,6 +26,41 @@
 #include "gringo/litdep.h"
 #include "gringo/varcollector.h"
 
+double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, const PredLit *pred) const
+{
+	double score = std::pow(pred->dom()->size(), 1.0 / pred->terms().size()) + 1;
+	double sum   = 0;
+	VarSet curBound(bound);
+	for(size_t i = 0; i < pred->terms().size(); i++)
+	{
+		VarSet vars;
+		pred->terms()[i].vars(vars);
+		VarVec diff;
+		std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
+		if(diff.empty()) { sum += 0; }
+		else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
+		curBound.insert(vars.begin(), vars.end());
+	}
+	return sum / pred->terms().size();
+
+}
+
+double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, const PredLit *pred) const
+{
+	const VarDomains &varDoms = pred->allVals(g);
+	uint32_t tsum = 0;
+	uint32_t free = 0;
+	foreach(VarDomains::const_reference ref, varDoms)
+	{
+		if(bound.find(ref.first) == bound.end())
+		{
+			free++;
+			tsum += ref.second.size();
+		}
+	}
+	return free == 0 ? 0 : tsum / free;
+}
+
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
 	: vals_(vals)
 {
@@ -241,23 +276,7 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 double PredLit::score(Grounder *g, VarSet &bound) const
 {
 	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
-	else
-	{
-		double score = std::pow(dom()->size(), 1.0 / terms_.size()) + 1;
-		double sum   = 0;
-		VarSet curBound(bound);
-		for(size_t i = 0; i < terms_.size(); i++)
-		{
-			VarSet vars;
-			terms_[i].vars(vars);
-			VarVec diff;
-			std::set_difference(vars.begin(), vars.end(), curBound.begin(), curBound.end(), std::back_inserter(diff));
-			if(diff.empty()) { sum += 0; }
-			else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
-			curBound.insert(vars.begin(), vars.end());
-		}
-		return sum / terms_.size();
-	}
+	else                             { return g->heuristic().score(g, bound, this); }
 }
 
 Lit *PredLit::clone() const
@@ -265,3 +284,11 @@ Lit *PredLit::clone() const
 	return new PredLit(*this);
 }
 
+const VarDomains &PredLit::allVals(Grounder *g) const
+{
+	if(terms_.size() > 0 && varDoms_.empty())
+	{
+		dom()->allVals(g, terms_, varDoms_);
+	}
+	return varDoms_;
+}

@@ -27,17 +27,13 @@
 
 namespace
 {
-	class SumIndex : public Index
+	class SumIndex : public NewOnceIndex
 	{
 	public:
 		SumIndex(SumAggrLit *sum_, const VarVec &bind);
-		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-		void reset() { finished_ = false; }
-		void finish() { finished_ = true; }
-		bool hasNew() const { return !finished_; }
+		bool first(Grounder *grounder, int binder);
+		bool next(Grounder *grounder, int binder);
 	private:
-		bool        finished_;
 		SumAggrLit *sum_;
 		VarVec      bind_;
 		int32_t     current_;
@@ -46,22 +42,21 @@ namespace
 	};
 
 	SumIndex::SumIndex(SumAggrLit *sum, const VarVec &bind)
-		: finished_(false)
-		, sum_(sum)
+		: sum_(sum)
 		, bind_(bind)
 	{
 	}
 
-	std::pair<bool,bool> SumIndex::firstMatch(Grounder *grounder, int binder)
+	bool SumIndex::first(Grounder *grounder, int binder)
 	{
 		boost::tuple<int32_t, int32_t, int32_t> interval = sum_->matchAssign(grounder);
 		current_ = interval.get<0>();
 		upper_   = interval.get<1>();
 		fixed_   = interval.get<2>();
-		return nextMatch(grounder, binder);
+		return next(grounder, binder);
 	}
 
-	std::pair<bool,bool> SumIndex::nextMatch(Grounder *grounder, int binder)
+	bool SumIndex::next(Grounder *grounder, int binder)
 	{
 		if(current_ <= upper_)
 		{
@@ -69,13 +64,13 @@ namespace
 			foreach(uint32_t var, bind_) grounder->unbind(var);
 			if(sum_->assign()->unify(grounder, Val::create(Val::NUM, current_++ + fixed_), binder))
 			{
-				return std::make_pair(true, !finished_);
+				return true;
 			}
 			// if it doesn't match at this point no futher integers will match as well
 			// hence, it is safe to return false
 			// (a match index would have been used if there was no variable on the left)
 		}
-		return std::make_pair(false, false);
+		return false;
 	}
 }
 

@@ -67,17 +67,13 @@ bool RangeLit::match(Grounder *grounder)
 
 namespace
 {
-	class RangeIndex : public Index
+	class RangeIndex : public NewOnceIndex
 	{
 	public:
 		RangeIndex(uint32_t var, RangeLit *lit, Term *a, Term *b, const VarVec &bind);
-		std::pair<bool,bool> firstMatch(Grounder *grounder, int binder);
-		std::pair<bool,bool> nextMatch(Grounder *grounder, int binder);
-		void reset() { finished_ = false; }
-		void finish() { finished_ = true; }
-		bool hasNew() const { return !finished_; }
+		bool first(Grounder *grounder, int binder);
+		bool next(Grounder *grounder, int binder);
 	private:
-		bool      finished_;
 		uint32_t  var_;
 		int       current_;
 		int       upper_;
@@ -88,8 +84,7 @@ namespace
 	};
 
 	RangeIndex::RangeIndex(uint32_t var, RangeLit *lit, Term *a, Term *b, const VarVec &bind)
-		: finished_(false)
-		, var_(var)
+		: var_(var)
 		, lit_(lit)
 		, a_(a)
 		, b_(b)
@@ -97,7 +92,7 @@ namespace
 	{
 	}
 
-	std::pair<bool,bool> RangeIndex::firstMatch(Grounder *grounder, int binder)
+	bool RangeIndex::first(Grounder *grounder, int binder)
 	{
 		try
 		{
@@ -108,17 +103,17 @@ namespace
 		{
 			numException(grounder, lit_, val);
 		}	
-		return nextMatch(grounder, binder);
+		return next(grounder, binder);
 	}
 
-	std::pair<bool,bool> RangeIndex::nextMatch(Grounder *grounder, int binder)
+	bool RangeIndex::next(Grounder *grounder, int binder)
 	{
 		if(current_ <= upper_)
 		{
 			grounder->val(var_, Val::create(Val::NUM, current_++), binder);
-			return std::make_pair(true, !finished_);
+			return true;
 		}
-		else return std::make_pair(false, !finished_);
+		else { return false; }
 	}
 }
 

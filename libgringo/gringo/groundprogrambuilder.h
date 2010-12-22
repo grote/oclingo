@@ -55,7 +55,7 @@ public:
 		META_EXTERNAL
 	};
 
-protected:
+private:
 	struct Lit
 	{
 		static Lit create(Type type, uint32_t offset, uint32_t n)
@@ -72,7 +72,7 @@ protected:
 		uint32_t offset;
 		uint32_t n;
 	};
-	typedef std::vector<Lit>          LitVec;
+	typedef std::vector<Lit> LitVec;
 
 	struct Literal : public PredLitRep
 	{
@@ -80,27 +80,35 @@ protected:
 		Literal() : PredLitRep(false, 0) { }
 	};
 
+	struct Stack
+	{
+		Type          type;
+		uint32_t      n;
+		LitVec        lits;
+		LitVec        aggrLits;
+		ValVec        vals;
+	};
+	typedef std::auto_ptr<Stack> StackPtr;
+
 public:
 	GroundProgramBuilder(Output *output);
 	void add(Type type, uint32_t n = 0);
+	// call instead of add and later use add(StackPtr stm)
+	StackPtr get(Type type, uint32_t n);
+	void add(StackPtr stm);
 	void addVal(const Val &val);
 	void addSign();
 	Storage *storage();
 
-protected:
-	void printLit(Printer *printer, uint32_t offset, bool head);
-	void pop(uint32_t n);
-
-protected:
-	Output       *output_;
-	LitVec        lits_;
-	ValVec        vals_;
-
 private:
 	void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
+	void printLit(Printer *printer, uint32_t offset, bool head);
 	PredLitRep *predLitRep(Lit &a);
+	void pop(uint32_t n);
+	void add();
 
 private:
-	LitVec        aggrLits_;
-	Literal       lit_;
+	Output  *output_;
+	StackPtr stack_;
+	Literal  lit_;
 };

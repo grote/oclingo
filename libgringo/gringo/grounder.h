@@ -66,7 +66,7 @@ private:
 
 
 public:
-	Grounder(Output *out, bool debug, TermExpansionPtr exp);
+	Grounder(Output *out, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic);
 	void analyze(const std::string &depGraph = "", bool stats = false);
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
@@ -84,6 +84,7 @@ public:
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
 	TermExpansion &termExpansion() const;
+	const BodyOrderHeuristic& heuristic() const;
 	~Grounder();
 
 private:
@@ -99,7 +100,7 @@ private:
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
 	TermExpansionPtr       termExpansion_;
-
+	BodyOrderHeuristicPtr  heuristic_;
 };
 
 inline TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }

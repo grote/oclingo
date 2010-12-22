@@ -186,7 +186,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	else
 	{
 		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
-		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config)));
+		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config), app.gringo.heuristics.heuristic));
 		parser.reset(new Parser(grounder.get(), config, str, app.gringo.compat, inc));
 	}
 }
