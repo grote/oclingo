@@ -30,7 +30,7 @@ Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
 	, head_(head)
 	, body_(body.release())
 {
-	if(head) head->head(true);
+	if(head) { head->head(true); }
 }
 
 namespace
@@ -101,7 +101,9 @@ void Rule::normalize(Grounder *g)
 	{
 		RuleBodyExpander exp(body_);
 		for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
+		{
 			body_[i].normalize(g, &exp);
+		}
 	}
 }
 
@@ -111,7 +113,7 @@ void Rule::init(Grounder *g, const VarSet &b)
 	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
+		if(litDep_.get()) { litDep_->order(g, b); }
 		else
 		{
 			VarSet bound(b);
@@ -126,6 +128,7 @@ void Rule::init(Grounder *g, const VarSet &b)
 				head_->index(g, this, bound);
 			}
 		}
+		if(body_.empty()) { inst_->append(new MatchOnceIndex()); }
 	}
 	inst_->enqueue(g);
 }
@@ -137,23 +140,20 @@ bool Rule::edbFact() const
 
 void Rule::ground(Grounder *g)
 {
-	if(inst_.get()) inst_->ground(g);
+	if(inst_.get()) { inst_->ground(g); }
 	else
 	{
-		if(head_.get()) head_->match(g);
+		if(head_.get()) { head_->match(g); }
 		grounded(g);
 	}
-	if(head_.get()) head_->finish(g);
+	if(head_.get()) { head_->finish(g); }
 }
 
 void Rule::addDomain(Grounder *g, bool fact)
 {
 	if(head_.get())
 	{
-		try
-		{
-			head_->addDomain(g, fact);
-		}
+		try { head_->addDomain(g, fact); }
 		catch(const AtomRedefinedException &ex)
 		{
 			std::stringstream ss;
@@ -201,8 +201,8 @@ void Rule::append(Lit *l)
 
 void Rule::visit(PrgVisitor *v)
 {
-	for(size_t i = 0, n = body_.size(); i < n; i++) v->visit(&body_[i], false);
-	if(head_.get()) v->visit(head_.get(), false);
+	for(size_t i = 0, n = body_.size(); i < n; i++) { v->visit(&body_[i], false); }
+	if(head_.get()) { v->visit(head_.get(), false); }
 }
 
 void Rule::print(Storage *sto, std::ostream &out) const

@@ -34,7 +34,6 @@ private:
 	Groundable *groundable_;
 	IndexPtrVec indices_;
 	BoolVec     new_;
-	bool        grounded_;
 };
    
 inline Instantiator* new_clone(const Instantiator&)

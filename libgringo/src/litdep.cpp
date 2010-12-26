@@ -66,7 +66,7 @@ void VarNode::propagate(LitNodeVec &queue)
 	if(!done_)
 	{
 		done_ = true;
-		foreach(LitNode *lit, provide_) lit->propagate(queue);
+		foreach(LitNode *lit, provide_) { lit->propagate(queue); }
 	}
 }
 
@@ -97,13 +97,13 @@ void LitNode::reset()
 
 void LitNode::check(LitNodeVec &queue)
 {
-	foreach(VarNode *var, provide_) var->propagate(queue);
+	foreach(VarNode *var, provide_) { var->propagate(queue); }
 }
 
 void LitNode::propagate(LitNodeVec &queue)
 {
 	assert(done_ > 0);
-	if(--done_ == 0) queue.push_back(this);
+	if(--done_ == 0) { queue.push_back(this); }
 }
 
 bool LitNode::done()
@@ -128,8 +128,8 @@ void GrdNode::append(VarNode *varNode)
 
 void GrdNode::reset()
 {
-	foreach(LitNode &lit, litNodes_) lit.reset();
-	foreach(VarNode &var, varNodes_) var.reset();
+	foreach(LitNode &lit, litNodes_) { lit.reset(); }
+	foreach(VarNode &var, varNodes_) { var.reset(); }
 }
 
 bool GrdNode::check(VarTermVec &terms)

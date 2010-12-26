@@ -23,7 +23,6 @@
 Instantiator::Instantiator(Groundable *g)
 	: groundable_(g)
 	, new_(1, false)
-	, grounded_(g)
 {
 }
 
@@ -37,7 +36,7 @@ void Instantiator::append(Index *i)
 void Instantiator::ground(Grounder *g)
 {
 	int lastNew = -1;
-	int numNew  = !grounded_;
+	int numNew  = 0;
 	
 	for(int i = 0; i < (int)indices_.size(); ++i)
 	{
@@ -76,7 +75,6 @@ void Instantiator::ground(Grounder *g)
 		g->unbind(var);
 	foreach(Index &idx, indices_)
 		idx.finish();
-	grounded_ = true;
 }
 
 void Instantiator::reset()
@@ -87,15 +85,12 @@ void Instantiator::reset()
 
 void Instantiator::enqueue(Grounder *g)
 {
-	// NOTE: this can only happen for the empty integrity constraint
-	if(!grounded_ && indices_.empty()) { g->enqueue(groundable_); }
-	else
+	bool modified = false;
+	foreach(Index &idx, indices_)
 	{
-		foreach(Index &idx, indices_)
-		{
-			if(idx.init(g)) { g->enqueue(groundable_); }
-		}
+		modified = idx.init(g) || modified;
 	}
+	if(modified) { g->enqueue(groundable_); }
 }
 
 Instantiator::~Instantiator()
