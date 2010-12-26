@@ -128,7 +128,7 @@ void Rule::init(Grounder *g, const VarSet &b)
 				head_->index(g, this, bound);
 			}
 		}
-		if(body_.empty()) { inst_->append(new MatchOnceIndex()); }
+		if(body_.empty()) { inst_->append(new NewOnceIndex()); }
 	}
 	inst_->enqueue(g);
 }

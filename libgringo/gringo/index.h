@@ -30,21 +30,21 @@ public:
 	virtual void finish() = 0;
 	virtual bool hasNew() const = 0;
 	virtual bool init(Grounder* g);
-	virtual ~Index() { }
+	virtual ~Index();
 };
 
 class NewOnceIndex : public Index
 {
 public:
 	NewOnceIndex();
-	virtual bool first(Grounder *grounder, int binder) = 0;
+	virtual bool first(Grounder *grounder, int binder);
 	virtual bool next(Grounder *grounder, int binder);
 	Match firstMatch(Grounder *grounder, int binder);
 	Match nextMatch(Grounder *grounder, int binder);
 	void reset();
 	void finish();
 	bool hasNew() const;
-	virtual ~NewOnceIndex() { }
+	virtual ~NewOnceIndex();
 private:
 	bool finished_;
 };
@@ -58,17 +58,13 @@ private:
 	Lit *lit_;
 };
 
-class MatchOnceIndex : public NewOnceIndex
-{
-public:
-	bool first(Grounder *grounder, int binder);
-};
-
 // ========================= Index =========================
 inline bool Index::init(Grounder*)
 {
 	return hasNew();
 }
+
+inline Index::~Index() { }
 
 // ========================= NewOnceIndex =========================
 inline NewOnceIndex::NewOnceIndex()
@@ -76,6 +72,7 @@ inline NewOnceIndex::NewOnceIndex()
 {
 }
 
+inline bool NewOnceIndex::first(Grounder *, int) { return true; }
 inline bool NewOnceIndex::next(Grounder *, int) { return false; }
 
 inline Index::Match NewOnceIndex::firstMatch(Grounder *grounder, int binder)
@@ -94,10 +91,9 @@ inline void NewOnceIndex::reset()        { finished_ = false; }
 inline void NewOnceIndex::finish()       { finished_ = true; }
 inline bool NewOnceIndex::hasNew() const { return !finished_; }
 
+inline NewOnceIndex::~NewOnceIndex() { }
+
 // ========================= MatchIndex =========================
 inline MatchIndex::MatchIndex(Lit *lit) : lit_(lit)
 {
 }
-
-// ========================= MatchOnceIndex =========================
-inline bool MatchOnceIndex::first(Grounder *, int) { return true; }
