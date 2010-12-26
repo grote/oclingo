@@ -23,6 +23,7 @@
 
 struct VarDomains
 {
+	VarDomains() : offset(0) { }
 	typedef std::map<uint32_t, boost::unordered_set<Val> > Map;
 	uint32_t offset;
 	Map      map;
