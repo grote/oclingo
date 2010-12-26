@@ -21,6 +21,13 @@
 #include <gringo/lit.h>
 #include <gringo/predlitrep.h>
 
+struct VarDomains
+{
+	typedef std::map<uint32_t, boost::unordered_set<Val> > Map;
+	uint32_t offset;
+	Map      map;
+};
+
 class BodyOrderHeuristic
 {
 public:
@@ -31,21 +38,21 @@ public:
 	  * \param free variables that are not bound
 	  * \param varDoms possible values for each variable
 	  */
-	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const = 0;
+	virtual double score(Grounder *g, VarSet &bound, PredLit *pred) = 0;
 };
 
 class BasicBodyOrderHeuristic : public BodyOrderHeuristic
 {
 public:
 	virtual ~BasicBodyOrderHeuristic() {}
-	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const;
+	virtual double score(Grounder *g, VarSet &bound, PredLit *pred);
 };
 
 class UnifyBodyOrderHeuristic : public BodyOrderHeuristic
 {
 public:
 	virtual ~UnifyBodyOrderHeuristic() {}
-	virtual double score(Grounder *g, VarSet &bound, const PredLit *pred) const;
+	virtual double score(Grounder *g, VarSet &bound, PredLit *pred);
 };
 
 class PredLitSet
@@ -96,16 +103,16 @@ public:
 	void pop();
 	void move(size_t p);
 	void clear();
-	double score(Grounder *g, VarSet &bound) const;
+	double score(Grounder *g, VarSet &bound);
 	Lit *clone() const;
-	const VarDomains &allVals(Grounder *g) const;
+	const VarDomains &allVals(Grounder *g);
 	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
     bool compatible(PredLit* pred);
 	void provide(PredLit *pred);
 private:
 	TermPtrVec         terms_;
-	mutable VarDomains varDoms_;
+	VarDomains         varDoms_;
 	PredLitVec         provide_;
 	bool               complete_;
 	uint32_t           startNew_;

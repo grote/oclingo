@@ -64,7 +64,7 @@ public:
 	void pop() { assert(false); }
 	void move(size_t p) { (void)p; assert(false); }
 	void clear() { assert(false); }
-	double score(Grounder *, VarSet &) const { return std::numeric_limits<double>::max(); }
+	double score(Grounder *, VarSet &) { return std::numeric_limits<double>::max(); }
 
 	//! whether the aggregate's list is a set (or else multiset)
 	bool set() const { return set_; }

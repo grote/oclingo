@@ -274,7 +274,7 @@ void Grounder::externalStm(uint32_t nameId, uint32_t arity)
 	output()->external(nameId, arity);
 }
 
-const BodyOrderHeuristic& Grounder::heuristic() const
+BodyOrderHeuristic& Grounder::heuristic() const
 {
 	return *heuristic_;
 }

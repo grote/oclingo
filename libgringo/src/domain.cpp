@@ -18,6 +18,7 @@
 #include <gringo/domain.h>
 #include <gringo/val.h>
 #include <gringo/predindex.h>
+#include <gringo/predlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
 #include <gringo/groundable.h>
@@ -159,43 +160,6 @@ bool Domain::extend(Grounder *g, PredIndex *idx, uint32_t offset)
 	return modified;
 }
 
-/*
-void Domain::enqueue(Grounder *g)
-{
-	// TODO: needs rewrite!!!
-	uint32_t end = vals_.size();
-	foreach(const PredInfo &info, index_)
-	{
-		bool modified = false;
-		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
-		for(uint32_t i = new_; i < vals_.size(); ++i, k+= arity_)
-			modified = info.first->extend(g, k) || modified;
-		if(modified) g->enqueue(info.second);
-	}
-	foreach(PredIndex *idx, completeIndex_)
-	{
-		ValVec::const_iterator k = vals_.begin() + arity_ * new_;
-		for(uint32_t i = new_; i < vals_.size(); ++i, k+= arity_)
-			idx->extend(g, k);
-	}
-	new_ = end;
-}
-*/
-
-
-
-/*
-void Domain::append(Grounder *g, Groundable *gr, PredIndex *idx)
-{
-	// TODO: needs rewrite!!!
-	ValVec::const_iterator j = vals_.begin();
-	for(uint32_t i = 0; i < new_; ++i, j+= arity_) idx->extend(g, j);
-	assert(!complete_ || new_ == vals_.size());
-	if(!complete_) { index_.push_back(PredInfo(idx, gr)); }
-	else { completeIndex_.push_back(idx); }
-}
-*/
-
 void Domain::addOffset(int32_t offset)
 {
 	OffsetMap::iterator valIterator = valsLarger_.find(offset);
@@ -211,7 +175,7 @@ void Domain::allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms)
 	VarSet vars;
 	foreach(const Term &term, terms) { term.vars(vars); }
 	ValVec::const_iterator k = vals_.begin();
-	for(uint32_t i = 0; i < new_; ++i)
+	for(uint32_t i = varDoms.offset; i < size(); i++)
 	{
 		bool unified = true;
 		foreach(const Term &term, terms)
@@ -224,12 +188,9 @@ void Domain::allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms)
 		}
 		if(unified)
 		{
-			foreach(uint32_t var, vars)
-			{
-				varDoms[var].insert(g->val(var));
-			}
+			foreach(uint32_t var, vars) { varDoms.map[var].insert(g->val(var)); }
 		}
-		foreach(uint32_t var, vars)
-			g->unbind(var);
+		foreach(uint32_t var, vars) { g->unbind(var); }
 	}
+	varDoms.offset = size();
 }

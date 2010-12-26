@@ -52,7 +52,7 @@ public:
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
-	double score(Grounder *g, VarSet &bound) const;
+	double score(Grounder *g, VarSet &bound);
 	Lit *clone() const;
 	const IncConfig &config() const { return config_; }
 	const VarTerm *var() const { return var_.get(); }

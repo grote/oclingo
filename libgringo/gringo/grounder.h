@@ -89,7 +89,7 @@ public:
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
 	TermExpansion &termExpansion() const;
-	const BodyOrderHeuristic& heuristic() const;
+	BodyOrderHeuristic& heuristic() const;
 	Module *createModule();
 	void addInternal(Statement *stm);
 	
