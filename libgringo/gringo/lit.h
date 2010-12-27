@@ -33,6 +33,8 @@ class Lit : public Locateable
 {
 public:
 	enum Monotonicity { MONOTONE, ANTIMONOTONE, NONMONOTONE };
+	enum Priority { HIGHEST=0, CHECK_ONLY=8, RECURSIVE=32, NON_RECURSIVE=64, LOWEST=255};
+	typedef std::pair<Priority,double> Score;
 public:
 	Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
 	virtual void normalize(Grounder *g, Expander *expander) = 0;
@@ -66,7 +68,7 @@ public:
 	virtual void pop() { }
 	virtual void move(size_t p) { (void)p; }
 	virtual void clear() { }
-	virtual double score(Grounder *, VarSet &) { return std::numeric_limits<double>::min(); }
+	virtual Score score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::min()); }
 	virtual bool isFalse(Grounder *grounder) { (void)grounder; assert(false); return false; }
 	virtual ~Lit() { }
 

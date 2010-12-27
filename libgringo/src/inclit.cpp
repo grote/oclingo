@@ -152,9 +152,9 @@ Lit *IncLit::clone() const
 	return new IncLit(*this);
 }
 
-double IncLit::score(Grounder *, VarSet &)
+Lit::Score IncLit::score(Grounder *, VarSet &)
 {
-	return -1;
+	return Lit::Score(Lit::HIGHEST,-1);
 }
 
 IncLit::~IncLit()

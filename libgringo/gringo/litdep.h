@@ -19,6 +19,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/prgvisitor.h>
+#include <gringo/lit.h>
 
 namespace LitDep
 {
@@ -58,14 +59,14 @@ namespace LitDep
 		void check(LitNodeVec &queue);
 		void propagate(LitNodeVec &queue);
 		bool done();
-		void score(double score) { score_ = score; }
-		double score() const { return score_; }
+		void score(Lit::Score score) { score_ = score; }
+		Lit::Score score() const { return score_; }
 		Lit *lit() const { return lit_; }
 	private:
 		Lit       *lit_;
 		uint32_t   done_;
 		uint32_t   depend_;
-		double     score_;
+		Lit::Score score_;
 		VarNodeVec provide_;
 	};
 
@@ -103,7 +104,7 @@ namespace LitDep
 		bool check(VarTermVec &terms);
 		~Builder();
 	private:
-		double       score_;
+		std::pair<double,double> score_;
 		LitNodeStack litStack_;
 		GrdNodeVec   grdNodes_;
 		GrdNodeStack grdStack_;

@@ -162,9 +162,9 @@ void RangeLit::normalize(Grounder *g, Expander *expander)
 	b_->normalize(this, Term::PtrRef(b_), g, expander, false);
 }
 
-double RangeLit::score(Grounder *g, VarSet &bound)
+Lit::Score RangeLit::score(Grounder *g, VarSet &bound)
 {
-	if(bound.find(var_->index()) != bound.end()) { return Lit::score(g, bound); }
+	if(bound.find(var_->index()) != bound.end()) { return Lit::Score(Lit::CHECK_ONLY, 0); }
 	if(a_->constant() && b_->constant())
 	{
 		Val l = a_->val(g);
@@ -172,12 +172,12 @@ double RangeLit::score(Grounder *g, VarSet &bound)
 		if(l.type == Val::NUM && u.type == Val::NUM)
 		{
 			int diff = u.num - l.num;
-			if(diff >= 0) { return diff; }
-			else          { return Lit::score(g, bound); }
+			if(diff >= 0) { return Lit::Score(Lit::NON_RECURSIVE, diff); }
+			else          { return Lit::Score(Lit::HIGHEST, 0); }
 		}
 		else { return Lit::score(g, bound); }
 	}
-	else { return 0; }
+	else { return Lit::Score(Lit::LOWEST,0); }
 }
 
 Lit *RangeLit::clone() const

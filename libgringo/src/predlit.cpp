@@ -26,7 +26,7 @@
 #include "gringo/litdep.h"
 #include "gringo/varcollector.h"
 
-double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, PredLit *pred)
+Lit::Score BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, PredLit *pred)
 {
 	double score = std::pow(pred->dom()->size(), 1.0 / pred->terms().size()) + 1;
 	double sum   = 0;
@@ -41,10 +41,10 @@ double BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, PredLit *pred)
 		else             { sum += std::pow(score, diff.size() / (double)vars.size()); }
 		curBound.insert(vars.begin(), vars.end());
 	}
-	return sum / pred->terms().size();
+	return Lit::Score(pred->complete() ? Lit::NON_RECURSIVE : Lit::RECURSIVE, sum / pred->terms().size());
 }
 
-double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, PredLit *pred)
+Lit::Score UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, PredLit *pred)
 {
 	const VarDomains &varDoms = pred->allVals(g);
 	uint32_t tsum = 0;
@@ -55,7 +55,7 @@ double UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, PredLit *pred)
 			tsum += ref.second.size();
 		}
 	}
-	return varDoms.map.empty() ? 0 : tsum / varDoms.map.size();
+	return Lit::Score(pred->complete() ? Lit::NON_RECURSIVE : Lit::RECURSIVE, varDoms.map.empty() == 0 ? 0 : tsum / varDoms.map.size());
 }
 
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
@@ -270,7 +270,7 @@ void PredLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
-double PredLit::score(Grounder *g, VarSet &bound)
+Lit::Score PredLit::score(Grounder *g, VarSet &bound)
 {
 	if(sign() || terms_.size() == 0) { return Lit::score(g, bound); }
 	else                             { return g->heuristic().score(g, bound, this); }

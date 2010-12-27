@@ -74,7 +74,7 @@ LitNode::LitNode(Lit *lit)
 	: lit_(lit)
 	, done_(0)
 	, depend_(0)
-	, score_(0)
+	, score_(Lit::Score(Lit::LOWEST,0))
 {
 }
 
@@ -182,7 +182,7 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 }
 
 Builder::Builder(uint32_t vars)
-	: score_(0)
+	: score_(std::pair<double,double>(0,0))
 	, varNodes_(vars)
 {
 }
