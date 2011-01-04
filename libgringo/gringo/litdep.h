@@ -104,7 +104,6 @@ namespace LitDep
 		bool check(VarTermVec &terms);
 		~Builder();
 	private:
-		std::pair<double,double> score_;
 		LitNodeStack litStack_;
 		GrdNodeVec   grdNodes_;
 		GrdNodeStack grdStack_;

@@ -182,8 +182,7 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 }
 
 Builder::Builder(uint32_t vars)
-	: score_(std::pair<double,double>(0,0))
-	, varNodes_(vars)
+	: varNodes_(vars)
 {
 }
 
