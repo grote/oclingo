@@ -25,6 +25,45 @@
 namespace LitDep
 {
 
+class VarNode
+{
+public:
+	VarNode(VarTerm *var);
+	VarTerm *var() const;
+	void depend(LitNode *litNode);
+	void provide(LitNode *litNode);
+	void reset();
+	bool done();
+	void propagate(LitNodeVec &queue);
+private:
+	bool       done_;
+	VarTerm    *var_;
+	LitNodeVec provide_;
+};
+
+class LitNode
+{
+private:
+	typedef std::vector<VarNode*> VarNodeVec;
+public:
+	LitNode(Lit *lit);
+	void depend(VarNode *varNode);
+	void provide(VarNode *varNode);
+	void reset();
+	void check(LitNodeVec &queue);
+	void propagate(LitNodeVec &queue);
+	bool done();
+	void score(Lit::Score score) { score_ = score; }
+	Lit::Score score() const { return score_; }
+	Lit *lit() const { return lit_; }
+private:
+	Lit       *lit_;
+	uint32_t   done_;
+	uint32_t   depend_;
+	Lit::Score score_;
+	VarNodeVec provide_;
+};
+
 bool LitNodeCmp::operator()(LitNode *a, LitNode *b)
 {
 	return a->score() < b->score();
@@ -179,6 +218,10 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 		lit->check(queue);
 		lit->lit()->position = position++;
 	}
+}
+
+GrdNode::~GrdNode()
+{
 }
 
 Builder::Builder(uint32_t vars)

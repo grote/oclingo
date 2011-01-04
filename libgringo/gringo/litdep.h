@@ -19,56 +19,18 @@
 
 #include <gringo/gringo.h>
 #include <gringo/prgvisitor.h>
-#include <gringo/lit.h>
 
 namespace LitDep
 {
+	class VarNode;
 	class LitNode;
+
 	struct LitNodeCmp
 	{
 		bool operator()(LitNode *a, LitNode *b);
 	};
 
 	typedef std::vector<LitNode*> LitNodeVec;
-
-	class VarNode
-	{
-	public:
-		VarNode(VarTerm *var);
-		VarTerm *var() const;
-		void depend(LitNode *litNode);
-		void provide(LitNode *litNode);
-		void reset();
-		bool done();
-		void propagate(LitNodeVec &queue);
-	private:
-		bool       done_;
-		VarTerm    *var_;
-		LitNodeVec provide_;
-	};
-
-	class LitNode
-	{
-	private:
-		typedef std::vector<VarNode*> VarNodeVec;
-	public:
-		LitNode(Lit *lit);
-		void depend(VarNode *varNode);
-		void provide(VarNode *varNode);
-		void reset();
-		void check(LitNodeVec &queue);
-		void propagate(LitNodeVec &queue);
-		bool done();
-		void score(Lit::Score score) { score_ = score; }
-		Lit::Score score() const { return score_; }
-		Lit *lit() const { return lit_; }
-	private:
-		Lit       *lit_;
-		uint32_t   done_;
-		uint32_t   depend_;
-		Lit::Score score_;
-		VarNodeVec provide_;
-	};
 
 	class GrdNode
 	{
@@ -82,6 +44,7 @@ namespace LitDep
 		void reset();
 		bool check(VarTermVec &terms);
 		void order(Grounder *g, const VarSet &bound);
+		~GrdNode();
 	private:
 		Groundable   *groundable_;
 		LitNodePtrVec litNodes_;
