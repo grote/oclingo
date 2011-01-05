@@ -72,7 +72,7 @@ void OnlineParser::parse(std::istream &in)
 		onlineparser(parser_, token, token_, this);
 	}
 	// stop at ENDSTEP because socket stream will not return EOI
-	while(token != OPARSER_ENDSTEP);
+	while(token != OPARSER_ENDSTEP && !terminated_);
 }
 
 void OnlineParser::parse()
@@ -116,9 +116,15 @@ void OnlineParser::add(Type type, uint32_t n) {
 			Lit &lit = litVec.at(litVec.size() - n - 1);
 			uint32_t head = dynamic_cast<LparseConverter*>(output_)->symbol(predLitRep(stack, lit));
 
-			if(output_->getExternalKnowledge().checkHead(head, token_.line)) {
+			if(output_->getExternalKnowledge().checkHead(head)) {
 				output_->getExternalKnowledge().addHead(head);
 				GroundProgramBuilder::add(stack);
+			} else {
+				std::stringstream emsg;
+				emsg << "Warning: Head of rule added in line " << token_.line;
+				emsg << " has not been declared external. The entire rule will be ignored.";
+				std::cerr << emsg.str() << std::endl;
+				output_->getExternalKnowledge().sendToClient(emsg.str());
 			}
 			break;
 		}

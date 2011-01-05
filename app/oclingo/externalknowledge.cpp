@@ -24,6 +24,7 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
+	, debug_(false)
 {
 //	externals_per_step_.push_back(IntSet());
 //	externals_per_step_.push_back(IntSet());
@@ -180,23 +181,13 @@ bool ExternalKnowledge::addInput() {
 	return true;
 }
 
-bool ExternalKnowledge::checkHead(uint32_t symbol, int line=0) {
+bool ExternalKnowledge::checkHead(uint32_t symbol) {
 	// check if head atom has been defined as external
 	if(find(externals_.begin(), externals_.end(), symbol) != externals_.end() ||
 	   find(externals_old_.begin(), externals_old_.end(), symbol) != externals_old_.end()) {
 		return true;
 	}
-	else {
-		std::stringstream emsg;
-		emsg << "Warning: Head of rule added for step " << controller_step_;
-		if(line) emsg << " in line " << line;
-		emsg << " has not been declared external. ";
-		emsg << "The entire rule will be ignored.";
-		std::cerr << emsg.str() << std::endl;
-		sendToClient(emsg.str());
-
-		return false;
-	}
+	else return false;
 }
 
 void ExternalKnowledge::addHead(uint32_t symbol) {
