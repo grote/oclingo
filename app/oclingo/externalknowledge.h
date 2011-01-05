@@ -79,8 +79,8 @@ private:
 	// external head handling
 	VarVec heads_;
 	VarVec externals_;
-	VarVec externals_old_;
-/*	std::vector<IntSet> externals_per_step_;
+/*	VarVec externals_old_;
+	std::vector<IntSet> externals_per_step_;
 	IntSet facts_;
 	IntSet facts_old_;
 	std::vector<NS_OUTPUT::Atom*> premature_facts_;

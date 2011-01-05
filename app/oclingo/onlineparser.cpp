@@ -116,15 +116,20 @@ void OnlineParser::add(Type type, uint32_t n) {
 			Lit &lit = litVec.at(litVec.size() - n - 1);
 			uint32_t head = dynamic_cast<LparseConverter*>(output_)->symbol(predLitRep(stack, lit));
 
-			if(output_->getExternalKnowledge().checkHead(head)) {
-				output_->getExternalKnowledge().addHead(head);
+			ExternalKnowledge& ext = output_->getExternalKnowledge();
+
+			if(ext.needsNewStep()) {
+				std::cerr << "NEED NEW STEP BEFORE ADDING RULE" << std::endl;
+				// TODO save StackPtr for right step
+			} else if(ext.checkHead(head)) {
+				ext.addHead(head);
 				GroundProgramBuilder::add(stack);
 			} else {
 				std::stringstream emsg;
 				emsg << "Warning: Head of rule added in line " << token_.line;
 				emsg << " has not been declared external. The entire rule will be ignored.";
 				std::cerr << emsg.str() << std::endl;
-				output_->getExternalKnowledge().sendToClient(emsg.str());
+				ext.sendToClient(emsg.str());
 			}
 			break;
 		}

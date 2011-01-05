@@ -38,8 +38,8 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	my_post_ = true;
 	solver_stopped_ = false;
 
-	step_ = 1;
-	controller_step_ = 0;
+	step_ = 0;
+	controller_step_ = 1;
 	model_ = false;
 //	debug_ = grounder_->options().debug;
 }
@@ -160,7 +160,7 @@ bool ExternalKnowledge::addInput() {
 	if(model_)
 		sendToClient("End of Step.\n");
 
-	if(!new_input_ && model_ && step_ > 1) {
+	if(!new_input_ && model_ && step_ > 0) {
 		io_service_.reset();
 		io_service_.run_one();
 	}
@@ -183,14 +183,19 @@ bool ExternalKnowledge::addInput() {
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {
 	// check if head atom has been defined as external
-	if(find(externals_.begin(), externals_.end(), symbol) != externals_.end() ||
-	   find(externals_old_.begin(), externals_old_.end(), symbol) != externals_old_.end()) {
+	if(find(externals_.begin(), externals_.end(), symbol) != externals_.end()) {
 		return true;
 	}
 	else return false;
 }
 
 void ExternalKnowledge::addHead(uint32_t symbol) {
+	// first remove head atom from externals
+	VarVec::iterator it = find(externals_.begin(), externals_.end(), symbol);
+	assert(it != externals_.end()); // call checkHead() first
+	externals_.erase(it);
+
+	// add head atom
 	heads_.push_back(symbol);
 }
 
@@ -218,19 +223,24 @@ void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Atom* atom) {
 	premature_facts_.push_back(atom);
 }
 */
+void ExternalKnowledge::setControllerStep(int step) {
+	std::cerr << "SET CONTROLLER STEP TO " << step << std::endl;
+	controller_step_ = step;
+}
+
 bool ExternalKnowledge::needsNewStep() {
+//	std::cerr << "DO I NEED NEW STEP? " << controller_step_ << " > " << step_ << std::endl;
 	return
 //			!premature_facts_.empty() ||	// has facts waiting to be added
-			step_ == 1 ||				// is first iteration
-			controller_step_ >= step_;	// controller wants to progress step count
+			step_ == 0 ||				// is first iteration
+			controller_step_ > step_;	// controller wants to progress step count
 }
 
 bool ExternalKnowledge::controllerNeedsNewStep() {
-	return controller_step_ >= step_;
+	return controller_step_ > step_;
 }
 
 VarVec& ExternalKnowledge::getAssumptions() {
-	//return externals_old_;
 	return externals_;
 }
 
@@ -276,16 +286,17 @@ void ExternalKnowledge::endStep() {
 	}
 
 	endIteration();
-
+/*
 	externals_old_.swap(externals_);
 	externals_.clear();
-/*
+
 	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
 		// freeze new external atoms, facts have been deleted already in addNewAtom()
 		output_->printExternalRule(i->second, i->first.first);
 	}
 */
 	step_++;
+//	std::cerr << "Step: " << step_ << std::endl;
 //	externals_per_step_.push_back(IntSet());
 }
 
@@ -326,9 +337,6 @@ int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
 	return del.size();
 }
 */
-void ExternalKnowledge::setControllerStep(int step) {
-	controller_step_ = step;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // ExternalKnowledge::PostPropagator
