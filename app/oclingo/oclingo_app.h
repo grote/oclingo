@@ -72,10 +72,16 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl;
 
 			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
-				std::cerr << "ASSUMING " << *lit << " FALSE" << std::endl;
-				a.push_back(i.find(*lit)->lit);
-			}
-		}
+				Clasp::Atom* atom = i.find(*lit);
+				if(atom) { // atom is not in AtomIndex if hidden with #hide
+					std::cerr << "ASSUMING " << *lit << " FALSE" << std::endl;
+					a.push_back(~atom->lit);
+					// create conflict to skip solving for next step
+					if(dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().controllerNeedsNewStep())
+						a.push_back(atom->lit);
+				}
+			} // end for
+		} // end OCLINGO only part
 	}
 }
 
