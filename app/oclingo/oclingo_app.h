@@ -141,7 +141,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 					ext.endIteration();
 				}
 			}
-			std::cerr << "preparing get of new ext knowledge" << std::endl;
+			std::cerr << "preparing reception of new ext knowledge" << std::endl;
 			ext.get();
 		} else {
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);

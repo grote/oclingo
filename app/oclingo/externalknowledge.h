@@ -46,6 +46,7 @@ public:
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
+	bool checkHead(uint32_t symbol, int line);
 	void addHead(uint32_t symbol);
 //	bool checkFact(Object* object);
 //	void addNewFact(NS_OUTPUT::Atom* atom, int line);

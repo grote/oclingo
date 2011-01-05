@@ -115,9 +115,11 @@ void OnlineParser::add(Type type, uint32_t n) {
 			LitVec &litVec = stack->lits;
 			Lit &lit = litVec.at(litVec.size() - n - 1);
 			uint32_t head = dynamic_cast<LparseConverter*>(output_)->symbol(predLitRep(stack, lit));
-			output_->getExternalKnowledge().addHead(head);
 
-			GroundProgramBuilder::add(stack);
+			if(output_->getExternalKnowledge().checkHead(head, token_.line)) {
+				output_->getExternalKnowledge().addHead(head);
+				GroundProgramBuilder::add(stack);
+			}
 			break;
 		}
 		default:

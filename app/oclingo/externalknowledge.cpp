@@ -180,35 +180,30 @@ bool ExternalKnowledge::addInput() {
 	return true;
 }
 
+bool ExternalKnowledge::checkHead(uint32_t symbol, int line=0) {
+	// check if head atom has been defined as external
+	if(find(externals_.begin(), externals_.end(), symbol) != externals_.end() ||
+	   find(externals_old_.begin(), externals_old_.end(), symbol) != externals_old_.end()) {
+		return true;
+	}
+	else {
+		std::stringstream emsg;
+		emsg << "Warning: Head of rule added for step " << controller_step_;
+		if(line) emsg << " in line " << line;
+		emsg << " has not been declared external. ";
+		emsg << "The entire rule will be ignored.";
+		std::cerr << emsg.str() << std::endl;
+		sendToClient(emsg.str());
+
+		return false;
+	}
+}
+
 void ExternalKnowledge::addHead(uint32_t symbol) {
 	heads_.push_back(symbol);
 }
 
 /*
-// checks if fact-atom has been defined as external
-bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
-	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
-	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
-	std::pair<int, ValueVector> pred = std::make_pair(atom->predUid_, atom->values_);
-
-	// try to find atom in external predicates
-	if(externals_.find(pred) != externals_.end() ||
-	   externals_old_.find(pred) != externals_old_.end()) {
-		return true;
-	}
-	return false;
-}
-
-void ExternalKnowledge::addNewFact(NS_OUTPUT::Atom* atom, int line=0) {
-	addNewAtom(atom, line);
-
-	// add fact to program
-	NS_OUTPUT::Fact* fact = new NS_OUTPUT::Fact(atom);
-	output_->print(fact);
-
-	delete fact;
-}
-
 void ExternalKnowledge::addNewAtom(NS_OUTPUT::Object* object, int line=0) {
 	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
 	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
