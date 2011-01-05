@@ -55,7 +55,7 @@ Lit::Score UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, PredLit *p
 			tsum += ref.second.size();
 		}
 	}
-	return Lit::Score(pred->complete() ? Lit::NON_RECURSIVE : Lit::RECURSIVE, varDoms.map.empty() == 0 ? 0 : tsum / varDoms.map.size());
+	return Lit::Score(pred->complete() ? Lit::NON_RECURSIVE : Lit::RECURSIVE, varDoms.map.empty() ? 0 : tsum / varDoms.map.size());
 }
 
 PredLitSet::PredCmp::PredCmp(const ValVec &vals)
