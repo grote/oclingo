@@ -43,6 +43,8 @@ public:
 	bool choice() const { return true; }
 	~External();
 private:
+	void addDomain(Grounder *g);
+private:
 	clone_ptr<PredLit> head_;
 	LitPtrVec          body_;
 };

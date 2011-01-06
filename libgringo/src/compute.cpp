@@ -16,7 +16,7 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/compute.h>
-#include <gringo/lit.h>
+#include <gringo/index.h>
 #include <gringo/term.h>
 #include <gringo/output.h>
 #include <gringo/predlit.h>
@@ -25,49 +25,99 @@
 #include <gringo/litdep.h>
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
+#include <gringo/prgvisitor.h>
+
+////////////////////////////// Compute::Head //////////////////////////////
+
+class Compute::Head : public Lit::Decorator
+{
+public:
+	Head(PredLit *lit);
+	Lit *decorated() const;
+	bool fact() const;
+	bool match(Grounder *grounder);
+	bool isFalse(Grounder *grounder);
+	void index(Grounder *g, Groundable *gr, VarSet &bound);
+    Monotonicity monotonicity();
+	void visit(PrgVisitor *v);
+	Lit *clone() const;
+	~Head();
+public:
+	clone_ptr<PredLit> lit;
+};
+
+Compute::Head::Head(PredLit *lit)
+	: Lit::Decorator(lit->loc())
+	, lit(lit)
+{
+}
+
+Lit *Compute::Head::decorated() const 
+{
+	return lit.get(); 
+	
+}
+
+bool Compute::Head::fact() const
+{
+	return false;
+}
+
+bool Compute::Head::match(Grounder *g)
+{
+	lit->match(g);
+	return true;
+}
+
+bool Compute::Head::isFalse(Grounder *)
+{
+	return false;
+}
+
+void Compute::Head::index(Grounder *g, Groundable *gr, VarSet &bound)
+{
+	gr->instantiator()->append(new MatchIndex(this));
+}
+
+Lit::Monotonicity Compute::Head::monotonicity()
+{
+	return ANTIMONOTONE;
+}
+
+void Compute::Head::visit(PrgVisitor *v)
+{
+	v->visit(lit.get());
+	foreach(Term &a, const_cast<TermPtrVec&>(lit->terms())) { v->visit(&a, false); }
+}
+
+Lit *Compute::Head::clone() const 
+{
+	return new Compute::Head(*this);
+}
+
+Compute::Head::~Head()
+{
+}
+
+////////////////////////////// Compute //////////////////////////////
 
 Compute::Compute(const Loc &loc, PredLit *head, LitPtrVec &body)
 	: Statement(loc)
-	, head_(head)
+	, head_(new Head(head))
 	, body_(body.release())
 {
 }
 
 void Compute::ground(Grounder *g)
 {
-	head_->clear();
-	if(inst_.get()) 
-	{
-		inst_->reset();
-		inst_->ground(g);
-	}
-	else if(head_->match(g)) { grounded(g); }
-	// TODO: bring in line with external/compute
-	Printer *printer = g->output()->printer<Printer>();
-	printer->begin();
-	printer->print(head_.get());
-	printer->end();
+	inst_->ground(g);
 }
 
 bool Compute::grounded(Grounder *g)
 {
-	try
-	{
-		head_->grounded(g);
-		head_->push();
-		return true;
-	}
-	catch(const Val *val)
-	{
-		std::ostringstream oss;
-		oss << "cannot convert ";
-		val->print(g, oss);
-		oss << " to integer";
-		std::string str(oss.str());
-		oss.str("");
-		print(g, oss);
-		throw TypeException(str, StrLoc(g, loc()), oss.str());
-	}
+	Printer *printer = g->output()->printer<Printer>();
+	printer->print(head_->lit.get());
+	return true;
 }
 
 namespace
@@ -132,15 +182,17 @@ void Compute::normalize(Grounder *g)
 	ComputeBodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
+	{
 		body_[i].normalize(g, &bodyExp);
+	}
 }
 
 void Compute::init(Grounder *g, const VarSet &b)
 {
-	if(body_.size() > 0 || vars_.size() > 0)
+	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
+		if(litDep_.get()) { litDep_->order(g, b); }
 		else
 		{
 			VarSet bound(b);
@@ -153,14 +205,13 @@ void Compute::init(Grounder *g, const VarSet &b)
 			head_->index(g, this, bound);
 		}
 	}
-	else head_->init(g, b);
-	litDep_.reset(0);
+	inst_->enqueue(g);
 }
 
 void Compute::visit(PrgVisitor *visitor)
 {
 	visitor->visit(static_cast<Lit*>(head_.get()), false);
-	foreach(Lit &lit, body_) visitor->visit(&lit, true);
+	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
 }
 
 void Compute::print(Storage *sto, std::ostream &out) const

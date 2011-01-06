@@ -358,17 +358,9 @@ namespace reifiedoutput_impl
 	{
 	}
 
-	void ComputePrinter::begin()
-	{
-	}
-
 	void ComputePrinter::print(PredLitRep *l)
 	{
 		output_->addCompute(l);
-	}
-
-	void ComputePrinter::end()
-	{
 	}
 
 }

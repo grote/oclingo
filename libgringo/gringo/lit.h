@@ -32,9 +32,12 @@ public:
 class Lit : public Locateable
 {
 public:
+	class Decorator;
+public:
 	enum Monotonicity { MONOTONE, ANTIMONOTONE, NONMONOTONE };
 	enum Priority { HIGHEST=0, CHECK_ONLY=8, RECURSIVE=32, NON_RECURSIVE=64, LOWEST=255};
 	typedef std::pair<Priority,double> Score;
+	
 public:
 	Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
 	virtual void normalize(Grounder *g, Expander *expander) = 0;
@@ -83,6 +86,38 @@ private:
 
 public:
 	uint32_t position : 31;
+};
+
+class Lit::Decorator : public Lit
+{
+public:
+	Decorator(const Loc &loc) : Lit(loc) { }
+	virtual Lit *decorated() const = 0;
+	virtual void normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
+	virtual Monotonicity monotonicity() { return decorated()->monotonicity(); }
+	virtual bool fact() const { return decorated()->fact(); }
+	virtual bool forcePrint() { return decorated()->forcePrint(); }
+	virtual bool match(Grounder *grounder) { return decorated()->match(grounder); }
+	virtual void addDomain(Grounder *grounder, bool fact) { decorated()->addDomain(grounder, fact); }
+	virtual void grounded(Grounder *grounder) { decorated()->grounded(grounder); }
+	virtual bool complete() const { return decorated()->complete(); }
+	virtual void finish(Grounder *grounder) { decorated()->finish(grounder); }
+	virtual bool head() const { return decorated()->head(); }
+	virtual void head(bool head) { decorated()->head(head); }
+	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) { decorated()->index(g, gr, bound); }
+	virtual void visit(PrgVisitor *visitor) { decorated()->visit(visitor); }
+	virtual bool edbFact() const { return decorated()->edbFact(); }
+	virtual void print(Storage *sto, std::ostream &out) const { decorated()->print(sto, out); }
+	virtual void accept(Printer *v) { decorated()->accept(v); }
+	virtual void init(Grounder *grounder, const VarSet &bound) { decorated()->init(grounder, bound); }
+	virtual void push() { decorated()->push() ; }
+	virtual bool testUnique(PredLitSet &set, Val v)  { return decorated()->testUnique(set, v); }
+	virtual void pop() { decorated()->pop(); }
+	virtual void move(size_t p) { decorated()->move(p); }
+	virtual void clear() { decorated()->clear(); }
+	virtual Score score(Grounder *grounder, VarSet &bound) { return decorated()->score(grounder, bound); }
+	virtual bool isFalse(Grounder *grounder) { return decorated()->isFalse(grounder); }
+	virtual ~Decorator() { }
 };
 
 inline Lit* new_clone(const Lit& a)

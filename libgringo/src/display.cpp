@@ -92,7 +92,9 @@ void Display::normalize(Grounder *g)
 	BodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
+	{
 		body_[i].normalize(g, &bodyExp);
+	}
 }
 
 void Display::init(Grounder *g, const VarSet &b)
@@ -120,7 +122,7 @@ void Display::init(Grounder *g, const VarSet &b)
 void Display::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
-	foreach(Lit &lit, body_) visitor->visit(&lit, true);
+	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
 }
 
 void Display::print(Storage *sto, std::ostream &out) const

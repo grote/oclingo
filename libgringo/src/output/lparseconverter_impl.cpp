@@ -81,9 +81,7 @@ class ComputePrinter : public Compute::Printer
 {
 public:
 	ComputePrinter(LparseConverter *output) : output_(output) { }
-	void begin() { }
 	void print(PredLitRep *l);
-	void end() { }
 	Output *output() const { return output_; }
 	std::ostream &out() const { return output_->out(); }
 private:

@@ -257,17 +257,9 @@ namespace plainoutput_impl
 		out() << (set_ ? "}.\n" : "].\n");
 	}
 
-	void ComputePrinter::begin()
-	{
-	}
-
 	void ComputePrinter::print(PredLitRep *l)
 	{
 		output_->addCompute(l);
-	}
-
-	void ComputePrinter::end()
-	{
 	}
 }
 

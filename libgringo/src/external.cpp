@@ -36,18 +36,24 @@ External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
 
 void External::ground(Grounder *g)
 {
-	if(inst_.get()) inst_->ground(g);
-	else
+	inst_->ground(g);
+}
+
+void External::addDomain(Grounder *g)
+{
+	try { head_->addDomain(g, false); }
+	catch(const AtomRedefinedException &ex)
 	{
-		head_->match(g);
-		grounded(g);
+		std::stringstream ss;
+		print(g, ss);
+		throw ModularityException(StrLoc(g, loc()), ss.str(), ex.what());
 	}
 }
 
 bool External::grounded(Grounder *g)
 {
 	head_->grounded(g);
-	head_->addDomain(g, false);
+	addDomain(g);
 	Printer *printer = g->output()->printer<Printer>();
 	printer->print(head_.get());
 	return true;
@@ -97,12 +103,14 @@ void External::normalize(Grounder *g)
 	BodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
+	{
 		body_[i].normalize(g, &bodyExp);
+	}
 }
 
 void External::init(Grounder *g, const VarSet &b)
 {
-	if(body_.size() > 0 || vars_.size() > 0)
+	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
 		if(vars_.size() > 0) litDep_->order(g, b);
@@ -118,8 +126,7 @@ void External::init(Grounder *g, const VarSet &b)
 			head_->index(g, this, bound);
 		}
 	}
-	else head_->init(g, b);
-	litDep_.reset(0);
+	inst_->enqueue(g);
 }
 
 void External::visit(PrgVisitor *visitor)

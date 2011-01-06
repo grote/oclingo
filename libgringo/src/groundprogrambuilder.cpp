@@ -147,13 +147,11 @@ void GroundProgramBuilder::add()
 		case STM_COMPUTE:
 		{
 			Compute::Printer *printer = output_->printer<Compute::Printer>();
-			printer->begin();
 			for(uint32_t i = stack_->n; i >= 1; i--)
 			{
 				Lit &a = stack_->lits[stack_->lits.size() - i];
 				printer->print(predLitRep(a));
 			}
-			printer->end();
 			pop(stack_->n);
 			break;
 		}

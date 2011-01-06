@@ -38,7 +38,7 @@ private:
 	bool head_;
 	bool printedHead_;
 	bool printedBody_;
-	std::vector<int32_t> computeLits_;
-	std::vector<bool>    computeSigns_;
+	std::stringstream compute_;
+
 };
 

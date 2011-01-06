@@ -106,18 +106,12 @@ void PlainOutput::finalize()
 			out() << "#external " << name << "/" << arity << ".\n";
 		}
 	}
-	if(!computeLits_.empty())
+	if(!compute_.str().empty())
 	{
-		bool comma = false;
 		out() << "#compute{";
-		for(size_t i = 0; i < computeLits_.size(); i++)
-		{
-			if(comma) out() << ",";
-			else comma = true;
-			if(computeSigns_[i]) out() << "not ";
-			out() << storage()->string(computeLits_[i]);
-		}
+		out() << compute_.str();
 		out() << "}.\n";
+		compute_.str("");
 	}
 }
 
@@ -133,8 +127,8 @@ void PlainOutput::doShow(uint32_t nameId, uint32_t arity, bool s)
 
 void PlainOutput::addCompute(PredLitRep *l)
 {
-	computeLits_.push_back(l->dom()->nameId());
-	computeSigns_.push_back(l->sign());
+	if(!compute_.str().empty()) { compute_ << ","; }
+	print(l, compute_);
 }
 
 PlainOutput::~PlainOutput()

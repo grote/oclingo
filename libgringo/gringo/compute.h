@@ -23,18 +23,18 @@
 
 class Compute : public Statement
 {
+private:
+	class Head;
+	
 public:
 	class Printer : public ::Printer
 	{
 	public:
 		void print(PredLitRep *l) { (void)l; assert(false); }
-		virtual void begin() = 0;
-		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
 public:
 	Compute(const Loc &loc, PredLit *head, LitPtrVec &body);
-	PredLit *head() const { return head_.get(); }
 	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
 	void ground(Grounder *g);
@@ -45,7 +45,7 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	~Compute();
 private:
-	clone_ptr<PredLit> head_;
-	LitPtrVec          body_;
+	clone_ptr<Head> head_;
+	LitPtrVec       body_;
 };
 

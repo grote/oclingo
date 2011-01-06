@@ -328,3 +328,8 @@ void PredLit::finish(Grounder *g)
 		startNew_ = 0;
 	}
 }
+
+PredLit* new_clone(const PredLit& a)
+{
+	return new PredLit(a);
+}

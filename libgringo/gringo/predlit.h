@@ -121,3 +121,4 @@ private:
 	Groundable        *parent_;
 };
 
+PredLit* new_clone(const PredLit& a);
