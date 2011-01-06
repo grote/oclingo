@@ -36,7 +36,7 @@ Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
 
 void Display::ground(Grounder *g)
 {
-	if(inst_.get()) inst_->ground(g);
+	if(inst_.get()) { inst_->ground(g); }
 	else
 	{
 		head_->match(g);
@@ -102,10 +102,10 @@ void Display::normalize(Grounder *g)
 
 void Display::init(Grounder *g, const VarSet &b)
 {
-	if(body_.size() > 0 || vars_.size() > 0)
+	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
+		if(litDep_.get()) { litDep_->order(g, b); }
 		else
 		{
 			VarSet bound(b);
@@ -118,8 +118,8 @@ void Display::init(Grounder *g, const VarSet &b)
 			head_->index(g, this, bound);
 		}
 	}
-	else head_->init(g, b);
-	litDep_.reset(0);
+	else { head_->init(g, b); }
+	inst_->enqueue(g);
 }
 
 void Display::visit(PrgVisitor *visitor)

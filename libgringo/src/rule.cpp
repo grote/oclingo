@@ -143,6 +143,7 @@ void Rule::ground(Grounder *g)
 	if(inst_.get()) { inst_->ground(g); }
 	else
 	{
+		assert(edbFact());
 		if(head_.get()) { head_->match(g); }
 		grounded(g);
 	}
