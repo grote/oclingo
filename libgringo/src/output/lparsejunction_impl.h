@@ -17,6 +17,8 @@
 
 #pragma once
 
+/*
+
 #include <gringo/gringo.h>
 #include <gringo/junctionaggrlit.h>
 #include <gringo/lparseconverter.h>
@@ -43,3 +45,4 @@ private:
 
 }
 
+*/

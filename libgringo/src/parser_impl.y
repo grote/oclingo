@@ -193,6 +193,13 @@ boost::ptr_vector<T> *vec1(T *x)
 %left COMMA.
 %left VBAR.
 
+// TODO: remove me!!!
+%left EVEN.
+%left ODD.
+%left MAX.
+%left MIN.
+%left AVG.
+
 start ::= program.
 
 program ::= .
@@ -235,7 +242,7 @@ rule(res) ::= head(head).               { LitPtrVec v; res = new Rule(head->loc(
 
 head(res) ::= predicate(pred).  { res = pred; }
 head(res) ::= aggr_atom(lit).   { res = lit; }
-head(res) ::= disjunction(lit). { res = lit; }
+//head(res) ::= disjunction(lit). { res = lit; }
 
 nbody(res) ::= body_literal(lit).                   { res = vec1(lit); }
 nbody(res) ::= nbody(body) COMMA body_literal(lit). { res = body; res->push_back(lit); }
@@ -258,7 +265,7 @@ body_literal(res) ::= aggr_atom(lit).                     { res = lit; }
 body_literal(res) ::= NOT aggr_atom(lit).                 { res = lit; lit->sign(true); }
 body_literal(res) ::= VARIABLE(var) ASSIGN aggr_ass(lit). { res = lit; lit->assign(new VarTerm(var.loc(), var.index)); }
 body_literal(res) ::= term(a) CASSIGN aggr_ass(lit).      { res = lit; lit->assign(a); }
-body_literal(res) ::= conjunction(lit).                   { res = lit; }
+//body_literal(res) ::= conjunction(lit).                   { res = lit; }
 
 cmp(res) ::= GREATER. { res = RelLit::GREATER; }
 cmp(res) ::= LOWER.   { res = RelLit::LOWER; }
@@ -321,7 +328,7 @@ weightcond(res) ::= nweightcond(list). { res = list; }
 aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
 aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.     { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
 
-aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
+//aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
 
 ncondlist(res) ::= condlit(lit).                       { res = vec1(lit); }
 ncondlist(res) ::= ncondlist(list) COMMA condlit(lit). { res = list; res->push_back(lit); }
@@ -333,29 +340,29 @@ condlit(res) ::= lit(lit) weightcond(cond). { res = new CondLit(lit->loc(), lit,
 aggr_ass(res) ::= COUNT(tok) LCBRAC condlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
 aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
 
-aggr(res) ::= EVEN(tok) LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, true); delete list; }
-aggr(res) ::= ODD(tok)  LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, true); delete list; }
-aggr(res) ::= EVEN(tok) LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, false); delete list; }
-aggr(res) ::= ODD(tok)  LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, false); delete list; }
+//aggr(res) ::= EVEN(tok) LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, true); delete list; }
+//aggr(res) ::= ODD(tok)  LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, true); delete list; }
+//aggr(res) ::= EVEN(tok) LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, false); delete list; }
+//aggr(res) ::= ODD(tok)  LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, false); delete list; }
 
-ccondlit(res) ::= lit(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
-ccondlist(res) ::= ccondlit(lit). { res = new CondLitVec(); res->push_back(lit); }
+//ccondlit(res) ::= lit(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
+//ccondlist(res) ::= ccondlit(lit). { res = new CondLitVec(); res->push_back(lit); }
 
-conjunction(res) ::= ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
+//conjunction(res) ::= ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
 
-head_ccondlit_nocond(res) ::= predicate(lit).                   { LitPtrVec cond; res = new CondLit(lit->loc(), lit, ONE(lit->loc()), cond); }
-head_ccondlit_cond(res)   ::= predicate(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
-head_ccondlit(res) ::= head_ccondlit_nocond(lit). { res = lit; }
-head_ccondlit(res) ::= head_ccondlit_cond(lit).   { res = lit; }
+//head_ccondlit_nocond(res) ::= predicate(lit).                   { LitPtrVec cond; res = new CondLit(lit->loc(), lit, ONE(lit->loc()), cond); }
+//head_ccondlit_cond(res)   ::= predicate(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
+//head_ccondlit(res) ::= head_ccondlit_nocond(lit). { res = lit; }
+//head_ccondlit(res) ::= head_ccondlit_cond(lit).   { res = lit; }
 
-head_ccondlist(res) ::= head_ccondlit_cond(lit).                            { res = new CondLitVec(); res->push_back(lit); }
-head_ccondlist(res) ::= head_ccondlit_nocond(lit) VBAR head_ccondlit(lit2). { res = new CondLitVec(); res->push_back(lit); res->push_back(lit2); }
-head_ccondlist(res) ::= head_ccondlist(list) VBAR head_ccondlit(lit).       { res = list; res->push_back(lit); }
+//head_ccondlist(res) ::= head_ccondlit_cond(lit).                            { res = new CondLitVec(); res->push_back(lit); }
+//head_ccondlist(res) ::= head_ccondlit_nocond(lit) VBAR head_ccondlit(lit2). { res = new CondLitVec(); res->push_back(lit); res->push_back(lit2); }
+//head_ccondlist(res) ::= head_ccondlist(list) VBAR head_ccondlit(lit).       { res = list; res->push_back(lit); }
 
-disjunction(res) ::= head_ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
+//disjunction(res) ::= head_ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
 
-aggr_ass(res) ::= MIN(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, false); delete list; }
-aggr_ass(res) ::= MAX(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, true); delete list; }
+//aggr_ass(res) ::= MIN(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, false); delete list; }
+//aggr_ass(res) ::= MAX(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, true); delete list; }
 
 aggr_num(res) ::= aggr_ass(lit). { res = lit; }
 aggr(res)     ::= aggr_num(lit). { res = lit; }

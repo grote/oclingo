@@ -146,6 +146,7 @@ namespace reifiedoutput_impl
 		}
 	}
 
+	/*
 	void AvgAggrLitPrinter::begin(bool head, bool sign)
 	{
 		head_       = head;
@@ -342,6 +343,8 @@ namespace reifiedoutput_impl
 			else { output_->popSet(); }
 		}
 	}
+	
+	*/
 
 	void OptimizePrinter::begin(bool maximize, bool set)
 	{
@@ -369,10 +372,12 @@ GRINGO_REGISTER_PRINTER(reifiedoutput_impl::DisplayPrinter, Display::Printer, Re
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ExternalPrinter, External::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::RulePrinter, Rule::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, ReifiedOutput)
+/*
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ParityAggrLitPrinter, ParityAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::JunctionAggrLitPrinter, JunctionAggrLit::Printer, ReifiedOutput)
+*/
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::OptimizePrinter, Optimize::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ComputePrinter, Compute::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::IncPrinter, IncLit::Printer, ReifiedOutput)

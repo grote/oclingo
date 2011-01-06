@@ -21,6 +21,8 @@
 #include <gringo/domain.h>
 #include <gringo/storage.h>
 
+/*
+
 namespace lparseconverter_impl
 {
 
@@ -75,3 +77,4 @@ void JunctionPrinter::end()
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionAggrLit::Printer, LparseConverter)
 
+*/

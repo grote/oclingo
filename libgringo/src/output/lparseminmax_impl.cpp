@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include "output/lparseminmax_impl.h"
 #include "output/lparsesum_impl.h"
 #include <gringo/predlitrep.h>
@@ -133,3 +135,4 @@ void MinMaxPrinter::addConstraint(tribool bound, bool head, bool sign, RulePrint
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::MinMaxPrinter, MinMaxAggrLit::Printer, LparseConverter)
 
+*/

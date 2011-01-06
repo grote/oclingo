@@ -92,6 +92,7 @@ namespace plainoutput_impl
 		std::ostringstream aggr_;
 	};
 
+	/*
 	class AvgAggrLitPrinter : public AvgAggrLit::Printer
 	{
 	public:
@@ -174,6 +175,7 @@ namespace plainoutput_impl
 		bool               printed_;
 		std::ostringstream aggr_;
 	};
+	*/
 
 	class OptimizePrinter : public Optimize::Printer
 	{

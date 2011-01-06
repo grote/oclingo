@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include <gringo/avgaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -140,3 +142,5 @@ tribool AvgAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(c
 	}
 	return unknown;
 }
+
+*/

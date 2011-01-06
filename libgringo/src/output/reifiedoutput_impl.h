@@ -95,6 +95,7 @@ namespace reifiedoutput_impl
 		bool               hasNeg_;
 	};
 
+	/*
 	class AvgAggrLitPrinter : public AvgAggrLit::Printer
 	{
 	public:
@@ -181,6 +182,8 @@ namespace reifiedoutput_impl
 		bool              head_;
 
 	};
+	
+	*/
 
 	class OptimizePrinter : public Optimize::Printer
 	{

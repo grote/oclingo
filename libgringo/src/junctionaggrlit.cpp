@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include <gringo/junctionaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -180,3 +182,4 @@ void JunctionAggrLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
+*/

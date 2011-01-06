@@ -17,14 +17,11 @@
 
 #pragma once
 
+/*
+
 #include <gringo/gringo.h>
 #include <gringo/sumaggrlit.h>
 
-//! Min or Max Aggregate.
-/** Examples:
-  * <pre> Y = \#min [ q(X)=X : p(X) ]
-  * 2 \#max[ q(1)=2, q(2)=1, not p(1)=3 ]</pre>
-  */
 class MinMaxAggrLit : public AggrLit
 {
 public:
@@ -38,10 +35,6 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	/** \param head whether the literal appears in the head of a rule
-	  * \param sign the sign of the literal
-	  * \param count whether it is a count aggregate (false for sum aggregate).
-	  */
 	MinMaxAggrLit(const Loc &loc, CondLitVec &conds, bool count);
 
 	bool match(Grounder *grounder);
@@ -77,3 +70,4 @@ private:
 	boost::unordered_set<Val> *vals_;
 };
 
+*/

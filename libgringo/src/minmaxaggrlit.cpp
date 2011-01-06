@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -226,3 +228,5 @@ tribool MinMaxAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) thro
 	}
 	return unknown;
 }
+
+*/

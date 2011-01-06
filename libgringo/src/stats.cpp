@@ -92,7 +92,8 @@ void Stats::visit(Lit *lit, bool domain)
 			if(dynamic_cast<SumAggrLit*>(lit)->set()) numAggrCount_ ++;
 			else numAggrSum_ ++;
 		}
-		else if(dynamic_cast<MinMaxAggrLit*>(lit)) numAggrMinmax_ ++;
+		#pragma message "readd this"
+		//else if(dynamic_cast<MinMaxAggrLit*>(lit)) numAggrMinmax_ ++;
 
 		inAggregate_ = true;
 		lit->visit(this);

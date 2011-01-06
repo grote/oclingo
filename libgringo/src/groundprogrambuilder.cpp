@@ -229,6 +229,7 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			aggrPrinter->end();
 			break;
 		}
+		/*
 		case AGGR_AVG:
 		{
 			AvgAggrLit::Printer *aggrPrinter = output_->printer<AvgAggrLit::Printer>();
@@ -299,6 +300,7 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			aggrPrinter->end();
 			break;
 		}
+		*/
 		default:
 		{
 			assert(a.type == LIT);

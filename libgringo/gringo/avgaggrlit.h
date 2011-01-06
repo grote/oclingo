@@ -17,13 +17,11 @@
 
 #pragma once
 
+/*
+
 #include <gringo/gringo.h>
 #include <gringo/aggrlit.h>
 
-//! Average Aggregate.
-/** Examples:
-  * <pre> 1 #avg [ q(X)=X : p(X) ] 2</pre>
-  */
 class AvgAggrLit : public AggrLit
 {
 public:
@@ -63,3 +61,4 @@ private:
 	int32_t lowerBound_;
 };
 
+*/

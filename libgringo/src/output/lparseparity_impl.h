@@ -17,6 +17,8 @@
 
 #pragma once
 
+/*
+
 #include <gringo/gringo.h>
 #include <gringo/sumaggrlit.h>
 #include <gringo/parityaggrlit.h>
@@ -47,3 +49,4 @@ private:
 
 }
 
+*/

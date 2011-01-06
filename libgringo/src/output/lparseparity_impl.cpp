@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
 #include "output/lparseparity_impl.h"
 #include "output/lparsesum_impl.h"
 #include <gringo/predlitrep.h>
@@ -106,3 +107,4 @@ void ParityPrinter::end()
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ParityPrinter, ParityAggrLit::Printer, LparseConverter)
 
+*/

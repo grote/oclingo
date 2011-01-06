@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include "output/lparseavg_impl.h"
 #include "output/lparsesum_impl.h"
 #include <gringo/predlitrep.h>
@@ -131,3 +133,4 @@ void AvgPrinter::addConstraint(tribool bound, bool head, bool sign, RulePrinter 
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::AvgPrinter, AvgAggrLit::Printer, LparseConverter)
 
+*/

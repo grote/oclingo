@@ -101,6 +101,8 @@ namespace plainoutput_impl
 		else out() << "#sum[" << aggr_.str() << "]";
 		if(hasUpper_) out() << upper_;
 	}
+	
+	/*
 
 	void AvgAggrLitPrinter::begin(bool head, bool sign)
 	{
@@ -234,6 +236,8 @@ namespace plainoutput_impl
 		output_->print();
 		output_->print(l, out());
 	}
+	
+	*/
 
 	void OptimizePrinter::begin(bool maximize, bool set)
 	{
@@ -267,10 +271,12 @@ GRINGO_REGISTER_PRINTER(plainoutput_impl::DisplayPrinter, Display::Printer, Plai
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, PlainOutput)
+/*
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ParityAggrLitPrinter, ParityAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::JunctionAggrLitPrinter, JunctionAggrLit::Printer, PlainOutput)
+*/
 GRINGO_REGISTER_PRINTER(plainoutput_impl::OptimizePrinter, Optimize::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::IncPrinter, IncLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ComputePrinter, Compute::Printer, PlainOutput)

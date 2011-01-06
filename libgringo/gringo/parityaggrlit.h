@@ -17,14 +17,11 @@
 
 #pragma once
 
+/*
 #include <gringo/gringo.h>
 #include <gringo/aggrlit.h>
 
-//! Parity Aggregate.
-/** Examples:
-  * <pre> \#even [ q(X)=X : p(X) ]
-  * X \#odd { q(1), q(2), not p }</pre>
-  */
+
 class ParityAggrLit : public AggrLit
 {
 public:
@@ -36,9 +33,6 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	/** \param even whether the sum has to be even (or odd)
-	  * \param set whether the list is handled like a set
-	  */
 	ParityAggrLit(const Loc &loc, CondLitVec &conds, bool even, bool set);
 
 	bool match(Grounder *grounder);
@@ -58,3 +52,4 @@ private:
 	bool fixed_;
 };
 
+*/

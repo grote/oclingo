@@ -20,12 +20,9 @@
 #include <gringo/gringo.h>
 #include <gringo/aggrlit.h>
 
+/*
+
 //! Junction Aggregate.
-/** Examples:
-  * <pre> q(X) : p(X)
-  * X < 3 : p(X)
-  * a | b : d | c</pre>
-  */
 class JunctionAggrLit : public AggrLit
 {
 public:
@@ -54,3 +51,4 @@ private:
 	bool    hasFalse_;
 };
 
+*/

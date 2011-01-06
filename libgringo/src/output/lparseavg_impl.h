@@ -17,6 +17,8 @@
 
 #pragma once
 
+/*
+
 #include <gringo/gringo.h>
 #include <gringo/sumaggrlit.h>
 #include <gringo/avgaggrlit.h>
@@ -39,8 +41,6 @@ public:
 	std::ostream &out() const { return output_->out(); }
 private:
 	//! prints a choice or constraint
-	/** \param bound whether the constraint has an upper (true) or lower (false) bound
-	*/
 	void addConstraint(tribool bound, bool head, bool sign, RulePrinter &printer);
 	LparseConverter     *output_;
 	std::vector<int32_t> lits_;
@@ -56,3 +56,4 @@ private:
 
 }
 
+*/

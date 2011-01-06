@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include <gringo/parityaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -106,3 +108,5 @@ tribool ParityAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) thro
 	else if (num % 2 != 0) fixed_ = !fixed_;
 	return lit.fact() ? tribool(true) : unknown;
 }
+
+*/
