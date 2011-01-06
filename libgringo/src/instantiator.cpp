@@ -71,10 +71,8 @@ void Instantiator::ground(Grounder *g)
 			}
 		}
 	}
-	foreach(uint32_t var, groundable_->vars())
-		g->unbind(var);
-	foreach(Index &idx, indices_)
-		idx.finish();
+	foreach(uint32_t var, groundable_->vars()) { g->unbind(var); }
+	foreach(Index &idx, indices_) { idx.finish(); }
 }
 
 void Instantiator::reset()
