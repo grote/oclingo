@@ -84,6 +84,7 @@ Term *Optimize::prio()
 
 void Optimize::ground(Grounder *g)
 {
+	#pragma message "optimize statements can be printed right away without storing them!"
 	prios_.clear();
 	head_->clear();
 	if(inst_.get()) 
@@ -200,10 +201,10 @@ void Optimize::normalize(Grounder *g)
 
 void Optimize::init(Grounder *g, const VarSet &b)
 {
-	if(body_.size() > 0 || vars_.size() > 0)
+	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
+		if(litDep_.get()) { litDep_->order(g, b); }
 		else
 		{
 			VarSet bound(b);
@@ -216,8 +217,7 @@ void Optimize::init(Grounder *g, const VarSet &b)
 			head_->index(g, this, bound);
 		}
 	}
-	else head_->init(g, b);
-	litDep_.reset(0);
+	inst_->enqueue(g);
 }
 
 void Optimize::visit(PrgVisitor *visitor)
