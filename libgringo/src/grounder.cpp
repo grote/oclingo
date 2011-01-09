@@ -178,6 +178,10 @@ void Grounder::luaPushVal(const Val &val)
 	return luaImpl_->pushVal(val);
 }
 
+void Grounder::addMagic()
+{
+}
+
 void Grounder::analyze(const std::string &depGraph, bool stats)
 {
 	// build dependency graph

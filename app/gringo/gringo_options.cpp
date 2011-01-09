@@ -64,6 +64,7 @@ GringoOptions::GringoOptions()
 	, disjShift(false)
 	, compat(false)
 	, stats(false)
+	, magic(false)
 	, iexpand(IEXPAND_ALL)
 {
 	heuristics.heuristic.reset(new BasicBodyOrderHeuristic());
@@ -103,6 +104,8 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 			"      Valid:   basic, unify\n"
 			"        basic: basic heuristic\n"
 			"        unify: unify to estimate domain sizes")
+
+		("magic"     , bool_switch(&magic),             "Enable magic set rewriting")
 
 		("ifixed"    , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
 		("iexpand"   , storeTo(iexpand),

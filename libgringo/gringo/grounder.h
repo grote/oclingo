@@ -84,6 +84,7 @@ private:
 public:
 	Grounder(Output *out, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic);
 	void analyze(const std::string &depGraph = "", bool stats = false);
+	void addMagic();
 	void ground(Module &module);
 	void enqueue(Groundable *g);
 	void externalStm(uint32_t nameId, uint32_t arity);

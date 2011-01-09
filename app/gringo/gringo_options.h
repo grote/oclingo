@@ -70,6 +70,8 @@ public:
 	bool compat;
 	/** whether statistics will be printed to stderr */
 	bool stats;
+	/** whether magic set rewriting is enabled */
+	bool magic;
 	IExpand iexpand;
 	ProgramOptions::HeuristicOptions heuristics;
 };

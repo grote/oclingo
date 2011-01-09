@@ -119,6 +119,7 @@ typedef boost::ptr_vector<Statement> StatementPtrVec;
 typedef boost::ptr_vector<Index> IndexPtrVec;
 typedef boost::ptr_vector<Lit> LitPtrVec;
 typedef boost::ptr_vector<Term> TermPtrVec;
+typedef std::vector<Lit*> LitVec;
 typedef std::vector<VarTerm*> VarTermVec;
 typedef std::vector<std::string> StringVec;
 typedef std::vector<Val> ValVec;

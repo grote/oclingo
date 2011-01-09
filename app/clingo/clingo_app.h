@@ -215,6 +215,7 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 		{
 			parser->parse();
 
+			if(app.gringo.magic) grounder->addMagic();
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);

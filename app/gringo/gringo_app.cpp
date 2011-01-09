@@ -119,6 +119,7 @@ int GringoApp::doRun()
 
 		o->initialize();
 		p.parse();
+		if(gringo.magic) g.addMagic();
 		g.analyze(gringo.depGraph, gringo.stats);
 		groundBase(g, config, 1, gringo.ifixed, gringo.ifixed);
 		o->finalize();

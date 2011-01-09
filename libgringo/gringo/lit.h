@@ -32,6 +32,17 @@ public:
 class Lit : public Locateable
 {
 public:
+	struct LitCmp
+	{
+		LitCmp(Grounder &g, VarSet &b) : grounder(g), bound(b) {}
+		Grounder &grounder;
+		VarSet &bound;
+		bool operator()(Lit *a, Lit *b)
+		{
+			return a->score(&grounder, bound) < b->score(&grounder, bound);
+		}
+	};
+public:
 	class Decorator;
 public:
 	enum Monotonicity { MONOTONE, ANTIMONOTONE, NONMONOTONE };
