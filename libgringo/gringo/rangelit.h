@@ -29,7 +29,7 @@ public:
 	void accept(Printer *v);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
-	bool match(Grounder *grounder);
+	bool isFalse(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit::Score score(Grounder *g, VarSet &bound);
 	Lit *clone() const;

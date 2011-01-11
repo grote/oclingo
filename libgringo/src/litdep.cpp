@@ -213,7 +213,6 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 		LitNodeVec::iterator min = std::min_element(queue.begin(), queue.end(), LitNodeCmp());
 		LitNode *lit = *min;
 		queue.erase(min);
-		lit->lit()->init(g, bound);
 		lit->lit()->index(g, groundable_, bound);
 		lit->check(queue);
 		lit->lit()->position = position++;

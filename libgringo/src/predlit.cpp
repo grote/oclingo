@@ -58,53 +58,6 @@ Lit::Score UnifyBodyOrderHeuristic::score(Grounder *g, VarSet &bound, PredLit *p
 	return Lit::Score(pred->complete() ? Lit::NON_RECURSIVE : Lit::RECURSIVE, varDoms.map.empty() ? 0 : tsum / varDoms.map.size());
 }
 
-PredLitSet::PredCmp::PredCmp(const ValVec &vals)
-	: vals_(vals)
-{
-}
-
-size_t PredLitSet::PredCmp::operator()(const PredSig &a) const
-{
-	size_t hash = a.first->dom()->domId();
-	boost::hash_combine(hash, static_cast<size_t>(a.first->sign()));
-	boost::hash_range(hash, vals_.begin() + a.second, vals_.begin() + a.second + a.first->dom()->arity() + 1);
-	return hash;
-}
-
-bool PredLitSet::PredCmp::operator()(const PredSig &a, const PredSig &b) const
-{
-	return
-		a.first->dom() == b.first->dom() &&
-		a.first->sign() == b.first->sign() &&
-		ValRng(vals_.begin() + a.second, vals_.begin() + a.second + a.first->dom()->arity() + 1) ==
-		ValRng(vals_.begin() + b.second, vals_.begin() + b.second + a.first->dom()->arity() + 1);
-}
-
-PredLitSet::PredLitSet()
-	: set_(0, PredCmp(vals_), PredCmp(vals_))
-{
-}
-
-bool PredLitSet::insert(PredLit *pred, size_t pos, Val &val)
-{
-	ValRng rng = pred->vals(pos);
-	size_t offset = vals_.size();
-	vals_.insert(vals_.end(), rng.begin(), rng.end());
-	vals_.insert(vals_.end(), val);
-	if(set_.insert(PredSig(pred, offset)).second) return true;
-	else
-	{
-		vals_.resize(offset);
-		return false;
-	}
-}
-
-void PredLitSet::clear()
-{
-	set_.clear();
-	vals_.clear();
-}
-
 PredLit::PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms)
 	: Lit(loc)
 	, PredLitRep(false, dom)
@@ -154,32 +107,6 @@ void PredLit::visit(PrgVisitor *v)
 void PredLit::vars(VarSet &vars) const
 {
 	foreach(const Term &a, terms_) a.vars(vars);
-}
-
-void PredLit::push()
-{
-	top_ = vals_.size();
-}
-
-bool PredLit::testUnique(PredLitSet &set, Val val)
-{
-	return set.insert(this, top_, val);
-}
-
-void PredLit::pop()
-{
-	top_-= terms_.size();
-}
-
-void PredLit::move(size_t p)
-{
-	top_ = p * dom_->arity();
-}
-
-void PredLit::clear()
-{
-	top_ = 0;
-	vals_.clear();
 }
 
 bool PredLit::match(Grounder *grounder)
@@ -327,6 +254,10 @@ void PredLit::finish(Grounder *g)
 		}
 		startNew_ = 0;
 	}
+}
+
+PredLit::~PredLit()
+{
 }
 
 PredLit* new_clone(const PredLit& a)

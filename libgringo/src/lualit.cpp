@@ -34,11 +34,16 @@ LuaLit::LuaLit(const Loc &loc, VarTerm *var, TermPtrVec &args, uint32_t name, in
 
 bool LuaLit::match(Grounder *grounder)
 {
+	return !isFalse(grounder);
+}
+
+bool LuaLit::isFalse(Grounder *grounder)
+{
 	ValVec vals;
 	ValVec args;
 	foreach(Term &term, args_) { args.push_back(term.val(grounder)); }
 	grounder->luaCall(this, args, vals);
-	return std::find(vals.begin(), vals.end(), var_->val(grounder)) != vals.end();
+	return std::find(vals.begin(), vals.end(), var_->val(grounder)) == vals.end();
 }
 
 namespace

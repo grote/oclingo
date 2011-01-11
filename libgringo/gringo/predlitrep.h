@@ -19,6 +19,27 @@
 
 #include <gringo/gringo.h>
 
+class PredLitSet
+{
+private:
+	typedef std::pair<PredLitRep*, size_t> PredSig;
+	struct PredCmp
+	{
+		PredCmp(const ValVec &vals);
+		size_t operator()(const PredSig &a) const;
+		bool operator()(const PredSig &a, const PredSig &b) const;
+		const ValVec &vals_;
+	};
+	typedef boost::unordered_set<PredSig, PredCmp, PredCmp> PredSet;
+public:
+	PredLitSet();
+	bool insert(PredLitRep *pred, size_t pos, Val &val);
+	void clear();
+private:
+	PredSet set_;
+	ValVec  vals_;
+};
+
 class PredLitRep
 {
 public:
@@ -30,6 +51,11 @@ public:
 	ValRng vals() const;
 	ValRng vals(uint32_t top) const;
 	Domain *dom() const { return dom_; }
+	void push();
+	bool testUnique(PredLitSet &set, Val val=Val::create());
+	void pop();
+	void move(size_t p);
+	void clear();
 protected:
 	bool     sign_;
 	bool     match_;
@@ -37,4 +63,3 @@ protected:
 	Domain  *dom_;
 	ValVec   vals_;
 };
-

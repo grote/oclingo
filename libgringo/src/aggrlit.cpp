@@ -15,6 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+
+/*
+ * aggrlit with set of condlits
+ * condlit as usual + set of terms
+ * term tuple determines uniqueness
+ * in body conditionals + head correspond to conjunction
+ * in head conditionals will be treated like body literals
+ * if an aggrgegate is grounded
+ *   set a counter to the number of conditionals in the aggregate
+ *   mark all conditionals
+ * if all literals in a conditional are complete grounding similar to current algorithm
+ *   immediately ground the conditional
+ *   decrement aggregate counter
+ * otherwise the aggregate enqueues the recursive conditional
+ *   enqueue the conditional
+ * if conditional is grounded and marked
+ *   decrement counter in aggregate
+ *   if counter hits zero and aggregate possibly matches
+ *     enqueue the rule with the aggregate again
+ *     or if all conditionals where complete immediately match
+ * optimizations for monotone/antimonotone aggregates possible
+ *   a monotone aggregate stays true
+ *   an antimonotone aggregate stays false
+ * 
+ * 
+ * grounding happens w.r.t. some global substitution
+ *   globals substitutions have to be stored in the condlit
+ */
+
+/*
 #include <gringo/aggrlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
@@ -345,3 +375,4 @@ CondLit* new_clone(const CondLit& a)
 	return new CondLit(a);
 }
 
+*/

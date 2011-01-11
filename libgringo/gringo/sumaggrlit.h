@@ -43,6 +43,7 @@ public:
 	SumAggrLit(const Loc &loc, CondLitVec &conds, bool count);
 
 	bool match(Grounder *grounder);
+	bool isFalse(Grounder *);
 	boost::tuple<int32_t, int32_t, int32_t> matchAssign(Grounder *grounder);
 	void setValue(int32_t value) { lowerBound_ = upperBound_ = value; }
 	void index(Grounder *g, Groundable *gr, VarSet &bound);

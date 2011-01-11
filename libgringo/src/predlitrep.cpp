@@ -18,6 +18,53 @@
 #include <gringo/predlitrep.h>
 #include <gringo/domain.h>
 
+PredLitSet::PredCmp::PredCmp(const ValVec &vals)
+	: vals_(vals)
+{
+}
+
+size_t PredLitSet::PredCmp::operator()(const PredSig &a) const
+{
+	size_t hash = a.first->dom()->domId();
+	boost::hash_combine(hash, static_cast<size_t>(a.first->sign()));
+	boost::hash_range(hash, vals_.begin() + a.second, vals_.begin() + a.second + a.first->dom()->arity() + 1);
+	return hash;
+}
+
+bool PredLitSet::PredCmp::operator()(const PredSig &a, const PredSig &b) const
+{
+	return
+		a.first->dom() == b.first->dom() &&
+		a.first->sign() == b.first->sign() &&
+		ValRng(vals_.begin() + a.second, vals_.begin() + a.second + a.first->dom()->arity() + 1) ==
+		ValRng(vals_.begin() + b.second, vals_.begin() + b.second + a.first->dom()->arity() + 1);
+}
+
+PredLitSet::PredLitSet()
+	: set_(0, PredCmp(vals_), PredCmp(vals_))
+{
+}
+
+bool PredLitSet::insert(PredLitRep *pred, size_t pos, Val &val)
+{
+	ValRng rng = pred->vals(pos);
+	size_t offset = vals_.size();
+	vals_.insert(vals_.end(), rng.begin(), rng.end());
+	vals_.insert(vals_.end(), val);
+	if(set_.insert(PredSig(pred, offset)).second) return true;
+	else
+	{
+		vals_.resize(offset);
+		return false;
+	}
+}
+
+void PredLitSet::clear()
+{
+	set_.clear();
+	vals_.clear();
+}
+
 PredLitRep::PredLitRep(bool sign, Domain *dom)
 	: sign_(sign)
 	, match_(true)
@@ -42,3 +89,28 @@ ValRng PredLitRep::vals(uint32_t top) const
 	return ValRng(vals_.begin() + top, vals_.begin() + top + dom_->arity());
 }
 
+void PredLitRep::push()
+{
+	top_ = vals_.size();
+}
+
+bool PredLitRep::testUnique(PredLitSet &set, Val val)
+{
+	return set.insert(this, top_, val);
+}
+
+void PredLitRep::pop()
+{
+	top_-= dom_->arity();
+}
+
+void PredLitRep::move(size_t p)
+{
+	top_ = p * dom_->arity();
+}
+
+void PredLitRep::clear()
+{
+	top_ = 0;
+	vals_.clear();
+}

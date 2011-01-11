@@ -26,12 +26,14 @@
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
 
+#pragma message "implement this in the same manner as condlits"
 class Optimize::PrioLit : public Lit
 {
 public:
 	PrioLit(const Loc &loc, Term *weight, Term *prio) : Lit(loc), weight_(weight), prio_(prio) { }
 	bool fact() const { return true; }
 	bool match(Grounder *grounder) { (void)grounder; return true; }
+	bool isFalse(Grounder *grounder) { (void)grounder; return false; }
 	void addDomain(Grounder *, bool fact) { (void)fact; assert(false); }
 	void index(Grounder *g, Groundable *gr, VarSet &bound) { (void)g; (void)gr; (void)bound; }
 	bool edbFact() const { return false; }
@@ -208,12 +210,7 @@ void Optimize::init(Grounder *g, const VarSet &b)
 		else
 		{
 			VarSet bound(b);
-			foreach(Lit &lit, body_) 
-			{
-				lit.init(g, bound);
-				lit.index(g, this, bound);
-			}
-			head_->init(g, bound);
+			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
 			head_->index(g, this, bound);
 		}
 	}

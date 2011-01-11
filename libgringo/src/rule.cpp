@@ -117,16 +117,8 @@ void Rule::init(Grounder *g, const VarSet &b)
 		else
 		{
 			VarSet bound(b);
-			foreach(Lit &lit, body_)
-			{
-				lit.init(g, bound);
-				lit.index(g, this, bound);
-			}
-			if(head_.get()) 
-			{
-				head_->init(g, bound);
-				head_->index(g, this, bound);
-			}
+			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
+			if(head_.get()) { head_->index(g, this, bound); }
 		}
 		if(body_.empty()) { inst_->append(new NewOnceIndex()); }
 	}

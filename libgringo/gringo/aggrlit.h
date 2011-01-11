@@ -33,18 +33,10 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	/** \param set whether the aggregate's list is a set (or else multiset)
-		\param optComplete whether handling of complete predicates can be optimized
-	  */
-	AggrLit(const Loc &loc, CondLitVec &conds, bool set, bool optComplete);
+	AggrLit(const Loc &loc, CondLitVec &conds);
 	AggrLit(const AggrLit &aggr);
-
-	//! sets the lower bound.
 	void lower(Term *l);
-
-	//! sets the upper bound.
 	void upper(Term *u);
-
 	void assign(Term *a);
 	Term *assign() const { assert(assign_); return lower_.get(); }
 	void add(CondLit *cond);
@@ -58,69 +50,55 @@ public:
 	void finish(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void grounded(Grounder *grounder) { (void)grounder; }
-	bool complete() const { assert(false); return false; }
+	#pragma message "aggrolits are complete if the conditionals are complete!"
+	bool complete() const { return false; }
 	void init(Grounder *g, const VarSet &bound);
-	void push() { assert(false); }
-	void pop() { assert(false); }
-	void move(size_t p) { (void)p; assert(false); }
-	void clear() { assert(false); }
 	Score score(Grounder *, VarSet &) { return Score(LOWEST,std::numeric_limits<double>::max()); }
-
-	//! whether the aggregate's list is a set (or else multiset)
-	bool set() const { return set_; }
-
-	//! whether complete predicates will be handled differently
-	/** Example: If p/1 is complete, then p(X) : q(X) will be interpreted as p(X) : p(X) : q(X)
-	  */
-	bool optimizeComplete() const { return optComplete_; }
-
-	//! returns the set of already evaluated literals
-	PredLitSet &uniqueSet();
 	~AggrLit();
 protected:
 	bool            sign_;
 	bool            assign_;
 	bool            fact_;
-	//! lower bound
 	clone_ptr<Term> lower_;
-	//! upper bound
 	clone_ptr<Term> upper_;
-	//! literals in the aggregate's (multi)set
 	CondLitVec      conds_;
-
-	//! whether the aggregate represents a set (or else multiset)
-	bool            set_;
-
-	//! set for uniqueness check when set_ is true
-	PredLitSet      uniques_;
-
-	//! whether complete predicates will be handled differently
-	bool            optComplete_;
+	/*
+	 * AggreIndx : Global Substitution -> Set of Local Substitutions
+	 * use push/pop + top mechanism or implement somethig own?
+	 * local substitution could be a set of top values?
+	 *   i.e.: varvec -> intvec
+	 * would need this per conditional store in conditional?
+	 */
 };
 
-class WeightLit : public Lit
+// TODO: implementation detail; put into source file
+//       needs normalziation?
+
+class SetLit : public Lit
 {
 public:
-	WeightLit(const Loc &loc, Term *weight);
+	SetLit(const Loc &loc, Term *weight);
+
+	bool match(Grounder *) { return true; }
+	bool isFalse(Grounder *) { return false; }
 	bool fact() const { return true; }
-	bool match(Grounder *grounder) { (void)grounder; return true; }
-	void addDomain(Grounder *grounder, bool fact) { (void)grounder; (void)fact; assert(false); }
-	void index(Grounder *grounder, Groundable *gr, VarSet &bound) { (void)grounder; (void)gr; (void)bound; }
+
+	void addDomain(Grounder *, bool) { assert(false); }
+	void index(Grounder *, Groundable *, VarSet &) { }
 	bool edbFact() const { return false; }
-	void normalize(Grounder *grounder, Expander *expander) { (void)grounder; (void)expander; assert(false); }
+	void normalize(Grounder *, Expander *) { assert(false); }
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(Printer *v) { (void)v; }
-	clone_ptr<Term> &weight() { return weight_; }
 	Lit *clone() const;
-	~WeightLit();
+	~SetLit();
 private:
-	clone_ptr<Term> weight_;
+	TermPtrVec terms_; //! determines the uniqueness + holds the weight
 };
 
-inline WeightLit* new_clone(const WeightLit& a)
+inline SetLit* new_clone(const SetLit& a)
 {
-	return static_cast<WeightLit*>(a.clone());
+	return static_cast<SetLit*>(a.clone());
 }
 
 class CondLit : public Groundable, public Locateable
@@ -128,10 +106,7 @@ class CondLit : public Groundable, public Locateable
 	friend class AggrLit;
 public:
 	CondLit(const Loc &loc, Lit *head, Term *weight, LitPtrVec &body);
-	Term *weight() { return weight_->weight().get(); }
-	Lit *head() const { return head_.get(); }
-	LitPtrVec &body() { return body_; }
-	void add(Lit *lit) { body_.push_back(lit); }
+	void add(Lit *lit) { lits_.push_back(lit); }
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
 	void init(Grounder *g, const VarSet &bound);
@@ -143,10 +118,8 @@ public:
 	void finish(Grounder *g);
 	~CondLit();
 private:
-	clone_ptr<Lit>       head_;
-	clone_ptr<WeightLit> weight_;
-	LitPtrVec            body_;
-	ValVec               weights_;
-	AggrLit             *aggr_;
+	SetLit     set_;   //! determines uniqueness + holds weight (first position)
+	LitPtrVec  lits_;  //! list of conditionals optionally including head at first position
+	AggrLit    *aggr_; //! aggregate this conditional belongs to
 };
 

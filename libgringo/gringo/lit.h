@@ -26,7 +26,7 @@ public:
 	enum Type { POOL, RANGE, RELATION };
 public:
 	virtual void expand(Lit *lit, Type type) = 0;
-	virtual ~Expander() { }
+	virtual ~Expander();
 };
 
 class Lit : public Locateable
@@ -50,51 +50,48 @@ public:
 	typedef std::pair<Priority,double> Score;
 	
 public:
-	Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
-	virtual void normalize(Grounder *g, Expander *expander) = 0;
-	virtual Monotonicity monotonicity() { return MONOTONE; }
-	virtual bool fact() const = 0;
-	virtual bool forcePrint() { return false; }
-	virtual bool match(Grounder *grounder) = 0;
-	virtual void addDomain(Grounder *grounder, bool fact) { (void)grounder; (void)fact; assert(false); }
-	virtual void grounded(Grounder *grounder) { (void)grounder; }
-	virtual bool complete() const { return true; }
-	virtual void finish(Grounder *) { }
-
-	/** whether the literal is the head of a rule. */
-	virtual bool head() const { return head_; }
-
-	virtual void head(bool head)  { head_ = head; }
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) = 0;
-	virtual void visit(PrgVisitor *visitor) = 0;
-	virtual bool edbFact() const { return false; }
-	virtual void print(Storage *sto, std::ostream &out) const = 0;
-	virtual void accept(Printer *v) = 0;
-	virtual void init(Grounder *grounder, const VarSet &bound) { (void)grounder; (void)bound; }
+	Lit(const Loc &loc);
 	virtual Lit *clone() const = 0;
-	virtual void push() { }
 
-	/** whether the literal is in the set. Used in aggregates and optimize statements.
-	 * \param val additional information (e.g. used to distinguish literals with priorities in optimize statements)
-	 */
-	virtual bool testUnique(PredLitSet&, Val=Val::create()) { return true; }
+	virtual void normalize(Grounder *g, Expander *expander) = 0;
 
-	virtual void pop() { }
-	virtual void move(size_t p) { (void)p; }
-	virtual void clear() { }
-	virtual Score score(Grounder *, VarSet &) { return Score(HIGHEST, std::numeric_limits<double>::min()); }
-	virtual bool isFalse(Grounder *grounder) { (void)grounder; assert(false); return false; }
-	virtual ~Lit() { }
+	// NOTE: match has to be called before:
+	//       isFalse, fact, state, grounded, addDomain, forcePrint, and finish!
+	virtual bool match(Grounder *grounder);
+	virtual bool isFalse(Grounder *grounder) = 0;
+	virtual bool fact() const = 0;
 
+	bool head() const;
+	void head(bool head);
+	virtual void doHead(bool head);
+	virtual bool complete() const;
+	virtual bool edbFact() const;
+	virtual Monotonicity monotonicity();
+
+	virtual void grounded(Grounder *grounder);
+	virtual void addDomain(Grounder *grounder, bool fact);
+	virtual bool forcePrint();
+	virtual void finish(Grounder *grounder);
+
+	virtual void print(Storage *sto, std::ostream &out) const = 0;
+
+	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) = 0;
+	virtual Score score(Grounder *g, VarSet &bound);
+
+	virtual void visit(PrgVisitor *visitor) = 0;
+	virtual void accept(Printer *v) = 0;
+
+	// NOTE: so far PredLits are the only literals that store state
+	//       if anything else should store state
+	//       anothere abstraction is needed here
+	PredLitRep *state();
+
+	virtual ~Lit();
 public:
-	static bool cmpPos(const Lit *a, const Lit *b)
-	{
-		return a->position < b->position;
-	}
+	static bool cmpPos(const Lit *a, const Lit *b);
 
 private:
 	uint32_t head_ : 1;
-
 public:
 	uint32_t position : 31;
 };
@@ -102,37 +99,107 @@ public:
 class Lit::Decorator : public Lit
 {
 public:
-	Decorator(const Loc &loc) : Lit(loc) { }
+	Decorator(const Loc &loc);
 	virtual Lit *decorated() const = 0;
-	virtual void normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
-	virtual Monotonicity monotonicity() { return decorated()->monotonicity(); }
-	virtual bool fact() const { return decorated()->fact(); }
-	virtual bool forcePrint() { return decorated()->forcePrint(); }
-	virtual bool match(Grounder *grounder) { return decorated()->match(grounder); }
-	virtual void addDomain(Grounder *grounder, bool fact) { decorated()->addDomain(grounder, fact); }
-	virtual void grounded(Grounder *grounder) { decorated()->grounded(grounder); }
-	virtual bool complete() const { return decorated()->complete(); }
-	virtual void finish(Grounder *grounder) { decorated()->finish(grounder); }
-	virtual bool head() const { return decorated()->head(); }
-	virtual void head(bool head) { decorated()->head(head); }
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) { decorated()->index(g, gr, bound); }
-	virtual void visit(PrgVisitor *visitor) { decorated()->visit(visitor); }
-	virtual bool edbFact() const { return decorated()->edbFact(); }
-	virtual void print(Storage *sto, std::ostream &out) const { decorated()->print(sto, out); }
-	virtual void accept(Printer *v) { decorated()->accept(v); }
-	virtual void init(Grounder *grounder, const VarSet &bound) { decorated()->init(grounder, bound); }
-	virtual void push() { decorated()->push() ; }
-	virtual bool testUnique(PredLitSet &set, Val v)  { return decorated()->testUnique(set, v); }
-	virtual void pop() { decorated()->pop(); }
-	virtual void move(size_t p) { decorated()->move(p); }
-	virtual void clear() { decorated()->clear(); }
-	virtual Score score(Grounder *grounder, VarSet &bound) { return decorated()->score(grounder, bound); }
-	virtual bool isFalse(Grounder *grounder) { return decorated()->isFalse(grounder); }
-	virtual ~Decorator() { }
+
+	// Note: careful when forwarding this function
+	virtual void normalize(Grounder *g, Expander *expander);
+	virtual void init(Grounder *grounder, const VarSet &bound);
+
+	virtual bool match(Grounder *grounder);
+	virtual bool isFalse(Grounder *grounder);
+	virtual bool fact() const;
+
+	virtual bool complete() const;
+	virtual void doHead(bool head);
+	virtual bool edbFact() const;
+	virtual Monotonicity monotonicity();
+
+	virtual void grounded(Grounder *grounder);
+	virtual void addDomain(Grounder *grounder, bool fact);
+	virtual bool forcePrint();
+	virtual void finish(Grounder *grounder);
+
+	virtual void print(Storage *sto, std::ostream &out) const;
+
+	virtual void index(Grounder *g, Groundable *gr, VarSet &bound);
+	virtual Score score(Grounder *grounder, VarSet &bound);
+
+	virtual void visit(PrgVisitor *visitor);
+	virtual void accept(Printer *v);
+
+	virtual PredLitRep *state();
+
+	virtual ~Decorator();
 };
+
+Lit* new_clone(const Lit& a);
+
+//////////////////////////// Expander ////////////////////////////
+
+inline Expander::~Expander() { }
+
+//////////////////////////// Lit ////////////////////////////
+
+inline Lit::Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
+
+inline bool Lit::match(Grounder *grounder) { return !isFalse(grounder); }
+
+inline bool Lit::head() const { return head_; }
+inline void Lit::head(bool head) { head_ = head; doHead(head); }
+inline void Lit::doHead(bool) { }
+inline bool Lit::complete() const { return true; }
+inline bool Lit::edbFact() const { return false; }
+inline Lit::Monotonicity Lit::monotonicity() { return MONOTONE; }
+
+inline void Lit::grounded(Grounder *) { }
+inline void Lit::addDomain(Grounder *, bool) { }
+inline bool Lit::forcePrint() { return false; }
+inline void Lit::finish(Grounder *) { }
+
+inline Lit::Score Lit::score(Grounder *, VarSet &) { return Score(HIGHEST, std::numeric_limits<double>::min()); }
+
+inline PredLitRep *Lit::state() { return 0; }
+
+inline Lit::~Lit() { }
+
+inline bool Lit::cmpPos(const Lit *a, const Lit *b) { return a->position < b->position; }
+
+//////////////////////////// Lit::Decoreator ////////////////////////////
+
+inline Lit::Decorator::Decorator(const Loc &loc) : Lit(loc) { }
+
+inline void Lit::Decorator::normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
+
+inline bool Lit::Decorator::match(Grounder *grounder) { return decorated()->match(grounder); }
+inline bool Lit::Decorator::isFalse(Grounder *grounder) { return decorated()->isFalse(grounder); }
+inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
+
+inline bool Lit::Decorator::complete() const { return decorated()->complete(); }
+inline void Lit::Decorator::doHead(bool head) { decorated()->head(head); }
+inline bool Lit::Decorator::edbFact() const { return decorated()->edbFact(); }
+inline Lit::Monotonicity Lit::Decorator::monotonicity() { return decorated()->monotonicity(); }
+
+inline void Lit::Decorator::grounded(Grounder *grounder) { decorated()->grounded(grounder); }
+inline void Lit::Decorator::addDomain(Grounder *grounder, bool fact) { decorated()->addDomain(grounder, fact); }
+inline bool Lit::Decorator::forcePrint() { return decorated()->forcePrint(); }
+inline void Lit::Decorator::finish(Grounder *grounder) { decorated()->finish(grounder); }
+
+inline void Lit::Decorator::print(Storage *sto, std::ostream &out) const { decorated()->print(sto, out); }
+
+inline void Lit::Decorator::index(Grounder *g, Groundable *gr, VarSet &bound) { decorated()->index(g, gr, bound); }
+inline Lit::Score Lit::Decorator::score(Grounder *grounder, VarSet &bound) { return decorated()->score(grounder, bound); }
+
+inline void Lit::Decorator::visit(PrgVisitor *visitor) { decorated()->visit(visitor); }
+inline void Lit::Decorator::accept(Printer *v) { decorated()->accept(v); }
+
+inline PredLitRep *Lit::Decorator::state() { return decorated()->state(); }
+
+inline Lit::Decorator::~Decorator() { }
+
+//////////////////////////// other ////////////////////////////
 
 inline Lit* new_clone(const Lit& a)
 {
 	return a.clone();
 }
-

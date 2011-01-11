@@ -56,27 +56,6 @@ public:
 	virtual Lit::Score score(Grounder *g, VarSet &bound, PredLit *pred);
 };
 
-class PredLitSet
-{
-private:
-	typedef std::pair<PredLit*, size_t> PredSig;
-	struct PredCmp
-	{
-		PredCmp(const ValVec &vals);
-		size_t operator()(const PredSig &a) const;
-		bool operator()(const PredSig &a, const PredSig &b) const;
-		const ValVec &vals_;
-	};
-	typedef boost::unordered_set<PredSig, PredCmp, PredCmp> PredSet;
-public:
-	PredLitSet();
-	bool insert(PredLit *pred, size_t pos, Val &val);
-	void clear();
-private:
-	PredSet set_;
-	ValVec  vals_;
-};
-
 class PredLit : public Lit, public PredLitRep
 {
 private:
@@ -99,11 +78,6 @@ public:
 	bool complete() const { return complete_; }
 	void finish(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
-	void push();
-	bool testUnique(PredLitSet &set, Val val=Val::create());
-	void pop();
-	void move(size_t p);
-	void clear();
 	Score score(Grounder *g, VarSet &bound);
 	Lit *clone() const;
 	const VarDomains &allVals(Grounder *g);
@@ -111,6 +85,8 @@ public:
 	void vars(VarSet &vars) const;
     bool compatible(PredLit* pred);
 	void provide(PredLit *pred);
+	PredLitRep *state() { return this; }
+	~PredLit();
 private:
 	TermPtrVec         terms_;
 	VarDomains         varDoms_;

@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+/*
+
 #include <gringo/sumaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -210,3 +212,5 @@ tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(c
 	}
 	return lit.fact() ? tribool(true) : unknown;
 }
+
+*/

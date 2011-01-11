@@ -106,16 +106,10 @@ void Display::init(Grounder *g, const VarSet &b)
 		else
 		{
 			VarSet bound(b);
-			foreach(Lit &lit, body_)
-			{
-				lit.init(g, bound);
-				lit.index(g, this, bound);
-			}
-			head_->init(g, bound);
+			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
 			head_->index(g, this, bound);
 		}
 	}
-	else { head_->init(g, b); }
 	inst_->enqueue(g);
 }
 

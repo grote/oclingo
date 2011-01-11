@@ -41,6 +41,7 @@ public:
     Monotonicity monotonicity();
 	void visit(PrgVisitor *v);
 	Lit *clone() const;
+	// NOTE: normalize doesn't need to be overwritten
 	~Head();
 public:
 	clone_ptr<PredLit> lit;
@@ -196,12 +197,7 @@ void Compute::init(Grounder *g, const VarSet &b)
 		else
 		{
 			VarSet bound(b);
-			foreach(Lit &lit, body_) 
-			{
-				lit.init(g, bound);
-				lit.index(g, this, bound);
-			}
-			head_->init(g, bound);
+			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
 			head_->index(g, this, bound);
 		}
 	}

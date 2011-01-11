@@ -82,15 +82,17 @@ void Stats::visit(PredLit *pred)
 void Stats::visit(Lit *lit, bool domain)
 {
 	(void)domain;
-	if(dynamic_cast<WeightLit*>(lit)) return;
+	#pragma message "readd this"
+	//if(dynamic_cast<WeightLit*>(lit)) return;
 	if(!lit->head()) numLit_ ++;
 	if(dynamic_cast<AggrLit*>(lit))
 	{
 		numAggr_ ++;
 		if(dynamic_cast<SumAggrLit*>(lit))
 		{
-			if(dynamic_cast<SumAggrLit*>(lit)->set()) numAggrCount_ ++;
-			else numAggrSum_ ++;
+			#pragma message "it will be hard to make a difference in future"
+			//if(dynamic_cast<SumAggrLit*>(lit)->set()) numAggrCount_ ++;
+			//else numAggrSum_ ++;
 		}
 		#pragma message "readd this"
 		//else if(dynamic_cast<MinMaxAggrLit*>(lit)) numAggrMinmax_ ++;

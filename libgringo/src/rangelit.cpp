@@ -48,21 +48,20 @@ namespace
 	}
 }
 
-
-bool RangeLit::match(Grounder *grounder)
+bool RangeLit::isFalse(Grounder *grounder)
 {
 	try
 	{
 		int num(var_->val(grounder).number());
 		int lower(a_->val(grounder).number());
 		int upper(b_->val(grounder).number());
-		return lower <= num && num <= upper;
+		return lower > num || num > upper;
 	}
 	catch(const Val *val)
 	{
 		numException(grounder, this, val);
-		return false;
-	}	
+		return true;
+	}
 }
 
 namespace
