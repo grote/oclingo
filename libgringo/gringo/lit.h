@@ -34,13 +34,10 @@ class Lit : public Locateable
 public:
 	struct LitCmp
 	{
-		LitCmp(Grounder &g, VarSet &b) : grounder(g), bound(b) {}
+		LitCmp(Grounder &g, VarSet &b);
+		bool operator()(Lit *a, Lit *b);
 		Grounder &grounder;
-		VarSet &bound;
-		bool operator()(Lit *a, Lit *b)
-		{
-			return a->score(&grounder, bound) < b->score(&grounder, bound);
-		}
+		VarSet   &bound;
 	};
 public:
 	class Decorator;
@@ -138,6 +135,14 @@ Lit* new_clone(const Lit& a);
 //////////////////////////// Expander ////////////////////////////
 
 inline Expander::~Expander() { }
+
+//////////////////////////// Lit::LitCmp ////////////////////////////
+
+Lit::LitCmp::LitCmp(Grounder &g, VarSet &b) : grounder(g), bound(b) { }
+bool Lit::LitCmp::operator()(Lit *a, Lit *b)
+{
+	return a->score(&grounder, bound) < b->score(&grounder, bound);
+}
 
 //////////////////////////// Lit ////////////////////////////
 
