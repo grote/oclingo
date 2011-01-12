@@ -97,7 +97,9 @@ protected:
 class SetLit : public Lit
 {
 public:
-	SetLit(const Loc &loc, Term *weight);
+	SetLit(const Loc &loc, TermPtrVec &terms);
+
+	TermPtrVec *terms() { return &terms_; }
 
 	bool match(Grounder *) { return true; }
 	bool isFalse(Grounder *) { return false; }
@@ -125,19 +127,14 @@ public:
 	friend class AggrLit;
 public:
 	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
+	AggrLit *aggr();
+	TermPtrVec *terms();
+	LitPtrVec *lits();
+	Style style();
 	void add(Lit *lit) { lits_.push_back(lit); }
+
 	bool grounded(Grounder *g);
-	// if not predlit:
-	//   X=Y+1=W -> X=I=W:I=Y+1
-	//   terms=W,##<typeid>,<all variables>
-	// else:
-	//   if not set:
-	//     p(f(X);Y)=W
-	//     terms: W,#<predicate name>,<arity>,<all variables!>
-	//   else:
-	//     p(f(X);Y)=W
-	//     terms: W,#<predicate name>,<arity>,<terms in predicate>
-	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
+	void normalize(Grounder *g);
 	void init(Grounder *g, const VarSet &bound);
 	void ground(Grounder *g);
 	void visit(PrgVisitor *visitor);
@@ -159,19 +156,30 @@ inline AggrLit::Printer::~Printer() { }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 
-inline Term *assign() const
+inline Term *AggrLit::assign() const
 {
 	assert(assign_);
 	return lower_.get();
 }
-inline void sign(bool s) { sign_ = s; }
+inline void AggrLit::sign(bool s) { sign_ = s; }
 
-inline const CondLitVec &conds() { return conds_; }
+inline const CondLitVec &AggrLit::conds() { return conds_; }
 
-inline bool fact() const { return fact_; }
+inline bool AggrLit::fact() const { return fact_; }
 
-inline Monotonicity monotonicity() { return NONMONOTONE; }
+inline Lit::Monotonicity AggrLit::monotonicity() { return NONMONOTONE; }
 
-inline void grounded(Grounder *) { }
+inline void AggrLit::grounded(Grounder *) { }
 
 inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
+
+/////////////////////////////// CondLit ///////////////////////////////
+
+inline AggrLit *CondLit::aggr() { return aggr_; }
+
+inline TermPtrVec *CondLit::terms() { return set_.terms(); }
+
+inline LitPtrVec *CondLit::lits() { return &lits_; }
+
+inline CondLit::Style CondLit::style() { return style_;  }
+
