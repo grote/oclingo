@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-/*
-
 #include <gringo/sumaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -27,6 +25,7 @@
 #include <gringo/index.h>
 #include <gringo/output.h>
 
+/*
 namespace
 {
 	class SumIndex : public NewOnceIndex
@@ -76,13 +75,17 @@ namespace
 	}
 }
 
-SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool count)
-	: AggrLit(loc, conds, count, true)
+*/
+
+SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
+	: AggrLit(loc, conds)
 {
 }
 
 bool SumAggrLit::match(Grounder *grounder)
 {
+	#pragma message "implement me!"
+	/*
 	try
 	{
 		if(lower_.get()) lowerBound_ = lower_->val(grounder).number();
@@ -116,10 +119,18 @@ bool SumAggrLit::match(Grounder *grounder)
 	if(valLower_ >= lowerBound_ && valUpper_ <= upperBound_) return (fact_ = !sign_) || head();
 	if(valUpper_ < lowerBound_ || valLower_  > upperBound_) return (fact_ = sign_) || head();
 	return true;
+	*/
+}
+
+bool SumAggrLit::isFalse(Grounder *)
+{
+	#pragma message "implement me!"
 }
 
 boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *grounder)
 {
+	#pragma message "implement me!"
+	/*
 	assert(!head());
 	assert(!sign_);
 	fact_     = false;
@@ -130,10 +141,13 @@ boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *ground
 	foreach(CondLit &lit, conds_) lit.ground(grounder);
 	fact_     = factOnly_;
 	return boost::tuple<int32_t, int32_t, int32_t>(valLower_, valUpper_, fixed_);
+	*/
 }
 
 void SumAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound) 
 {
+	#pragma message "implement me!"
+	/*
 	(void)g;
 	if(assign_)
 	{
@@ -150,16 +164,20 @@ void SumAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 		}
 	}
 	gr->instantiator()->append(new MatchIndex(this));
+	*/
 }
 
 void SumAggrLit::accept(::Printer *v)
 { 
+	#pragma message "implement me!"
+	/*
 	Printer *printer = v->output()->printer<Printer>();
 	printer->begin(head(), sign_, set());
 	if(lower_.get() || assign_) printer->lower(lowerBound_);
 	if(upper_.get() || assign_) printer->upper(upperBound_);
 	foreach(CondLit &lit, conds_) lit.accept(printer);
 	printer->end();
+	*/
 }
 
 Lit *SumAggrLit::clone() const
@@ -170,22 +188,20 @@ Lit *SumAggrLit::clone() const
 void SumAggrLit::print(Storage *sto, std::ostream &out) const 
 { 
 	if(sign_) out << "not ";
-	bool comma = false;
 	if(lower_.get())
 	{
 		lower_->print(sto, out);
 		out << (assign_ ? ":=" : " ");
 	}
-	if(set()) out << "#count{";
-	else out << "#sum[";
+	bool comma = false;
+	out << "#sum[";
 	foreach(const CondLit &lit, conds_)
 	{
-		if(comma) out << ",";
-		else comma = true;
+		if(comma) { out << ","; }
+		else      { comma = true; }
 		lit.print(sto, out);
 	}
-	if(set()) out << "}";
-	else out << "]";
+	out << "]";
 	if(upper_.get())
 	{
 		out << " ";
@@ -195,6 +211,8 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 
 tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*)
 {
+	#pragma message "implement me!"
+	/*
 	(void)g;
 	int32_t num = weight.number();
 	if(num == 0 && !head()) return true;
@@ -211,6 +229,5 @@ tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(c
 		if(num > 0)	valUpper_ += num;
 	}
 	return lit.fact() ? tribool(true) : unknown;
+	*/
 }
-
-*/

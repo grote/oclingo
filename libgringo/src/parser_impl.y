@@ -325,8 +325,8 @@ nweightcond(res) ::= COLON literal(lit) nweightcond(list). { res = list; res->pu
 weightcond(res) ::= .                  { res = new LitPtrVec(); }
 weightcond(res) ::= nweightcond(list). { res = list; }
 
-aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
-aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.     { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
+aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list); delete list; }
+aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.     { res = new SumAggrLit(tok.loc(), *list); delete list; }
 
 //aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
 
@@ -337,8 +337,8 @@ condlist(res)  ::= ncondlist(list). { res = list; }
 
 condlit(res) ::= lit(lit) weightcond(cond). { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE_SET); delete cond; }
 
-aggr_ass(res) ::= COUNT(tok) LCBRAC condlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
-aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
+aggr_ass(res) ::= COUNT(tok) LCBRAC condlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list); delete list; }
+aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLit(tok.loc(), *list); delete list; }
 
 //aggr(res) ::= EVEN(tok) LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, true); delete list; }
 //aggr(res) ::= ODD(tok)  LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, true); delete list; }

@@ -101,7 +101,6 @@ public:
 
 	// Note: careful when forwarding this function
 	virtual void normalize(Grounder *g, Expander *expander);
-	virtual void init(Grounder *grounder, const VarSet &bound);
 
 	virtual bool match(Grounder *grounder);
 	virtual bool isFalse(Grounder *grounder);

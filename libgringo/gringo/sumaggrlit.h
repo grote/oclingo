@@ -40,7 +40,7 @@ public:
 public:
 	/** \param count whether it is a count aggregate (false for sum aggregate).
 	  */
-	SumAggrLit(const Loc &loc, CondLitVec &conds, bool count);
+	SumAggrLit(const Loc &loc, CondLitVec &conds);
 
 	bool match(Grounder *grounder);
 	bool isFalse(Grounder *);
