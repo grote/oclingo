@@ -138,8 +138,8 @@ inline Expander::~Expander() { }
 
 //////////////////////////// Lit::LitCmp ////////////////////////////
 
-Lit::LitCmp::LitCmp(Grounder &g, VarSet &b) : grounder(g), bound(b) { }
-bool Lit::LitCmp::operator()(Lit *a, Lit *b)
+inline Lit::LitCmp::LitCmp(Grounder &g, VarSet &b) : grounder(g), bound(b) { }
+inline bool Lit::LitCmp::operator()(Lit *a, Lit *b)
 {
 	return a->score(&grounder, bound) < b->score(&grounder, bound);
 }

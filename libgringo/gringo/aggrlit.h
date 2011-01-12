@@ -30,31 +30,40 @@ public:
 	{
 	public:
 		virtual void weight(const Val &v) = 0;
-		virtual ~Printer() { }
+		virtual ~Printer();
 	};
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
 	AggrLit(const AggrLit &aggr);
+
 	void lower(Term *l);
 	void upper(Term *u);
 	void assign(Term *a);
-	Term *assign() const { assert(assign_); return lower_.get(); }
+	Term *assign() const;
+	void sign(bool s);
+
 	void add(CondLit *cond);
-	const CondLitVec &conds() { return conds_; }
-	void sign(bool s) { sign_ = s; }
-	bool fact() const { return fact_; }
-	virtual Monotonicity monotonicity() { return NONMONOTONE; }
+	const CondLitVec &conds();
+
+	~AggrLit();
+
+	// Lit interface
 	virtual void normalize(Grounder *g, Expander *expander);
-	virtual tribool accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*) = 0;
+
+	bool fact() const;
+
+	bool complete() const;
+
+	virtual Monotonicity monotonicity();
+
+	void grounded(Grounder *grounder);
 	void addDomain(Grounder *g, bool fact);
 	void finish(Grounder *g);
+
 	void visit(PrgVisitor *visitor);
-	void grounded(Grounder *grounder) { (void)grounder; }
-	#pragma message "aggrolits are complete if the conditionals are complete!"
-	bool complete() const { return false; }
-	void init(Grounder *g, const VarSet &bound);
-	Score score(Grounder *, VarSet &) { return Score(LOWEST,std::numeric_limits<double>::max()); }
-	~AggrLit();
+
+	Score score(Grounder *g, VarSet &bound);
+
 protected:
 	bool            sign_;
 	bool            assign_;
@@ -69,6 +78,17 @@ protected:
 	 *   i.e.: varvec -> intvec
 	 * would need this per conditional store in conditional?
 	 */
+	VarVec varsGlobal_;
+	class AggrState
+	{
+		// TODO: do the accumulation here (interface)
+		// ValVec -> stuff in conditionals; number of conditional + number of offsets + offsets
+		// the conditional doesn't need to know anything
+		boost::unordered_map<ValVec, std::vector<uint32_t> > offsets_;
+	};
+	// maps global substitution to State
+	typedef boost::ptr_map<ValVec, AggrState> AggrIndex;
+
 };
 
 // TODO: implementation detail; put into source file
@@ -96,18 +116,27 @@ private:
 	TermPtrVec terms_; //! determines the uniqueness + holds the weight
 };
 
-inline SetLit* new_clone(const SetLit& a)
-{
-	return static_cast<SetLit*>(a.clone());
-}
+SetLit* new_clone(const SetLit& a);
 
 class CondLit : public Groundable, public Locateable
 {
+public:
+	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
 	friend class AggrLit;
 public:
-	CondLit(const Loc &loc, Lit *head, Term *weight, LitPtrVec &body);
+	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
 	void add(Lit *lit) { lits_.push_back(lit); }
 	bool grounded(Grounder *g);
+	// if not predlit:
+	//   X=Y+1=W -> X=I=W:I=Y+1
+	//   terms=W,##<typeid>,<all variables>
+	// else:
+	//   if not set:
+	//     p(f(X);Y)=W
+	//     terms: W,#<predicate name>,<arity>,<all variables!>
+	//   else:
+	//     p(f(X);Y)=W
+	//     terms: W,#<predicate name>,<arity>,<terms in predicate>
 	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
 	void init(Grounder *g, const VarSet &bound);
 	void ground(Grounder *g);
@@ -118,8 +147,31 @@ public:
 	void finish(Grounder *g);
 	~CondLit();
 private:
+	Style      style_; //! only affects normalization
 	SetLit     set_;   //! determines uniqueness + holds weight (first position)
 	LitPtrVec  lits_;  //! list of conditionals optionally including head at first position
 	AggrLit    *aggr_; //! aggregate this conditional belongs to
 };
 
+/////////////////////////////// AggrLit::Printer ///////////////////////////////
+
+inline AggrLit::Printer::~Printer() { }
+
+/////////////////////////////// AggrLit ///////////////////////////////
+
+inline Term *assign() const
+{
+	assert(assign_);
+	return lower_.get();
+}
+inline void sign(bool s) { sign_ = s; }
+
+inline const CondLitVec &conds() { return conds_; }
+
+inline bool fact() const { return fact_; }
+
+inline Monotonicity monotonicity() { return NONMONOTONE; }
+
+inline void grounded(Grounder *) { }
+
+inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
