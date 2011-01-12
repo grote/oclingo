@@ -95,12 +95,11 @@ namespace
 		void visit(PredLit *pred);
 		void visit(Lit *lit, bool domain);
 	public:
-		static void convert(Grounder *g, CondLit &cond);
+		static void convert(Grounder *g, CondLit &cond, uint32_t number);
 	private:
 		Grounder *grounder_;
 		CondLit  &cond_;
 		VarSet    vars_;
-		int       number_;
 		bool      addVars_;
 	};
 }
@@ -157,6 +156,15 @@ void AggrLit::addDomain(Grounder *g, bool)
 	foreach(CondLit &lit, conds_) { lit.addDomain(g, false); }
 }
 
+bool AggrLit::complete() const
+{
+	foreach(const CondLit &lit, conds_)
+	{
+		if(!lit.complete()) { return false; }
+	}
+	return true;
+}
+
 void AggrLit::finish(Grounder *g) 
 {
 	#pragma message "probably unused here?"
@@ -178,7 +186,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, expander, false); }
 	for(CondLitVec::size_type i = 0; i < conds_.size(); i++)
 	{
-		conds_[i].normalize(g);
+		conds_[i].normalize(g, i);
 	}
 }
 
@@ -188,6 +196,36 @@ AggrLit::~AggrLit()
 
 //////////////////////////////////////// SetLit ////////////////////////////////////////
 
+SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
+	: Lit(loc)
+	, terms_(terms.release())
+{
+}
+
+void SetLit::visit(PrgVisitor *visitor)
+{
+	foreach(Term &term, terms_) { term.visit(visitor, false); }
+}
+
+void SetLit::print(Storage *sto, std::ostream &out) const
+{
+	bool comma = false;
+	foreach(const Term &term, terms_)
+	{
+		if(comma) { out << ","; }
+		else      { comma = true; }
+		term.print(sto, out);
+	}
+}
+
+Lit *SetLit::clone() const
+{
+	return new SetLit(*this);
+}
+
+SetLit::~SetLit()
+{
+}
 
 //////////////////////////////////////// CondLit ////////////////////////////////////////
 
@@ -200,7 +238,16 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 {
 }
 
-void CondLit::normalize(Grounder *g)
+bool CondLit::complete() const
+{
+	foreach(const Lit &lit, lits_)
+	{
+		if(!lit.complete()) { return false; }
+	}
+	return true;
+}
+
+void CondLit::normalize(Grounder *g, uint32_t number)
 {
 	assert(!lits_.empty());
 	LitPtrVec::iterator i = lits_.begin();
@@ -213,12 +260,13 @@ void CondLit::normalize(Grounder *g)
 	set_.normalize(g, &setExp);
 	CondBodyExpander bodyExp(*this);
 	for(; i != lits_.end(); i++) { i->normalize(g, &bodyExp); }
-	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this); }
+	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
 }
 
-/*
 void CondLit::ground(Grounder *g)
 {
+	#pragma message "implement me!!!"
+	/*
 	weights_.clear();
 	head_->clear();
 	if(inst_.get()) 
@@ -230,42 +278,43 @@ void CondLit::ground(Grounder *g)
 	{
 		if(head_->match(g)) grounded(g);
 	}
+	*/
 }
 
 void CondLit::visit(PrgVisitor *visitor)
 {
-	#pragma message "this will be no longer needed in the new aggregate implementation"
-	if(head_->complete() && aggr_->optimizeComplete()) head_->head(false);
-	visitor->visit(head_.get(), false);
-	visitor->visit(weight_.get(), false);
-	foreach(Lit &lit, body_) visitor->visit(&lit, true);
+	visitor->visit(&set_, false);
+	foreach(Lit &lit, lits_) { visitor->visit(&lit, !lit.head()); }
 }
 
 void CondLit::print(Storage *sto, std::ostream &out) const
 {
-	head_->print(sto, out);
-	if(!aggr_->set())
+	out << "<";
+	set_.print(sto, out);
+	out << ":";
+	std::vector<const Lit*> lits;
+	foreach(const Lit &lit, lits_) { lits.push_back(&lit); }
+	std::sort(lits.begin(), lits.end(), Lit::cmpPos);
+	bool comma = false;
+	foreach(const Lit *lit, lits)
 	{
-		out << "=";
-		weight_->print(sto, out);
-	}
-	std::vector<const Lit*> body;
-	foreach(const Lit &lit, body_) { body.push_back(&lit); }
-	std::sort(body.begin(), body.end(), Lit::cmpPos);
-	foreach(const Lit *lit, body)
-	{
-		out << ":";
+		out << (comma ? "," : ":");
 		lit->print(sto, out);
+		comma = true;
 	}
+	out << ">";
 }
 
 void CondLit::addDomain(Grounder *g, bool fact) 
-{ 
+{
+	#pragma message "implement me!!!"
+	/*
 	for(size_t p = 0; p < weights_.size(); p++)
 	{
 		head_->move(p);
 		head_->addDomain(g, fact);
 	}
+	*/
 }
 
 void CondLit::finish(Grounder *g)
@@ -274,6 +323,8 @@ void CondLit::finish(Grounder *g)
 
 void CondLit::init(Grounder *g, const VarSet &b)
 {
+	#pragma message "implement me!!!"
+	/*
 	if(body_.size() > 0 || vars_.size() > 0)
 	{
 		inst_.reset(new Instantiator(this));
@@ -292,10 +343,13 @@ void CondLit::init(Grounder *g, const VarSet &b)
 	}
 	else head_->init(g, b);
 	litDep_.reset(0);
+	*/
 }
 
 bool CondLit::grounded(Grounder *g)
 {
+	#pragma message "implement me!!!"
+	/*
 	try
 	{
 		Val v = weight_->weight()->val(g);
@@ -320,10 +374,13 @@ bool CondLit::grounded(Grounder *g)
 		print(g, oss);
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
+	*/
+	return true;
 }
 
 void CondLit::accept(AggrLit::Printer *v)
 {
+	/*
 	size_t p = 0;
 	foreach(Val &val, weights_)
 	{
@@ -331,6 +388,7 @@ void CondLit::accept(AggrLit::Printer *v)
 		head_->accept(v);
 		v->weight(val);
 	}
+	*/
 }
 
 CondLit::~CondLit()
@@ -341,7 +399,6 @@ CondLit* new_clone(const CondLit& a)
 {
 	return new CondLit(a);
 }
-*/
 
 //////////////////////////////////////// CondHeadExpander ////////////////////////////////////////
 
@@ -419,10 +476,10 @@ void LparseCondLitConverter::visit(PredLit *pred)
 	if(cond_.style() == CondLit::STYLE_LPARSE_SET)
 	{
 		addVars_ = false;
-		uint32_t name  = grounder_->index("#" + grounder_->string(pred->dom()->nameId()));
-		int32_t  arity = pred->dom()->arity();
+		std::stringstream ss;
+		ss << "#pred(" << grounder_->string(pred->dom()->nameId()) << "," << pred->dom()->arity() << ")";
+		uint32_t name  = grounder_->index(ss.str());
 		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::create(Val::STRING, name)));
-		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::create(Val::NUM, arity)));
 	}
 }
 
@@ -432,27 +489,20 @@ void LparseCondLitConverter::visit(Lit *lit, bool)
 	lit->visit(this);
 }
 
-void LparseCondLitConverter::convert(Grounder *g, CondLit &cond)
+void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number)
 {
 	LparseCondLitConverter conv(g, cond);
-	if(cond.style() == CondLit::STYLE_LPARSE) { conv.visit(&*cond.lits()->begin(), false); }
-	else if(cond.style() == CondLit::STYLE_LPARSE_SET)
+	if(cond.style() == CondLit::STYLE_LPARSE_SET) { conv.visit(&*cond.lits()->begin(), false); }
+	else if(cond.style() == CondLit::STYLE_LPARSE)
 	{
 		foreach(Lit &lit, *cond.lits()) { conv.visit(&lit, false); }
 	}
 	if(conv.addVars_)
 	{
+		std::stringstream ss;
+		ss << "#cond(" << number << ")";
+		uint32_t name  = g->index(ss.str());
+		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::STRING, name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
 }
-
-// if not predlit:
-//   X=Y+1=W -> X=I=W:I=Y+1
-//   terms=W,##<typeid>,<all variables>
-// else:
-//   if not set:
-//     p(f(X);Y)=W
-//     terms: W,#<predicate name>,<arity>,<all variables!>
-//   else:
-//     p(f(X);Y)=W
-//     terms: W,#<predicate name>,<arity>,<terms in predicate>

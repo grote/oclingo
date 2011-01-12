@@ -91,9 +91,6 @@ protected:
 
 };
 
-// TODO: implementation detail; put into source file
-//       needs normalziation?
-
 class SetLit : public Lit
 {
 public:
@@ -131,10 +128,11 @@ public:
 	TermPtrVec *terms();
 	LitPtrVec *lits();
 	Style style();
+	bool complete() const;
 	void add(Lit *lit) { lits_.push_back(lit); }
 
 	bool grounded(Grounder *g);
-	void normalize(Grounder *g);
+	void normalize(Grounder *g, uint32_t number);
 	void init(Grounder *g, const VarSet &bound);
 	void ground(Grounder *g);
 	void visit(PrgVisitor *visitor);
