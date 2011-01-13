@@ -202,6 +202,14 @@ SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
 {
 }
 
+void SetLit::normalize(Grounder *g, Expander *e)
+{
+	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
+	{
+		i->normalize(this, Term::VecRef(terms_, i), g, e, false);
+	}
+}
+
 void SetLit::visit(PrgVisitor *visitor)
 {
 	foreach(Term &term, terms_) { term.visit(visitor, false); }
@@ -250,16 +258,18 @@ bool CondLit::complete() const
 void CondLit::normalize(Grounder *g, uint32_t number)
 {
 	assert(!lits_.empty());
-	LitPtrVec::iterator i = lits_.begin();
 	if(style_ != STYLE_DLV)
 	{
 		CondHeadExpander headExp(*this);
-		i->normalize(g, &headExp);
+		lits_[0].normalize(g, &headExp);
 	}
 	CondSetExpander setExp(*this);
 	set_.normalize(g, &setExp);
 	CondBodyExpander bodyExp(*this);
-	for(; i != lits_.end(); i++) { i->normalize(g, &bodyExp); }
+	for(LitPtrVec::size_type i = style_ != STYLE_DLV; i < lits_.size(); i++)
+	{
+		lits_[i].normalize(g, &bodyExp);
+	}
 	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
 }
 
@@ -291,7 +301,6 @@ void CondLit::print(Storage *sto, std::ostream &out) const
 {
 	out << "<";
 	set_.print(sto, out);
-	out << ":";
 	std::vector<const Lit*> lits;
 	foreach(const Lit &lit, lits_) { lits.push_back(&lit); }
 	std::sort(lits.begin(), lits.end(), Lit::cmpPos);
@@ -415,7 +424,9 @@ void CondHeadExpander::expand(Lit *lit, Expander::Type type)
 			cond_.add(lit);
 			break;
 		case POOL:
-			LitPtrVec lits(cond_.lits()->begin() + 1, cond_.lits()->end());
+			LitPtrVec lits;
+			lits.push_back(lit);
+			lits.insert(lits.end(), cond_.lits()->begin() + 1, cond_.lits()->end());
 			TermPtrVec terms(*cond_.terms());
 			cond_.aggr()->add(new CondLit(cond_.loc(), terms, lits, cond_.style()));
 			break;

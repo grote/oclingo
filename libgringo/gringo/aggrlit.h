@@ -105,7 +105,7 @@ public:
 	void addDomain(Grounder *, bool) { assert(false); }
 	void index(Grounder *, Groundable *, VarSet &) { }
 	bool edbFact() const { return false; }
-	void normalize(Grounder *, Expander *) { assert(false); }
+	void normalize(Grounder *g, Expander *e);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(Printer *v) { (void)v; }
