@@ -97,22 +97,6 @@ void Display::normalize(Grounder *g)
 	}
 }
 
-void Display::init(Grounder *g, const VarSet &b)
-{
-	if(!inst_.get())
-	{
-		inst_.reset(new Instantiator(this));
-		if(litDep_.get()) { litDep_->order(g, b); }
-		else
-		{
-			VarSet bound(b);
-			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
-			head_->index(g, this, bound);
-		}
-	}
-	inst_->enqueue(g);
-}
-
 void Display::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);

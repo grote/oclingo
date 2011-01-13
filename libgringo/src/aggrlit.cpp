@@ -330,31 +330,6 @@ void CondLit::finish(Grounder *g)
 {
 }
 
-void CondLit::init(Grounder *g, const VarSet &b)
-{
-	#pragma message "implement me!!!"
-	/*
-	if(body_.size() > 0 || vars_.size() > 0)
-	{
-		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
-		else
-		{
-			VarSet bound(b);
-			foreach(Lit &lit, body_) 
-			{
-				lit.init(g, bound);
-				lit.index(g, this, bound);
-			}
-			head_->init(g, bound);
-			head_->index(g, this, bound);
-		}
-	}
-	else head_->init(g, b);
-	litDep_.reset(0);
-	*/
-}
-
 bool CondLit::grounded(Grounder *g)
 {
 	#pragma message "implement me!!!"
@@ -490,7 +465,7 @@ void LparseCondLitConverter::visit(PredLit *pred)
 		std::stringstream ss;
 		ss << "#pred(" << grounder_->string(pred->dom()->nameId()) << "," << pred->dom()->arity() << ")";
 		uint32_t name  = grounder_->index(ss.str());
-		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::create(Val::STRING, name)));
+		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::create(Val::ID, name)));
 	}
 }
 
@@ -513,7 +488,7 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 		std::stringstream ss;
 		ss << "#cond(" << number << ")";
 		uint32_t name  = g->index(ss.str());
-		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::STRING, name)));
+		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::ID, name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
 }

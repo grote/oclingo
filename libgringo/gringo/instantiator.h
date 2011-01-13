@@ -26,6 +26,7 @@ private:
 public:
 	Instantiator(Groundable *g);
 	void append(Index *i);
+	void fix();
 	void ground(Grounder *g);
 	void reset();
 	void enqueue(Grounder *g);

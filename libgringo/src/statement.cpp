@@ -17,10 +17,37 @@
 
 #include <gringo/statement.h>
 #include <gringo/varcollector.h>
+#include <gringo/lit.h>
 #include <gringo/litdep.h>
 #include <gringo/varterm.h>
 #include <gringo/grounder.h>
 #include <gringo/exceptions.h>
+#include <gringo/instantiator.h>
+
+namespace
+{
+	class IndexAdder : private PrgVisitor
+	{
+	private:
+		IndexAdder(Grounder *g);
+		virtual void visit(Lit *lit, bool domain);
+		virtual void visit(Groundable *grd, bool choice);
+	public:
+		static void add(Grounder *g, Statement *s);
+	private:
+		Grounder   *g_;
+		Groundable *grd_;
+		VarSet      bound_;
+	};
+}
+
+//////////////////////////////// Statement ////////////////////////////////
+
+void Statement::init(Grounder *g)
+{
+	IndexAdder::add(g, this);
+	instantiator()->enqueue(g);
+}
 
 Statement::Statement(const Loc &loc)
 	: Locateable(loc)
@@ -53,3 +80,37 @@ void Statement::check(Grounder *g)
 	}
 }
 
+//////////////////////////////// IndexAdder ////////////////////////////////
+
+IndexAdder::IndexAdder(Grounder *g)
+	: g_(g)
+	, grd_(0)
+{ }
+
+void IndexAdder::visit(Lit *lit, bool)
+{
+	if(!grd_->litDep()) { lit->index(g_, grd_, bound_); }
+	lit->visit(this);
+}
+
+void IndexAdder::visit(Groundable *grd, bool)
+{
+	if(!grd->instantiator())
+	{
+		Groundable *oldGrd(grd_);
+		VarSet      oldBound(bound_);
+		grd_ = grd;
+		grd_->instantiator(new Instantiator(grd_));
+		grd_->visit(this);
+		if(grd_->litDep()) { grd_->litDep()->order(g_, bound_); }
+		grd_->instantiator()->fix();
+		grd_ = oldGrd;
+		std::swap(bound_, oldBound);
+	}
+}
+
+void IndexAdder::add(Grounder *g, Statement *s)
+{
+	IndexAdder adder(g);
+	adder.visit(s, false);
+}

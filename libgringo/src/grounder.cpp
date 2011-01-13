@@ -226,7 +226,7 @@ void Grounder::ground(Module &module)
 		foreach(Statement *statement, component.statements)
 		{
 			// NOTE: this adds statements into the grounding queue
-			statement->init(this, VarSet());
+			statement->init(this);
 			if(debug_)
 			{
 				std::cerr << "% ";

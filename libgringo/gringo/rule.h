@@ -37,7 +37,6 @@ public:
 	void normalize(Grounder *g);
 	bool grounded(Grounder *g);
 	void ground(Grounder *g);
-	void init(Grounder *g, const VarSet &bound);
 	void visit(PrgVisitor *v);
 	void print(Storage *sto, std::ostream &out) const;
 	void append(Lit *l);

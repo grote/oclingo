@@ -50,7 +50,6 @@ public:
 	void ground(Grounder *g);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
-	void init(Grounder *g, const VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	bool maximize() { return maximize_; }

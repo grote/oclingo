@@ -108,22 +108,6 @@ void External::normalize(Grounder *g)
 	}
 }
 
-void External::init(Grounder *g, const VarSet &b)
-{
-	if(!inst_.get())
-	{
-		inst_.reset(new Instantiator(this));
-		if(vars_.size() > 0) litDep_->order(g, b);
-		else
-		{
-			VarSet bound(b);
-			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
-			head_->index(g, this, bound);
-		}
-	}
-	inst_->enqueue(g);
-}
-
 void External::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);

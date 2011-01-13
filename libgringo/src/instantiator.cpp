@@ -33,6 +33,11 @@ void Instantiator::append(Index *i)
 	new_.push_back(false);
 }
 
+void Instantiator::fix()
+{
+	if(indices_.empty()) { append(new NewOnceIndex()); }
+}
+
 void Instantiator::ground(Grounder *g)
 {
 	int lastNew = -1;

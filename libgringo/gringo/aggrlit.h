@@ -60,9 +60,10 @@ public:
 	void addDomain(Grounder *g, bool fact);
 	void finish(Grounder *g);
 
-	void visit(PrgVisitor *visitor);
-
+	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) = 0;
 	Score score(Grounder *g, VarSet &bound);
+
+	void visit(PrgVisitor *visitor);
 
 protected:
 	bool            sign_;
@@ -133,7 +134,6 @@ public:
 
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g, uint32_t number);
-	void init(Grounder *g, const VarSet &bound);
 	void ground(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;

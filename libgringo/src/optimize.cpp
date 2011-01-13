@@ -201,22 +201,6 @@ void Optimize::normalize(Grounder *g)
 		body_[i].normalize(g, &bodyExp);
 }
 
-void Optimize::init(Grounder *g, const VarSet &b)
-{
-	if(!inst_.get())
-	{
-		inst_.reset(new Instantiator(this));
-		if(litDep_.get()) { litDep_->order(g, b); }
-		else
-		{
-			VarSet bound(b);
-			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
-			head_->index(g, this, bound);
-		}
-	}
-	inst_->enqueue(g);
-}
-
 void Optimize::visit(PrgVisitor *visitor)
 {
 	visitor->visit(static_cast<Lit*>(head_.get()), false);

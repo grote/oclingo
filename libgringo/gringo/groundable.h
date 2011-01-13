@@ -26,7 +26,6 @@ public:
 	virtual bool grounded(Grounder *g) = 0;
 	virtual void ground(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
-	virtual void init(Grounder *g, const VarSet &bound) = 0;
 	VarVec &vars() { return vars_; }
 	bool enqueued() const { return enqueued_; }
 	void enqueued(bool e) { enqueued_ = e; }

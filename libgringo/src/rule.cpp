@@ -107,24 +107,6 @@ void Rule::normalize(Grounder *g)
 	}
 }
 
-void Rule::init(Grounder *g, const VarSet &b)
-{
-	#pragma message "handle recreation of indices"
-	if(!inst_.get())
-	{
-		inst_.reset(new Instantiator(this));
-		if(litDep_.get()) { litDep_->order(g, b); }
-		else
-		{
-			VarSet bound(b);
-			foreach(Lit &lit, body_) { lit.index(g, this, bound); }
-			if(head_.get()) { head_->index(g, this, bound); }
-		}
-		if(body_.empty()) { inst_->append(new NewOnceIndex()); }
-	}
-	inst_->enqueue(g);
-}
-
 bool Rule::edbFact() const
 {
 	return body_.size() == 0 && head_.get() && head_->edbFact();

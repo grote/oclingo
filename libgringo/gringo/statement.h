@@ -25,9 +25,10 @@ class Statement : public Groundable, public Locateable
 {
 public:
 	Statement(const Loc &loc);
+	void init(Grounder *g);
+	void check(Grounder *g);
 	virtual void normalize(Grounder *g) = 0;
 	virtual void append(Lit *lit) = 0;
-	virtual void check(Grounder *g);
 	virtual void print(Storage *sto, std::ostream &out) const = 0;
 	virtual bool edbFact() const { return false; }
 	virtual bool choice() const { return false; }
