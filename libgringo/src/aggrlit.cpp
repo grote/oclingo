@@ -44,6 +44,29 @@
  *   globals substitutions have to be stored in the condlit
  */
 
+/*
+  in general:
+	immediately ground complete conditionals
+  in body:
+	if conditional matches
+	  accumulate #cond(<aggr-num>,<cond-num>)
+	  inform output
+	if aggregate matches:
+	  enqueue associated groundable
+	  (not neccesary if aggregate has already matched)
+	in the end:
+	  #aggr(<aggr-num>) :- <lower> <aggregate> [ #cond(<aggr-num>, <cond-num>), ... ] <upper>.
+  in head:
+	aggregate always matches
+	if conditional matches
+	  accumulate #cond(<aggr-num>,<cond-num>)
+	  inform output
+	  if aggregate matches
+		add domains (might include previous ones)
+ */
+
+
+
 #include <gringo/aggrlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
@@ -55,6 +78,7 @@
 #include <gringo/varterm.h>
 #include <gringo/constterm.h>
 #include <gringo/domain.h>
+#include <gringo/index.h>
 
 
 namespace
@@ -102,6 +126,20 @@ namespace
 		VarSet    vars_;
 		bool      addVars_;
 	};
+
+	class AggrIndex : public Index
+	{
+	public:
+		AggrIndex(AggrLit *aggr);
+		Match firstMatch(Grounder *grounder, int binder);
+		Match nextMatch(Grounder *grounder, int binder);
+		void reset();
+		void finish();
+		bool hasNew() const;
+	private:
+		AggrLit    *aggr_;
+		bool        finished_;
+	};
 }
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
@@ -110,8 +148,9 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	: Lit(loc)
 	, sign_(false)
 	, assign_(false)
-	, fact_(false)
+	, parent_(0)
 	, conds_(conds.release())
+	, last_(0)
 {
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 }
@@ -120,7 +159,6 @@ AggrLit::AggrLit(const AggrLit &aggr)
 	: Lit(aggr)
 	, sign_(aggr.sign_)
 	, assign_(aggr.assign_)
-	, fact_(aggr.fact_)
 	, lower_(aggr.lower_)
 	, upper_(aggr.upper_)
 	, conds_(aggr.conds_)
@@ -165,10 +203,62 @@ bool AggrLit::complete() const
 	return true;
 }
 
+bool AggrLit::fact() const
+{
+	return last_->matches() && last_->fact();
+}
+
+bool AggrLit::isFalse(Grounder *)
+{
+	return !last_->matches();
+}
+
+bool AggrLit::match(Grounder *grounder)
+{
+	return _match(grounder).first;
+}
+
+Index::Match AggrLit::_match(Grounder *grounder)
+{
+	ValVec bound;
+	foreach(uint32_t i, bound_) { bound.push_back(grounder->val(i)); }
+	AggrStates::iterator i = aggrStates_.find(bound);
+	bool newState = false;
+	if(i != aggrStates_.end()) { last_ = i->second; }
+	else
+	{
+		#pragma message "parent class has to generate this one"
+		last_    = new AggrState();
+		newState = true;
+		aggrStates_.insert(bound, last_);
+	}
+	foreach(CondLit &lit, conds_)
+	{
+		if(lit.complete()) { lit.enqueued(true); }
+		else if(newState)  { lit.enqueue(grounder, last_); }
+	}
+	foreach(CondLit &lit, conds_)
+	{
+		if(lit.complete())
+		{
+			lit.enqueued(false);
+			lit.ground(grounder, last_);
+		}
+	}
+	if(enqueued_ == 0 || last_->fact()) { return last_->match(); }
+	else                                { return Index::Match(false, false);}
+}
+
 void AggrLit::finish(Grounder *g) 
 {
-	#pragma message "probably unused here?"
-	foreach(CondLit &lit, conds_) { lit.finish(g); }
+	#pragma message "mark all matches as finished"
+}
+
+void AggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+{
+	parent_ = gr;
+	bound_.assign(bound.begin(), bound.end());
+	gr->instantiator()->append(new AggrIndex(this));
 }
 
 void AggrLit::visit(PrgVisitor *visitor)
@@ -491,4 +581,39 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::ID, name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
+}
+
+//////////////////////////////////////// AggrIndex ////////////////////////////////////////
+
+AggrIndex::AggrIndex(AggrLit *aggr)
+	: aggr_(aggr)
+	, finished_(false)
+{
+}
+
+Index::Match AggrIndex::firstMatch(Grounder *grounder, int)
+{
+	Match m = aggr_->_match(grounder);
+	return Match(m.first, m.first && (!finished_ || m.second));
+}
+
+Index::Match AggrIndex::nextMatch(Grounder *, int)
+{
+	#pragma message "handle assignments"
+	return Match(false, false);
+}
+
+void AggrIndex::reset()
+{
+	finished_ = false;
+}
+
+void AggrIndex::finish()
+{
+	finished_ = true;
+}
+
+bool AggrIndex::hasNew() const
+{
+	return !finished_ || aggr_->hasNew();
 }

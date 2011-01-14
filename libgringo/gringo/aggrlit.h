@@ -19,6 +19,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
+#include <gringo/index.h>
 #include <gringo/predlit.h>
 #include <gringo/printer.h>
 #include <gringo/groundable.h>
@@ -32,6 +33,18 @@ public:
 		virtual void weight(const Val &v) = 0;
 		virtual ~Printer();
 	};
+	class AggrState
+	{
+	public:
+		bool matches();
+		bool fact();
+		Index::Match match();
+	private:
+		boost::unordered_map<ValVec, std::vector<uint32_t> > offsets_;
+		bool            match_;
+		bool            fact_;
+	};
+	typedef boost::ptr_unordered_map<ValVec, AggrState> AggrStates;
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
 	AggrLit(const AggrLit &aggr);
@@ -42,6 +55,9 @@ public:
 	Term *assign() const;
 	void sign(bool s);
 
+	bool hasNew() const;
+	void enqueue(bool enqueue);
+
 	void add(CondLit *cond);
 	const CondLitVec &conds();
 
@@ -50,6 +66,9 @@ public:
 	// Lit interface
 	virtual void normalize(Grounder *g, Expander *expander);
 
+	Index::Match _match(Grounder *grounder);
+	virtual bool match(Grounder *grounder);
+	virtual bool isFalse(Grounder *grounder);
 	bool fact() const;
 
 	bool complete() const;
@@ -68,28 +87,14 @@ public:
 protected:
 	bool            sign_;
 	bool            assign_;
-	bool            fact_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
+	Groundable     *parent_;
 	CondLitVec      conds_;
-	/*
-	 * AggreIndx : Global Substitution -> Set of Local Substitutions
-	 * use push/pop + top mechanism or implement somethig own?
-	 * local substitution could be a set of top values?
-	 *   i.e.: varvec -> intvec
-	 * would need this per conditional store in conditional?
-	 */
-	VarVec varsGlobal_;
-	class AggrState
-	{
-		// TODO: do the accumulation here (interface)
-		// ValVec -> stuff in conditionals; number of conditional + number of offsets + offsets
-		// the conditional doesn't need to know anything
-		boost::unordered_map<ValVec, std::vector<uint32_t> > offsets_;
-	};
-	// maps global substitution to State
-	typedef boost::ptr_map<ValVec, AggrState> AggrIndex;
-
+	VarVec          bound_;
+	AggrStates      aggrStates_;
+	AggrState      *last_;
+	uint32_t        enqueued_;
 };
 
 class SetLit : public Lit
@@ -132,6 +137,9 @@ public:
 	bool complete() const;
 	void add(Lit *lit) { lits_.push_back(lit); }
 
+	void enqueue(Grounder *g, AggrLit::AggrState *state);
+	void ground(Grounder *g, AggrLit::AggrState *state);
+
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g, uint32_t number);
 	void ground(Grounder *g);
@@ -163,7 +171,11 @@ inline void AggrLit::sign(bool s) { sign_ = s; }
 
 inline const CondLitVec &AggrLit::conds() { return conds_; }
 
-inline bool AggrLit::fact() const { return fact_; }
+inline void AggrLit::enqueue(bool enqueue)
+{
+	if(enqueue) { enqueued_++; }
+	else        { enqueued_--; }
+}
 
 inline Lit::Monotonicity AggrLit::monotonicity() { return NONMONOTONE; }
 

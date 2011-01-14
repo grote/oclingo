@@ -26,15 +26,16 @@ public:
 	virtual bool grounded(Grounder *g) = 0;
 	virtual void ground(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
-	VarVec &vars() { return vars_; }
-	bool enqueued() const { return enqueued_; }
-	void enqueued(bool e) { enqueued_ = e; }
+	virtual void doEnqueue(bool enqueue);
+	VarVec &vars();
+	bool enqueued() const;
+	void enqueued(bool e);
 	void instantiator(Instantiator *inst);
 	Instantiator *instantiator() const;
-	uint32_t level() const { return level_; }
-	void level(uint32_t level) { level_ = level; }
+	uint32_t level() const;
+	void level(uint32_t level);
 	void litDep(LitDep::GrdNode *litDep);
-	LitDep::GrdNode *litDep() { return litDep_.get(); }
+	LitDep::GrdNode *litDep();
 protected:
 	~Groundable();
 protected:
@@ -45,3 +46,16 @@ protected:
 	VarVec                     vars_;
 };
 
+///////////////////////////////////// Groundable /////////////////////////////////////
+
+inline void Groundable::doEnqueue(bool enqueue) { }
+inline VarVec &Groundable::vars() { return vars_; }
+inline bool Groundable::enqueued() const { return enqueued_; }
+inline void Groundable::enqueued(bool e)
+{
+	if(enqueued_ != e) { doEnqueue(e); }
+	enqueued_ = e;
+}
+inline uint32_t Groundable::level() const { return level_; }
+inline void Groundable::level(uint32_t level) { level_ = level; }
+inline LitDep::GrdNode *Groundable::litDep() { return litDep_.get(); }
