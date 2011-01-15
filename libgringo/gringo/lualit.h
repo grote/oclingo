@@ -30,7 +30,6 @@ public:
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
-	bool isFalse(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit *clone() const;
 	int index() const;

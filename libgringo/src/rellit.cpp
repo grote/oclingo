@@ -32,26 +32,24 @@ RelLit::RelLit(const Loc &loc, Type t, Term *a, Term *b)
 {
 }
 
-bool RelLit::match(Grounder *grounder)
+bool RelLit::match(Grounder *g)
 {
-	if(head()) return true;
-	return !isFalse(grounder);
-}
-
-bool RelLit::isFalse(Grounder *g)
-{
-	switch(t_)
+	if(head()) { return true; }
+	else
 	{
-		case RelLit::GREATER: return a_->val(g).compare(b_->val(g), g) <= 0;
-		case RelLit::LOWER:   return a_->val(g).compare(b_->val(g), g) >= 0;
-		case RelLit::EQUAL:   return a_->val(g) != b_->val(g);
-		case RelLit::GTHAN:   return a_->val(g).compare(b_->val(g), g) < 0;
-		case RelLit::LTHAN:   return a_->val(g).compare(b_->val(g), g) > 0;
-		case RelLit::INEQUAL: return a_->val(g) == b_->val(g);
-		case RelLit::ASSIGN:  return a_->val(g).compare(b_->val(g), g) != 0;
+		switch(t_)
+		{
+			case RelLit::GREATER: return a_->val(g).compare(b_->val(g), g) > 0;
+			case RelLit::LOWER:   return a_->val(g).compare(b_->val(g), g) < 0;
+			case RelLit::EQUAL:   return a_->val(g) == b_->val(g);
+			case RelLit::GTHAN:   return a_->val(g).compare(b_->val(g), g) >= 0;
+			case RelLit::LTHAN:   return a_->val(g).compare(b_->val(g), g) <= 0;
+			case RelLit::INEQUAL: return a_->val(g) != b_->val(g);
+			case RelLit::ASSIGN:  return a_->val(g).compare(b_->val(g), g) == 0;
+		}
+		assert(false);
+		return false;
 	}
-	assert(false);
-	return false;
 }
 
 namespace

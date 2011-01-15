@@ -23,6 +23,7 @@
 #include <gringo/predlit.h>
 #include <gringo/printer.h>
 #include <gringo/groundable.h>
+#include <gringo/valvecset.h>
 
 class AggrLit : public Lit
 {
@@ -35,19 +36,20 @@ public:
 	};
 	class AggrState
 	{
+		typedef std::map<uint32_t,ValVecSet> Sets;
 	public:
-		bool matches();
-		bool fact();
-		Index::Match match();
+		bool accumulate(const ValVec &set, bool fact);
+		bool matches() const;
+		bool fact() const;
 	private:
-		boost::unordered_map<ValVec, std::vector<uint32_t> > offsets_;
-		bool            match_;
-		bool            fact_;
+		Sets sets_;
+	protected:
+		bool match_;
+		bool fact_;
 	};
-	typedef boost::ptr_unordered_map<ValVec, AggrState> AggrStates;
+	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
-	AggrLit(const AggrLit &aggr);
 
 	void lower(Term *l);
 	void upper(Term *u);
@@ -57,6 +59,10 @@ public:
 
 	bool hasNew() const;
 	void enqueue(bool enqueue);
+	void enqueueParent(Grounder *g);
+	AggrStates &states();
+	void bind(Grounder *g, uint32_t offset);
+	void unbind(Grounder *g);
 
 	void add(CondLit *cond);
 	const CondLitVec &conds();
@@ -66,9 +72,9 @@ public:
 	// Lit interface
 	virtual void normalize(Grounder *g, Expander *expander);
 
-	Index::Match _match(Grounder *grounder);
-	virtual bool match(Grounder *grounder);
-	virtual bool isFalse(Grounder *grounder);
+	void doHead(bool head);
+
+	bool match(Grounder *grounder);
 	bool fact() const;
 
 	bool complete() const;
@@ -95,6 +101,7 @@ protected:
 	AggrStates      aggrStates_;
 	AggrState      *last_;
 	uint32_t        enqueued_;
+	ValVecSet       index_;
 };
 
 class SetLit : public Lit
@@ -105,7 +112,6 @@ public:
 	TermPtrVec *terms() { return &terms_; }
 
 	bool match(Grounder *) { return true; }
-	bool isFalse(Grounder *) { return false; }
 	bool fact() const { return true; }
 
 	void addDomain(Grounder *, bool) { assert(false); }
@@ -136,29 +142,36 @@ public:
 	Style style();
 	bool complete() const;
 	void add(Lit *lit) { lits_.push_back(lit); }
+	void head(bool head);
 
-	void enqueue(Grounder *g, AggrLit::AggrState *state);
-	void ground(Grounder *g, AggrLit::AggrState *state);
-
-	bool grounded(Grounder *g);
-	void normalize(Grounder *g, uint32_t number);
+	void doEnqueue(bool enqueue);
+	void aggrEnqueue(Grounder *g);
 	void ground(Grounder *g);
+	bool grounded(Grounder *g);
+
+	void normalize(Grounder *g, uint32_t number);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(AggrLit::Printer *v);
 	void addDomain(Grounder *g, bool fact) ;
-	void finish(Grounder *g);
 	~CondLit();
 private:
-	Style      style_; //! only affects normalization
-	SetLit     set_;   //! determines uniqueness + holds weight (first position)
-	LitPtrVec  lits_;  //! list of conditionals optionally including head at first position
-	AggrLit    *aggr_; //! aggregate this conditional belongs to
+	Style      style_;
+	SetLit     set_;
+	LitPtrVec  lits_;
+	AggrLit   *aggr_;
+	uint32_t   offset_;
 };
 
 /////////////////////////////// AggrLit::Printer ///////////////////////////////
 
 inline AggrLit::Printer::~Printer() { }
+
+/////////////////////////////// AggrLit::AggrState ///////////////////////////////
+
+inline bool AggrLit::AggrState::matches() const { return match_; }
+
+inline bool AggrLit::AggrState::fact() const { return fact_; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 
@@ -176,6 +189,8 @@ inline void AggrLit::enqueue(bool enqueue)
 	if(enqueue) { enqueued_++; }
 	else        { enqueued_--; }
 }
+
+inline AggrLit::AggrStates &AggrLit::states() { return aggrStates_; }
 
 inline Lit::Monotonicity AggrLit::monotonicity() { return NONMONOTONE; }
 

@@ -15,35 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-
-/*
- * aggrlit with set of condlits
- * condlit as usual + set of terms
- * term tuple determines uniqueness
- * in body conditionals + head correspond to conjunction
- * in head conditionals will be treated like body literals
- * if an aggrgegate is grounded
- *   set a counter to the number of conditionals in the aggregate
- *   mark all conditionals
- * if all literals in a conditional are complete grounding similar to current algorithm
- *   immediately ground the conditional
- *   decrement aggregate counter
- * otherwise the aggregate enqueues the recursive conditional
- *   enqueue the conditional
- * if conditional is grounded and marked
- *   decrement counter in aggregate
- *   if counter hits zero and aggregate possibly matches
- *     enqueue the rule with the aggregate again
- *     or if all conditionals where complete immediately match
- * optimizations for monotone/antimonotone aggregates possible
- *   a monotone aggregate stays true
- *   an antimonotone aggregate stays false
- * 
- * 
- * grounding happens w.r.t. some global substitution
- *   globals substitutions have to be stored in the condlit
- */
-
 /*
   in general:
 	immediately ground complete conditionals
@@ -65,8 +36,6 @@
 		add domains (might include previous ones)
  */
 
-
-
 #include <gringo/aggrlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
@@ -79,7 +48,6 @@
 #include <gringo/constterm.h>
 #include <gringo/domain.h>
 #include <gringo/index.h>
-
 
 namespace
 {
@@ -126,20 +94,14 @@ namespace
 		VarSet    vars_;
 		bool      addVars_;
 	};
+}
 
-	class AggrIndex : public Index
-	{
-	public:
-		AggrIndex(AggrLit *aggr);
-		Match firstMatch(Grounder *grounder, int binder);
-		Match nextMatch(Grounder *grounder, int binder);
-		void reset();
-		void finish();
-		bool hasNew() const;
-	private:
-		AggrLit    *aggr_;
-		bool        finished_;
-	};
+//////////////////////////////////////// AggrLit::AggrState ////////////////////////////////////////
+
+bool AggrLit::AggrState::accumulate(const ValVec &set, bool fact)
+{
+	#pragma message "implement me!!!"
+	return true;
 }
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
@@ -151,19 +113,15 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	, parent_(0)
 	, conds_(conds.release())
 	, last_(0)
+	, enqueued_(0)
+	, index_(1)
 {
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 }
 
-AggrLit::AggrLit(const AggrLit &aggr)
-	: Lit(aggr)
-	, sign_(aggr.sign_)
-	, assign_(aggr.assign_)
-	, lower_(aggr.lower_)
-	, upper_(aggr.upper_)
-	, conds_(aggr.conds_)
+void AggrLit::doHead(bool head)
 {
-	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
+	foreach(CondLit &lit, conds_) { lit.head(head); }
 }
 
 void AggrLit::lower(Term *l) 
@@ -208,48 +166,35 @@ bool AggrLit::fact() const
 	return last_->matches() && last_->fact();
 }
 
-bool AggrLit::isFalse(Grounder *)
-{
-	return !last_->matches();
-}
-
-bool AggrLit::match(Grounder *grounder)
-{
-	return _match(grounder).first;
-}
-
-Index::Match AggrLit::_match(Grounder *grounder)
+bool AggrLit::match(Grounder *g)
 {
 	ValVec bound;
-	foreach(uint32_t i, bound_) { bound.push_back(grounder->val(i)); }
-	AggrStates::iterator i = aggrStates_.find(bound);
-	bool newState = false;
-	if(i != aggrStates_.end()) { last_ = i->second; }
+	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
+	std::pair<ValVecSet::Index, bool> res(index_.insert(bound.begin()));
+	if(!res.second) { last_ = &aggrStates_[res.first]; }
 	else
 	{
 		#pragma message "parent class has to generate this one"
-		last_    = new AggrState();
-		newState = true;
-		aggrStates_.insert(bound, last_);
-	}
-	foreach(CondLit &lit, conds_)
-	{
-		if(lit.complete()) { lit.enqueued(true); }
-		else if(newState)  { lit.enqueue(grounder, last_); }
-	}
-	foreach(CondLit &lit, conds_)
-	{
-		if(lit.complete())
+		aggrStates_.push_back(new AggrState());
+		last_ = &aggrStates_.back();
+		enqueued_+= conds_.size() + 1;
+		foreach(CondLit &lit, conds_) { lit.aggrEnqueue(g); }
+		foreach(CondLit &lit, conds_)
 		{
-			lit.enqueued(false);
-			lit.ground(grounder, last_);
+			if(lit.complete()) { lit.ground(g); }
 		}
+		enqueued_-= conds_.size() + 1;
 	}
-	if(enqueued_ == 0 || last_->fact()) { return last_->match(); }
-	else                                { return Index::Match(false, false);}
+	if(enqueued_ == 0 || last_->fact()) { return last_->matches(); }
+	else                                { return false;}
 }
 
-void AggrLit::finish(Grounder *g) 
+void AggrLit::enqueueParent(Grounder *g)
+{
+	if(enqueued_ == 0) { g->enqueue(parent_); }
+}
+
+void AggrLit::finish(Grounder *g)
 {
 	#pragma message "mark all matches as finished"
 }
@@ -258,7 +203,23 @@ void AggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 {
 	parent_ = gr;
 	bound_.assign(bound.begin(), bound.end());
-	gr->instantiator()->append(new AggrIndex(this));
+	index_ = ValVecSet(bound_.size());
+	// NOTE: think about binders (in theory the binder in the conditionals have to be shifted)
+	#pragma message "handle assignments!!"
+	gr->instantiator()->append(new MatchIndex(this));
+}
+
+void AggrLit::bind(Grounder *g, uint32_t offset)
+{
+	ValVecSet::iterator i = index_.begin() + offset;
+	VarVec::iterator    j = bound_.begin();
+	// NOTE: think about binders
+	for(; j != bound_.end(); i++, j++) { g->val(*j, *i, 0); }
+}
+
+void AggrLit::unbind(Grounder *g)
+{
+	foreach(uint32_t i, bound_) { g->unbind(i); }
 }
 
 void AggrLit::visit(PrgVisitor *visitor)
@@ -278,6 +239,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	{
 		conds_[i].normalize(g, i);
 	}
+	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 }
 
 AggrLit::~AggrLit()
@@ -333,7 +295,13 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, set_(loc, terms)
 	, lits_(lits)
 	, aggr_(0)
+	, offset_(0)
 {
+}
+
+void CondLit::head(bool head)
+{
+	lits_[0].head(head);
 }
 
 bool CondLit::complete() const
@@ -348,7 +316,8 @@ bool CondLit::complete() const
 void CondLit::normalize(Grounder *g, uint32_t number)
 {
 	assert(!lits_.empty());
-	if(style_ != STYLE_DLV)
+	bool head = lits_[0].head() || style_ != STYLE_DLV;
+	if(head)
 	{
 		CondHeadExpander headExp(*this);
 		lits_[0].normalize(g, &headExp);
@@ -356,29 +325,39 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 	CondSetExpander setExp(*this);
 	set_.normalize(g, &setExp);
 	CondBodyExpander bodyExp(*this);
-	for(LitPtrVec::size_type i = style_ != STYLE_DLV; i < lits_.size(); i++)
+	for(LitPtrVec::size_type i = head; i < lits_.size(); i++)
 	{
 		lits_[i].normalize(g, &bodyExp);
 	}
 	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
 }
 
+void CondLit::doEnqueue(bool enqueue)
+{
+	if(enqueue) { offset_ = 0; }
+	aggr_->enqueue(enqueue);
+}
+
+void CondLit::aggrEnqueue(Grounder *g)
+{
+	if(!complete())
+	{
+		uint32_t offset = offset_;
+		g->enqueue(this);
+		offset_ = offset;
+	}
+}
+
 void CondLit::ground(Grounder *g)
 {
-	#pragma message "implement me!!!"
-	/*
-	weights_.clear();
-	head_->clear();
-	if(inst_.get()) 
+	for(; offset_ < aggr_->states().size(); offset_++)
 	{
-		inst_->reset();
+		// TODO: possibly shortcut here
+		//       if the aggregate already has a fixed truthvalue
+		if(!complete()) { aggr_->bind(g, offset_); }
 		inst_->ground(g);
 	}
-	else
-	{
-		if(head_->match(g)) grounded(g);
-	}
-	*/
+	if(!complete()) { aggr_->unbind(g); }
 }
 
 void CondLit::visit(PrgVisitor *visitor)
@@ -416,26 +395,20 @@ void CondLit::addDomain(Grounder *g, bool fact)
 	*/
 }
 
-void CondLit::finish(Grounder *g)
-{
-}
-
 bool CondLit::grounded(Grounder *g)
 {
-	#pragma message "implement me!!!"
-	/*
+	#pragma message "output the conditional"
+	AggrLit::AggrState &state = aggr_->states()[offset_];
+	bool fact = true;
+	foreach(Lit &lit, lits_)
+	{
+		if(!lit.fact()) { fact = false; }
+	}
+	ValVec set;
+	foreach(Term &term, *set_.terms()) { set.push_back(term.val(g)); }
 	try
 	{
-		Val v = weight_->weight()->val(g);
-		head_->grounded(g);
-		tribool res = aggr_->accumulate(g, v, *head_);
-		if(unknown(res))
-		{
-			head_->push();
-			weights_.push_back(v);
-		}
-		else if(!res) return false;
-		return true;
+		if(state.accumulate(set, fact)) { aggr_->enqueueParent(g); }
 	}
 	catch(const Val *val)
 	{
@@ -448,12 +421,12 @@ bool CondLit::grounded(Grounder *g)
 		print(g, oss);
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
-	*/
 	return true;
 }
 
 void CondLit::accept(AggrLit::Printer *v)
 {
+	#pragma message "implement me!!!"
 	/*
 	size_t p = 0;
 	foreach(Val &val, weights_)
@@ -581,39 +554,4 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::ID, name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
-}
-
-//////////////////////////////////////// AggrIndex ////////////////////////////////////////
-
-AggrIndex::AggrIndex(AggrLit *aggr)
-	: aggr_(aggr)
-	, finished_(false)
-{
-}
-
-Index::Match AggrIndex::firstMatch(Grounder *grounder, int)
-{
-	Match m = aggr_->_match(grounder);
-	return Match(m.first, m.first && (!finished_ || m.second));
-}
-
-Index::Match AggrIndex::nextMatch(Grounder *, int)
-{
-	#pragma message "handle assignments"
-	return Match(false, false);
-}
-
-void AggrIndex::reset()
-{
-	finished_ = false;
-}
-
-void AggrIndex::finish()
-{
-	finished_ = true;
-}
-
-bool AggrIndex::hasNew() const
-{
-	return !finished_ || aggr_->hasNew();
 }

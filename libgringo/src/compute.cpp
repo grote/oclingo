@@ -36,7 +36,6 @@ public:
 	Lit *decorated() const;
 	bool fact() const;
 	bool match(Grounder *grounder);
-	bool isFalse(Grounder *grounder);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
     Monotonicity monotonicity();
 	void visit(PrgVisitor *v);
@@ -68,11 +67,6 @@ bool Compute::Head::match(Grounder *g)
 {
 	lit->match(g);
 	return true;
-}
-
-bool Compute::Head::isFalse(Grounder *)
-{
-	return false;
 }
 
 void Compute::Head::index(Grounder *g, Groundable *gr, VarSet &bound)

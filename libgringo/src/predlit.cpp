@@ -81,18 +81,6 @@ bool PredLit::fact() const
 	else return dom_->find(vals_.begin() + top_).fact;
 }
 
-bool PredLit::isFalse(Grounder *grounder)
-{
-	(void)grounder;
-	assert(top_ + dom_->arity() <= vals_.size());
-	if(!sign())
-	{
-		if(complete()) return !dom_->find(vals_.begin() + top_).valid();
-		else return false;
-	}
-	else return dom_->find(vals_.begin() + top_).fact;
-}
-
 Lit::Monotonicity PredLit::monotonicity()
 {
 	return PredLitRep::sign() || dom()->external() ? ANTIMONOTONE : MONOTONE;

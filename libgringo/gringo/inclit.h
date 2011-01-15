@@ -45,7 +45,6 @@ public:
 	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId);
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const { return true; }
-	bool isFalse(Grounder *g);
 	bool forcePrint() { return type_ == VOLATILE; }
 	void accept(::Printer *v);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);

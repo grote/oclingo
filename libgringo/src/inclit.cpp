@@ -35,16 +35,12 @@ IncLit::IncLit(const Loc &loc, IncConfig &config, Type type, uint32_t varId)
 {
 }
 
-bool IncLit::match(Grounder *grounder)
-{
-	return !isFalse(grounder);
-}
-
-bool IncLit::isFalse(Grounder *g)
+bool IncLit::match(Grounder *g)
 {
 	Val v = var_->val(g);
-	if(v.type != Val::NUM) { return true; }
-	else                   { return v.num != config_.incStep; }
+	if(v.type != Val::NUM) { return false; }
+	else                   { return v.num == config_.incStep; }
+
 }
 
 namespace

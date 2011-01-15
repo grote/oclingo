@@ -28,7 +28,6 @@ public:
 	RelLit(const Loc &loc, Type t, Term *a, Term *b);
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const { return true; }
-	bool isFalse(Grounder *g);
 	void accept(Printer *v);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);

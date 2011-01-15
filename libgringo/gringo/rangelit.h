@@ -25,11 +25,11 @@ class RangeLit : public Lit
 public:
 	RangeLit(const Loc &loc, VarTerm *var, Term *a, Term *b);
 	void normalize(Grounder *g, Expander *expander);
+	bool match(Grounder *grounder);
 	bool fact() const { return true; }
 	void accept(Printer *v);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
-	bool isFalse(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit::Score score(Grounder *g, VarSet &bound);
 	Lit *clone() const;

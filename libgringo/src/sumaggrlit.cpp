@@ -122,11 +122,6 @@ bool SumAggrLit::match(Grounder *grounder)
 	*/
 }
 
-bool SumAggrLit::isFalse(Grounder *)
-{
-	#pragma message "implement me!"
-}
-
 boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *grounder)
 {
 	#pragma message "implement me!"

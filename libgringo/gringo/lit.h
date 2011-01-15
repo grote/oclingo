@@ -53,9 +53,8 @@ public:
 	virtual void normalize(Grounder *g, Expander *expander) = 0;
 
 	// NOTE: match has to be called before:
-	//       isFalse, fact, state, grounded, addDomain, forcePrint, and finish!
-	virtual bool match(Grounder *grounder);
-	virtual bool isFalse(Grounder *grounder) = 0;
+	//       fact, state, grounded, addDomain, forcePrint, and finish!
+	virtual bool match(Grounder *grounder) = 0;
 	virtual bool fact() const = 0;
 
 	bool head() const;
@@ -103,7 +102,6 @@ public:
 	virtual void normalize(Grounder *g, Expander *expander);
 
 	virtual bool match(Grounder *grounder);
-	virtual bool isFalse(Grounder *grounder);
 	virtual bool fact() const;
 
 	virtual bool complete() const;
@@ -147,10 +145,11 @@ inline bool Lit::LitCmp::operator()(Lit *a, Lit *b)
 
 inline Lit::Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
 
-inline bool Lit::match(Grounder *grounder) { return !isFalse(grounder); }
-
 inline bool Lit::head() const { return head_; }
-inline void Lit::head(bool head) { head_ = head; doHead(head); }
+inline void Lit::head(bool head)
+{
+	if(head != head_) { doHead(head); head_ = head; }
+}
 inline void Lit::doHead(bool) { }
 inline bool Lit::complete() const { return true; }
 inline bool Lit::edbFact() const { return false; }
@@ -176,7 +175,6 @@ inline Lit::Decorator::Decorator(const Loc &loc) : Lit(loc) { }
 inline void Lit::Decorator::normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
 
 inline bool Lit::Decorator::match(Grounder *grounder) { return decorated()->match(grounder); }
-inline bool Lit::Decorator::isFalse(Grounder *grounder) { return decorated()->isFalse(grounder); }
 inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
 
 inline bool Lit::Decorator::complete() const { return decorated()->complete(); }
