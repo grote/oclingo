@@ -62,7 +62,7 @@ public:
 	virtual void doHead(bool head);
 	virtual bool complete() const;
 	virtual bool edbFact() const;
-	virtual Monotonicity monotonicity();
+	virtual Monotonicity monotonicity() const;
 
 	virtual void grounded(Grounder *grounder);
 	virtual void addDomain(Grounder *grounder, bool fact);
@@ -107,7 +107,7 @@ public:
 	virtual bool complete() const;
 	virtual void doHead(bool head);
 	virtual bool edbFact() const;
-	virtual Monotonicity monotonicity();
+	virtual Monotonicity monotonicity() const;
 
 	virtual void grounded(Grounder *grounder);
 	virtual void addDomain(Grounder *grounder, bool fact);
@@ -153,7 +153,7 @@ inline void Lit::head(bool head)
 inline void Lit::doHead(bool) { }
 inline bool Lit::complete() const { return true; }
 inline bool Lit::edbFact() const { return false; }
-inline Lit::Monotonicity Lit::monotonicity() { return MONOTONE; }
+inline Lit::Monotonicity Lit::monotonicity() const { return MONOTONE; }
 
 inline void Lit::grounded(Grounder *) { }
 inline void Lit::addDomain(Grounder *, bool) { }
@@ -180,7 +180,7 @@ inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
 inline bool Lit::Decorator::complete() const { return decorated()->complete(); }
 inline void Lit::Decorator::doHead(bool head) { decorated()->head(head); }
 inline bool Lit::Decorator::edbFact() const { return decorated()->edbFact(); }
-inline Lit::Monotonicity Lit::Decorator::monotonicity() { return decorated()->monotonicity(); }
+inline Lit::Monotonicity Lit::Decorator::monotonicity() const { return decorated()->monotonicity(); }
 
 inline void Lit::Decorator::grounded(Grounder *grounder) { decorated()->grounded(grounder); }
 inline void Lit::Decorator::addDomain(Grounder *grounder, bool fact) { decorated()->addDomain(grounder, fact); }

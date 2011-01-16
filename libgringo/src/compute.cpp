@@ -37,7 +37,7 @@ public:
 	bool fact() const;
 	bool match(Grounder *grounder);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);
-    Monotonicity monotonicity();
+	Monotonicity monotonicity() const;
 	void visit(PrgVisitor *v);
 	Lit *clone() const;
 	// NOTE: normalize doesn't need to be overwritten
@@ -74,7 +74,7 @@ void Compute::Head::index(Grounder *g, Groundable *gr, VarSet &bound)
 	gr->instantiator()->append(new MatchIndex(this));
 }
 
-Lit::Monotonicity Compute::Head::monotonicity()
+Lit::Monotonicity Compute::Head::monotonicity() const
 {
 	return ANTIMONOTONE;
 }

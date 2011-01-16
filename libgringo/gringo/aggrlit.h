@@ -19,8 +19,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
-#include <gringo/index.h>
-#include <gringo/predlit.h>
+//#include <gringo/predlit.h>
 #include <gringo/printer.h>
 #include <gringo/groundable.h>
 #include <gringo/valvecset.h>
@@ -38,12 +37,21 @@ public:
 	{
 		typedef std::map<uint32_t,ValVecSet> Sets;
 	public:
-		bool accumulate(const ValVec &set, bool fact);
+		AggrState();
+		virtual void doAccumulate(AggrLit &lit, const ValVec &set, bool isNew, bool newFact) { }
+		void accumulate(AggrLit &lit, const ValVec &set, bool fact);
 		bool matches() const;
 		bool fact() const;
+		bool lock();
+		bool isNew() const;
+		void finish();
+		virtual ~AggrState();
 	private:
 		Sets sets_;
+		bool new_;
+		bool lock_;
 	protected:
+		// NOTE: w.r.t. current step
 		bool match_;
 		bool fact_;
 	};
@@ -58,8 +66,9 @@ public:
 	void sign(bool s);
 
 	bool hasNew() const;
+	bool isNew() const;
 	void enqueue(bool enqueue);
-	void enqueueParent(Grounder *g);
+	void enqueueParent(Grounder *g, AggrState &state);
 	AggrStates &states();
 	void bind(Grounder *g, uint32_t offset);
 	void unbind(Grounder *g);
@@ -79,7 +88,7 @@ public:
 
 	bool complete() const;
 
-	virtual Monotonicity monotonicity();
+	virtual Monotonicity monotonicity() const;
 
 	void grounded(Grounder *grounder);
 	void addDomain(Grounder *g, bool fact);
@@ -101,6 +110,7 @@ protected:
 	AggrStates      aggrStates_;
 	AggrState      *last_;
 	uint32_t        enqueued_;
+	bool            new_;
 	ValVecSet       index_;
 };
 
@@ -169,9 +179,24 @@ inline AggrLit::Printer::~Printer() { }
 
 /////////////////////////////// AggrLit::AggrState ///////////////////////////////
 
-inline bool AggrLit::AggrState::matches() const { return match_; }
+inline bool AggrLit::AggrState::matches() const { return lock_ || match_; }
 
 inline bool AggrLit::AggrState::fact() const { return fact_; }
+
+inline bool AggrLit::AggrState::isNew() const { return new_; }
+
+inline bool AggrLit::AggrState::lock()
+{
+	if(match_ && !lock_)
+	{
+		new_  = true;
+		lock_ = true;
+		return true;
+	}
+	else { return false; }
+}
+
+inline void AggrLit::AggrState::finish() { new_  = false; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 
@@ -190,9 +215,11 @@ inline void AggrLit::enqueue(bool enqueue)
 	else        { enqueued_--; }
 }
 
+inline bool AggrLit::hasNew() const { return new_; }
+
 inline AggrLit::AggrStates &AggrLit::states() { return aggrStates_; }
 
-inline Lit::Monotonicity AggrLit::monotonicity() { return NONMONOTONE; }
+inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
 
 inline void AggrLit::grounded(Grounder *) { }
 

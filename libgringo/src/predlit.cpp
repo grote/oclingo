@@ -81,7 +81,7 @@ bool PredLit::fact() const
 	else return dom_->find(vals_.begin() + top_).fact;
 }
 
-Lit::Monotonicity PredLit::monotonicity()
+Lit::Monotonicity PredLit::monotonicity() const
 {
 	return PredLitRep::sign() || dom()->external() ? ANTIMONOTONE : MONOTONE;
 }

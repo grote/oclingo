@@ -64,7 +64,7 @@ public:
 	PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms);
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const;
-	Monotonicity monotonicity();
+	Monotonicity monotonicity() const;
 	void addDomain(Grounder *g, bool fact);
 	void accept(Printer *v);
 	/** \note grounded has to be called before reading top_ or vals_. */

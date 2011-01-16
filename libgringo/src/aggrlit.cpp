@@ -94,14 +94,44 @@ namespace
 		VarSet    vars_;
 		bool      addVars_;
 	};
+
+	class AggrIndex : public Index
+	{
+	public:
+		AggrIndex(AggrLit *lit);
+		Match firstMatch(Grounder *grounder, int binder);
+		Match nextMatch(Grounder *grounder, int binder);
+		void reset();
+		void finish();
+		bool hasNew() const;
+		~AggrIndex();
+	private:
+		AggrLit *lit_;
+		bool     finished_;
+	};
 }
 
 //////////////////////////////////////// AggrLit::AggrState ////////////////////////////////////////
 
-bool AggrLit::AggrState::accumulate(const ValVec &set, bool fact)
+AggrLit::AggrState::AggrState()
+	: new_(false)
+	, lock_(false)
+	, match_(false)
+	, fact_(false)
+{ }
+
+void AggrLit::AggrState::accumulate(AggrLit &lit, const ValVec &set, bool fact)
 {
-	#pragma message "implement me!!!"
-	return true;
+	Sets::iterator it = sets_.find(set.size());
+	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
+	std::pair<const ValVecSet::Index &, bool> res = it->second.insert(set.begin());
+	bool newFact = !res.first.fact && fact;
+	res.first.fact = res.first.fact || fact;
+	doAccumulate(lit, set, res.second, newFact);
+}
+
+AggrLit::AggrState::~AggrState()
+{
 }
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
@@ -114,6 +144,7 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	, conds_(conds.release())
 	, last_(0)
 	, enqueued_(0)
+	, new_(false)
 	, index_(1)
 {
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
@@ -161,9 +192,14 @@ bool AggrLit::complete() const
 	return true;
 }
 
+bool AggrLit::isNew() const
+{
+	return last_->isNew();
+}
+
 bool AggrLit::fact() const
 {
-	return last_->matches() && last_->fact();
+	return (monotonicity() == MONOTONE || complete()) && last_->matches() && last_->fact();
 }
 
 bool AggrLit::match(Grounder *g)
@@ -185,18 +221,26 @@ bool AggrLit::match(Grounder *g)
 		}
 		enqueued_-= conds_.size() + 1;
 	}
-	if(enqueued_ == 0 || last_->fact()) { return last_->matches(); }
-	else                                { return false;}
+	if(enqueued_ == 0 || fact())
+	{
+		if(last_->lock()) { new_ = true; }
+		return last_->matches();
+	}
+	else { return false;}
 }
 
-void AggrLit::enqueueParent(Grounder *g)
+void AggrLit::enqueueParent(Grounder *g, AggrState &state)
 {
-	if(enqueued_ == 0) { g->enqueue(parent_); }
+	if(enqueued_ == 0 && state.matches())
+	{
+		if(state.lock()) { new_ = true; }
+		g->enqueue(parent_);
+	}
 }
 
 void AggrLit::finish(Grounder *g)
 {
-	#pragma message "mark all matches as finished"
+	foreach(AggrState &state, aggrStates_) { state.finish(); }
 }
 
 void AggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
@@ -206,7 +250,7 @@ void AggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 	index_ = ValVecSet(bound_.size());
 	// NOTE: think about binders (in theory the binder in the conditionals have to be shifted)
 	#pragma message "handle assignments!!"
-	gr->instantiator()->append(new MatchIndex(this));
+	gr->instantiator()->append(new AggrIndex(this));
 }
 
 void AggrLit::bind(Grounder *g, uint32_t offset)
@@ -408,7 +452,8 @@ bool CondLit::grounded(Grounder *g)
 	foreach(Term &term, *set_.terms()) { set.push_back(term.val(g)); }
 	try
 	{
-		if(state.accumulate(set, fact)) { aggr_->enqueueParent(g); }
+		state.accumulate(*aggr_, set, fact);
+		aggr_->enqueueParent(g, state);
 	}
 	catch(const Val *val)
 	{
@@ -554,4 +599,43 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::ID, name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
+}
+
+//////////////////////////////////////// AggrIndex ////////////////////////////////////////
+
+AggrIndex::AggrIndex(AggrLit *lit)
+	: lit_(lit)
+	, finished_(false)
+{
+}
+
+Index::Match AggrIndex::firstMatch(Grounder *g, int)
+{
+	bool match = lit_->match(g);
+	return Match(match, !finished_ ||  lit_->isNew());
+}
+
+Index::Match AggrIndex::nextMatch(Grounder *, int)
+{
+	#pragma message "handle assignments"
+	return Match(false, false);
+}
+
+void AggrIndex::reset()
+{
+	finished_ = false;
+}
+
+void AggrIndex::finish()
+{
+	finished_ = true;
+}
+
+bool AggrIndex::hasNew() const
+{
+	return !finished_ || lit_->hasNew();
+}
+
+AggrIndex::~AggrIndex()
+{
 }
