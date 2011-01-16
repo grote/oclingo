@@ -69,7 +69,7 @@ bool Compute::Head::match(Grounder *g)
 	return true;
 }
 
-void Compute::Head::index(Grounder *g, Groundable *gr, VarSet &bound)
+void Compute::Head::index(Grounder *, Groundable *gr, VarSet &)
 {
 	gr->instantiator()->append(new MatchIndex(this));
 }

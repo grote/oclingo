@@ -237,12 +237,12 @@ void AggrLit::enqueueParent(Grounder *g, AggrState &state)
 	}
 }
 
-void AggrLit::finish(Grounder *g)
+void AggrLit::finish(Grounder *)
 {
 	foreach(AggrState &state, aggrStates_) { state.finish(); }
 }
 
-void AggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 {
 	parent_ = gr;
 	bound_.assign(bound.begin(), bound.end());

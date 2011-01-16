@@ -48,7 +48,7 @@ protected:
 
 ///////////////////////////////////// Groundable /////////////////////////////////////
 
-inline void Groundable::doEnqueue(bool enqueue) { }
+inline void Groundable::doEnqueue(bool) { }
 inline VarVec &Groundable::vars() { return vars_; }
 inline bool Groundable::enqueued() const { return enqueued_; }
 inline void Groundable::enqueued(bool e)

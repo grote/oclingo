@@ -1,5 +1,10 @@
 #include "gringo/valvecset.h"
 
+namespace
+{
+	ValVecSet::Index g_invalid;
+}
+
 ValVecSet::Cmp::Cmp(ValVecSet *argSet) :
 	set(argSet)
 {
@@ -29,7 +34,7 @@ ValVecSet::Index::Index(uint32_t index, bool fact)
 
 bool ValVecSet::Index::valid() const
 {
-	return *this != Index();
+	return *this != g_invalid;
 }
 
 ValVecSet::ValVecSet(uint32_t arity)
@@ -52,7 +57,7 @@ const ValVecSet::Index &ValVecSet::find(const const_iterator &v) const
 	ValSet::iterator i = valSet_.find(idx);
 	vals_.resize(idx.index);
 	if(i != valSet_.end()) return *i;
-	else return Index();
+	else return g_invalid;
 }
 
 std::pair<const ValVecSet::Index&, bool> ValVecSet::insert(const const_iterator &v, bool fact)
