@@ -31,7 +31,8 @@ public:
 	uint32_t       size() const  { return valSet_.size(); }
 
 	ValVecSet(uint32_t arity);
-	ValVecSet(const ValVecSet &argSet);
+	ValVecSet(const ValVecSet &set);
+	ValVecSet &operator=(const ValVecSet &set);
 	const Index &find(const const_iterator &v) const;
 	std::pair<const Index&, bool> insert(const const_iterator &v, bool fact = false);
 	void extend(const ValVecSet &other);

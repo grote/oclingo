@@ -202,7 +202,7 @@ inline bool AggrLit::AggrState::lock()
 	else { return false; }
 }
 
-inline void AggrLit::AggrState::finish() { new_  = false; }
+inline void AggrLit::AggrState::finish() { new_ = false; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 

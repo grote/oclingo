@@ -55,7 +55,7 @@ void Instantiator::ground(Grounder *g)
 	{
 		if(!matched.first || (!numNew && l >= lastNew))
 		{
-			if(--l == -1) { break; }
+			if(--l <= -1) { break; }
 			matched = indices_[l].nextMatch(g, l);
 			numNew -= new_[l];
 			new_[l] = matched.second;

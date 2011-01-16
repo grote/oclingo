@@ -206,7 +206,8 @@ bool AggrLit::match(Grounder *g)
 {
 	ValVec bound;
 	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
-	std::pair<ValVecSet::Index, bool> res(index_.insert(bound.begin()));
+	std::cerr << "bound: " << bound.size() << std::endl;
+	std::pair<const ValVecSet::Index&, bool> res(index_.insert(bound.begin()));
 	if(!res.second) { last_ = &aggrStates_[res.first]; }
 	else
 	{
@@ -340,6 +341,7 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, aggr_(0)
 	, offset_(0)
 {
+	#pragma message "create an auxiliary literal that binds the global variables to ground all conditionals at once"
 }
 
 void CondLit::head(bool head)

@@ -50,6 +50,14 @@ ValVecSet::ValVecSet(const ValVecSet &set)
 	extend(set);
 }
 
+ValVecSet &ValVecSet::operator=(const ValVecSet &set)
+{
+	arity_  = set.arity_;
+	valSet_ = ValSet(0, Cmp(this), Cmp(this));
+	extend(set);
+	return *this;
+}
+
 const ValVecSet::Index &ValVecSet::find(const const_iterator &v) const
 {
 	Index idx(vals_.size());
