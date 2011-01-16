@@ -38,13 +38,13 @@ public:
 		typedef std::map<uint32_t,ValVecSet> Sets;
 	public:
 		AggrState();
-		virtual void doAccumulate(AggrLit &lit, const ValVec &set, bool isNew, bool newFact) { }
-		void accumulate(AggrLit &lit, const ValVec &set, bool fact);
+		void accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact);
 		bool matches() const;
 		bool fact() const;
 		bool lock();
 		bool isNew() const;
 		void finish();
+		virtual void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact) = 0;
 		virtual ~AggrState();
 	private:
 		Sets sets_;
@@ -59,10 +59,14 @@ public:
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
 
+	virtual AggrState *newAggrState(Grounder *g) = 0;
+
 	void lower(Term *l);
 	void upper(Term *u);
 	void assign(Term *a);
 	Term *assign() const;
+	Term *lower() const;
+	Term *upper() const;
 	void sign(bool s);
 
 	bool hasNew() const;
@@ -94,7 +98,7 @@ public:
 	void addDomain(Grounder *g, bool fact);
 	void finish(Grounder *g);
 
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) = 0;
+	virtual void index(Grounder *g, Groundable *gr, VarSet &bound);
 	Score score(Grounder *g, VarSet &bound);
 
 	void visit(PrgVisitor *visitor);
@@ -113,6 +117,8 @@ protected:
 	bool            new_;
 	ValVecSet       index_;
 };
+
+AggrLit::AggrState* new_clone(const AggrLit::AggrState& state);
 
 class SetLit : public Lit
 {
@@ -200,11 +206,12 @@ inline void AggrLit::AggrState::finish() { new_  = false; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 
-inline Term *AggrLit::assign() const
-{
-	assert(assign_);
-	return lower_.get();
-}
+inline Term *AggrLit::assign() const { return assign_ ? lower_.get() : 0; }
+
+inline Term *AggrLit::lower() const { return assign_ ? 0 : lower_.get(); }
+
+inline Term *AggrLit::upper() const { return upper_.get(); }
+
 inline void AggrLit::sign(bool s) { sign_ = s; }
 
 inline const CondLitVec &AggrLit::conds() { return conds_; }
@@ -224,6 +231,13 @@ inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
 inline void AggrLit::grounded(Grounder *) { }
 
 inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
+
+inline AggrLit::AggrState* new_clone(const AggrLit::AggrState&)
+{
+	// NOTE: should never be called
+	assert(false);
+	return 0;
+}
 
 /////////////////////////////// CondLit ///////////////////////////////
 

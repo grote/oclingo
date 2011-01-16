@@ -34,6 +34,7 @@ public:
 	typedef ValVec::const_iterator const_iterator;
 
 private:
+	#pragma message "replace this by valvecset!!!"
 	class ArgSet
 	{
 	private:

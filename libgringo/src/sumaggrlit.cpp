@@ -25,6 +25,115 @@
 #include <gringo/index.h>
 #include <gringo/output.h>
 
+namespace
+{
+	class SumAggrState : public AggrLit::AggrState
+	{
+	public:
+		SumAggrState(Grounder *g, AggrLit &lit);
+		void accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact);
+		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
+	private:
+		int64_t fixed_;
+		int64_t min_;
+		int64_t max_;
+	};
+
+}
+
+//////////////////////////////////////// SumAggrLit ////////////////////////////////////////
+
+SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
+	: AggrLit(loc, conds)
+{
+}
+
+AggrLit::AggrState *SumAggrLit::newAggrState(Grounder *g)
+{
+	return new SumAggrState(g, *this);
+}
+
+//////////////////////////////////////// SumAggrState ////////////////////////////////////////
+
+SumAggrState::SumAggrState(Grounder *g, AggrLit &lit)
+	: fixed_(0)
+	, min_(0)
+	, max_(0)
+{
+	accumulate(g, lit, 0, true, true);
+}
+
+void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact)
+{
+	if(isNew)
+	{
+		 if(newFact) { fixed_ += weight; }
+		 else
+		 {
+			 if(weight < 0) { min_ += weight; }
+			 else           { max_ += weight; }
+		 }
+	}
+	else if(newFact)
+	{
+		fixed_ += weight;
+		if(weight < 0) { min_ -= weight; }
+		else           { max_ -= weight; }
+	}
+	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
+	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
+	match_ = lower <= upper && lower <= fixed_ + max_ && fixed_ + min_ <= upper;
+	fact_  = match_ && lower <= fixed_ + min_ && fixed_ + max_ <= upper;
+}
+
+void SumAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
+{
+	accumulate(g, lit, set[0].number(), isNew, newFact);
+}
+
+Lit *SumAggrLit::clone() const
+{
+	return new SumAggrLit(*this);
+}
+
+void SumAggrLit::print(Storage *sto, std::ostream &out) const
+{
+	if(sign_) out << "not ";
+	if(lower_.get())
+	{
+		lower_->print(sto, out);
+		out << (assign_ ? ":=" : " ");
+	}
+	bool comma = false;
+	out << "#sum[";
+	foreach(const CondLit &lit, conds_)
+	{
+		if(comma) { out << ","; }
+		else      { comma = true; }
+		lit.print(sto, out);
+	}
+	out << "]";
+	if(upper_.get())
+	{
+		out << " ";
+		upper_->print(sto, out);
+	}
+}
+
+void SumAggrLit::accept(::Printer *v)
+{
+	#pragma message "implement me! (best in aggrlit!)"
+	/*
+	Printer *printer = v->output()->printer<Printer>();
+	printer->begin(head(), sign_, set());
+	if(lower_.get() || assign_) printer->lower(lowerBound_);
+	if(upper_.get() || assign_) printer->upper(upperBound_);
+	foreach(CondLit &lit, conds_) lit.accept(printer);
+	printer->end();
+	*/
+}
+
+
 /*
 namespace
 {
@@ -75,17 +184,20 @@ namespace
 	}
 }
 
-*/
-
 SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
 	: AggrLit(loc, conds)
 {
 }
 
+AggrLit::AggrState *SumAggrLit::newAggrState(Grounder *g)
+{
+	#pragma message "implement me!!"
+	return 0;
+}
+
 bool SumAggrLit::match(Grounder *grounder)
 {
 	#pragma message "implement me!"
-	/*
 	try
 	{
 		if(lower_.get()) lowerBound_ = lower_->val(grounder).number();
@@ -119,13 +231,11 @@ bool SumAggrLit::match(Grounder *grounder)
 	if(valLower_ >= lowerBound_ && valUpper_ <= upperBound_) return (fact_ = !sign_) || head();
 	if(valUpper_ < lowerBound_ || valLower_  > upperBound_) return (fact_ = sign_) || head();
 	return true;
-	*/
 }
 
 boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *grounder)
 {
 	#pragma message "implement me!"
-	/*
 	assert(!head());
 	assert(!sign_);
 	fact_     = false;
@@ -136,13 +246,11 @@ boost::tuple<int32_t, int32_t, int32_t> SumAggrLit::matchAssign(Grounder *ground
 	foreach(CondLit &lit, conds_) lit.ground(grounder);
 	fact_     = factOnly_;
 	return boost::tuple<int32_t, int32_t, int32_t>(valLower_, valUpper_, fixed_);
-	*/
 }
 
 void SumAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound) 
 {
 	#pragma message "implement me!"
-	/*
 	(void)g;
 	if(assign_)
 	{
@@ -159,55 +267,22 @@ void SumAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 		}
 	}
 	gr->instantiator()->append(new MatchIndex(this));
-	*/
 }
 
 void SumAggrLit::accept(::Printer *v)
 { 
 	#pragma message "implement me!"
-	/*
 	Printer *printer = v->output()->printer<Printer>();
 	printer->begin(head(), sign_, set());
 	if(lower_.get() || assign_) printer->lower(lowerBound_);
 	if(upper_.get() || assign_) printer->upper(upperBound_);
 	foreach(CondLit &lit, conds_) lit.accept(printer);
 	printer->end();
-	*/
-}
-
-Lit *SumAggrLit::clone() const
-{ 
-	return new SumAggrLit(*this);
-}
-
-void SumAggrLit::print(Storage *sto, std::ostream &out) const 
-{ 
-	if(sign_) out << "not ";
-	if(lower_.get())
-	{
-		lower_->print(sto, out);
-		out << (assign_ ? ":=" : " ");
-	}
-	bool comma = false;
-	out << "#sum[";
-	foreach(const CondLit &lit, conds_)
-	{
-		if(comma) { out << ","; }
-		else      { comma = true; }
-		lit.print(sto, out);
-	}
-	out << "]";
-	if(upper_.get())
-	{
-		out << " ";
-		upper_->print(sto, out);
-	}
 }
 
 tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*)
 {
 	#pragma message "implement me!"
-	/*
 	(void)g;
 	int32_t num = weight.number();
 	if(num == 0 && !head()) return true;
@@ -224,5 +299,5 @@ tribool SumAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(c
 		if(num > 0)	valUpper_ += num;
 	}
 	return lit.fact() ? tribool(true) : unknown;
-	*/
 }
+*/

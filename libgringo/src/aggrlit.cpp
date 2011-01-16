@@ -120,14 +120,14 @@ AggrLit::AggrState::AggrState()
 	, fact_(false)
 { }
 
-void AggrLit::AggrState::accumulate(AggrLit &lit, const ValVec &set, bool fact)
+void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact)
 {
 	Sets::iterator it = sets_.find(set.size());
 	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
 	std::pair<const ValVecSet::Index &, bool> res = it->second.insert(set.begin());
 	bool newFact = !res.first.fact && fact;
 	res.first.fact = res.first.fact || fact;
-	doAccumulate(lit, set, res.second, newFact);
+	doAccumulate(g, lit, set, res.second, newFact);
 }
 
 AggrLit::AggrState::~AggrState()
@@ -210,8 +210,7 @@ bool AggrLit::match(Grounder *g)
 	if(!res.second) { last_ = &aggrStates_[res.first]; }
 	else
 	{
-		#pragma message "parent class has to generate this one"
-		aggrStates_.push_back(new AggrState());
+		aggrStates_.push_back(newAggrState(g));
 		last_ = &aggrStates_.back();
 		enqueued_+= conds_.size() + 1;
 		foreach(CondLit &lit, conds_) { lit.aggrEnqueue(g); }
@@ -452,7 +451,7 @@ bool CondLit::grounded(Grounder *g)
 	foreach(Term &term, *set_.terms()) { set.push_back(term.val(g)); }
 	try
 	{
-		state.accumulate(*aggr_, set, fact);
+		state.accumulate(g, *aggr_, set, fact);
 		aggr_->enqueueParent(g, state);
 	}
 	catch(const Val *val)
@@ -617,7 +616,6 @@ Index::Match AggrIndex::firstMatch(Grounder *g, int)
 
 Index::Match AggrIndex::nextMatch(Grounder *, int)
 {
-	#pragma message "handle assignments"
 	return Match(false, false);
 }
 
