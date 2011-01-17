@@ -29,7 +29,7 @@ public:
 	void fix();
 	void ground(Grounder *g);
 	void reset();
-	void enqueue(Grounder *g);
+	void init(Grounder *g, bool enqueue);
 	~Instantiator();
 private:
 	Groundable *groundable_;

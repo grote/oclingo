@@ -38,6 +38,7 @@ namespace
 		Grounder   *g_;
 		Groundable *grd_;
 		VarSet      bound_;
+		bool        top_;
 	};
 }
 
@@ -46,7 +47,6 @@ namespace
 void Statement::init(Grounder *g)
 {
 	IndexAdder::add(g, this);
-	instantiator()->enqueue(g);
 }
 
 Statement::Statement(const Loc &loc)
@@ -85,6 +85,7 @@ void Statement::check(Grounder *g)
 IndexAdder::IndexAdder(Grounder *g)
 	: g_(g)
 	, grd_(0)
+	, top_(true)
 { }
 
 void IndexAdder::visit(Lit *lit, bool)
@@ -95,6 +96,8 @@ void IndexAdder::visit(Lit *lit, bool)
 
 void IndexAdder::visit(Groundable *grd, bool)
 {
+	bool top = top_;
+	top_     = false;
 	if(!grd->instantiator())
 	{
 		Groundable *oldGrd(grd_);
@@ -107,6 +110,7 @@ void IndexAdder::visit(Groundable *grd, bool)
 		grd_ = oldGrd;
 		std::swap(bound_, oldBound);
 	}
+	grd->instantiator()->init(g_, top);
 }
 
 void IndexAdder::add(Grounder *g, Statement *s)

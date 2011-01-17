@@ -27,10 +27,12 @@ public:
 	virtual void ground(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
 	virtual void doEnqueue(bool enqueue);
+	virtual void print(Storage *sto, std::ostream &out) const = 0;
 	VarVec &vars();
 	bool enqueued() const;
 	void enqueued(bool e);
-	void instantiator(Instantiator *inst);
+	// TODO: remove the virtual!!!
+	virtual void instantiator(Instantiator *inst);
 	Instantiator *instantiator() const;
 	uint32_t level() const;
 	void level(uint32_t level);

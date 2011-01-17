@@ -229,9 +229,9 @@ void Grounder::ground(Module &module)
 			statement->init(this);
 			if(debug_)
 			{
-				std::cerr << "% ";
-				statement->print(this, std::cerr);
-				std::cerr << std::endl;
+				//std::cerr << "% ";
+				//statement->print(this, std::cerr);
+				//std::cerr << std::endl;
 			}
 			ground_();
 		}
@@ -249,6 +249,10 @@ void Grounder::ground_()
 	{
 		std::random_shuffle(queue_.begin(), queue_.end());
 		Groundable *g = queue_.front();
+		std::cerr << "% ";
+		g->print(this, std::cerr);
+		std::cerr << std::endl;
+
 		queue_.pop_front();
 		g->enqueued(false);
 		g->ground(this);

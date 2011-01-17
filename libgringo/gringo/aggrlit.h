@@ -74,7 +74,7 @@ public:
 	void enqueue(bool enqueue);
 	void enqueueParent(Grounder *g, AggrState &state);
 	AggrStates &states();
-	void bind(Grounder *g, uint32_t offset);
+	void bind(Grounder *g, uint32_t offset, int binder);
 	void unbind(Grounder *g);
 
 	void add(CondLit *cond);
@@ -160,6 +160,8 @@ public:
 	void add(Lit *lit) { lits_.push_back(lit); }
 	void head(bool head);
 
+	bool bind(Grounder *g, uint32_t offset, int binder);
+
 	void doEnqueue(bool enqueue);
 	void aggrEnqueue(Grounder *g);
 	void ground(Grounder *g);
@@ -170,13 +172,16 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(AggrLit::Printer *v);
 	void addDomain(Grounder *g, bool fact) ;
+
+	void instantiator(Instantiator *inst);
+
 	~CondLit();
 private:
 	Style      style_;
 	SetLit     set_;
 	LitPtrVec  lits_;
 	AggrLit   *aggr_;
-	uint32_t   offset_;
+	AggrLit::AggrState *current_;
 };
 
 /////////////////////////////// AggrLit::Printer ///////////////////////////////
@@ -248,4 +253,3 @@ inline TermPtrVec *CondLit::terms() { return set_.terms(); }
 inline LitPtrVec *CondLit::lits() { return &lits_; }
 
 inline CondLit::Style CondLit::style() { return style_;  }
-

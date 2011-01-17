@@ -53,13 +53,14 @@ void Instantiator::ground(Grounder *g)
 	
 	for(;;)
 	{
-		if(!matched.first || (!numNew && l >= lastNew))
+		if(!matched.first || (!numNew && l == lastNew))
 		{
-			if(--l <= -1) { break; }
+			l-= !matched.first;
+			if(l == -1) { break; }
 			matched = indices_[l].nextMatch(g, l);
 			numNew -= new_[l];
 			new_[l] = matched.second;
-			numNew += matched.second;
+			numNew += matched.first && matched.second;
 		}
 		else
 		{
@@ -86,14 +87,14 @@ void Instantiator::reset()
 	foreach(Index &index, indices_) { index.reset(); }
 }
 
-void Instantiator::enqueue(Grounder *g)
+void Instantiator::init(Grounder *g, bool enqueue)
 {
 	bool modified = false;
 	foreach(Index &idx, indices_)
 	{
 		modified = idx.init(g) || modified;
 	}
-	if(modified) { g->enqueue(groundable_); }
+	if(modified && enqueue) { g->enqueue(groundable_); }
 }
 
 Instantiator::~Instantiator()
