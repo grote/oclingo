@@ -90,8 +90,8 @@ IndexAdder::IndexAdder(Grounder *g)
 
 void IndexAdder::visit(Lit *lit, bool)
 {
-	if(!grd_->litDep()) { lit->index(g_, grd_, bound_); }
 	lit->visit(this);
+	lit->index(g_, grd_, bound_);
 }
 
 void IndexAdder::visit(Groundable *grd, bool)
@@ -104,8 +104,8 @@ void IndexAdder::visit(Groundable *grd, bool)
 		VarSet      oldBound(bound_);
 		grd_ = grd;
 		grd_->instantiator(new Instantiator(grd_));
-		grd_->visit(this);
-		if(grd_->litDep()) { grd_->litDep()->order(g_, bound_); }
+		if(grd_->litDep()) { grd_->litDep()->order(g_, this, bound_); }
+		else               { grd_->visit(this); }
 		grd_->instantiator()->fix();
 		grd_ = oldGrd;
 		std::swap(bound_, oldBound);

@@ -43,7 +43,7 @@ namespace LitDep
 		void append(VarNode *varNode);
 		void reset();
 		bool check(VarTermVec &terms);
-		void order(Grounder *g, const VarSet &bound);
+		void order(Grounder *g, PrgVisitor *v, const VarSet &bound);
 		~GrdNode();
 	private:
 		Groundable   *groundable_;

@@ -145,6 +145,7 @@ void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set
 		std::cerr << " ";
 	}
 	std::cerr << std::endl;
+	std::cerr << "\tmatches (pre): " << match_ << std::endl;
 
 	Sets::iterator it = sets_.find(set.size());
 	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
@@ -152,6 +153,7 @@ void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set
 	bool newFact = !res.first.fact && fact;
 	res.first.fact = res.first.fact || fact;
 	doAccumulate(g, lit, set, res.second, newFact);
+	std::cerr << "\tmatches (post): " << match_ << std::endl;
 }
 
 AggrLit::AggrState::~AggrState()
@@ -246,11 +248,22 @@ bool AggrLit::match(Grounder *g)
 	ValVec bound;
 	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
 	std::pair<const ValVecSet::Index&, bool> res(index_.insert(bound.begin()));
-	if(!res.second) { last_ = &aggrStates_[res.first]; }
+	if(!res.second)
+	{
+		std::cerr << "\tresusing state: \n\t";
+		debug(g, last_);
+		uint32_t offset = !bound.empty() ? res.first / bound.size() : 0;
+		std::cerr << "use existing index: \n\t" << res.first << " / " << index_.size() * bound_.size() << " @ " << offset << std::endl;
+		last_ = &aggrStates_[offset];
+		std::cerr << "\t";
+		debug(g, last_);
+	}
 	else
 	{
 		aggrStates_.push_back(newAggrState(g));
 		last_ = &aggrStates_.back();
+		std::cerr << "\tadding state: \n\t";
+		debug(g, last_);
 		enqueued_+= conds_.size() + 1;
 		foreach(CondLit &lit, conds_) { lit.ground(g); }
 		enqueued_-= conds_.size() + 1;
@@ -290,7 +303,7 @@ void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 
 void AggrLit::bind(Grounder *g, uint32_t offset, int binder)
 {
-	ValVecSet::iterator i = index_.begin() + offset;
+	ValVecSet::iterator i = index_.begin() + offset * bound_.size();
 	VarVec::iterator    j = bound_.begin();
 	// NOTE: think about binders
 	for(; j != bound_.end(); i++, j++) { g->val(*j, *i, binder); }
@@ -303,9 +316,9 @@ void AggrLit::unbind(Grounder *g)
 
 void AggrLit::visit(PrgVisitor *visitor)
 {
+	foreach(CondLit &lit, conds_) { visitor->visit(&lit, head()); }
 	if(lower_.get()) { visitor->visit(lower_.get(), assign_); }
 	if(upper_.get()) { visitor->visit(upper_.get(), false); }
-	foreach(CondLit &lit, conds_) { visitor->visit(&lit, head()); }
 }
 
 void AggrLit::normalize(Grounder *g, Expander *expander) 
@@ -446,7 +459,7 @@ void CondLit::ground(Grounder *g)
 void CondLit::visit(PrgVisitor *visitor)
 {
 	visitor->visit(&set_, false);
-	foreach(Lit &lit, lits_) { visitor->visit(&lit, !lit.head()); }
+	foreach(Lit &lit, lits_) { visitor->visit(&lit, false); }
 }
 
 void CondLit::print(Storage *sto, std::ostream &out) const
@@ -478,6 +491,17 @@ void CondLit::addDomain(Grounder *g, bool fact)
 	*/
 }
 
+void AggrLit::debug(Grounder *g, AggrState *s)
+{
+	std::cerr << "\tstate(" << s << "):";
+	foreach(uint32_t var, bound_)
+	{
+		std::cerr << " ";
+		g->val(var).print(g, std::cerr);
+	}
+	std::cerr << std::endl;
+}
+
 bool CondLit::grounded(Grounder *g)
 {
 	#pragma message "output the conditional"
@@ -493,6 +517,7 @@ bool CondLit::grounded(Grounder *g)
 	try
 	{
 		current_->accumulate(g, *aggr_, set, fact);
+		aggr()->debug(g, current_);
 		aggr_->enqueueParent(g, *current_);
 	}
 	catch(const Val *val)

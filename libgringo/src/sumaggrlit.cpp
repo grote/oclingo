@@ -67,12 +67,12 @@ void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool is
 {
 	if(isNew)
 	{
-		 if(newFact) { fixed_ += weight; }
-		 else
-		 {
-			 if(weight < 0) { min_ += weight; }
-			 else           { max_ += weight; }
-		 }
+		if(newFact) { fixed_ += weight; }
+		else
+		{
+			if(weight < 0) { min_ += weight; }
+			else           { max_ += weight; }
+		}
 	}
 	else if(newFact)
 	{
@@ -80,6 +80,10 @@ void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool is
 		if(weight < 0) { min_ -= weight; }
 		else           { max_ -= weight; }
 	}
+	std::cerr << "\tgot something new!" << std::endl;
+	std::cerr << "\tfixed: " << fixed_ << std::endl;
+	std::cerr << "\tmin  : " << min_ << std::endl;
+	std::cerr << "\tmax  : " << max_ << std::endl;
 	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
 	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
 	match_ = lower <= upper && lower <= fixed_ + max_ && fixed_ + min_ <= upper;

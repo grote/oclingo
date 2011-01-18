@@ -197,7 +197,7 @@ bool GrdNode::check(VarTermVec &terms)
 	return res;
 }
 
-void GrdNode::order(Grounder *g, const VarSet &b)
+void GrdNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
 {
 	reset();
 	LitNodeVec queue;
@@ -213,7 +213,8 @@ void GrdNode::order(Grounder *g, const VarSet &b)
 		LitNodeVec::iterator min = std::min_element(queue.begin(), queue.end(), LitNodeCmp());
 		LitNode *lit = *min;
 		queue.erase(min);
-		lit->lit()->index(g, groundable_, bound);
+		v->visit(lit->lit(), false);
+		//lit->lit()->index(g, groundable_, bound);
 		lit->check(queue);
 		lit->lit()->position = position++;
 	}

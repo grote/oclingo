@@ -103,6 +103,8 @@ public:
 
 	void visit(PrgVisitor *visitor);
 
+	void debug(Grounder *g, AggrState *s);
+
 protected:
 	bool            sign_;
 	bool            assign_;
