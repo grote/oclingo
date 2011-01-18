@@ -19,7 +19,6 @@
 
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
-//#include <gringo/predlit.h>
 #include <gringo/printer.h>
 #include <gringo/groundable.h>
 #include <gringo/valvecset.h>
@@ -87,6 +86,7 @@ public:
 
 	void doHead(bool head);
 
+	bool matchLast() const;
 	bool match(Grounder *grounder);
 	bool fact() const;
 
@@ -106,6 +106,7 @@ public:
 protected:
 	bool            sign_;
 	bool            assign_;
+	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
 	Groundable     *parent_;
@@ -148,8 +149,8 @@ SetLit* new_clone(const SetLit& a);
 class CondLit : public Groundable, public Locateable
 {
 public:
-	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
 	friend class AggrLit;
+	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
 public:
 	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
 	AggrLit *aggr();
@@ -163,7 +164,6 @@ public:
 	bool bind(Grounder *g, uint32_t offset, int binder);
 
 	void doEnqueue(bool enqueue);
-	void aggrEnqueue(Grounder *g);
 	void ground(Grounder *g);
 	bool grounded(Grounder *g);
 
@@ -177,11 +177,12 @@ public:
 
 	~CondLit();
 private:
-	Style      style_;
-	SetLit     set_;
-	LitPtrVec  lits_;
-	AggrLit   *aggr_;
+	Style               style_;
+	SetLit              set_;
+	LitPtrVec           lits_;
+	AggrLit            *aggr_;
 	AggrLit::AggrState *current_;
+	mutable tribool     complete_;
 };
 
 /////////////////////////////// AggrLit::Printer ///////////////////////////////

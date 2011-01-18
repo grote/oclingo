@@ -123,7 +123,6 @@ namespace
 	private:
 		CondLit *lit_;
 		uint32_t offset_;
-		uint32_t finished_;
 	};
 }
 
@@ -139,7 +138,14 @@ AggrLit::AggrState::AggrState()
 void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact)
 {
 	std::cerr << "AggrState" << std::endl;
-	std::cerr << "\taccumulating" << std::endl;
+	std::cerr << "\taccumulating: ";
+	foreach(const Val &val, set)
+	{
+		val.print(g, std::cerr);
+		std::cerr << " ";
+	}
+	std::cerr << std::endl;
+
 	Sets::iterator it = sets_.find(set.size());
 	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
 	std::pair<const ValVecSet::Index &, bool> res = it->second.insert(set.begin());
@@ -158,6 +164,7 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	: Lit(loc)
 	, sign_(false)
 	, assign_(false)
+	, complete_(tribool::indeterminate_value)
 	, parent_(0)
 	, conds_(conds.release())
 	, last_(0)
@@ -196,18 +203,26 @@ void AggrLit::add(CondLit *cond)
 }
 
 void AggrLit::addDomain(Grounder *g, bool)
-{ 
+{
 	assert(head());
 	foreach(CondLit &lit, conds_) { lit.addDomain(g, false); }
 }
 
 bool AggrLit::complete() const
 {
-	foreach(const CondLit &lit, conds_)
+	if(boost::logic::indeterminate(complete_))
 	{
-		if(!lit.complete()) { return false; }
+		complete_ = true;
+		foreach(const CondLit &lit, conds_)
+		{
+			if(!lit.complete())
+			{
+				complete_ = false;
+				break;
+			}
+		}
 	}
-	return true;
+	return complete_;
 }
 
 bool AggrLit::isNew() const
@@ -220,11 +235,16 @@ bool AggrLit::fact() const
 	return (monotonicity() == MONOTONE || complete()) && last_->matches() && last_->fact();
 }
 
+bool AggrLit::matchLast() const
+{
+	return enqueued_ > conds_.size();
+}
+
 bool AggrLit::match(Grounder *g)
 {
+	std::cerr << "AggrLit::match()" << std::endl;
 	ValVec bound;
 	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
-	std::cerr << "bound: " << bound.size() << std::endl;
 	std::pair<const ValVecSet::Index&, bool> res(index_.insert(bound.begin()));
 	if(!res.second) { last_ = &aggrStates_[res.first]; }
 	else
@@ -232,19 +252,15 @@ bool AggrLit::match(Grounder *g)
 		aggrStates_.push_back(newAggrState(g));
 		last_ = &aggrStates_.back();
 		enqueued_+= conds_.size() + 1;
-		foreach(CondLit &lit, conds_) { lit.aggrEnqueue(g); }
-		foreach(CondLit &lit, conds_)
-		{
-			if(lit.complete()) { lit.ground(g); }
-		}
+		foreach(CondLit &lit, conds_) { lit.ground(g); }
 		enqueued_-= conds_.size() + 1;
 	}
-	if(enqueued_ == 0 || fact())
-	{
-		if(last_->lock()) { new_ = true; }
-		return last_->matches();
-	}
-	else { return false;}
+	// NOTE: its uncritical to set the new_ flag here
+	if(last_->lock()) { new_ = true; }
+	// TODO: handle signed aggregates
+	//       handle aggregates that switch from true -> to false and stay false
+	//       (aggregates with an antimonotone part)
+	return last_->matches();
 }
 
 void AggrLit::enqueueParent(Grounder *g, AggrState &state)
@@ -258,6 +274,7 @@ void AggrLit::enqueueParent(Grounder *g, AggrState &state)
 
 void AggrLit::finish(Grounder *)
 {
+	new_ = false;
 	foreach(AggrState &state, aggrStates_) { state.finish(); }
 }
 
@@ -358,6 +375,7 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, lits_(lits)
 	, aggr_(0)
 	, current_(0)
+	, complete_(tribool::indeterminate_value)
 {
 }
 
@@ -368,11 +386,19 @@ void CondLit::head(bool head)
 
 bool CondLit::complete() const
 {
-	foreach(const Lit &lit, lits_)
+	if(boost::logic::indeterminate(complete_))
 	{
-		if(!lit.complete()) { return false; }
+		complete_ = true;
+		foreach(const Lit &lit, lits_)
+		{
+			if(!lit.complete())
+			{
+				complete_ = false;
+				break;
+			}
+		}
 	}
-	return true;
+	return complete_;
 }
 
 void CondLit::normalize(Grounder *g, uint32_t number)
@@ -399,17 +425,12 @@ void CondLit::doEnqueue(bool enqueue)
 	aggr_->enqueue(enqueue);
 }
 
-void CondLit::aggrEnqueue(Grounder *g)
-{
-	if(!complete()) { g->enqueue(this); }
-}
-
 bool CondLit::bind(Grounder *g, uint32_t offset, int binder)
 {
 	if(offset <  aggr_->states().size())
 	{
 		current_ = &aggr_->states()[offset];
-		if(!complete()) { aggr_->bind(g, offset, binder); }
+		if(!aggr_->matchLast()) { aggr_->bind(g, offset, binder); }
 		return true;
 	}
 	else { return false; }
@@ -417,8 +438,9 @@ bool CondLit::bind(Grounder *g, uint32_t offset, int binder)
 
 void CondLit::ground(Grounder *g)
 {
+	std::cerr << "CondLit::ground" << std::endl;
 	inst_->ground(g);
-	if(!complete()) { aggr_->unbind(g); }
+	if(!aggr_->matchLast()) { aggr_->unbind(g); }
 }
 
 void CondLit::visit(PrgVisitor *visitor)
@@ -669,13 +691,12 @@ AggrIndex::~AggrIndex()
 GlobalsBinder::GlobalsBinder(CondLit *lit)
 	: lit_(lit)
 	, offset_(0)
-	, finished_(false)
 {
 }
 
 Index::Match GlobalsBinder::firstMatch(Grounder *g, int binder)
 {
-	offset_ = 0;
+	offset_ = lit_->aggr()->matchLast() ? lit_->aggr()->states().size() - 1 : 0;
 	return nextMatch(g, binder);
 }
 
@@ -683,29 +704,23 @@ Index::Match GlobalsBinder::nextMatch(Grounder *g, int binder)
 {
 	if(offset_ < lit_->aggr()->states().size())
 	{
-		std::cerr << "GlobalsBinder" << std::endl;
-		std::cerr << hasNew() << std::endl;
-		std::cerr << "\toffset: " << offset_ << std::endl;
-		std::cerr << "\tsize  : " << lit_->aggr()->states().size() << std::endl;
-		lit_->bind(g, offset_, binder);
-		return Match(true, offset_++ >= finished_);
+		lit_->bind(g, offset_++, binder);
+		return Match(true, lit_->aggr()->matchLast());
 	}
 	else { return Match(false, false); }
 }
 
 void GlobalsBinder::reset()
 {
-	finished_ = 0;
 }
 
 void GlobalsBinder::finish()
 {
-	finished_ = offset_;
 }
 
 bool GlobalsBinder::hasNew() const
 {
-	return finished_ < lit_->aggr()->states().size();
+	return lit_->aggr()->matchLast();
 }
 
 GlobalsBinder::~GlobalsBinder()
