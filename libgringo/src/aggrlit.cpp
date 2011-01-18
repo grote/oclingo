@@ -137,23 +137,12 @@ AggrLit::AggrState::AggrState()
 
 void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact)
 {
-	std::cerr << "AggrState" << std::endl;
-	std::cerr << "\taccumulating: ";
-	foreach(const Val &val, set)
-	{
-		val.print(g, std::cerr);
-		std::cerr << " ";
-	}
-	std::cerr << std::endl;
-	std::cerr << "\tmatches (pre): " << match_ << std::endl;
-
 	Sets::iterator it = sets_.find(set.size());
 	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
 	std::pair<const ValVecSet::Index &, bool> res = it->second.insert(set.begin());
 	bool newFact = !res.first.fact && fact;
 	res.first.fact = res.first.fact || fact;
 	doAccumulate(g, lit, set, res.second, newFact);
-	std::cerr << "\tmatches (post): " << match_ << std::endl;
 }
 
 AggrLit::AggrState::~AggrState()
@@ -244,26 +233,18 @@ bool AggrLit::matchLast() const
 
 bool AggrLit::match(Grounder *g)
 {
-	std::cerr << "AggrLit::match()" << std::endl;
 	ValVec bound;
 	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
 	std::pair<const ValVecSet::Index&, bool> res(index_.insert(bound.begin()));
 	if(!res.second)
 	{
-		std::cerr << "\tresusing state: \n\t";
-		debug(g, last_);
 		uint32_t offset = !bound.empty() ? res.first / bound.size() : 0;
-		std::cerr << "use existing index: \n\t" << res.first << " / " << index_.size() * bound_.size() << " @ " << offset << std::endl;
 		last_ = &aggrStates_[offset];
-		std::cerr << "\t";
-		debug(g, last_);
 	}
 	else
 	{
 		aggrStates_.push_back(newAggrState(g));
 		last_ = &aggrStates_.back();
-		std::cerr << "\tadding state: \n\t";
-		debug(g, last_);
 		enqueued_+= conds_.size() + 1;
 		foreach(CondLit &lit, conds_) { lit.ground(g); }
 		enqueued_-= conds_.size() + 1;
@@ -281,6 +262,7 @@ void AggrLit::enqueueParent(Grounder *g, AggrState &state)
 	if(enqueued_ == 0 && state.matches())
 	{
 		if(state.lock()) { new_ = true; }
+		#pragma message "extend the enqueue function -> allow for a prefix (globals + binder)"
 		g->enqueue(parent_);
 	}
 }
@@ -451,7 +433,6 @@ bool CondLit::bind(Grounder *g, uint32_t offset, int binder)
 
 void CondLit::ground(Grounder *g)
 {
-	std::cerr << "CondLit::ground" << std::endl;
 	inst_->ground(g);
 	if(!aggr_->matchLast()) { aggr_->unbind(g); }
 }
@@ -491,17 +472,6 @@ void CondLit::addDomain(Grounder *g, bool fact)
 	*/
 }
 
-void AggrLit::debug(Grounder *g, AggrState *s)
-{
-	std::cerr << "\tstate(" << s << "):";
-	foreach(uint32_t var, bound_)
-	{
-		std::cerr << " ";
-		g->val(var).print(g, std::cerr);
-	}
-	std::cerr << std::endl;
-}
-
 bool CondLit::grounded(Grounder *g)
 {
 	#pragma message "output the conditional"
@@ -517,7 +487,6 @@ bool CondLit::grounded(Grounder *g)
 	try
 	{
 		current_->accumulate(g, *aggr_, set, fact);
-		aggr()->debug(g, current_);
 		aggr_->enqueueParent(g, *current_);
 	}
 	catch(const Val *val)
