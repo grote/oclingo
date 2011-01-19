@@ -19,12 +19,14 @@
 
 #include <gringo/gringo.h>
 #include <gringo/val.h>
+#include <gringo/groundprogrambuilder.h>
 
 #include "onlineparser.h"
 
 #include <clasp/solver.h>
 #include <clasp/constraint.h>
 
+#include <boost/ptr_container/ptr_list.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
@@ -46,6 +48,7 @@ public:
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
+	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	bool checkHead(uint32_t symbol);
 	void addHead(uint32_t symbol);
 //	bool checkFact(Object* object);
@@ -75,6 +78,9 @@ private:
 	Grounder* grounder_;
 	oClaspOutput* output_;
 	Clasp::Solver* solver_;
+
+	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
+	StackPtrList stacks_;
 
 	// external head handling
 	VarVec heads_;

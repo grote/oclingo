@@ -81,6 +81,7 @@ protected:
 		Literal() : PredLitRep(false, 0) { }
 	};
 
+public:
 	struct Stack
 	{
 		Type          type;

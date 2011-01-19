@@ -141,6 +141,15 @@ void ExternalKnowledge::get() {
 	}
 	// solver can be stopped again
 	solver_stopped_ = false;
+
+	// check for knowledge from previous steps and add if found
+	if(controller_step_ == step_ && stacks_.size() > 0) {
+		std::istream is(&b_);
+		OnlineParser parser(output_, &is);
+		while(stacks_.size()) {
+			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
+		}
+	}
 }
 
 void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, size_t bytesT) {
@@ -165,12 +174,14 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
+	std::istream is(&b_);
+	OnlineParser parser(output_, &is);
+//	while(stacks_.size()) {
+//		parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
+//	}
+
 	if(new_input_) {
 		new_input_ = false;
-
-		std::istream is(&b_);
-
-		OnlineParser parser(output_, &is);
 		parser.parse();
 
 		if(parser.isTerminated()) {
@@ -179,6 +190,10 @@ bool ExternalKnowledge::addInput() {
 		}
 	}
 	return true;
+}
+
+void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
+	stacks_.push_back(stack);
 }
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {
@@ -229,11 +244,12 @@ void ExternalKnowledge::setControllerStep(int step) {
 }
 
 bool ExternalKnowledge::needsNewStep() {
-//	std::cerr << "DO I NEED NEW STEP? " << controller_step_ << " > " << step_ << std::endl;
+	std::cerr << "DO I NEED NEW STEP? " << controller_step_ << " > " << step_;
+	std::cerr << " RULE STACK SIZE: " << stacks_.size() << std::endl;
 	return
-//			!premature_facts_.empty() ||	// has facts waiting to be added
 			step_ == 0 ||				// is first iteration
-			controller_step_ > step_;	// controller wants to progress step count
+			controller_step_ > step_ ||	// controller wants to progress step count
+			stacks_.size() > 0;			// rule stack not empty
 }
 
 bool ExternalKnowledge::controllerNeedsNewStep() {
@@ -296,7 +312,7 @@ void ExternalKnowledge::endStep() {
 	}
 */
 	step_++;
-//	std::cerr << "Step: " << step_ << std::endl;
+	std::cerr << "Step: " << step_ << std::endl;
 //	externals_per_step_.push_back(IntSet());
 }
 

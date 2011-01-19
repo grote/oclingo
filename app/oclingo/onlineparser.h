@@ -54,6 +54,7 @@ public:
 	void parse();
 	void addSigned(uint32_t index, bool sign);
 
+	void add(StackPtr stm);
 	void add(Type type, uint32_t n = 0);
 
 	void setStep(int step);

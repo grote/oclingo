@@ -105,12 +105,17 @@ PredLitRep *OnlineParser::predLitRep(GroundProgramBuilder::StackPtr &stack, Lit 
 	return &lit_;
 }
 
+void OnlineParser::add(StackPtr stm) {
+	std::cerr << "ADDING RULE FROM STACK" << std::endl;
+	GroundProgramBuilder::add(stm);
+}
+
 void OnlineParser::add(Type type, uint32_t n) {
 	switch(type)
 	{
 		case STM_RULE:
 		{
-			GroundProgramBuilder::StackPtr stack = get(type, n);
+			StackPtr stack = get(type, n);
 
 			LitVec &litVec = stack->lits;
 			Lit &lit = litVec.at(litVec.size() - n - 1);
@@ -119,10 +124,12 @@ void OnlineParser::add(Type type, uint32_t n) {
 			ExternalKnowledge& ext = output_->getExternalKnowledge();
 
 			if(ext.needsNewStep()) {
-				std::cerr << "NEED NEW STEP BEFORE ADDING RULE" << std::endl;
-				// TODO save StackPtr for right step
+				std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
+				ext.addStackPtr(stack);
+				// TODO make sure head is added as well!
 			} else if(ext.checkHead(head)) {
 				ext.addHead(head);
+				std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
 				GroundProgramBuilder::add(stack);
 			} else {
 				std::stringstream emsg;
