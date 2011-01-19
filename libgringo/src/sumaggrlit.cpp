@@ -34,11 +34,9 @@ namespace
 		void accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact);
 		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
 	private:
-		int64_t fixed_;
 		int64_t min_;
 		int64_t max_;
 	};
-
 }
 
 //////////////////////////////////////// SumAggrLit ////////////////////////////////////////
@@ -56,8 +54,7 @@ AggrLit::AggrState *SumAggrLit::newAggrState(Grounder *g)
 //////////////////////////////////////// SumAggrState ////////////////////////////////////////
 
 SumAggrState::SumAggrState(Grounder *g, AggrLit &lit)
-	: fixed_(0)
-	, min_(0)
+	: min_(0)
 	, max_(0)
 {
 	accumulate(g, lit, 0, true, true);
@@ -67,7 +64,11 @@ void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool is
 {
 	if(isNew)
 	{
-		if(newFact) { fixed_ += weight; }
+		if(newFact)
+		{
+			min_ += weight;
+			max_ += weight;
+		}
 		else
 		{
 			if(weight < 0) { min_ += weight; }
@@ -76,14 +77,12 @@ void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool is
 	}
 	else if(newFact)
 	{
-		fixed_ += weight;
-		if(weight < 0) { min_ -= weight; }
-		else           { max_ -= weight; }
+		if(weight < 0) { max_ += weight; }
+		else           { min_ += weight; }
 	}
 	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
 	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
-	match_ = lower <= upper && lower <= fixed_ + max_ && fixed_ + min_ <= upper;
-	fact_  = match_ && lower <= fixed_ + min_ && fixed_ + max_ <= upper;
+	updateState(lit, min_, max_, lower, upper);
 }
 
 void SumAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)

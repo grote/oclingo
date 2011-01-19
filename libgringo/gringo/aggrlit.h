@@ -43,6 +43,10 @@ public:
 		bool lock();
 		bool isNew() const;
 		void finish();
+		template <class T>
+		void updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper);
+		template <class T, class P>
+		void updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt);
 		virtual void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact) = 0;
 		virtual ~AggrState();
 	private:
@@ -67,6 +71,7 @@ public:
 	Term *lower() const;
 	Term *upper() const;
 	void sign(bool s);
+	bool sign() const;
 
 	bool hasNew() const;
 	bool isNew() const;
@@ -210,6 +215,25 @@ inline bool AggrLit::AggrState::lock()
 
 inline void AggrLit::AggrState::finish() { new_ = false; }
 
+template <class T>
+void AggrLit::AggrState::updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper)
+{
+	updateState<T, std::less<T> >(lit, min, max, lower, upper, std::less<T>());
+}
+
+template <class T, class P>
+void AggrLit::AggrState::updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt)
+{
+	match_ = lt(upper, lower) || lt(min, lower) || lt(upper, max);
+	fact_  = lt(upper, lower) || lt(max, lower) || lt(upper, min);
+	if(!lit.sign())
+	{
+		bool match = match_;
+		match_     = !fact_;
+		fact_      = !match;
+	}
+}
+
 /////////////////////////////// AggrLit ///////////////////////////////
 
 inline Term *AggrLit::assign() const { return assign_ ? lower_.get() : 0; }
@@ -219,6 +243,8 @@ inline Term *AggrLit::lower() const { return assign_ ? 0 : lower_.get(); }
 inline Term *AggrLit::upper() const { return upper_.get(); }
 
 inline void AggrLit::sign(bool s) { sign_ = s; }
+
+inline bool AggrLit::sign() const { return sign_; }
 
 inline const CondLitVec &AggrLit::conds() { return conds_; }
 

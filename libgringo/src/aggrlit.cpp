@@ -223,7 +223,7 @@ bool AggrLit::isNew() const
 
 bool AggrLit::fact() const
 {
-	return (monotonicity() == MONOTONE || complete()) && last_->matches() && last_->fact();
+	return (monotonicity() == MONOTONE || complete()) && last_->fact();
 }
 
 bool AggrLit::matchLast() const
