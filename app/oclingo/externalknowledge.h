@@ -39,7 +39,7 @@ public:
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
-	void addExternal(uint32_t symbol);
+	bool addExternal(uint32_t symbol);
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -48,13 +48,10 @@ public:
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
-	void addStackPtr(GroundProgramBuilder::StackPtr stack);
+	void addStackPtr(GroundProgramBuilder::StackPtr stack, uint32_t head);
 	bool checkHead(uint32_t symbol);
 	void addHead(uint32_t symbol);
-//	bool checkFact(Object* object);
-//	void addNewFact(NS_OUTPUT::Atom* atom, int line);
-//	void addNewAtom(NS_OUTPUT::Object* object, int line);
-//	void addPrematureFact(NS_OUTPUT::Atom* atom);
+	void addPrematureKnowledge();
 	bool needsNewStep();
 	bool controllerNeedsNewStep();
 	VarVec& getAssumptions();
@@ -81,6 +78,7 @@ private:
 
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
+	std::list<uint32_t> heads_for_stacks_;
 
 	// external head handling
 	VarVec heads_;

@@ -125,8 +125,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 
 			if(ext.needsNewStep()) {
 				std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
-				ext.addStackPtr(stack);
-				// TODO make sure head is added as well!
+				ext.addStackPtr(stack, head);
 			} else if(ext.checkHead(head)) {
 				ext.addHead(head);
 				std::cerr << "ADDING RULE/HEAD!!!" << std::endl;

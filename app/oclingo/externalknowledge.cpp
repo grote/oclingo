@@ -64,9 +64,12 @@ void ExternalKnowledge::removePostPropagator() {
 	my_post_ = true;
 }
 
-void ExternalKnowledge::addExternal(uint32_t symbol) {
+bool ExternalKnowledge::addExternal(uint32_t symbol) {
 	externals_.push_back(symbol);
 	//externals_per_step_.at(step_).insert(uid);
+	if(find(heads_for_stacks_.begin(), heads_for_stacks_.end(), symbol) == heads_for_stacks_.end())
+		return true; // true if head is not about to be added and needs being frozen
+	else return false;
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -141,15 +144,6 @@ void ExternalKnowledge::get() {
 	}
 	// solver can be stopped again
 	solver_stopped_ = false;
-
-	// check for knowledge from previous steps and add if found
-	if(controller_step_ == step_ && stacks_.size() > 0) {
-		std::istream is(&b_);
-		OnlineParser parser(output_, &is);
-		while(stacks_.size()) {
-			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
-		}
-	}
 }
 
 void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, size_t bytesT) {
@@ -174,14 +168,11 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
-	std::istream is(&b_);
-	OnlineParser parser(output_, &is);
-//	while(stacks_.size()) {
-//		parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
-//	}
-
 	if(new_input_) {
 		new_input_ = false;
+
+		std::istream is(&b_);
+		OnlineParser parser(output_, &is);
 		parser.parse();
 
 		if(parser.isTerminated()) {
@@ -192,8 +183,9 @@ bool ExternalKnowledge::addInput() {
 	return true;
 }
 
-void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
+void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack, uint32_t head) {
 	stacks_.push_back(stack);
+	heads_for_stacks_.push_back(head);
 }
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {
@@ -214,30 +206,21 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	heads_.push_back(symbol);
 }
 
-/*
-void ExternalKnowledge::addNewAtom(NS_OUTPUT::Object* object, int line=0) {
-	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
-	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
-
-	// add Atom to get a uid assigned to it
-	output_->addAtom(atom);
-
-	if(facts_old_.find(atom->uid_) != facts_old_.end()) {
-		std::stringstream error_msg;
-		error_msg << "Warning: Fact in line " << line << " was already added." << std::endl;
-		std::cerr << error_msg.str() << std::endl;
-		sendToClient(error_msg.str());
-	}
-	else {
-		facts_.insert(atom->uid_);
-		eraseUidFromExternals(&externals_, atom->uid_);
+void ExternalKnowledge::addPrematureKnowledge() {
+	// check for knowledge from previous steps and add it if found
+	assert(stacks_.size() == heads_for_stacks_.size());
+	if(controller_step_ == step_ && stacks_.size() > 0) {
+		std::istream is(&b_);
+		OnlineParser parser(output_, &is);
+		while(stacks_.size()) {
+			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
+			std::cerr << "WOULD HAVE ADDED HEAD HERE!!! " << heads_for_stacks_.front() <<std::endl;
+			addHead(heads_for_stacks_.front());
+			heads_for_stacks_.pop_front();
+		}
 	}
 }
 
-void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Atom* atom) {
-	premature_facts_.push_back(atom);
-}
-*/
 void ExternalKnowledge::setControllerStep(int step) {
 	std::cerr << "SET CONTROLLER STEP TO " << step << std::endl;
 	controller_step_ = step;

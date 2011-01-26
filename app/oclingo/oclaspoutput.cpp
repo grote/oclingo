@@ -45,13 +45,19 @@ void oClaspOutput::doFinalize()
 
 	ClaspOutput::doFinalize();
 	printExternalTable();
+	// add premature knowledge here, so externals are already defined
+	ext_->addPrematureKnowledge();
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
 {
-	ext_->addExternal(atom.symbol);
-	std::cerr << "FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
-	b_->freeze(atom.symbol);
+	if(ext_->addExternal(atom.symbol)) {
+		b_->freeze(atom.symbol);
+		std::cerr << "FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
+	}
+	else {
+		std::cerr << "SKIP FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
+	}
 }
 
 /*

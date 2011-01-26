@@ -43,7 +43,7 @@ protected:
 	void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 	uint32_t symbol();
-	void doFinalize();
+	virtual void doFinalize();
 protected:
 	Clasp::ProgramBuilder *b_;
 	BoolVec  atomUnnamed_;
