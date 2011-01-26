@@ -119,15 +119,12 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
 			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
+			config.incStep--; // start with step 1 later
 		}
-		else
-		{
-			config.incStep++;
-		}
-
-		ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
 
 		if(app.clingo.mode == OCLINGO) {
+			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
+
 			std::cerr << "read in OCLINGO mode" << std::endl;
 			if(solver->hasConflict()) {
 				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
@@ -140,7 +137,9 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
 					std::cerr << "preparing new step" << std::endl;
-					// TODO explore iQuery/goal use to ground to #step
+					// TODO explore incStep/iQuery/goal use to ground to #step
+					config.incStep++;
+					std::cerr << ">>>> INC STEP <<<<" << std::endl;
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 				} else {
@@ -151,6 +150,8 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			std::cerr << "preparing reception of new ext knowledge" << std::endl;
 			ext.get();
 		} else {
+			std::cerr << ">>>> INC STEP <<<<" << std::endl;
+			config.incStep++;
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 		}
 	}
