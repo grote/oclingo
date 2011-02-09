@@ -40,12 +40,9 @@ void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &n
 	if(ext_input_) {
 		if(ext_->checkHead(head)) {
 			ext_->addHead(head);
-		} else{
-			std::stringstream emsg;
-			emsg << "Warning: Head of rule added in line ";// << token_.line;
-			emsg << " has not been declared external. The entire rule will be ignored.";
-			std::cerr << emsg.str() << std::endl;
-			ext_->sendToClient(emsg.str());
+		} else {
+			 // don't add rule since it was not defined external or already added
+			return;
 		}
 	}
 	ClaspOutput::printBasicRule(head, pos, neg);

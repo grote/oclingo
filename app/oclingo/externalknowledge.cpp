@@ -192,10 +192,13 @@ void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {
 	// check if head atom has been defined as external
-	if(find(externals_.begin(), externals_.end(), symbol) != externals_.end()) {
-		return true;
+	if(find(externals_.begin(), externals_.end(), symbol) == externals_.end()) {
+		std::string emsg = "Warning: Head of rule has not been declared external. The entire rule will be ignored.";
+		std::cerr << emsg << std::endl;
+		sendToClient(emsg);
+		return false;
 	}
-	else return false;
+	return true;
 }
 
 void ExternalKnowledge::addHead(uint32_t symbol) {
