@@ -67,9 +67,9 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 		a.push_back(i.find(out->getIncAtom())->lit);
 
 		if(app.clingo.mode == OCLINGO) {
-			VarVec& ass = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().getAssumptions();
+			VarVec& ass = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().getExternals();
 
-			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl;
+			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl; std::cerr.flush();
 
 			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
 				Clasp::Atom* atom = i.find(*lit);
@@ -157,6 +157,11 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 	}
 	out->finalize();
 	release();
+
+	// reset solver state
+//	std::cerr << "RESET SOLVER STATS" << std::endl;
+//	s.stats.solve.reset();
+
 	return true;
 }
 

@@ -20,11 +20,37 @@
 
 oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj) : iClaspOutput(shiftDisj) {
 	ext_ = new ExternalKnowledge(grounder, this, solver);
+	ext_input_ = false;
 }
 
 ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
 	assert(ext_);
 	return *ext_;
+}
+
+void oClaspOutput::startExtInput() {
+		ext_input_ = true;
+}
+
+void oClaspOutput::stopExtInput() {
+		ext_input_ = false;
+}
+
+void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg) {
+	if(ext_input_) {
+		std::cerr << "--> WANT TO PRINT HEAD " << head << std::endl;
+
+		if(ext_->checkHead(head)) {
+			ext_->addHead(head);
+		} else{
+			std::stringstream emsg;
+			emsg << "Warning: Head of rule added in line ";// << token_.line;
+			emsg << " has not been declared external. The entire rule will be ignored.";
+			std::cerr << emsg.str() << std::endl;
+			ext_->sendToClient(emsg.str());
+		}
+	}
+	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
 void oClaspOutput::unfreezeAtom(uint32_t symbol) {
@@ -39,25 +65,29 @@ void oClaspOutput::doFinalize()
 	{
 		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin(); it != newSymbols_[domId].end(); it++)
 		{
-			std::cerr << "NEW SYMBOL: " << it->symbol << std::endl;
+			std::cerr << "NEW SYMBOL: " << it->symbol << " offset: " << it->offset << std::endl;
 		}
 	}
 
 	ClaspOutput::doFinalize();
 	printExternalTable();
+
 	// add premature knowledge here, so externals are already defined
 	ext_->addPrematureKnowledge();
+
+	// freeze externals that were not defined with premature knowledge
+	VarVec externals = ext_->getFreezers();
+	foreach(uint32_t symbol, externals) {
+		b_->freeze(symbol);
+		std::cerr << "FREEZE " << symbol << std::endl;
+	}
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
 {
-	if(ext_->addExternal(atom.symbol)) {
-		b_->freeze(atom.symbol);
-		std::cerr << "FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
-	}
-	else {
-		std::cerr << "SKIP FREEZE " << atom.symbol << "   (" << name << "/" << arity << " Offset: " << atom.offset << ")" <<  std::endl;
-	}
+	(void) arity;
+	(void) name;
+	ext_->addExternal(atom.symbol);
 }
 
 /*

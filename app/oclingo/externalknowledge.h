@@ -39,7 +39,8 @@ public:
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
-	bool addExternal(uint32_t symbol);
+	void addExternal(uint32_t symbol);
+	VarVec& getFreezers();
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -48,13 +49,13 @@ public:
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
-	void addStackPtr(GroundProgramBuilder::StackPtr stack, uint32_t head);
+	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	bool checkHead(uint32_t symbol);
 	void addHead(uint32_t symbol);
 	void addPrematureKnowledge();
 	bool needsNewStep();
 	bool controllerNeedsNewStep();
-	VarVec& getAssumptions();
+	VarVec& getExternals();
 	void endIteration();
 	void endStep();
 	void forgetExternals(int step);
@@ -83,6 +84,7 @@ private:
 	// external head handling
 	VarVec heads_;
 	VarVec externals_;
+	VarVec to_freeze_;
 /*	VarVec externals_old_;
 	std::vector<IntSet> externals_per_step_;
 	IntSet facts_;

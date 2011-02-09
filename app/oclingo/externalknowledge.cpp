@@ -64,12 +64,15 @@ void ExternalKnowledge::removePostPropagator() {
 	my_post_ = true;
 }
 
-bool ExternalKnowledge::addExternal(uint32_t symbol) {
+void ExternalKnowledge::addExternal(uint32_t symbol) {
 	externals_.push_back(symbol);
+	to_freeze_.push_back(symbol);
+	std::cerr << "ADD EXTERNAL " << symbol << std::endl;
 	//externals_per_step_.at(step_).insert(uid);
-	if(find(heads_for_stacks_.begin(), heads_for_stacks_.end(), symbol) == heads_for_stacks_.end())
-		return true; // true if head is not about to be added and needs being frozen
-	else return false;
+}
+
+VarVec& ExternalKnowledge::getFreezers() {
+	return to_freeze_;
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -183,9 +186,8 @@ bool ExternalKnowledge::addInput() {
 	return true;
 }
 
-void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack, uint32_t head) {
+void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 	stacks_.push_back(stack);
-	heads_for_stacks_.push_back(head);
 }
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {
@@ -202,21 +204,21 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	assert(it != externals_.end()); // call checkHead() first
 	externals_.erase(it);
 
+	// don't freeze added head
+	it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
+	if(it != to_freeze_.end()) to_freeze_.erase(it);
+
 	// add head atom
 	heads_.push_back(symbol);
 }
 
 void ExternalKnowledge::addPrematureKnowledge() {
 	// check for knowledge from previous steps and add it if found
-	assert(stacks_.size() == heads_for_stacks_.size());
 	if(controller_step_ == step_ && stacks_.size() > 0) {
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
-			std::cerr << "WOULD HAVE ADDED HEAD HERE!!! " << heads_for_stacks_.front() <<std::endl;
-			addHead(heads_for_stacks_.front());
-			heads_for_stacks_.pop_front();
 		}
 	}
 }
@@ -239,7 +241,7 @@ bool ExternalKnowledge::controllerNeedsNewStep() {
 	return controller_step_ > step_;
 }
 
-VarVec& ExternalKnowledge::getAssumptions() {
+VarVec& ExternalKnowledge::getExternals() {
 	return externals_;
 }
 
@@ -248,6 +250,7 @@ void ExternalKnowledge::endIteration() {
 		output_->unfreezeAtom(*i);
 	}
 	heads_.clear();
+	to_freeze_.clear();
 /*
 	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
 		if(eraseUidFromExternals(&externals_old_, *i) > 0) {

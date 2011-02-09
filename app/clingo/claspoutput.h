@@ -33,7 +33,7 @@ public:
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
 protected:
-	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
+	virtual void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
 	void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);

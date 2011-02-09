@@ -107,7 +107,9 @@ PredLitRep *OnlineParser::predLitRep(GroundProgramBuilder::StackPtr &stack, Lit 
 
 void OnlineParser::add(StackPtr stm) {
 	std::cerr << "ADDING RULE FROM STACK" << std::endl;
+	output_->startExtInput();
 	GroundProgramBuilder::add(stm);
+	output_->stopExtInput();
 }
 
 void OnlineParser::add(Type type, uint32_t n) {
@@ -117,25 +119,16 @@ void OnlineParser::add(Type type, uint32_t n) {
 		{
 			StackPtr stack = get(type, n);
 
-			LitVec &litVec = stack->lits;
-			Lit &lit = litVec.at(litVec.size() - n - 1);
-			uint32_t head = dynamic_cast<LparseConverter*>(output_)->symbol(predLitRep(stack, lit));
-
 			ExternalKnowledge& ext = output_->getExternalKnowledge();
 
 			if(ext.needsNewStep()) {
 				std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
-				ext.addStackPtr(stack, head);
-			} else if(ext.checkHead(head)) {
-				ext.addHead(head);
-				std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
-				GroundProgramBuilder::add(stack);
+				ext.addStackPtr(stack);
 			} else {
-				std::stringstream emsg;
-				emsg << "Warning: Head of rule added in line " << token_.line;
-				emsg << " has not been declared external. The entire rule will be ignored.";
-				std::cerr << emsg.str() << std::endl;
-				ext.sendToClient(emsg.str());
+				std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
+				output_->startExtInput();
+				GroundProgramBuilder::add(stack);
+				output_->stopExtInput();
 			}
 			break;
 		}
