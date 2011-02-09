@@ -65,14 +65,14 @@ void ExternalKnowledge::removePostPropagator() {
 }
 
 void ExternalKnowledge::addExternal(uint32_t symbol) {
+	std::cerr << "ADD EXTERNAL " << symbol << std::endl;
 	externals_.push_back(symbol);
 	to_freeze_.push_back(symbol);
-	std::cerr << "ADD EXTERNAL " << symbol << std::endl;
 	//externals_per_step_.at(step_).insert(uid);
 }
 
-VarVec& ExternalKnowledge::getFreezers() {
-	return to_freeze_;
+VarVec* ExternalKnowledge::getFreezers() {
+	return &to_freeze_; // pointer so it can be cleared right away
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -204,12 +204,14 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	assert(it != externals_.end()); // call checkHead() first
 	externals_.erase(it);
 
-	// don't freeze added head
+	// don't freeze added head and unfreeze it if necessary
 	it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
-	if(it != to_freeze_.end()) to_freeze_.erase(it);
-
-	// add head atom
-	heads_.push_back(symbol);
+	if(it != to_freeze_.end()) {
+		std::cerr << "REMOVED FROM FREEZE LIST " << symbol << std::endl;
+		to_freeze_.erase(it);
+	} else {
+		output_->unfreezeAtom(symbol);
+	}
 }
 
 void ExternalKnowledge::addPrematureKnowledge() {
@@ -246,22 +248,6 @@ VarVec& ExternalKnowledge::getExternals() {
 }
 
 void ExternalKnowledge::endIteration() {
-	for(VarVec::iterator i = heads_.begin(); i != heads_.end(); ++i) {
-		output_->unfreezeAtom(*i);
-	}
-	heads_.clear();
-	to_freeze_.clear();
-/*
-	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
-		if(eraseUidFromExternals(&externals_old_, *i) > 0) {
-			// fact was declared external earlier -> needs unfreezing
-			output_->unfreezeAtom(*i);
-		}
-	}
-*/
-//	facts_old_.insert(facts_.begin(), facts_.end());
-//	facts_.clear();
-
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
 

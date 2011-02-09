@@ -40,7 +40,7 @@ public:
 	void addPostPropagator();
 	void removePostPropagator();
 	void addExternal(uint32_t symbol);
-	VarVec& getFreezers();
+	VarVec* getFreezers();
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -81,8 +81,7 @@ private:
 	StackPtrList stacks_;
 	std::list<uint32_t> heads_for_stacks_;
 
-	// external head handling
-	VarVec heads_;
+	// externals handling
 	VarVec externals_;
 	VarVec to_freeze_;
 /*	VarVec externals_old_;

@@ -38,8 +38,6 @@ void oClaspOutput::stopExtInput() {
 
 void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
-		std::cerr << "--> WANT TO PRINT HEAD " << head << std::endl;
-
 		if(ext_->checkHead(head)) {
 			ext_->addHead(head);
 		} else{
@@ -61,11 +59,12 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 
 void oClaspOutput::doFinalize()
 {
+	// TODO remove debug loops
 	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
 	{
 		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin(); it != newSymbols_[domId].end(); it++)
 		{
-			std::cerr << "NEW SYMBOL: " << it->symbol << " offset: " << it->offset << std::endl;
+			std::cerr << "NEW SYMBOL: " << it->symbol << std::endl;
 		}
 	}
 
@@ -76,11 +75,12 @@ void oClaspOutput::doFinalize()
 	ext_->addPrematureKnowledge();
 
 	// freeze externals that were not defined with premature knowledge
-	VarVec externals = ext_->getFreezers();
-	foreach(uint32_t symbol, externals) {
+	VarVec* externals = ext_->getFreezers();
+	foreach(uint32_t symbol, *externals) {
+		std::cerr << "FREEZE " << symbol << std::endl; std::cerr.flush();
 		b_->freeze(symbol);
-		std::cerr << "FREEZE " << symbol << std::endl;
 	}
+	externals->clear();
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
