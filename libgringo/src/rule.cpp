@@ -151,7 +151,7 @@ bool Rule::grounded(Grounder *g)
 	}
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin();
-	if(head_.get()) head_->accept(printer);
+	if(head_.get()) { head_->accept(printer); }
 	printer->endHead();
 	bool fact = true;
 	foreach(Lit &lit, body_)

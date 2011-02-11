@@ -15,27 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-/*
-  in general:
-	immediately ground complete conditionals
-  in body:
-	if conditional matches
-	  accumulate #cond(<aggr-num>,<cond-num>)
-	  inform output
-	if aggregate matches:
-	  enqueue associated groundable
-	  (not neccesary if aggregate has already matched)
-	in the end:
-	  #aggr(<aggr-num>) :- <lower> <aggregate> [ #cond(<aggr-num>, <cond-num>), ... ] <upper>.
-  in head:
-	aggregate always matches
-	if conditional matches
-	  accumulate #cond(<aggr-num>,<cond-num>)
-	  inform output
-	  if aggregate matches
-		add domains (might include previous ones)
- */
-
 #include <gringo/aggrlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
@@ -51,6 +30,25 @@
 
 namespace
 {
+	class GlobalsCollector : public PrgVisitor
+	{
+	private:
+		GlobalsCollector(VarSet &globals, uint32_t level);
+
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(Lit *lit, bool domain);
+		void visit(Groundable *grd, bool choice);
+
+	public:
+		static void collect(AggrLit &lit, VarSet &globals, uint32_t level);
+		static void collect(Lit &lit, VarVec &globals, uint32_t level);
+
+	private:
+		VarSet  &globals_;
+		uint32_t level_;
+	};
+
 	class CondHeadExpander : public Expander
 	{
 	public:
@@ -98,55 +96,77 @@ namespace
 	class AggrIndex : public Index
 	{
 	public:
-		AggrIndex(AggrLit *lit);
+		AggrIndex(AggrLit &lit);
 		Match firstMatch(Grounder *grounder, int binder);
 		Match nextMatch(Grounder *grounder, int binder);
 		void reset();
 		void finish();
 		bool hasNew() const;
+		AggrState *current() const;
 		~AggrIndex();
 	private:
-		AggrLit *lit_;
-		bool     finished_;
+		AggrLit   &lit_;
+		bool       finished_;
 	};
 
-	class GlobalsBinder : public Index
-	{
-	public:
-		GlobalsBinder(CondLit *lit);
-		Match firstMatch(Grounder *grounder, int binder);
-		Match nextMatch(Grounder *grounder, int binder);
-		void reset();
-		void finish();
-		bool hasNew() const;
-		~GlobalsBinder();
-	private:
-		CondLit *lit_;
-		uint32_t offset_;
-	};
 }
 
-//////////////////////////////////////// AggrLit::AggrState ////////////////////////////////////////
+//////////////////////////////////////// AggrState ////////////////////////////////////////
 
-AggrLit::AggrState::AggrState()
-	: new_(false)
-	, lock_(false)
-	, match_(false)
-	, fact_(false)
+AggrState::AggrState()
 { }
 
-void AggrLit::AggrState::accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact)
+void AggrState::accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrLit &lit, const ValVec &set, bool fact)
 {
-	Sets::iterator it = sets_.find(set.size());
-	if(it == sets_.end()) {	it = sets_.insert(Sets::value_type(set.size(), ValVecSet(set.size()))).first; }
-	std::pair<const ValVecSet::Index &, bool> res = it->second.insert(set.begin());
-	bool newFact = !res.first.fact && fact;
-	res.first.fact = res.first.fact || fact;
+	std::pair<ValVecSet::iterator, bool> res = sets_.insert(ValVecSet::value_type(set, false));
+	bool newFact      = !res.first->second && fact;
+	res.first->second = res.first->second || fact;
+	if(res.second)
+	{
+		foreach(uint32_t var, headVars) { subst_[head].push_back(g->val(var)); }
+	}
 	doAccumulate(g, lit, set, res.second, newFact);
 }
 
-AggrLit::AggrState::~AggrState()
+AggrState::~AggrState()
 {
+}
+
+//////////////////////////////////////// AggrDomain ////////////////////////////////////////
+
+AggrDomain::AggrDomain()
+	: domain_(0)
+	, last_(0)
+	, new_(false)
+{
+}
+
+void AggrDomain::init(const VarSet &global)
+{
+	if(global_.size() != global.size())
+	{
+		assert(global_.size() == 0);
+		global_.assign(global.begin(), global.end());
+		domain_ = ValVecSet(global_.size());
+	}
+}
+
+AggrState *AggrDomain::state(Grounder *g, AggrLit *lit)
+{
+	ValVec vals;
+	foreach(uint32_t var, global_) { vals.push_back(g->val(var)); }
+	std::pair<const ValVecSet::Index&, bool> res = domain_.insert(vals.begin(), false);
+	// NOTE: inserting a new state does not immediately provide new bindings
+	if(res.second) { states_.push_back(lit->newAggrState(g)); }
+	last_ = &states_[vals.size() ? res.first / vals.size() : 0];
+	return last_;
+}
+
+void AggrDomain::finish()
+{
+	// TODO: could be done more efficiently (vector + markings)
+	foreach(AggrState &state, states_) { state.finish(); }
+	new_ = false;
 }
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
@@ -155,13 +175,10 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	: Lit(loc)
 	, sign_(false)
 	, assign_(false)
+	, fact_(false)
 	, complete_(tribool::indeterminate_value)
 	, parent_(0)
 	, conds_(conds.release())
-	, last_(0)
-	, enqueued_(0)
-	, new_(false)
-	, index_(1)
 {
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 }
@@ -189,14 +206,22 @@ void AggrLit::assign(Term *a)
 
 void AggrLit::add(CondLit *cond)
 {
-	cond->aggr_ = this;
 	conds_.push_back(cond);
 }
 
 void AggrLit::addDomain(Grounder *g, bool)
 {
 	assert(head());
-	foreach(CondLit &lit, conds_) { lit.addDomain(g, false); }
+	if(domain_.last()->match())
+	{
+		foreach(CondLit &lit, conds_) { lit.addDomain(g, false); }
+	}
+}
+
+void AggrLit::enqueue(Grounder *g)
+{
+	domain().markNew();
+	parent_->enqueue(g);
 }
 
 bool AggrLit::complete() const
@@ -216,84 +241,26 @@ bool AggrLit::complete() const
 	return complete_;
 }
 
-bool AggrLit::isNew() const
-{
-	return last_->isNew();
-}
-
 bool AggrLit::fact() const
 {
-	return (monotonicity() == MONOTONE || complete()) && last_->fact();
+	return !head() && (monotonicity() == MONOTONE || complete()) && fact_;
 }
 
-bool AggrLit::matchLast() const
+void AggrLit::finish(Grounder *g)
 {
-	return enqueued_ > conds_.size();
-}
-
-bool AggrLit::match(Grounder *g)
-{
-	ValVec bound;
-	foreach(uint32_t i, bound_) { bound.push_back(g->val(i)); }
-	std::pair<const ValVecSet::Index&, bool> res(index_.insert(bound.begin()));
-	if(!res.second)
-	{
-		uint32_t offset = !bound.empty() ? res.first / bound.size() : 0;
-		last_ = &aggrStates_[offset];
-	}
-	else
-	{
-		aggrStates_.push_back(newAggrState(g));
-		last_ = &aggrStates_.back();
-		enqueued_+= conds_.size() + 1;
-		foreach(CondLit &lit, conds_) { lit.ground(g); }
-		enqueued_-= conds_.size() + 1;
-	}
-	// NOTE: its uncritical to set the new_ flag here
-	if(last_->lock()) { new_ = true; }
-	// TODO: handle signed aggregates
-	//       handle aggregates that switch from true -> to false and stay false
-	//       (aggregates with an antimonotone part)
-	return last_->matches();
-}
-
-void AggrLit::enqueueParent(Grounder *g, AggrState &state)
-{
-	if(enqueued_ == 0 && state.matches())
-	{
-		if(state.lock()) { new_ = true; }
-		#pragma message "extend the enqueue function -> allow for a prefix (globals + binder)"
-		g->enqueue(parent_);
-	}
-}
-
-void AggrLit::finish(Grounder *)
-{
-	new_ = false;
-	foreach(AggrState &state, aggrStates_) { state.finish(); }
+	foreach(CondLit &lit, conds_) { lit.finish(g); }
 }
 
 void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 {
 	parent_ = gr;
-	bound_.assign(bound.begin(), bound.end());
-	index_ = ValVecSet(bound_.size());
-	// NOTE: think about binders (in theory the binder in the conditionals have to be shifted)
-	#pragma message "handle assignments!!"
-	gr->instantiator()->append(new AggrIndex(this));
-}
-
-void AggrLit::bind(Grounder *g, uint32_t offset, int binder)
-{
-	ValVecSet::iterator i = index_.begin() + offset * bound_.size();
-	VarVec::iterator    j = bound_.begin();
-	// NOTE: think about binders
-	for(; j != bound_.end(); i++, j++) { g->val(*j, *i, binder); }
-}
-
-void AggrLit::unbind(Grounder *g)
-{
-	foreach(uint32_t i, bound_) { g->unbind(i); }
+	VarSet global;
+	GlobalsCollector::collect(*this, global, parent_->level());
+	// NOTE: this possibly reinitializes the domain
+	//       but the set of global variables always stays the same
+	domain_.init(global);
+	if(assign()) { assign()->vars(bound); }
+	gr->instantiator()->append(new AggrIndex(*this));
 }
 
 void AggrLit::visit(PrgVisitor *visitor)
@@ -314,6 +281,17 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 		conds_[i].normalize(g, i);
 	}
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
+}
+
+void AggrLit::ground(Grounder *g)
+{
+	foreach(CondLit &lit, conds_) { lit.ground(g); }
+	fact_ = domain_.last()->fact();
+}
+
+void AggrLit::grounded(Grounder *)
+{
+	if(!head()) { domain_.last()->lock(); }
 }
 
 AggrLit::~AggrLit()
@@ -369,14 +347,18 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, set_(loc, terms)
 	, lits_(lits)
 	, aggr_(0)
-	, current_(0)
 	, complete_(tribool::indeterminate_value)
 {
 }
 
 void CondLit::head(bool head)
 {
-	lits_[0].head(head);
+	if(!lits_[0].sign()) { lits_[0].head(head); }
+}
+
+void CondLit::enqueue(Grounder *g)
+{
+	aggr_->enqueue(g);
 }
 
 bool CondLit::complete() const
@@ -413,28 +395,12 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 		lits_[i].normalize(g, &bodyExp);
 	}
 	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
-}
-
-void CondLit::doEnqueue(bool enqueue)
-{
-	aggr_->enqueue(enqueue);
-}
-
-bool CondLit::bind(Grounder *g, uint32_t offset, int binder)
-{
-	if(offset <  aggr_->states().size())
-	{
-		current_ = &aggr_->states()[offset];
-		if(!aggr_->matchLast()) { aggr_->bind(g, offset, binder); }
-		return true;
-	}
-	else { return false; }
+	if(!lits_[0].sign() && lits_[0].head()) { GlobalsCollector::collect(lits_[0], headVars_, level()); }
 }
 
 void CondLit::ground(Grounder *g)
 {
 	inst_->ground(g);
-	if(!aggr_->matchLast()) { aggr_->unbind(g); }
 }
 
 void CondLit::visit(PrgVisitor *visitor)
@@ -460,22 +426,31 @@ void CondLit::print(Storage *sto, std::ostream &out) const
 	out << ">";
 }
 
-void CondLit::addDomain(Grounder *g, bool fact) 
+void CondLit::addDomain(Grounder *g, bool fact)
 {
-	#pragma message "implement me!!!"
-	/*
-	for(size_t p = 0; p < weights_.size(); p++)
+	Lit &head = lits_[0];
+	if(!head.sign())
 	{
-		head_->move(p);
-		head_->addDomain(g, fact);
+		ValVec &vals = aggr_->domain().last()->substitution(&head);
+		if(vals.empty())
+		{
+			head.grounded(g);
+			head.addDomain(g, fact);
+		}
+		for(ValVec::iterator it = vals.begin(); it != vals.end();)
+		{
+			foreach(uint32_t &var, headVars_) { g->val(var, *it++, 0); }
+			head.grounded(g);
+			head.addDomain(g, fact);
+		}
+		foreach(uint32_t &var, headVars_) { g->unbind(var); }
+		vals.clear();
 	}
-	*/
 }
 
 bool CondLit::grounded(Grounder *g)
 {
 	#pragma message "output the conditional"
-	assert(current_);
 	bool fact = true;
 	foreach(Lit &lit, lits_)
 	{
@@ -484,11 +459,7 @@ bool CondLit::grounded(Grounder *g)
 	}
 	ValVec set;
 	foreach(Term &term, *set_.terms()) { set.push_back(term.val(g)); }
-	try
-	{
-		current_->accumulate(g, *aggr_, set, fact);
-		aggr_->enqueueParent(g, *current_);
-	}
+	try { aggr_->domain().last()->accumulate(g, &lits_[0], headVars_, *aggr_, set, fact); }
 	catch(const Val *val)
 	{
 		std::ostringstream oss;
@@ -517,11 +488,14 @@ void CondLit::accept(AggrLit::Printer *v)
 	*/
 }
 
-void CondLit::instantiator(Instantiator *inst)
+void CondLit::finish()
 {
-	#pragma message "solve this differently (later)"
-	inst->append(new GlobalsBinder(this));
-	Groundable::instantiator(inst);
+	// Note: indices of CondLit are finished in AggrIndex
+}
+
+void CondLit::finish(Grounder *g)
+{
+	if(!lits_[0].sign()) { lits_[0].finish(g); }
 }
 
 CondLit::~CondLit()
@@ -531,6 +505,53 @@ CondLit::~CondLit()
 CondLit* new_clone(const CondLit& a)
 {
 	return new CondLit(a);
+}
+
+//////////////////////////////////////// GlobalsCollector ////////////////////////////////////////
+
+GlobalsCollector::GlobalsCollector(VarSet &globals, uint32_t level)
+	: globals_(globals)
+	, level_(level)
+{
+}
+
+void GlobalsCollector::visit(VarTerm *var, bool)
+{
+	if(var->level() <= level_) { globals_.insert(var->index()); }
+}
+
+void GlobalsCollector::visit(Term* term, bool bind)
+{
+	term->visit(this, bind);
+}
+
+void GlobalsCollector::visit(Lit *lit, bool)
+{
+	lit->visit(this);
+}
+
+void GlobalsCollector::visit(Groundable *grd, bool)
+{
+	grd->visit(this);
+}
+
+void GlobalsCollector::collect(AggrLit &lit, VarSet &globals, uint32_t level)
+{
+	GlobalsCollector gc(globals, level);
+	foreach(CondLit &cond, lit.conds()) { cond.visit(&gc); }
+	if(!lit.assign())
+	{
+		if(lit.lower()) { lit.lower()->visit(&gc, false); }
+		if(lit.upper()) { lit.upper()->visit(&gc, false); }
+	}
+}
+
+void GlobalsCollector::collect(Lit &lit, VarVec &globals, uint32_t level)
+{
+	VarSet set;
+	GlobalsCollector gc(set, level);
+	gc.visit(&lit, false);
+	globals.assign(set.begin(), set.end());
 }
 
 //////////////////////////////////////// CondHeadExpander ////////////////////////////////////////
@@ -644,21 +665,43 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 
 //////////////////////////////////////// AggrIndex ////////////////////////////////////////
 
-AggrIndex::AggrIndex(AggrLit *lit)
+AggrIndex::AggrIndex(AggrLit &lit)
 	: lit_(lit)
 	, finished_(false)
 {
 }
 
-Index::Match AggrIndex::firstMatch(Grounder *g, int)
+AggrState *AggrIndex::current() const { return lit_.domain().last(); }
+
+Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 {
-	bool match = lit_->match(g);
-	return Match(match, !finished_ ||  lit_->isNew());
+	lit_.domain().state(g, &lit_);
+	lit_.ground(g);
+	if(lit_.assign())
+	{
+		Val v;
+		for(bool match = current()->bindFirst(&v); match; match = current()->bindNext(&v))
+		{
+			if(lit_.assign()->unify(g, v, binder)) { return Match(true, !finished_ || current()->isNew()); }
+		}
+		return Match(false, false);
+	}
+	else if(current()->bindFirst(0)) { return Match(true, !finished_ || current()->isNew()); }
+	else { return Match(false, false); }
 }
 
-Index::Match AggrIndex::nextMatch(Grounder *, int)
+Index::Match AggrIndex::nextMatch(Grounder *g, int binder)
 {
-	return Match(false, false);
+	if(lit_.assign())
+	{
+		Val v;
+		while(current()->bindNext(&v))
+		{
+			if(lit_.assign()->unify(g, v, binder)) { return Match(true, !finished_ || current()->isNew()); }
+		}
+		return Match(false, false);
+	}
+	else { return Match(false, false); }
 }
 
 void AggrIndex::reset()
@@ -668,55 +711,19 @@ void AggrIndex::reset()
 
 void AggrIndex::finish()
 {
+	foreach(CondLit &lit, lit_.conds())
+	{
+		lit.instantiator()->finish();
+	}
+	lit_.domain().finish();
 	finished_ = true;
 }
 
 bool AggrIndex::hasNew() const
 {
-	return !finished_ || lit_->hasNew();
+	return !finished_ || lit_.domain().hasNew();
 }
 
 AggrIndex::~AggrIndex()
-{
-}
-
-//////////////////////////////////////// GlobalsBinder ////////////////////////////////////////
-
-GlobalsBinder::GlobalsBinder(CondLit *lit)
-	: lit_(lit)
-	, offset_(0)
-{
-}
-
-Index::Match GlobalsBinder::firstMatch(Grounder *g, int binder)
-{
-	offset_ = lit_->aggr()->matchLast() ? lit_->aggr()->states().size() - 1 : 0;
-	return nextMatch(g, binder);
-}
-
-Index::Match GlobalsBinder::nextMatch(Grounder *g, int binder)
-{
-	if(offset_ < lit_->aggr()->states().size())
-	{
-		lit_->bind(g, offset_++, binder);
-		return Match(true, lit_->aggr()->matchLast());
-	}
-	else { return Match(false, false); }
-}
-
-void GlobalsBinder::reset()
-{
-}
-
-void GlobalsBinder::finish()
-{
-}
-
-bool GlobalsBinder::hasNew() const
-{
-	return lit_->aggr()->matchLast();
-}
-
-GlobalsBinder::~GlobalsBinder()
 {
 }

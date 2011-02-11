@@ -58,6 +58,7 @@ public:
 
 class PredLit : public Lit, public PredLitRep
 {
+	using Lit::sign;
 private:
 	typedef std::vector<PredLit*> PredLitVec;
 public:
@@ -83,17 +84,19 @@ public:
 	const TermPtrVec &terms() const { return terms_; }
 	void vars(VarSet &vars) const;
     bool compatible(PredLit* pred);
+	bool sign() const;
+	void sign(bool sign);
 	void provide(PredLit *pred);
 	PredLitRep *state() { return this; }
 	~PredLit();
 private:
-	TermPtrVec         terms_;
-	VarDomains         varDoms_;
-	PredLitVec         provide_;
-	bool               complete_;
-	uint32_t           startNew_;
-	PredIndex         *index_;
-	Groundable        *parent_;
+	TermPtrVec  terms_;
+	VarDomains  varDoms_;
+	PredLitVec  provide_;
+	bool        complete_;
+	uint32_t    startNew_;
+	PredIndex  *index_;
+	Groundable *parent_;
 };
 
 PredLit* new_clone(const PredLit& a);

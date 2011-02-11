@@ -27,7 +27,7 @@
 
 namespace
 {
-	class SumAggrState : public AggrLit::AggrState
+	class SumAggrState : public BoundAggrState
 	{
 	public:
 		SumAggrState(Grounder *g, AggrLit &lit);
@@ -46,48 +46,13 @@ SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
 {
 }
 
-AggrLit::AggrState *SumAggrLit::newAggrState(Grounder *g)
+AggrState *SumAggrLit::newAggrState(Grounder *g)
 {
-	return new SumAggrState(g, *this);
-}
-
-//////////////////////////////////////// SumAggrState ////////////////////////////////////////
-
-SumAggrState::SumAggrState(Grounder *g, AggrLit &lit)
-	: min_(0)
-	, max_(0)
-{
-	accumulate(g, lit, 0, true, true);
-}
-
-void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact)
-{
-	if(isNew)
+	if(assign())
 	{
-		if(newFact)
-		{
-			min_ += weight;
-			max_ += weight;
-		}
-		else
-		{
-			if(weight < 0) { min_ += weight; }
-			else           { max_ += weight; }
-		}
+		assert(false && "implement me");
 	}
-	else if(newFact)
-	{
-		if(weight < 0) { max_ += weight; }
-		else           { min_ += weight; }
-	}
-	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
-	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
-	updateState(lit, min_, max_, lower, upper);
-}
-
-void SumAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
-{
-	accumulate(g, lit, set[0].number(), isNew, newFact);
+	else { return new SumAggrState(g, *this); }
 }
 
 Lit *SumAggrLit::clone() const
@@ -132,6 +97,44 @@ void SumAggrLit::accept(::Printer *v)
 	*/
 }
 
+//////////////////////////////////////// SumAggrState ////////////////////////////////////////
+
+SumAggrState::SumAggrState(Grounder *g, AggrLit &lit)
+	: min_(0)
+	, max_(0)
+{
+	accumulate(g, lit, 0, true, true);
+}
+
+void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact)
+{
+	if(isNew)
+	{
+		if(newFact)
+		{
+			min_ += weight;
+			max_ += weight;
+		}
+		else
+		{
+			if(weight < 0) { min_ += weight; }
+			else           { max_ += weight; }
+		}
+	}
+	else if(newFact)
+	{
+		if(weight < 0) { max_ += weight; }
+		else           { min_ += weight; }
+	}
+	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
+	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
+	checkBounds(lit, min_, max_, lower, upper);
+}
+
+void SumAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
+{
+	accumulate(g, lit, set[0].number(), isNew, newFact);
+}
 
 /*
 namespace

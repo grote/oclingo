@@ -59,6 +59,7 @@ public:
 
 	bool head() const;
 	void head(bool head);
+	virtual bool sign() const;
 	virtual void doHead(bool head);
 	virtual bool complete() const;
 	virtual bool edbFact() const;
@@ -159,6 +160,7 @@ inline void Lit::grounded(Grounder *) { }
 inline void Lit::addDomain(Grounder *, bool) { }
 inline bool Lit::forcePrint() { return false; }
 inline void Lit::finish(Grounder *) { }
+inline bool Lit::sign() const { return false; }
 
 inline Lit::Score Lit::score(Grounder *, VarSet &) { return Score(HIGHEST, std::numeric_limits<double>::min()); }
 

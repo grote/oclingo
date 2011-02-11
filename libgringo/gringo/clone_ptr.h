@@ -31,38 +31,39 @@ public:
 	const T *operator->() const;
 	T &operator *();
 	const T &operator *() const;
+	operator bool() const;
 	~clone_ptr();
 private:
 	T *ptr_;
 };
 
 template<typename T>
-inline clone_ptr<T>::clone_ptr() 
+clone_ptr<T>::clone_ptr()
 	: ptr_(0)
 {
 }
 
 template<typename T>
-inline clone_ptr<T>::clone_ptr(T *ptr)
+clone_ptr<T>::clone_ptr(T *ptr)
 	: ptr_(ptr)
 {
 }
 
 template<typename T>
-inline clone_ptr<T>::clone_ptr(const clone_ptr<T> &ptr)
+clone_ptr<T>::clone_ptr(const clone_ptr<T> &ptr)
 	: ptr_(ptr.get() ? new_clone(*ptr.get()) : 0)
 {
 }
 
 template<typename T>
-inline void clone_ptr<T>::reset(T *ptr)
+void clone_ptr<T>::reset(T *ptr)
 {
 	delete ptr_;
 	ptr_ = ptr;
 }
 
 template<typename T>
-inline T *clone_ptr<T>::release()
+T *clone_ptr<T>::release()
 {
 	T *ptr = ptr_;
 	ptr_ = 0;
@@ -70,37 +71,43 @@ inline T *clone_ptr<T>::release()
 }
 
 template<typename T>
-inline T *clone_ptr<T>::get() const
+T *clone_ptr<T>::get() const
 {
 	return ptr_;
 }
 
 template<typename T>
-inline T *clone_ptr<T>::operator->()
+T *clone_ptr<T>::operator->()
 {
 	return ptr_;
 }
 
 template<typename T>
-inline const T *clone_ptr<T>::operator->() const
+const T *clone_ptr<T>::operator->() const
 {
 	return ptr_;
 }
 
 template<typename T>
-inline T &clone_ptr<T>::operator *()
+T &clone_ptr<T>::operator *()
 {
 	return *ptr_;
 }
 
 template<typename T>
-inline const T &clone_ptr<T>::operator *() const
+const T &clone_ptr<T>::operator *() const
 {
 	return *ptr_;
 }
 
 template<typename T>
-inline clone_ptr<T>::~clone_ptr()
+clone_ptr<T>::operator bool() const
+{
+	return ptr_;
+}
+
+template<typename T>
+clone_ptr<T>::~clone_ptr()
 {
 	delete ptr_;
 }

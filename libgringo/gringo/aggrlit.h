@@ -22,6 +22,125 @@
 #include <gringo/printer.h>
 #include <gringo/groundable.h>
 #include <gringo/valvecset.h>
+#include <gringo/index.h>
+
+class AggrLit;
+
+class AggrState
+{
+private:
+	typedef boost::unordered_map<ValVec,bool> ValVecSet;
+	typedef std::map<Lit*, ValVec> Substitution;
+public:
+	AggrState();
+
+	void accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrLit &lit, const ValVec &set, bool fact);
+	ValVec &substitution(Lit *lit);
+
+	virtual void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact) = 0;
+
+	virtual bool match() const = 0;
+	virtual void finish() = 0;
+
+	virtual bool fact() const = 0;
+	virtual bool isNew() const = 0;
+	virtual void lock() = 0;
+
+	virtual bool bindFirst(Val *val) = 0;
+	virtual bool bindNext(Val *val) = 0;
+
+	virtual ~AggrState();
+
+protected:
+	ValVecSet    sets_;
+	Substitution subst_;
+};
+
+class BoundAggrState : public AggrState
+{
+public:
+	BoundAggrState();
+
+	bool match() const;
+	void finish();
+
+	bool fact() const;
+	bool isNew() const;
+	void lock();
+
+	bool bindFirst(Val *val);
+	bool bindNext(Val *val);
+
+	virtual ~BoundAggrState();
+
+protected:
+	template<class T>
+	void checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper);
+	template<class T, class P>
+	void checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt);
+
+private:
+	bool locked_;
+	bool new_;
+	// NOTE: have to be set in accumulate
+	bool match_;
+	bool fact_;
+};
+
+class AssignAggrState : public AggrState
+{
+public:
+	struct Assign
+	{
+		Assign(const Val &val);
+		Val  val;
+		bool isNew;
+		bool locked;
+		bool fact;
+	};
+	typedef std::vector<Assign> AssignVec;
+
+public:
+	AssignAggrState();
+
+	bool match() const;
+	void finish();
+
+	bool fact() const;
+	bool isNew() const;
+	void lock();
+
+	bool bindFirst(Val *val);
+	bool bindNext(Val *val);
+
+	virtual ~AssignAggrState();
+
+protected:
+	AssignVec           assign_;
+	AssignVec::iterator current_;
+};
+
+AggrState* new_clone(const AggrState& state);
+
+class AggrDomain
+{
+	typedef boost::ptr_vector<AggrState> AggrStateVec;
+public:
+	AggrDomain();
+	void init(const VarSet &global);
+	AggrState *state(Grounder *g, AggrLit *lit);
+	void finish();
+	void markNew();
+	bool hasNew() const;
+	AggrState *last() const;
+
+private:
+	AggrStateVec states_; // set of aggrstates
+	ValVecSet    domain_; // vals -> states
+	VarVec       global_; // global variables in the aggregate
+	AggrState   *last_;
+	bool         new_;    // wheather there is (possibly) a new match
+};
 
 class AggrLit : public Lit
 {
@@ -32,37 +151,12 @@ public:
 		virtual void weight(const Val &v) = 0;
 		virtual ~Printer();
 	};
-	class AggrState
-	{
-		typedef std::map<uint32_t,ValVecSet> Sets;
-	public:
-		AggrState();
-		void accumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool fact);
-		bool matches() const;
-		bool fact() const;
-		bool lock();
-		bool isNew() const;
-		void finish();
-		template <class T>
-		void updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper);
-		template <class T, class P>
-		void updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt);
-		virtual void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact) = 0;
-		virtual ~AggrState();
-	private:
-		Sets sets_;
-		bool new_;
-		bool lock_;
-	protected:
-		// NOTE: w.r.t. current step
-		bool match_;
-		bool fact_;
-	};
 	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
 
 	virtual AggrState *newAggrState(Grounder *g) = 0;
+	AggrState *lastState();
 
 	void lower(Term *l);
 	void upper(Term *u);
@@ -73,16 +167,11 @@ public:
 	void sign(bool s);
 	bool sign() const;
 
-	bool hasNew() const;
-	bool isNew() const;
-	void enqueue(bool enqueue);
-	void enqueueParent(Grounder *g, AggrState &state);
-	AggrStates &states();
-	void bind(Grounder *g, uint32_t offset, int binder);
-	void unbind(Grounder *g);
-
 	void add(CondLit *cond);
-	const CondLitVec &conds();
+	CondLitVec &conds();
+	AggrDomain &domain();
+	void enqueue(Grounder *g);
+	void ground(Grounder *g);
 
 	~AggrLit();
 
@@ -103,7 +192,7 @@ public:
 	void addDomain(Grounder *g, bool fact);
 	void finish(Grounder *g);
 
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound);
+	void index(Grounder *g, Groundable *gr, VarSet &bound);
 	Score score(Grounder *g, VarSet &bound);
 
 	void visit(PrgVisitor *visitor);
@@ -111,38 +200,32 @@ public:
 protected:
 	bool            sign_;
 	bool            assign_;
+	bool            fact_;
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
 	Groundable     *parent_;
 	CondLitVec      conds_;
-	VarVec          bound_;
-	AggrStates      aggrStates_;
-	AggrState      *last_;
-	uint32_t        enqueued_;
-	bool            new_;
-	ValVecSet       index_;
+	AggrDomain      domain_;
 };
-
-AggrLit::AggrState* new_clone(const AggrLit::AggrState& state);
 
 class SetLit : public Lit
 {
 public:
 	SetLit(const Loc &loc, TermPtrVec &terms);
 
-	TermPtrVec *terms() { return &terms_; }
+	TermPtrVec *terms();
 
-	bool match(Grounder *) { return true; }
-	bool fact() const { return true; }
+	bool match(Grounder *g);
+	bool fact() const;
 
-	void addDomain(Grounder *, bool) { assert(false); }
-	void index(Grounder *, Groundable *, VarSet &) { }
-	bool edbFact() const { return false; }
+	void addDomain(Grounder *g, bool fact);
+	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	bool edbFact() const;
 	void normalize(Grounder *g, Expander *e);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
-	void accept(Printer *v) { (void)v; }
+	void accept(Printer *v);
 	Lit *clone() const;
 	~SetLit();
 private:
@@ -153,6 +236,7 @@ SetLit* new_clone(const SetLit& a);
 
 class CondLit : public Groundable, public Locateable
 {
+	using Groundable::finish;
 public:
 	friend class AggrLit;
 	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
@@ -163,12 +247,12 @@ public:
 	LitPtrVec *lits();
 	Style style();
 	bool complete() const;
-	void add(Lit *lit) { lits_.push_back(lit); }
+	void add(Lit *lit);
 	void head(bool head);
 
-	bool bind(Grounder *g, uint32_t offset, int binder);
-
-	void doEnqueue(bool enqueue);
+	void finish();
+	void finish(Grounder *g);
+	void enqueue(Grounder *g);
 	void ground(Grounder *g);
 	bool grounded(Grounder *g);
 
@@ -176,102 +260,151 @@ public:
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(AggrLit::Printer *v);
-	void addDomain(Grounder *g, bool fact) ;
-
-	void instantiator(Instantiator *inst);
+	void addDomain(Grounder *g, bool fact);
 
 	~CondLit();
 private:
-	Style               style_;
-	SetLit              set_;
-	LitPtrVec           lits_;
-	AggrLit            *aggr_;
-	AggrLit::AggrState *current_;
-	mutable tribool     complete_;
+	Style           style_;
+	SetLit          set_;
+	LitPtrVec       lits_;
+	VarVec          headVars_;
+	AggrLit        *aggr_;
+	mutable tribool complete_;
 };
 
 /////////////////////////////// AggrLit::Printer ///////////////////////////////
 
 inline AggrLit::Printer::~Printer() { }
 
-/////////////////////////////// AggrLit::AggrState ///////////////////////////////
+/////////////////////////////// AggrState ///////////////////////////////
 
-inline bool AggrLit::AggrState::matches() const { return lock_ || match_; }
+inline ValVec &AggrState::substitution(Lit *lit) { return subst_[lit]; }
 
-inline bool AggrLit::AggrState::fact() const { return fact_; }
-
-inline bool AggrLit::AggrState::isNew() const { return new_; }
-
-inline bool AggrLit::AggrState::lock()
-{
-	if(match_ && !lock_)
-	{
-		new_  = true;
-		lock_ = true;
-		return true;
-	}
-	else { return false; }
-}
-
-inline void AggrLit::AggrState::finish() { new_ = false; }
-
-template <class T>
-void AggrLit::AggrState::updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper)
-{
-	updateState<T, std::less<T> >(lit, min, max, lower, upper, std::less<T>());
-}
-
-template <class T, class P>
-void AggrLit::AggrState::updateState(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt)
-{
-	match_ = lt(upper, lower) || lt(min, lower) || lt(upper, max);
-	fact_  = lt(upper, lower) || lt(max, lower) || lt(upper, min);
-	if(!lit.sign())
-	{
-		bool match = match_;
-		match_     = !fact_;
-		fact_      = !match;
-	}
-}
-
-/////////////////////////////// AggrLit ///////////////////////////////
-
-inline Term *AggrLit::assign() const { return assign_ ? lower_.get() : 0; }
-
-inline Term *AggrLit::lower() const { return assign_ ? 0 : lower_.get(); }
-
-inline Term *AggrLit::upper() const { return upper_.get(); }
-
-inline void AggrLit::sign(bool s) { sign_ = s; }
-
-inline bool AggrLit::sign() const { return sign_; }
-
-inline const CondLitVec &AggrLit::conds() { return conds_; }
-
-inline void AggrLit::enqueue(bool enqueue)
-{
-	if(enqueue) { enqueued_++; }
-	else        { enqueued_--; }
-}
-
-inline bool AggrLit::hasNew() const { return new_; }
-
-inline AggrLit::AggrStates &AggrLit::states() { return aggrStates_; }
-
-inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
-
-inline void AggrLit::grounded(Grounder *) { }
-
-inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
-
-inline AggrLit::AggrState* new_clone(const AggrLit::AggrState&)
+inline AggrState* new_clone(const AggrState&)
 {
 	// NOTE: should never be called
 	assert(false);
 	return 0;
 }
 
+/////////////////////////////// BoundAggrState ///////////////////////////////
+
+inline BoundAggrState::BoundAggrState()
+	: locked_(false)
+	, new_(true)
+	, match_(false)
+	, fact_(false)
+{ }
+
+inline bool BoundAggrState::match() const { return match_; }
+inline void BoundAggrState::finish() { new_ = false; }
+
+inline bool BoundAggrState::fact() const { return fact_; }
+inline bool BoundAggrState::isNew() const { return new_; }
+inline void BoundAggrState::lock() { locked_ = true; }
+
+inline bool BoundAggrState::bindFirst(Val *) { return locked_ || match_; }
+inline bool BoundAggrState::bindNext(Val *) { return false; }
+
+template <class T>
+void BoundAggrState::checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper)
+{
+	checkBounds<T, std::less<T> >(lit, min, max, lower, upper, std::less<T>());
+}
+
+template <class T, class P>
+void BoundAggrState::checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt)
+{
+	match_ = lt(upper, lower) || lt(min, lower) || lt(upper, max);
+	fact_  = lt(upper, lower) || lt(max, lower) || lt(upper, min);
+	if(!lit.sign())
+	{
+		bool match = !fact_;
+		fact_      = !match_;
+		match_     = match;
+	}
+}
+
+inline BoundAggrState::~BoundAggrState() { }
+
+/////////////////////////////// AssignAggrState ///////////////////////////////
+
+inline AssignAggrState::AssignAggrState() { }
+
+inline bool AssignAggrState::match() const { return true; }
+inline void AssignAggrState::finish()
+{
+	foreach(Assign &assign, assign_) { assign.isNew = false; }
+}
+
+inline bool AssignAggrState::fact() const { return (current_ - 1)->fact; }
+inline bool AssignAggrState::isNew() const { return (current_ - 1)->isNew; }
+inline void AssignAggrState::lock() { (current_ - 1)->locked = true; }
+
+inline bool AssignAggrState::bindFirst(Val *val)
+{
+	current_ = assign_.begin();
+	return bindNext(val);
+}
+inline bool AssignAggrState::bindNext(Val *val)
+{
+	if(current_ != assign_.end())
+	{
+		*val = current_++->val;
+		return true;
+	}
+	return false;
+}
+
+inline AssignAggrState::~AssignAggrState() { }
+
+/////////////////////////////// AggrDomain ///////////////////////////////
+
+inline void AggrDomain::markNew() { new_ = true; }
+inline bool AggrDomain::hasNew() const { return new_; }
+inline AggrState *AggrDomain::last() const { return last_; }
+
+/////////////////////////////// AggrLit ///////////////////////////////
+
+inline Term *AggrLit::assign() const { return assign_ ? lower_.get() : 0; }
+
+inline Term *AggrLit::lower() const { return lower_.get(); }
+
+inline Term *AggrLit::upper() const { return assign_ ? lower_.get() : upper_.get(); }
+
+inline void AggrLit::sign(bool s) { sign_ = s; }
+
+inline bool AggrLit::sign() const { return sign_; }
+
+inline bool AggrLit::match(Grounder *)
+{
+	// NOTE: should not be called
+	assert(false);
+	return false;
+}
+
+inline AggrDomain &AggrLit::domain() { return domain_; }
+inline CondLitVec &AggrLit::conds() { return conds_; }
+
+inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
+
+inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
+
+/////////////////////////////// SetLit ///////////////////////////////
+
+inline TermPtrVec *SetLit::terms() { return &terms_; }
+
+inline bool SetLit::match(Grounder *) { return true; }
+inline bool SetLit::fact() const { return true; }
+
+inline void SetLit::addDomain(Grounder *, bool) { assert(false); }
+inline void SetLit::index(Grounder *, Groundable *, VarSet &) { }
+inline bool SetLit::edbFact() const { return false; }
+inline void SetLit::accept(Printer *) { }
+
 /////////////////////////////// CondLit ///////////////////////////////
+
+inline void CondLit::add(Lit *lit) { lits_.push_back(lit); }
 
 inline AggrLit *CondLit::aggr() { return aggr_; }
 

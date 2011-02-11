@@ -18,6 +18,7 @@
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
+#include <gringo/grounder.h>
 
 Groundable::Groundable() 
 	: enqueued_(false)
@@ -40,7 +41,20 @@ void Groundable::litDep(LitDep::GrdNode *litDep)
 	litDep_.reset(litDep); 
 }
 
+void Groundable::enqueue(Grounder *g)
+{
+	if(!enqueued_)
+	{
+		enqueued_ = true;
+		g->enqueue(this);
+	}
+}
+
 Groundable::~Groundable() 
 { 
 }
 
+void Groundable::finish()
+{
+	if(inst_) { inst_->finish(); }
+}

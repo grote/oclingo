@@ -247,25 +247,21 @@ void Grounder::ground_()
 {
 	while(!queue_.empty())
 	{
-		std::random_shuffle(queue_.begin(), queue_.end());
+		//std::random_shuffle(queue_.begin(), queue_.end());
 		Groundable *g = queue_.front();
 		std::cerr << "% ";
 		g->print(this, std::cerr);
 		std::cerr << std::endl;
 
 		queue_.pop_front();
-		g->enqueued(false);
+		g->dequeue();
 		g->ground(this);
 	}
 }
 
 void Grounder::enqueue(Groundable *g)
 {
-	if(!g->enqueued())
-	{
-		g->enqueued(true);
-		queue_.push_back(g);
-	}
+	queue_.push_back(g);
 }
 
 uint32_t Grounder::createVar()

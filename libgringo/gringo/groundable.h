@@ -26,13 +26,12 @@ public:
 	virtual bool grounded(Grounder *g) = 0;
 	virtual void ground(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
-	virtual void doEnqueue(bool enqueue);
 	virtual void print(Storage *sto, std::ostream &out) const = 0;
+	virtual void enqueue(Grounder *g);
+	virtual void dequeue();
+	virtual void finish();
 	VarVec &vars();
-	bool enqueued() const;
-	void enqueued(bool e);
-	// TODO: remove the virtual!!!
-	virtual void instantiator(Instantiator *inst);
+	void instantiator(Instantiator *inst);
 	Instantiator *instantiator() const;
 	uint32_t level() const;
 	void level(uint32_t level);
@@ -50,14 +49,8 @@ protected:
 
 ///////////////////////////////////// Groundable /////////////////////////////////////
 
-inline void Groundable::doEnqueue(bool) { }
 inline VarVec &Groundable::vars() { return vars_; }
-inline bool Groundable::enqueued() const { return enqueued_; }
-inline void Groundable::enqueued(bool e)
-{
-	if(enqueued_ != e) { doEnqueue(e); }
-	enqueued_ = e;
-}
 inline uint32_t Groundable::level() const { return level_; }
 inline void Groundable::level(uint32_t level) { level_ = level; }
 inline LitDep::GrdNode *Groundable::litDep() { return litDep_.get(); }
+inline void Groundable::dequeue() { enqueued_ = false; }

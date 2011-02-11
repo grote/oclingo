@@ -100,7 +100,7 @@ void PredLit::vars(VarSet &vars) const
 bool PredLit::match(Grounder *grounder)
 {
 	vals_.resize(top_);
-	foreach(const Term &term, terms_) vals_.push_back(term.val(grounder));
+	foreach(const Term &term, terms_) { vals_.push_back(term.val(grounder)); }
 	if(head()) return true;
 	if(sign()) return !dom_->find(vals_.begin() + top_).fact;
 	if(dom()->external()) return true;
@@ -135,7 +135,7 @@ void PredLit::grounded(Grounder *grounder)
 	if(!match_)
 	{
 		vals_.resize(top_);
-		foreach(const Term &a, terms_) vals_.push_back(a.val(grounder));
+		foreach(const Term &a, terms_) { vals_.push_back(a.val(grounder)); }
 	}
 }
 
@@ -225,8 +225,18 @@ void PredLit::provide(PredLit *pred)
 
 void PredLit::addDomain(Grounder *g, bool fact)
 {
-    bool res = PredLitRep::addDomain(g, fact);
+	bool res = PredLitRep::addDomain(g, fact);
 	if(res && !startNew_) { startNew_ = dom_->size(); }
+}
+
+bool PredLit::sign() const
+{
+	return PredLitRep::sign();
+}
+
+void PredLit::sign(bool sign)
+{
+	PredLitRep::sign(sign);
 }
 
 void PredLit::finish(Grounder *g)
@@ -238,7 +248,7 @@ void PredLit::finish(Grounder *g)
 			// NOTE: atm pred->index_ might be zero for e.g. negative literals
 			//       I think that I'll need indices for negative predicates too
 			//       during incremnetal grounding
-			if(pred->index_ && dom_->extend(g, pred->index_, startNew_ - 1)) { g->enqueue(pred->parent_); }
+			if(pred->index_ && dom_->extend(g, pred->index_, startNew_ - 1)) { pred->parent_->enqueue(g); }
 		}
 		startNew_ = 0;
 	}

@@ -78,6 +78,10 @@ void Instantiator::ground(Grounder *g)
 		}
 	}
 	foreach(uint32_t var, groundable_->vars()) { g->unbind(var); }
+}
+
+void Instantiator::finish()
+{
 	foreach(Index &idx, indices_) { idx.finish(); }
 }
 
@@ -94,7 +98,7 @@ void Instantiator::init(Grounder *g, bool enqueue)
 	{
 		modified = idx.init(g) || modified;
 	}
-	if(modified && enqueue) { g->enqueue(groundable_); }
+	if(modified && enqueue) { groundable_->enqueue(g); }
 }
 
 Instantiator::~Instantiator()

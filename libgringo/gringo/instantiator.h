@@ -29,6 +29,7 @@ public:
 	void fix();
 	void ground(Grounder *g);
 	void reset();
+	void finish();
 	void init(Grounder *g, bool enqueue);
 	~Instantiator();
 private:
