@@ -39,11 +39,11 @@ public:
 	NewOnceIndex();
 	virtual bool first(Grounder *grounder, int binder);
 	virtual bool next(Grounder *grounder, int binder);
-	Match firstMatch(Grounder *grounder, int binder);
-	Match nextMatch(Grounder *grounder, int binder);
-	void reset();
-	void finish();
-	bool hasNew() const;
+	virtual Match firstMatch(Grounder *grounder, int binder);
+	virtual Match nextMatch(Grounder *grounder, int binder);
+	virtual void reset();
+	virtual void finish();
+	virtual bool hasNew() const;
 	virtual ~NewOnceIndex();
 private:
 	bool finished_;
@@ -53,7 +53,7 @@ class MatchIndex : public NewOnceIndex
 {
 public:
 	MatchIndex(Lit *lit);
-	bool first(Grounder *grounder, int binder);
+	virtual bool first(Grounder *grounder, int binder);
 private:
 	Lit *lit_;
 };

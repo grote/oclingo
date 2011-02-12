@@ -27,15 +27,22 @@
 
 namespace
 {
-	class SumAggrState : public BoundAggrState
+	class SumBoundAggrState : public BoundAggrState
 	{
 	public:
-		SumAggrState(Grounder *g, AggrLit &lit);
+		SumBoundAggrState(Grounder *g, AggrLit &lit);
 		void accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact);
 		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
 	private:
 		int64_t min_;
 		int64_t max_;
+	};
+
+	class SumAssignAggrState : public AssignAggrState
+	{
+	public:
+		SumAssignAggrState();
+		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
 	};
 }
 
@@ -48,11 +55,8 @@ SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
 
 AggrState *SumAggrLit::newAggrState(Grounder *g)
 {
-	if(assign())
-	{
-		assert(false && "implement me");
-	}
-	else { return new SumAggrState(g, *this); }
+	if(assign()) { return new SumAssignAggrState(); }
+	else         { return new SumBoundAggrState(g, *this); }
 }
 
 Lit *SumAggrLit::clone() const
@@ -97,16 +101,16 @@ void SumAggrLit::accept(::Printer *v)
 	*/
 }
 
-//////////////////////////////////////// SumAggrState ////////////////////////////////////////
+//////////////////////////////////////// SumBoundAggrState ////////////////////////////////////////
 
-SumAggrState::SumAggrState(Grounder *g, AggrLit &lit)
+SumBoundAggrState::SumBoundAggrState(Grounder *g, AggrLit &lit)
 	: min_(0)
 	, max_(0)
 {
 	accumulate(g, lit, 0, true, true);
 }
 
-void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact)
+void SumBoundAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool isNew, bool newFact)
 {
 	if(isNew)
 	{
@@ -131,9 +135,40 @@ void SumAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bool is
 	checkBounds(lit, min_, max_, lower, upper);
 }
 
-void SumAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
+void SumBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
 {
 	accumulate(g, lit, set[0].number(), isNew, newFact);
+}
+
+//////////////////////////////////////// SumAssignAggrState ////////////////////////////////////////
+
+SumAssignAggrState::SumAssignAggrState()
+{
+	assign_.push_back(Val::create(Val::NUM, 0));
+	fact_ = true;
+}
+
+void SumAssignAggrState::doAccumulate(Grounder *g, AggrLit &, const ValVec &set, bool isNew, bool newFact)
+{
+	if(isNew)
+	{
+		int32_t weight = set[0].number();
+		if(!newFact) { fact_ = false; }
+		size_t end = assign_.size();
+		for(size_t i = 0; i != end; i++)
+		{
+			if(!fact_ || assign_[i].locked)
+			{
+				assign_.push_back(Val::create(Val::NUM, weight + assign_[i].val.num));
+			}
+			else
+			{
+				assign_[i].val.num  += weight;
+			}
+		}
+		std::sort(assign_.begin(), assign_.end(), AssignAggrState::Assign::Less(g));
+		assign_.erase(std::unique(assign_.begin(), assign_.end()), assign_.end());
+	}
 }
 
 /*

@@ -92,11 +92,20 @@ class AssignAggrState : public AggrState
 public:
 	struct Assign
 	{
+		struct Less
+		{
+			Less(Storage *s);
+			bool operator()(const Assign &a, const Assign &b);
+
+			Storage *storage;
+		};
+
 		Assign(const Val &val);
+		bool operator==(const Assign &a);
+
 		Val  val;
 		bool isNew;
 		bool locked;
-		bool fact;
 	};
 	typedef std::vector<Assign> AssignVec;
 
@@ -118,6 +127,7 @@ public:
 protected:
 	AssignVec           assign_;
 	AssignVec::iterator current_;
+	bool                fact_;
 };
 
 AggrState* new_clone(const AggrState& state);
@@ -327,9 +337,36 @@ void BoundAggrState::checkBounds(AggrLit &lit, const T &min, const T &max, const
 
 inline BoundAggrState::~BoundAggrState() { }
 
+/////////////////////////////// AssignAggrState::Assign::Less ///////////////////////////////
+
+inline AssignAggrState::Assign::Less::Less(Storage *s)
+ : storage(s)
+{ }
+
+inline bool AssignAggrState::Assign::Less::operator()(const Assign &a, const Assign &b)
+{
+	if(     a.val    != b.val)    { return a.val.compare(b.val, storage) < 0; }
+	else if(a.locked != b.locked) { return a.locked && !b.locked; }
+	else if(a.isNew  != b.isNew)  { return !a.isNew && b.isNew; }
+	return false;
+}
+
+/////////////////////////////// AssignAggrState::Assign ///////////////////////////////
+
+inline AssignAggrState::Assign::Assign(const Val &val)
+	: val(val)
+	, isNew(true)
+	, locked(false)
+{
+}
+
+inline bool AssignAggrState::Assign::operator==(const Assign &a) { return val == a.val; }
+
 /////////////////////////////// AssignAggrState ///////////////////////////////
 
-inline AssignAggrState::AssignAggrState() { }
+inline AssignAggrState::AssignAggrState()
+	: fact_(true)
+{ }
 
 inline bool AssignAggrState::match() const { return true; }
 inline void AssignAggrState::finish()
@@ -337,7 +374,7 @@ inline void AssignAggrState::finish()
 	foreach(Assign &assign, assign_) { assign.isNew = false; }
 }
 
-inline bool AssignAggrState::fact() const { return (current_ - 1)->fact; }
+inline bool AssignAggrState::fact() const { return fact_; }
 inline bool AssignAggrState::isNew() const { return (current_ - 1)->isNew; }
 inline void AssignAggrState::lock() { (current_ - 1)->locked = true; }
 

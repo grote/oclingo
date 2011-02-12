@@ -101,10 +101,10 @@ bool PredLit::match(Grounder *grounder)
 {
 	vals_.resize(top_);
 	foreach(const Term &term, terms_) { vals_.push_back(term.val(grounder)); }
-	if(head()) return true;
-	if(sign()) return !dom_->find(vals_.begin() + top_).fact;
-	if(dom()->external()) return true;
-	else return dom_->find(vals_.begin() + top_).valid();
+	if(head())            { return true; }
+	if(sign())            { return !dom_->find(vals_.begin() + top_).fact; }
+	if(dom()->external()) { return true; }
+	else                  { return dom_->find(vals_.begin() + top_).valid(); }
 }
 
 void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
@@ -112,13 +112,11 @@ void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 	parent_ = gr;
 	if(sign() || head() || dom()->external())
 	{
-		match_ = true;
 		gr->instantiator()->append(new MatchIndex(this));
 		index_ = 0;
 	}
 	else
 	{
-		match_ = false;
 		VarSet vars;
 		VarVec index, bind;
 		this->vars(vars);
@@ -132,11 +130,8 @@ void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 
 void PredLit::grounded(Grounder *grounder)
 {
-	if(!match_)
-	{
-		vals_.resize(top_);
-		foreach(const Term &a, terms_) { vals_.push_back(a.val(grounder)); }
-	}
+	vals_.resize(top_);
+	foreach(const Term &a, terms_) { vals_.push_back(a.val(grounder)); }
 }
 
 void PredLit::accept(Printer *v)

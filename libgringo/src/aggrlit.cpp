@@ -243,7 +243,7 @@ bool AggrLit::complete() const
 
 bool AggrLit::fact() const
 {
-	return !head() && (monotonicity() == MONOTONE || complete()) && fact_;
+	return !head() && ((monotonicity() == MONOTONE && !assign()) || complete()) && fact_;
 }
 
 void AggrLit::finish(Grounder *g)

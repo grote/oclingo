@@ -58,7 +58,6 @@ public:
 	void clear();
 protected:
 	bool     sign_;
-	bool     match_;
 	uint32_t top_;
 	Domain  *dom_;
 	ValVec   vals_;

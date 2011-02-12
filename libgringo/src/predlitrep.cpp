@@ -67,7 +67,6 @@ void PredLitSet::clear()
 
 PredLitRep::PredLitRep(bool sign, Domain *dom)
 	: sign_(sign)
-	, match_(true)
 	, top_(0)
 	, dom_(dom)
 {
