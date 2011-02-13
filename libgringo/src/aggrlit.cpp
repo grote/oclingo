@@ -96,7 +96,7 @@ namespace
 	class AggrIndex : public Index
 	{
 	public:
-		AggrIndex(AggrLit &lit);
+		AggrIndex(AggrLit &lit, VarSet &bound);
 		Match firstMatch(Grounder *grounder, int binder);
 		Match nextMatch(Grounder *grounder, int binder);
 		void reset();
@@ -106,6 +106,7 @@ namespace
 		~AggrIndex();
 	private:
 		AggrLit   &lit_;
+		VarVec     assignVars_;
 		bool       finished_;
 	};
 
@@ -121,9 +122,10 @@ void AggrState::accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrL
 	std::pair<ValVecSet::iterator, bool> res = sets_.insert(ValVecSet::value_type(set, false));
 	bool newFact      = !res.first->second && fact;
 	res.first->second = res.first->second || fact;
-	if(res.second)
+	if(res.second && !headVars.empty())
 	{
-		foreach(uint32_t var, headVars) { subst_[head].push_back(g->val(var)); }
+		ValVec &vals = subst_[head];
+		foreach(uint32_t var, headVars) { vals.push_back(g->val(var)); }
 	}
 	doAccumulate(g, lit, set, res.second, newFact);
 }
@@ -256,11 +258,15 @@ void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 	parent_ = gr;
 	VarSet global;
 	GlobalsCollector::collect(*this, global, parent_->level());
+	if(head())
+	{
+		foreach(CondLit &lit, conds_) { lit.initHead(); }
+	}
 	// NOTE: this possibly reinitializes the domain
 	//       but the set of global variables always stays the same
 	domain_.init(global);
+	gr->instantiator()->append(new AggrIndex(*this, bound));
 	if(assign()) { assign()->vars(bound); }
-	gr->instantiator()->append(new AggrIndex(*this));
 }
 
 void AggrLit::visit(PrgVisitor *visitor)
@@ -395,7 +401,6 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 		lits_[i].normalize(g, &bodyExp);
 	}
 	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
-	if(!lits_[0].sign() && lits_[0].head()) { GlobalsCollector::collect(lits_[0], headVars_, level()); }
 }
 
 void CondLit::ground(Grounder *g)
@@ -496,6 +501,11 @@ void CondLit::finish()
 void CondLit::finish(Grounder *g)
 {
 	if(!lits_[0].sign()) { lits_[0].finish(g); }
+}
+
+void CondLit::initHead()
+{
+	if(!lits_[0].sign() && lits_[0].head()) { GlobalsCollector::collect(lits_[0], headVars_, level()); }
 }
 
 CondLit::~CondLit()
@@ -665,10 +675,16 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 
 //////////////////////////////////////// AggrIndex ////////////////////////////////////////
 
-AggrIndex::AggrIndex(AggrLit &lit)
+AggrIndex::AggrIndex(AggrLit &lit, VarSet &bound)
 	: lit_(lit)
 	, finished_(false)
 {
+	if(lit.assign())
+	{
+		VarSet vars;
+		lit.assign()->vars(vars);
+		std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_inserter(assignVars_));
+	}
 }
 
 AggrState *AggrIndex::current() const { return lit_.domain().last(); }
@@ -682,6 +698,7 @@ Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 		Val v;
 		for(bool match = current()->bindFirst(&v); match; match = current()->bindNext(&v))
 		{
+			foreach(uint32_t var, assignVars_) { g->unbind(var); }
 			if(lit_.assign()->unify(g, v, binder)) { return Match(true, !finished_ || current()->isNew()); }
 		}
 		return Match(false, false);
@@ -697,6 +714,7 @@ Index::Match AggrIndex::nextMatch(Grounder *g, int binder)
 		Val v;
 		while(current()->bindNext(&v))
 		{
+			foreach(uint32_t var, assignVars_) { g->unbind(var); }
 			if(lit_.assign()->unify(g, v, binder)) { return Match(true, !finished_ || current()->isNew()); }
 		}
 		return Match(false, false);

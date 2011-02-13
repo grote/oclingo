@@ -259,6 +259,7 @@ public:
 	bool complete() const;
 	void add(Lit *lit);
 	void head(bool head);
+	void initHead();
 
 	void finish();
 	void finish(Grounder *g);
