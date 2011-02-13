@@ -314,8 +314,7 @@ void Parser::include()
 {
 	if(include_ != std::numeric_limits<uint32_t>::max())
 	{
-		const std::string &ref = grounder()->string(include_);
-		std::string filename(ref.substr(1, ref.size() - 2));
+		const std::string &filename = grounder()->string(include_);
 		include_ = std::numeric_limits<uint32_t>::max();
 		streams_.addFile(filename);
 	}
