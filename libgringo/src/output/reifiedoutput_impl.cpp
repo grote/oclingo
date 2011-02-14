@@ -78,9 +78,8 @@ namespace reifiedoutput_impl
 		output_->popDep(false);
 	}
 
-	void SumAggrLitPrinter::begin(bool head, bool sign, bool count)
+	void SumAggrLitPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
 	{
-		(void)count;
 		head_       = head;
 		sign_       = sign;
 		hasUpper_   = false;
@@ -371,8 +370,8 @@ namespace reifiedoutput_impl
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::DisplayPrinter, Display::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ExternalPrinter, External::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::RulePrinter, Rule::Printer, ReifiedOutput)
-GRINGO_REGISTER_PRINTER(reifiedoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, ReifiedOutput)
 /*
+GRINGO_REGISTER_PRINTER(reifiedoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ParityAggrLitPrinter, ParityAggrLit::Printer, ReifiedOutput)

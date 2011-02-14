@@ -204,6 +204,7 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 	Lit &a = stack_->lits[offset];
 	switch(a.type)
 	{
+		/*
 		case AGGR_SUM:
 		case AGGR_COUNT:
 		{
@@ -229,7 +230,6 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 			aggrPrinter->end();
 			break;
 		}
-		/*
 		case AGGR_AVG:
 		{
 			AvgAggrLit::Printer *aggrPrinter = output_->printer<AvgAggrLit::Printer>();
@@ -310,6 +310,7 @@ void GroundProgramBuilder::printLit(Printer *printer, uint32_t offset, bool head
 	}
 }
 
+/*
 void GroundProgramBuilder::printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight)
 {
 	if(a.n > 0)
@@ -322,6 +323,7 @@ void GroundProgramBuilder::printAggrLits(AggrLit::Printer *printer, Lit &a, bool
 		}
 	}
 }
+*/
 
 PredLitRep *GroundProgramBuilder::predLitRep(Lit &a)
 {

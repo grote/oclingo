@@ -25,7 +25,7 @@ private:
 	typedef std::map<Signature, bool> ShowMap;
 public:
 	Printer() { }
-	virtual void print(PredLitRep *l) = 0;
+	virtual void print(PredLitRep *l) { }
 	virtual Output *output() const = 0;
 	template<class P>
 	static uint32_t printer();

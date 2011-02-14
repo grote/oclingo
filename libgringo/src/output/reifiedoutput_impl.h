@@ -72,7 +72,7 @@ namespace reifiedoutput_impl
 	{
 	public:
 		SumAggrLitPrinter(ReifiedOutput *output) : output_(output) { }
-		void begin(bool head, bool sign, bool count);
+		void begin(AggrState *state, bool head, bool sign, bool complete);
 		void weight(const Val &v);
 		void lower(int32_t l);
 		void upper(int32_t u);

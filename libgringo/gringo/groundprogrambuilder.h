@@ -101,7 +101,7 @@ public:
 	Storage *storage();
 
 private:
-	void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
+	//void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
 	void printLit(Printer *printer, uint32_t offset, bool head);
 	PredLitRep *predLitRep(Lit &a);
 	void pop(uint32_t n);

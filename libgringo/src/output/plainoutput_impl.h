@@ -68,28 +68,46 @@ namespace plainoutput_impl
 		bool         printed_;
 	};
 
-	class SumAggrLitPrinter : public SumAggrLit::Printer
+	class CondLitPrinter : public CondLit::Printer
 	{
 	public:
-		SumAggrLitPrinter(PlainOutput *output) : output_(output) { }
-		void begin(bool head, bool sign, bool count);
-		void weight(const Val &v);
-		void lower(int32_t l);
-		void upper(int32_t u);
+		typedef std::vector<std::pair<ValVec, std::string> > CondVec;
+	private:
+		typedef boost::unordered_map<AggrState*, CondVec> StateMap;
+	public:
+		CondLitPrinter(PlainOutput *output) : output_(output) { }
+		void begin(AggrState *state);
+		CondVec &state(AggrState *state);
+		void endHead();
+		void set(const ValVec &set);
+		void trueLit();
 		void print(PredLitRep *l);
 		void end();
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput       *output_;
-		int32_t            upper_;
+		StateMap           stateMap_;
+		CondVec           *currentState_;
+	};
+
+	class SumAggrLitPrinter : public SumAggrLit::Printer
+	{
+	public:
+		SumAggrLitPrinter(PlainOutput *output) : output_(output) { }
+		void begin(AggrState *state, bool head, bool sign, bool complete);
+		void lower(int32_t l);
+		void upper(int32_t u);
+		void end();
+		Output *output() const { return output_; }
+		std::ostream &out() const { return output_->out(); }
+	private:
+		PlainOutput       *output_;
+		AggrState         *state_;
 		int32_t            lower_;
+		int32_t            upper_;
 		bool               sign_;
-		bool               count_;
-		bool               hasUpper_;
-		bool               hasLower_;
-		bool               printedLit_;
-		std::ostringstream aggr_;
+		bool               complete_;
 	};
 
 	/*

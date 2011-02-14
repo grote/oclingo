@@ -15,7 +15,7 @@ To avoid confusing sets, unique elements can be printded in symbolic notation:
 
 == Implementation ==
 
-=== Printfing Aggregates ===
+=== Printing Aggregates ===
 
 Do not print rules directly but print to a buffer.
 Whenever an aggregate shall be printed mark said buffer and store it for later.
@@ -26,3 +26,7 @@ At this point, all aggregates are complete and ready for printing.
 === Printing Conditionals ===
 For each conditional printed store a multi-map (relative to the aggregate) that maps set to conditional
 (the latter can be stored as string).
+
+=== Optimization ===
+
+Immediately print aggregates if they are complete!

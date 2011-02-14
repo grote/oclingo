@@ -24,9 +24,8 @@
 namespace lparseconverter_impl
 {
 
-void SumPrinter::begin(bool head, bool sign, bool count)
+void SumPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
 {
-	(void)count;
 	head_     = head;
 	sign_     = sign;
 	hasLower_ = false;
@@ -239,4 +238,4 @@ void SumPrinter::end()
 
 }
 
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumPrinter, SumAggrLit::Printer, LparseConverter)
+//GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumPrinter, SumAggrLit::Printer, LparseConverter)

@@ -154,19 +154,12 @@ private:
 
 class AggrLit : public Lit
 {
-public:
-	class Printer : public ::Printer
-	{
-	public:
-		virtual void weight(const Val &v) = 0;
-		virtual ~Printer();
-	};
+private:
 	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
 	AggrLit(const Loc &loc, CondLitVec &conds);
 
 	virtual AggrState *newAggrState(Grounder *g) = 0;
-	AggrState *lastState();
 
 	void lower(Term *l);
 	void upper(Term *u);
@@ -217,6 +210,8 @@ protected:
 	Groundable     *parent_;
 	CondLitVec      conds_;
 	AggrDomain      domain_;
+	Val             valLower_;
+	Val             valUpper_;
 };
 
 class SetLit : public Lit
@@ -246,9 +241,20 @@ SetLit* new_clone(const SetLit& a);
 
 class CondLit : public Groundable, public Locateable
 {
+	friend class AggrLit;
 	using Groundable::finish;
 public:
-	friend class AggrLit;
+	class Printer : public ::Printer
+	{
+	public:
+		virtual void begin(AggrState *state) = 0;
+		virtual void endHead() = 0;
+		virtual void set(const ValVec &set) = 0;
+		virtual void trueLit() = 0;
+		virtual void print(PredLitRep *l) = 0;
+		virtual void end() = 0;
+		virtual ~Printer();
+	};
 	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
 public:
 	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
@@ -270,7 +276,6 @@ public:
 	void normalize(Grounder *g, uint32_t number);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
-	void accept(AggrLit::Printer *v);
 	void addDomain(Grounder *g, bool fact);
 
 	~CondLit();
@@ -282,10 +287,6 @@ private:
 	AggrLit        *aggr_;
 	mutable tribool complete_;
 };
-
-/////////////////////////////// AggrLit::Printer ///////////////////////////////
-
-inline AggrLit::Printer::~Printer() { }
 
 /////////////////////////////// AggrState ///////////////////////////////
 
@@ -439,6 +440,10 @@ inline void SetLit::addDomain(Grounder *, bool) { assert(false); }
 inline void SetLit::index(Grounder *, Groundable *, VarSet &) { }
 inline bool SetLit::edbFact() const { return false; }
 inline void SetLit::accept(Printer *) { }
+
+/////////////////////////////// CondLit::Printer ///////////////////////////////
+
+inline CondLit::Printer::~Printer() { }
 
 /////////////////////////////// CondLit ///////////////////////////////
 

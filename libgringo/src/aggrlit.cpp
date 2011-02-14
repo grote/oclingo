@@ -27,6 +27,7 @@
 #include <gringo/constterm.h>
 #include <gringo/domain.h>
 #include <gringo/index.h>
+#include <gringo/output.h>
 
 namespace
 {
@@ -295,8 +296,10 @@ void AggrLit::ground(Grounder *g)
 	fact_ = domain_.last()->fact();
 }
 
-void AggrLit::grounded(Grounder *)
+void AggrLit::grounded(Grounder *g)
 {
+	if(lower()) { valLower_ = lower()->val(g); }
+	if(upper()) { valUpper_ = upper()->val(g); }
 	if(!head()) { domain_.last()->lock(); }
 }
 
@@ -359,7 +362,9 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 
 void CondLit::head(bool head)
 {
-	if(!lits_[0].sign()) { lits_[0].head(head); }
+	// TODO: ugly - a special Lit::method is probably the only way arround?
+	PredLit *lit = dynamic_cast<PredLit*>(&lits_[0]);
+	if(lit && !lit->sign()) { lit->head(head); }
 }
 
 void CondLit::enqueue(Grounder *g)
@@ -455,7 +460,6 @@ void CondLit::addDomain(Grounder *g, bool fact)
 
 bool CondLit::grounded(Grounder *g)
 {
-	#pragma message "output the conditional"
 	bool fact = true;
 	foreach(Lit &lit, lits_)
 	{
@@ -476,21 +480,17 @@ bool CondLit::grounded(Grounder *g)
 		print(g, oss);
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
-	return true;
-}
-
-void CondLit::accept(AggrLit::Printer *v)
-{
-	#pragma message "implement me!!!"
-	/*
-	size_t p = 0;
-	foreach(Val &val, weights_)
+	Printer *printer = g->output()->printer<Printer>();
+	printer->begin(aggr_->domain().last());
+	printer->set(set);
+	foreach(Lit &lit, lits_)
 	{
-		head_->move(p++);
-		head_->accept(v);
-		v->weight(val);
+		if(!lit.head())     { printer->endHead(); }
+		if(!lit.fact())     { lit.accept(printer); }
+		else if(lit.head()) { printer->trueLit(); }
 	}
-	*/
+	printer->end();
+	return true;
 }
 
 void CondLit::finish()

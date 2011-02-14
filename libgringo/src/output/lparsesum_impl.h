@@ -29,7 +29,7 @@ class SumPrinter : public SumAggrLit::Printer
 {
 public:
 	SumPrinter(LparseConverter *output, RulePrinter *printer = 0) : output_(output), printer_(printer) { }
-	void begin(bool head, bool sign, bool count);
+	void begin(AggrState *state, bool head, bool sign, bool complete);
 	void lower(int32_t l);
 	void upper(int32_t u);
 	void print(PredLitRep *l);

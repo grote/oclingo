@@ -102,6 +102,8 @@ int GringoApp::doRun()
 	Streams  inputStreams(generic.input, constStream());
 	if(gringo.groundInput)
 	{
+#pragma message "reimplement me!!!"
+		/*
 		Storage   s(o.get());
 		Converter c(o.get(), inputStreams);
 
@@ -109,6 +111,7 @@ int GringoApp::doRun()
 		o->initialize();
 		c.parse();
 		o->finalize();
+		*/
 	}
 	else
 	{

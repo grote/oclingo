@@ -27,8 +27,8 @@ namespace reifiedoutput_impl
 GRINGO_EXPORT_PRINTER(DisplayPrinter)
 GRINGO_EXPORT_PRINTER(ExternalPrinter)
 GRINGO_EXPORT_PRINTER(RulePrinter)
-GRINGO_EXPORT_PRINTER(SumAggrLitPrinter)
 /*
+GRINGO_EXPORT_PRINTER(SumAggrLitPrinter)
 GRINGO_EXPORT_PRINTER(AvgAggrLitPrinter)
 GRINGO_EXPORT_PRINTER(MinMaxAggrLitPrinter)
 GRINGO_EXPORT_PRINTER(ParityAggrLitPrinter)

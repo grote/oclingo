@@ -90,15 +90,11 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 
 void SumAggrLit::accept(::Printer *v)
 {
-	#pragma message "implement me! (best in aggrlit!)"
-	/*
 	Printer *printer = v->output()->printer<Printer>();
-	printer->begin(head(), sign_, set());
-	if(lower_.get() || assign_) printer->lower(lowerBound_);
-	if(upper_.get() || assign_) printer->upper(upperBound_);
-	foreach(CondLit &lit, conds_) lit.accept(printer);
+	printer->begin(domain_.last(), head(), sign_, complete());
+	if(lower()) { printer->lower(valLower_.number()); }
+	if(upper()) { printer->upper(valUpper_.number()); }
 	printer->end();
-	*/
 }
 
 //////////////////////////////////////// SumBoundAggrState ////////////////////////////////////////
