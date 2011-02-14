@@ -1,4 +1,8 @@
 = ToDo =
+	* Higher Priorit
+			* [ ] Reimplement aggrgate printers
+			* [ ] PlainAggregatePrinter
+			* [ ] LparseAggregatePrinter
 	* High Priority
 		* [ ] cleanup code/interfaces
 			* [ ] remove push/pop/testUnique/move/clear from literals

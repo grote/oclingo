@@ -1,0 +1,28 @@
+= Print Aggregates in Plain Text =
+
+== Eample ==
+
+Input language allows for arbitrary mix between symbolic and and explicit sets:
+	[ a=1:b:c, a=2, b=3, <1,a>:a, <1,a>:b, <1,b>:a:d ]
+
+== Plain Output ==
+
+In symbolic representation, the example above could look like this:
+	[ <1,1>:a:b:c, <2,2>:a, <3,3>:b, <1,4>:a, <1,4>:b, <1,5>:a:d ]
+
+To avoid confusing sets, unique elements can be printded in symbolic notation:
+	[ a:b:c, a, b, <1,4>:a, <1,4>:b, a:d ]
+
+== Implementation ==
+
+=== Printfing Aggregates ===
+
+Do not print rules directly but print to a buffer.
+Whenever an aggregate shall be printed mark said buffer and store it for later.
+Every aggregate passes along its state, this state and its bounds have to stored together with the buffer.
+Once finalize is called all stored buffers have to be printed.
+At this point, all aggregates are complete and ready for printing.
+
+=== Printing Conditionals ===
+For each conditional printed store a multi-map (relative to the aggregate) that maps set to conditional
+(the latter can be stored as string).
