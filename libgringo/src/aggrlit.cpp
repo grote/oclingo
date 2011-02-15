@@ -358,12 +358,14 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, lits_(lits)
 	, aggr_(0)
 	, complete_(tribool::indeterminate_value)
+	, head_(false)
 {
 }
 
 void CondLit::head(bool head)
 {
-	// TODO: ugly - a special Lit::method is probably the only way arround?
+	head_ = head;
+	// TODO: ugly - a special Lit::method is probably the only way arround? (Lit::positive?)
 	PredLit *lit = dynamic_cast<PredLit*>(&lits_[0]);
 	if(lit && !lit->sign()) { lit->head(head); }
 }
@@ -486,9 +488,9 @@ bool CondLit::grounded(Grounder *g)
 	printer->set(set);
 	foreach(Lit &lit, lits_)
 	{
-		if(!lit.head())     { printer->endHead(); }
-		if(!lit.fact())     { lit.accept(printer); }
-		else if(lit.head()) { printer->trueLit(); }
+		if(!lit.head()) { printer->endHead(); }
+		if(!lit.fact()) { lit.accept(printer); }
+		else if(head_)  { printer->trueLit(); }
 	}
 	printer->end();
 	return true;

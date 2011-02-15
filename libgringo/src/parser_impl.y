@@ -156,36 +156,36 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor nsetweightlist { del($$); }
 
 
-%type condlit { CondLit* }
-%type ccondlit { CondLit* }
-%type head_ccondlit { CondLit* }
-%type head_ccondlit_cond { CondLit* }
+%type condlit              { CondLit* }
+%type ccondlit             { CondLit* }
+%type head_ccondlit        { CondLit* }
+%type head_ccondlit_cond   { CondLit* }
 %type head_ccondlit_nocond { CondLit* }
-%destructor condlit { del($$); }
-%destructor ccondlit { del($$); }
-%destructor head_ccondlit { del($$); }
-%destructor head_ccondlit_cond { del($$); }
+%destructor condlit              { del($$); }
+%destructor ccondlit             { del($$); }
+%destructor head_ccondlit        { del($$); }
+%destructor head_ccondlit_cond   { del($$); }
 %destructor head_ccondlit_nocond { del($$); }
 
-%type weightcond { LitPtrVec* }
-%type nweightcond { LitPtrVec* }
-%type priolit_cond { LitPtrVec* }
+%type weightcond    { LitPtrVec* }
+%type nweightcond   { LitPtrVec* }
+%type priolit_cond  { LitPtrVec* }
 %type npriolit_cond { LitPtrVec* }
-%destructor weightcond { del($$); }
-%destructor nweightcond { del($$); }
-%destructor priolit_cond { del($$); }
+%destructor weightcond    { del($$); }
+%destructor nweightcond   { del($$); }
+%destructor priolit_cond  { del($$); }
 %destructor npriolit_cond { del($$); }
 
-%type aggr      { AggrLit* }
-%type aggr_ass  { AggrLit* }
-%type aggr_num  { AggrLit* }
-%type aggr_atom { AggrLit* }
+%type aggr        { AggrLit* }
+%type aggr_ass    { AggrLit* }
+%type aggr_num    { AggrLit* }
+%type aggr_atom   { AggrLit* }
 %type conjunction { AggrLit* }
 %type disjunction { AggrLit* }
-%destructor aggr      { del($$); }
-%destructor aggr_ass  { del($$); }
-%destructor aggr_num  { del($$); }
-%destructor aggr_atom { del($$); }
+%destructor aggr        { del($$); }
+%destructor aggr_ass    { del($$); }
+%destructor aggr_num    { del($$); }
+%destructor aggr_atom   { del($$); }
 %destructor conjunction { del($$); }
 %destructor disjunction { del($$); }
 

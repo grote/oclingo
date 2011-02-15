@@ -286,6 +286,7 @@ private:
 	VarVec          headVars_;
 	AggrLit        *aggr_;
 	mutable tribool complete_;
+	bool            head_;
 };
 
 /////////////////////////////// AggrState ///////////////////////////////
