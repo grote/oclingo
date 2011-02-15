@@ -78,6 +78,7 @@ void Instantiator::ground(Grounder *g)
 		}
 	}
 	foreach(uint32_t var, groundable_->vars()) { g->unbind(var); }
+	groundable_->finish();
 }
 
 void Instantiator::finish()

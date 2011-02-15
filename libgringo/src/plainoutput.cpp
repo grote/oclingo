@@ -58,6 +58,7 @@ void PlainOutput::endHead()
 	printedBody_ = false;
 }
 
+#pragma message "something has to be done about that - this sucks!"
 void PlainOutput::print()
 {
 	if(head_)
@@ -99,6 +100,7 @@ void PlainOutput::print(PredLitRep *l, std::ostream &out)
 
 void PlainOutput::finalize()
 {
+	Output::finalize();
 	foreach(const Signature &sig, external_)
 	{
 		DomainMap::const_iterator i = s_->domains().find(sig);

@@ -91,21 +91,28 @@ namespace plainoutput_impl
 		CondVec           *currentState_;
 	};
 
-	class SumAggrLitPrinter : public SumAggrLit::Printer
+	class SumAggrLitPrinter : public SumAggrLit::Printer, DelayedPrinter
 	{
+		typedef std::pair<AggrState*, std::pair<int32_t, int32_t> > TodoKey;
+		typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
+		typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
 	public:
-		SumAggrLitPrinter(PlainOutput *output) : output_(output) { }
+		SumAggrLitPrinter(PlainOutput *output);
 		void begin(AggrState *state, bool head, bool sign, bool complete);
+		void _begin(AggrState *state, bool head, bool sign, bool complete);
 		void lower(int32_t l);
 		void upper(int32_t u);
 		void end();
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
+		void finish();
 	private:
+		TodoMap            todo_;
 		PlainOutput       *output_;
 		AggrState         *state_;
 		int32_t            lower_;
 		int32_t            upper_;
+		bool               head_;
 		bool               sign_;
 		bool               complete_;
 	};

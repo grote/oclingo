@@ -94,14 +94,26 @@ namespace plainoutput_impl
 	{
 	}
 
-	void SumAggrLitPrinter::begin(AggrState *state, bool, bool sign, bool complete)
+	SumAggrLitPrinter::SumAggrLitPrinter(PlainOutput *output)
+		: output_(output)
+	{
+		output->regDelayedPrinter(this);
+	}
+
+	void SumAggrLitPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
 	{
 		output_->print();
+		_begin(state, head, sign, complete);
+	}
+
+	void SumAggrLitPrinter::_begin(AggrState *state, bool head, bool sign, bool complete)
+	{
 		lower_    = std::numeric_limits<int32_t>::min();
 		upper_    = std::numeric_limits<int32_t>::max();
 		sign_     = sign;
 		complete_ = complete;
 		state_    = state;
+		head_     = head;
 	}
 
 	void SumAggrLitPrinter::lower(int32_t l) { lower_ = l; }
@@ -110,9 +122,10 @@ namespace plainoutput_impl
 
 	void SumAggrLitPrinter::end()
 	{
-		if(sign_) { out() << "not "; }
+		// Note: the latter part can be reused for other aggregates!
 		if(complete_)
 		{
+			if(sign_) { out() << "not "; }
 			CondLitPrinter::CondVec &conds_ = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(state_);
 			typedef boost::unordered_map<ValVec, uint32_t> SetMap;
 			SetMap map;
@@ -153,9 +166,24 @@ namespace plainoutput_impl
 		}
 		else
 		{
-			assert(false && "something else has to be done!");
+			out() << "#aggr(sum," << todo_.size() << ")";
+			todo_.insert(TodoMap::value_type(TodoKey(state_, TodoKey::second_type(lower_, upper_)), TodoVal(todo_.size(), head_, sign_)));
 		}
+	}
 
+	void SumAggrLitPrinter::finish()
+	{
+		foreach(TodoMap::value_type &val, todo_)
+		{
+			if(!val.second.get<1>()) { out() << "#aggr(sum," << val.second.get<0>() << "):-"; }
+			begin(val.first.first, val.second.get<1>(), val.second.get<2>(), true);
+			lower(val.first.second.first);
+			upper(val.first.second.second);
+			end();
+			if(val.second.get<1>()) { out() << ":-#aggr(sum," << val.second.get<0>() << ")"; }
+			out() << ".";
+		}
+		todo_.clear();
 	}
 	
 	/*

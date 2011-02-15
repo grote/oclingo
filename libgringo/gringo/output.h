@@ -20,9 +20,18 @@
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
 
+class DelayedPrinter
+{
+public:
+	virtual void finish() = 0;
+protected:
+	virtual ~DelayedPrinter() { }
+};
+
 class Output
 {
 private:
+	typedef std::vector<DelayedPrinter*> DelayedPrinters;
 	typedef std::map<Signature, bool> ShowMap;
 	typedef std::set<Signature> ExternalSet;
 	typedef boost::ptr_vector<boost::nullable<Printer> > PrinterVec;
@@ -30,7 +39,7 @@ public:
 	Output(std::ostream *out);
 	virtual void initialize() { }
 	virtual void endGround() { }
-	virtual void finalize() { }
+	virtual void finalize() { foreach(DelayedPrinter *printer, delayedPrinters_) { printer->finish(); } }
 	virtual void addDomain(Domain *d) { (void)d; }
 	std::ostream &out() const { return *out_; }
 	Storage *storage() const { return s_; }
@@ -41,6 +50,7 @@ public:
 	virtual void doShow(uint32_t nameId, uint32_t arity, bool s) { (void)nameId; (void)arity; (void) s; }
 	bool show(uint32_t nameId, uint32_t arity);
 	void external(uint32_t nameId, uint32_t arity);
+	void regDelayedPrinter(DelayedPrinter *printer) { delayedPrinters_.push_back(printer); }
 	template<class P>
 	static bool expPrinter();
 	template<class T>
@@ -57,14 +67,15 @@ private:
 	template<class T>
 	static PrinterFactory<T> &printerFactory();
 protected:
-	std::ostream *out_;
-	ShowMap       showMap_;
-	ExternalSet   external_;
-	Storage      *s_;
-	bool          show_;
-//private:
+	std::ostream   *out_;
+	ShowMap         showMap_;
+	ExternalSet     external_;
+	Storage        *s_;
+	bool            show_;
+private:
+	DelayedPrinters delayedPrinters_;
 public:
-	PrinterVec    printers_;
+	PrinterVec      printers_;
 };
 
 template<class T>

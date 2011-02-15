@@ -242,7 +242,6 @@ SetLit* new_clone(const SetLit& a);
 class CondLit : public Groundable, public Locateable
 {
 	friend class AggrLit;
-	using Groundable::finish;
 public:
 	class Printer : public ::Printer
 	{
@@ -267,6 +266,7 @@ public:
 	void head(bool head);
 	void initHead();
 
+	using Groundable::finish;
 	void finish();
 	void finish(Grounder *g);
 	void enqueue(Grounder *g);
@@ -309,7 +309,10 @@ inline BoundAggrState::BoundAggrState()
 { }
 
 inline bool BoundAggrState::match() const { return match_; }
-inline void BoundAggrState::finish() { new_ = false; }
+inline void BoundAggrState::finish()
+{
+	if(match_) { new_ = false; }
+}
 
 inline bool BoundAggrState::fact() const { return fact_; }
 inline bool BoundAggrState::isNew() const { return new_; }
@@ -456,3 +459,5 @@ inline TermPtrVec *CondLit::terms() { return set_.terms(); }
 inline LitPtrVec *CondLit::lits() { return &lits_; }
 
 inline CondLit::Style CondLit::style() { return style_;  }
+
+inline void CondLit::finish() { }

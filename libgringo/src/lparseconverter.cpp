@@ -216,6 +216,7 @@ void LparseConverter::endGround()
 
 void LparseConverter::finalize()
 {
+	Output::finalize();
 	foreach(PrioMap::value_type &min, prioMap_)
 	{
 		printMinimizeRule(min.second.pos, min.second.neg, min.second.wPos, min.second.wNeg);

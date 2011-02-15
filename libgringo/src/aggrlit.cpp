@@ -493,11 +493,6 @@ bool CondLit::grounded(Grounder *g)
 	return true;
 }
 
-void CondLit::finish()
-{
-	// Note: indices of CondLit are finished in AggrIndex
-}
-
 void CondLit::finish(Grounder *g)
 {
 	if(!lits_[0].sign()) { lits_[0].finish(g); }
@@ -729,10 +724,7 @@ void AggrIndex::reset()
 
 void AggrIndex::finish()
 {
-	foreach(CondLit &lit, lit_.conds())
-	{
-		lit.instantiator()->finish();
-	}
+	foreach(CondLit &lit, lit_.conds()) { lit.instantiator()->finish(); }
 	lit_.domain().finish();
 	finished_ = true;
 }

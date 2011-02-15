@@ -275,6 +275,7 @@ void ReifiedOutput::tarjan()
 
 void ReifiedOutput::finalize()
 {
+	Output::finalize();
 	tarjan();
 	foreach(MiniMap::const_reference ref, minimize_)
 	{
