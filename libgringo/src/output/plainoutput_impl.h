@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+#pragma once
+
 #include <gringo/plainoutput.h>
 #include <gringo/rule.h>
 #include <gringo/sumaggrlit.h>
@@ -106,6 +108,8 @@ namespace plainoutput_impl
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 		void finish();
+	private:
+		static bool todoCmp(const TodoMap::value_type *a, const TodoMap::value_type *b);
 	private:
 		TodoMap            todo_;
 		PlainOutput       *output_;

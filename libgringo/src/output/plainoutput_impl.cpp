@@ -171,17 +171,25 @@ namespace plainoutput_impl
 		}
 	}
 
+	bool SumAggrLitPrinter::todoCmp(const TodoMap::value_type *a, const TodoMap::value_type *b)
+	{
+		return a->second.get<0>() < b->second.get<0>();
+	}
+
 	void SumAggrLitPrinter::finish()
 	{
-		foreach(TodoMap::value_type &val, todo_)
+		std::vector<TodoMap::value_type*> vals;
+		foreach(TodoMap::value_type &val, todo_) { vals.push_back(&val); }
+		sort(vals.begin(), vals.end(), todoCmp);
+		foreach(TodoMap::value_type *val, vals)
 		{
-			if(!val.second.get<1>()) { out() << "#aggr(sum," << val.second.get<0>() << "):-"; }
-			begin(val.first.first, val.second.get<1>(), val.second.get<2>(), true);
-			lower(val.first.second.first);
-			upper(val.first.second.second);
+			if(!val->second.get<1>()) { out() << "#aggr(sum," << val->second.get<0>() << "):-"; }
+			_begin(val->first.first, val->second.get<1>(), val->second.get<2>(), true);
+			lower(val->first.second.first);
+			upper(val->first.second.second);
 			end();
-			if(val.second.get<1>()) { out() << ":-#aggr(sum," << val.second.get<0>() << ")"; }
-			out() << ".";
+			if(val->second.get<1>()) { out() << ":-#aggr(sum," << val->second.get<0>() << ")"; }
+			out() << ".\n";
 		}
 		todo_.clear();
 	}

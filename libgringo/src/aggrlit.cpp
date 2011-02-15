@@ -180,7 +180,7 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	, sign_(false)
 	, assign_(false)
 	, fact_(false)
-	, complete_(tribool::indeterminate_value)
+	, complete_(boost::logic::indeterminate)
 	, parent_(0)
 	, conds_(conds.release())
 {
@@ -357,7 +357,7 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 	, set_(loc, terms)
 	, lits_(lits)
 	, aggr_(0)
-	, complete_(tribool::indeterminate_value)
+	, complete_(boost::logic::indeterminate)
 	, head_(false)
 {
 }
@@ -379,14 +379,16 @@ bool CondLit::complete() const
 {
 	if(boost::logic::indeterminate(complete_))
 	{
+		bool head = head_;
 		complete_ = true;
 		foreach(const Lit &lit, lits_)
 		{
-			if(!lit.complete())
+			if(!lit.complete() && !head)
 			{
 				complete_ = false;
 				break;
 			}
+			head = false;
 		}
 	}
 	return complete_;
