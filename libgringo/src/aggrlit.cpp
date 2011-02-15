@@ -92,6 +92,7 @@ namespace
 		CondLit  &cond_;
 		VarSet    vars_;
 		bool      addVars_;
+		bool      ignorePreds_;
 	};
 
 	class AggrIndex : public Index
@@ -619,6 +620,7 @@ LparseCondLitConverter::LparseCondLitConverter(Grounder *g, CondLit &cond)
 	: grounder_(g)
 	, cond_(cond)
 	, addVars_(false)
+	, ignorePreds_(false)
 { }
 
 void LparseCondLitConverter::visit(VarTerm *var, bool)
@@ -634,7 +636,7 @@ void LparseCondLitConverter::visit(Term* term, bool bind)
 
 void LparseCondLitConverter::visit(PredLit *pred)
 {
-	if(cond_.style() == CondLit::STYLE_LPARSE_SET)
+	if(!ignorePreds_ && cond_.style() == CondLit::STYLE_LPARSE_SET)
 	{
 		addVars_ = false;
 		std::stringstream ss;
@@ -653,7 +655,16 @@ void LparseCondLitConverter::visit(Lit *lit, bool)
 void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number)
 {
 	LparseCondLitConverter conv(g, cond);
-	if(cond.style() == CondLit::STYLE_LPARSE_SET) { conv.visit(&*cond.lits()->begin(), false); }
+	if(cond.style() == CondLit::STYLE_LPARSE_SET)
+	{
+		LitPtrVec::iterator it = cond.lits()->begin();
+		conv.visit(&*it, false);
+		if(conv.addVars_)
+		{
+			conv.ignorePreds_ = true;
+			for(it++; it != cond.lits()->end(); it++) { conv.visit(&*it, false); }
+		}
+	}
 	else if(cond.style() == CondLit::STYLE_LPARSE)
 	{
 		foreach(Lit &lit, *cond.lits()) { conv.visit(&lit, false); }
