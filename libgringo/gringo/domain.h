@@ -18,56 +18,12 @@
 #pragma once
 
 #include <gringo/gringo.h>
+#include <gringo/valvecset.h>
 
 class Domain
 {
-public:
-	struct Index
-	{
-		Index(uint32_t index, bool fact = false);
-		uint32_t index : 31;
-		mutable uint32_t fact : 1;
-		bool valid() const;
-		operator uint32_t() const { return index; }
-	};
-	typedef ValVec::iterator       iterator;
-	typedef ValVec::const_iterator const_iterator;
-
 private:
-	#pragma message "replace this by valvecset!!!"
-	class ArgSet
-	{
-	private:
-		struct TupleCmp
-		{
-			TupleCmp(ArgSet *argSet);
-			size_t operator()(const Index &i) const;
-			bool operator()(const Index &a, const Index &b) const;
-			ArgSet *argSet;
-		};
-		typedef boost::unordered_set<Index, TupleCmp, TupleCmp> ValSet;
-
-	public:
-		iterator       begin()       { return vals_.begin(); }
-		const_iterator begin() const { return vals_.begin(); }
-		iterator       end()         { return vals_.end(); }
-		const_iterator end() const   { return vals_.end(); }
-		uint32_t       size() const  { return valSet_.size(); }
-
-		ArgSet(uint32_t arity);
-		ArgSet(const ArgSet &argSet);
-		const Index &find(const ValVec::const_iterator &v) const;
-		std::pair<const Domain::Index&, bool> insert(const ValVec::const_iterator &v, bool fact = false);
-		void extend(const ArgSet &other);
-
-	private:
-		uint32_t       arity_;
-		mutable ValVec vals_;
-		ValSet         valSet_;
-	};
-
-private:
-	typedef std::map<int32_t, ArgSet> OffsetMap;
+	typedef std::map<int32_t, ValVecSet> OffsetMap;
 public:
 	typedef std::pair<PredIndex*,Groundable*> PredInfo;
 	typedef std::vector<PredInfo> PredInfoVec;
@@ -75,7 +31,7 @@ public:
 	typedef std::vector<Groundable*> GroundableVec;
 public:
 	Domain(uint32_t nameId, uint32_t arity, uint32_t domId);
-	const Index &find(const ValVec::const_iterator &v) const;
+	const ValVecSet::Index &find(const ValVec::const_iterator &v) const;
 	bool insert(Grounder *g, const ValVec::const_iterator &v, bool fact = false);
 	uint32_t size() const   { return vals_.size(); }
 	void fix()              { lastInsertPos_ = vals_.size(); }
@@ -92,7 +48,7 @@ private:
 	uint32_t       nameId_;
 	uint32_t       arity_;
 	uint32_t       domId_;
-	ArgSet         vals_;
+	ValVecSet      vals_;
 	OffsetMap      valsLarger_;
 	PredInfoVec    index_;
 	PredIndexVec   completeIndex_;

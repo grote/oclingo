@@ -1,3 +1,7 @@
+#pragma once
+
+#include <gringo/gringo.h>
+
 class ValVecSet
 {
 public:

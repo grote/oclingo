@@ -486,11 +486,13 @@ bool CondLit::grounded(Grounder *g)
 	Printer *printer = g->output()->printer<Printer>();
 	printer->begin(aggr_->domain().last());
 	printer->set(set);
+	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{
 		if(!lit.head()) { printer->endHead(); }
 		if(!lit.fact()) { lit.accept(printer); }
-		else if(head_)  { printer->trueLit(); }
+		else if(head)   { printer->trueLit(); }
+		head = false;
 	}
 	printer->end();
 	return true;
