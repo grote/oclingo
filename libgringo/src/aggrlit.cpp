@@ -489,7 +489,7 @@ bool CondLit::grounded(Grounder *g)
 	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{
-		if(!lit.head()) { printer->endHead(); }
+		if(!head)       { printer->endHead(); }
 		if(!lit.fact()) { lit.accept(printer); }
 		else if(head)   { printer->trueLit(); }
 		head = false;
