@@ -140,7 +140,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 					std::cerr << "preparing new step" << std::endl;
 					// TODO explore incStep/iQuery/goal use to ground to #step
 					std::cerr << ">>>> INC STEP <<<<" << std::endl;
-					out->initialize();
+					if(config.incStep > 1) out->initialize(); // gives new IncUid for volatiles
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 					out->finalize();
