@@ -183,12 +183,11 @@ public:
 
 	void doHead(bool head);
 
-	bool matchLast() const;
 	bool match(Grounder *grounder);
-	bool fact() const;
 
 	bool complete() const;
 
+	virtual bool fact() const;
 	virtual Monotonicity monotonicity() const;
 
 	void grounded(Grounder *grounder);

@@ -105,6 +105,7 @@ start:
 		ANONYMOUS        { return PARSER_ANONYMOUS; }
 		STRING           { token_.index = g_->index(g_->unquote(string(1,1))); return PARSER_STRING; }
 		"#sum"           { return PARSER_SUM; }
+		"#sum+"          { return PARSER_SUMP; }
 		"#count"         { return PARSER_COUNT; }
 		"#min"           { return PARSER_MIN; }
 		"#max"           { return PARSER_MAX; }

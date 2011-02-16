@@ -30,13 +30,21 @@ public:
 		virtual void lower(int32_t l) = 0;
 		virtual void upper(int32_t u) = 0;
 		virtual void end() = 0;
-		virtual ~Printer() { }
+		virtual ~Printer();
 	};
 public:
-	SumAggrLit(const Loc &loc, CondLitVec &conds);
+	SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights);
 	AggrState *newAggrState(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit *clone() const;
 	void accept(::Printer *v);
+	Monotonicity monotonicity() const;
+	bool fact() const;
+	void checkWeight(Grounder *g, const Val &weight);
+private:
+	bool posWeights_;
 };
 
+////////////////////////////// SumAggrLit::Printer //////////////////////////////
+
+inline SumAggrLit::Printer::~Printer() { }

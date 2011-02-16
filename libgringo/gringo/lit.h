@@ -154,7 +154,7 @@ inline void Lit::head(bool head)
 inline void Lit::doHead(bool) { }
 inline bool Lit::complete() const { return true; }
 inline bool Lit::edbFact() const { return false; }
-inline Lit::Monotonicity Lit::monotonicity() const { return MONOTONE; }
+inline Lit::Monotonicity Lit::monotonicity() const { return sign() ? ANTIMONOTONE : MONOTONE; }
 
 inline void Lit::grounded(Grounder *) { }
 inline void Lit::addDomain(Grounder *, bool) { }

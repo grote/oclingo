@@ -76,7 +76,7 @@ void Compute::Head::index(Grounder *, Groundable *gr, VarSet &)
 
 Lit::Monotonicity Compute::Head::monotonicity() const
 {
-	return ANTIMONOTONE;
+	return NONMONOTONE;
 }
 
 void Compute::Head::visit(PrgVisitor *v)

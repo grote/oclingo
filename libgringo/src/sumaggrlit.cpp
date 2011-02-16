@@ -48,8 +48,9 @@ namespace
 
 //////////////////////////////////////// SumAggrLit ////////////////////////////////////////
 
-SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds)
+SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights)
 	: AggrLit(loc, conds)
+	, posWeights_(posWeights)
 {
 }
 
@@ -97,6 +98,39 @@ void SumAggrLit::accept(::Printer *v)
 	printer->end();
 }
 
+Lit::Monotonicity SumAggrLit::monotonicity() const
+{
+	if(posWeights_)
+	{
+		if(lower()  && !upper()) { return  sign() ? ANTIMONOTONE : MONOTONE; }
+		if(!lower() &&  upper()) { return !sign() ? ANTIMONOTONE : MONOTONE; }
+	}
+	return NONMONOTONE;
+}
+
+bool SumAggrLit::fact() const
+{
+	if(posWeights_ && ((lower() && !upper() && !sign()) || (upper() && !lower() && sign()))) { return fact_; }
+	else { return AggrLit::fact(); }
+}
+
+void SumAggrLit::checkWeight(Grounder *g, const Val &weight)
+{
+	if(weight.type != Val::NUM)
+	{
+		std::stringstream os;
+		print(g, os);
+		throw TypeException("only integers weights permitted", StrLoc(g, loc()), os.str());
+	}
+	if(weight.num < 0 && posWeights_)
+	{
+		std::stringstream os;
+		print(g, os);
+		throw TypeException("only positive weights permitted", StrLoc(g, loc()), os.str());
+	}
+}
+
+
 //////////////////////////////////////// SumBoundAggrState ////////////////////////////////////////
 
 SumBoundAggrState::SumBoundAggrState(Grounder *g, AggrLit &lit)
@@ -133,7 +167,8 @@ void SumBoundAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bo
 
 void SumBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
 {
-	accumulate(g, lit, set[0].number(), isNew, newFact);
+	static_cast<SumAggrLit&>(lit).checkWeight(g, set[0]);
+	accumulate(g, lit, set[0].num, isNew, newFact);
 }
 
 //////////////////////////////////////// SumAssignAggrState ////////////////////////////////////////
@@ -144,11 +179,12 @@ SumAssignAggrState::SumAssignAggrState()
 	fact_ = true;
 }
 
-void SumAssignAggrState::doAccumulate(Grounder *g, AggrLit &, const ValVec &set, bool isNew, bool newFact)
+void SumAssignAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
 {
+	static_cast<SumAggrLit&>(lit).checkWeight(g, set[0]);
 	if(isNew)
 	{
-		int32_t weight = set[0].number();
+		int32_t weight = set[0].num;
 		if(!newFact) { fact_ = false; }
 		size_t end = assign_.size();
 		for(size_t i = 0; i != end; i++)
