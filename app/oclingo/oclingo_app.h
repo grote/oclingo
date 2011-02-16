@@ -139,12 +139,12 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 				if(!ext.hasModel() || ext.needsNewStep()) {
 					std::cerr << "preparing new step" << std::endl;
 					// TODO explore incStep/iQuery/goal use to ground to #step
-					config.incStep++;
 					std::cerr << ">>>> INC STEP <<<<" << std::endl;
 					out->initialize();
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 					out->finalize();
+					config.incStep++;
 				} else {
 					std::cerr << "preparing new iteration" << std::endl;
 					ext.endIteration();
