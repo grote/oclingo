@@ -103,29 +103,30 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 	assert(out.get());
 	out->setProgramBuilder(api);
 	solver = &s;
-	out->initialize();
 	if(converter.get())
 	{
+		out->initialize();
 		converter->parse();
 		converter.reset(0);
+		out->finalize();
 	}
 	else
 	{
 		if (parser.get())
 		{
+			out->initialize();
 			parser->parse();
 
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
 			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
-			config.incStep--; // start with step 1 later
+			out->finalize();
 		}
-
-		if(app.clingo.mode == OCLINGO) {
+		else if(app.clingo.mode == OCLINGO) {
 			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
 
-			std::cerr << "read in OCLINGO mode" << std::endl;
+			std::cerr << "READ in OCLINGO mode" << std::endl;
 			if(solver->hasConflict()) {
 				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
@@ -140,8 +141,10 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 					// TODO explore incStep/iQuery/goal use to ground to #step
 					config.incStep++;
 					std::cerr << ">>>> INC STEP <<<<" << std::endl;
+					out->initialize();
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
+					out->finalize();
 				} else {
 					std::cerr << "preparing new iteration" << std::endl;
 					ext.endIteration();
@@ -151,11 +154,12 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			ext.get();
 		} else {
 			std::cerr << ">>>> INC STEP <<<<" << std::endl;
+			out->initialize();
 			config.incStep++;
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
+			out->finalize();
 		}
 	}
-	out->finalize();
 	release();
 
 	// reset solver state
