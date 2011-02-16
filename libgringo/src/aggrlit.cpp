@@ -428,17 +428,16 @@ void CondLit::print(Storage *sto, std::ostream &out) const
 {
 	out << "<";
 	set_.print(sto, out);
+	out << ">";
 	std::vector<const Lit*> lits;
 	foreach(const Lit &lit, lits_) { lits.push_back(&lit); }
-	std::sort(lits.begin(), lits.end(), Lit::cmpPos);
-	bool comma = false;
+	std::sort(lits.begin() + head_, lits.end(), Lit::cmpPos);
 	foreach(const Lit *lit, lits)
 	{
-		out << (comma ? "," : ":");
+		out << ":";
 		lit->print(sto, out);
-		comma = true;
 	}
-	out << ">";
+
 }
 
 void CondLit::addDomain(Grounder *g, bool fact)
