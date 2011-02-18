@@ -35,7 +35,8 @@ public:
 		LparseConverter::AtomVec pos;
 		LparseConverter::AtomVec neg;
 
-		bool operator <(const Cond &c);
+		bool operator<(const Cond &c) const;
+		bool operator==(const Cond &c) const;
 	};
 	typedef boost::unordered_map<ValVec, std::vector<Cond> > CondMap;
 private:
@@ -85,7 +86,7 @@ private:
 
 //////////////////////////////// CondLitPrinter::Cond ////////////////////////////////
 
-bool CondLitPrinter::Cond::operator <(const Cond &c)
+inline bool CondLitPrinter::Cond::operator<(const Cond &c) const
 {
 	if(head != c.head) { return head < c.head; }
 	if(pos != c.pos)   { return pos < c.pos; }
@@ -93,12 +94,18 @@ bool CondLitPrinter::Cond::operator <(const Cond &c)
 	return false;
 }
 
+inline bool CondLitPrinter::Cond::operator==(const Cond &c) const
+{
+	return head == c.head && pos == c.pos && neg == c.neg;
+}
+
 //////////////////////////////// CondLitPrinter ////////////////////////////////
 
-CondLitPrinter::CondLitPrinter(LparseConverter *output) : output_(output) { }
-void CondLitPrinter::CondLitPrinter::trueLit() { }
-Output *CondLitPrinter::output() const { return output_; }
-std::ostream &CondLitPrinter::out() const { return output_->out(); }
+inline CondLitPrinter::CondLitPrinter(LparseConverter *output) : output_(output) { }
+inline void CondLitPrinter::CondLitPrinter::trueLit() { }
+inline Output *CondLitPrinter::output() const { return output_; }
+inline std::ostream &CondLitPrinter::out() const { return output_->out(); }
+inline void CondLitPrinter::end() { }
 
 
 //////////////////////////////// SumAggrLitPrinter ////////////////////////////////
