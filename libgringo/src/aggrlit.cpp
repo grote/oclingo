@@ -162,7 +162,8 @@ AggrState *AggrDomain::state(Grounder *g, AggrLit *lit)
 	std::pair<const ValVecSet::Index&, bool> res = domain_.insert(vals.begin(), false);
 	// NOTE: inserting a new state does not immediately provide new bindings
 	if(res.second) { states_.push_back(lit->newAggrState(g)); }
-	last_ = &states_[vals.size() ? res.first / vals.size() : 0];
+	lastId_ = vals.size() ? res.first / vals.size() : 0;
+	last_   = &states_[lastId_];
 	return last_;
 }
 
@@ -485,8 +486,7 @@ bool CondLit::grounded(Grounder *g)
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(aggr_->domain().last());
-	printer->set(set);
+	printer->begin(aggr_->domain().lastId(), set);
 	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{
@@ -706,6 +706,7 @@ Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 	lit_.ground(g);
 	if(lit_.assign())
 	{
+		assert(!lit_.head());
 		Val v;
 		for(bool match = current()->bindFirst(&v); match; match = current()->bindNext(&v))
 		{
@@ -714,7 +715,7 @@ Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 		}
 		return Match(false, false);
 	}
-	else if(current()->bindFirst(0)) { return Match(true, !finished_ || current()->isNew()); }
+	else if(current()->bindFirst(0) || lit_.head()) { return Match(true, !finished_ || current()->isNew()); }
 	else { return Match(false, false); }
 }
 

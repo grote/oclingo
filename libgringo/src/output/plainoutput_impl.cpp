@@ -57,23 +57,19 @@ namespace plainoutput_impl
 		output_->endRule();
 	}
 
-	void CondLitPrinter::begin(AggrState *state)
+	void CondLitPrinter::begin(uint32_t state, const ValVec &set)
 	{
 		currentState_ = &stateMap_[state];
+		currentState_->push_back(CondVec::value_type(set, ""));
 	}
 
-	CondLitPrinter::CondVec &CondLitPrinter::state(AggrState *state)
+	CondLitPrinter::CondVec &CondLitPrinter::state(uint32_t state)
 	{
 		return stateMap_[state];
 	}
 
 	void CondLitPrinter::endHead()
 	{
-	}
-
-	void CondLitPrinter::set(const ValVec &set)
-	{
-		currentState_->push_back(CondVec::value_type(set, ""));
 	}
 
 	void CondLitPrinter::trueLit()
@@ -100,13 +96,13 @@ namespace plainoutput_impl
 		output->regDelayedPrinter(this);
 	}
 
-	void SumAggrLitPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
+	void SumAggrLitPrinter::begin(uint32_t state, bool head, bool sign, bool complete)
 	{
 		output_->print();
 		_begin(state, head, sign, complete);
 	}
 
-	void SumAggrLitPrinter::_begin(AggrState *state, bool head, bool sign, bool complete)
+	void SumAggrLitPrinter::_begin(uint32_t state, bool head, bool sign, bool complete)
 	{
 		lower_    = std::numeric_limits<int32_t>::min();
 		upper_    = std::numeric_limits<int32_t>::max();
@@ -126,10 +122,10 @@ namespace plainoutput_impl
 		if(complete_)
 		{
 			if(sign_) { out() << "not "; }
-			CondLitPrinter::CondVec &conds_ = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(state_);
+			CondLitPrinter::CondVec &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(state_);
 			typedef boost::unordered_map<ValVec, uint32_t> SetMap;
 			SetMap map;
-			foreach(CondLitPrinter::CondVec::value_type &cond, conds_)
+			foreach(CondLitPrinter::CondVec::value_type &cond, conds)
 			{
 				std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.first, 0));
 				if(!res.second) { res.first->second = 1; }
@@ -144,7 +140,7 @@ namespace plainoutput_impl
 			out() << "[";
 			uint32_t uid = 2;
 			bool printed = false;
-			foreach(CondLitPrinter::CondVec::value_type &cond, conds_)
+			foreach(CondLitPrinter::CondVec::value_type &cond, conds)
 			{
 				int32_t weight = cond.first.front().num;
 				if(!cond.second.empty() && cond.second != "#true" && weight != 0)
@@ -178,17 +174,14 @@ namespace plainoutput_impl
 
 	void SumAggrLitPrinter::finish()
 	{
-		std::vector<TodoMap::value_type*> vals;
-		foreach(TodoMap::value_type &val, todo_) { vals.push_back(&val); }
-		sort(vals.begin(), vals.end(), todoCmp);
-		foreach(TodoMap::value_type *val, vals)
+		foreach(TodoMap::value_type &val, todo_)
 		{
-			if(!val->second.get<1>()) { out() << "#aggr(sum," << val->second.get<0>() << "):-"; }
-			_begin(val->first.first, val->second.get<1>(), val->second.get<2>(), true);
-			lower(val->first.second.first);
-			upper(val->first.second.second);
+			if(!val.second.get<1>()) { out() << "#aggr(sum," << val.second.get<0>() << "):-"; }
+			_begin(val.first.first, val.second.get<1>(), val.second.get<2>(), true);
+			lower(val.first.second.first);
+			upper(val.first.second.second);
 			end();
-			if(val->second.get<1>()) { out() << ":-#aggr(sum," << val->second.get<0>() << ")"; }
+			if(val.second.get<1>()) { out() << ":-#aggr(sum," << val.second.get<0>() << ")"; }
 			out() << ".\n";
 		}
 		todo_.clear();

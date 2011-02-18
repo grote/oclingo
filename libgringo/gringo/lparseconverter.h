@@ -64,6 +64,7 @@ public:
 	void showAtom(PredLitRep *l);
 	void hideAtom(PredLitRep *l);
 	uint32_t symbol(PredLitRep *l);
+	uint32_t falseSymbol() const { return false_; }
 	virtual void initialize();
 	virtual void endGround();
 	void finalize();

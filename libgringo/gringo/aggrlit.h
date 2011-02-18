@@ -143,11 +143,13 @@ public:
 	void markNew();
 	bool hasNew() const;
 	AggrState *last() const;
+	uint32_t lastId() const;
 
 private:
 	AggrStateVec states_; // set of aggrstates
 	ValVecSet    domain_; // vals -> states
 	VarVec       global_; // global variables in the aggregate
+	uint32_t     lastId_;
 	AggrState   *last_;
 	bool         new_;    // wheather there is (possibly) a new match
 };
@@ -245,9 +247,8 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(AggrState *state) = 0;
+		virtual void begin(uint32_t state, const ValVec &set) = 0;
 		virtual void endHead() = 0;
-		virtual void set(const ValVec &set) = 0;
 		virtual void trueLit() = 0;
 		virtual void print(PredLitRep *l) = 0;
 		virtual void end() = 0;
@@ -311,7 +312,7 @@ inline BoundAggrState::BoundAggrState()
 inline bool BoundAggrState::match() const { return match_; }
 inline void BoundAggrState::finish()
 {
-	if(match_) { new_ = false; }
+	if(match_ || locked_) { new_ = false; }
 }
 
 inline bool BoundAggrState::fact() const { return fact_; }
@@ -405,6 +406,7 @@ inline AssignAggrState::~AssignAggrState() { }
 inline void AggrDomain::markNew() { new_ = true; }
 inline bool AggrDomain::hasNew() const { return new_; }
 inline AggrState *AggrDomain::last() const { return last_; }
+inline uint32_t AggrDomain::lastId() const { return lastId_; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
 

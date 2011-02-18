@@ -24,6 +24,118 @@
 namespace lparseconverter_impl
 {
 
+void CondLitPrinter::begin(uint32_t state, const ValVec &set)
+{
+	isHead_  = true;
+	//current_ = &stateMap_.insert(StateMap::value_type(state, StateMap::mapped_type())).first->second.insert(CondMap::value_type(set, Cond())).first->second;
+	stateMap_.insert(StateMap::value_type(state, StateMap::mapped_type()));
+			//.first->second.insert(CondMap::value_type(set, Cond())).first->second;
+}
+
+CondLitPrinter::CondMap &CondLitPrinter::state(uint32_t state)
+{
+	return stateMap_.find(state)->second;
+}
+
+void CondLitPrinter::endHead()
+{
+	isHead_ = false;
+}
+
+void CondLitPrinter::print(PredLitRep *l)
+{
+	uint32_t sym = output_->symbol(l);
+	if(isHead_)
+	{
+		assert(!l->sign());
+		current_->head.push_back(sym);
+	}
+	else if(l->sign()) { current_->pos.push_back(sym); }
+	else               { current_->neg.push_back(sym); }
+}
+
+void CondLitPrinter::end()
+{
+	/*
+	 head
+	   L #aggr { H:C, ... } U :- B.
+
+	   # for each conditional
+	   {c} :- a, C.
+	   H :- c.
+		 :- H, a, C, not c.
+	   ...
+
+	   a :- B.
+	   :- a, not L #aggr { c, ... } U.
+
+	 body
+	   H :- L #aggr { C, ... } U, B.
+
+	   # for each conditional
+	   c :- C.
+
+	   H :- a, B.
+	   a :- L #aggr { c, ... } U.
+	*/
+	/*
+	uint32_t c = output_->symbol();
+
+	if(!head_.empty())
+	{
+		// L #aggr { H:C, ... } U :- B.
+		LparseConverter::AtomVec choiceHead(1, c);
+		pos_.push_back(currentState_->first);
+		// {c} :- a, C.
+		output_->printChoiceRule(choiceHead, pos_, neg_);
+		foreach(uint32_t head, head_)
+		{
+			// H :- c.
+			output_->printBasicRule(head, choiceHead, LparseConverter::AtomVec());
+		}
+		neg_.push_back(c);
+		foreach(uint32_t head, head_) { pos_.push_back(head); }
+		// :- H, a, C, not c.
+		output_->printBasicRule(output_->falseSymbol(), pos_, neg_);
+	}
+	else
+	{
+		// H :- L #aggr { C, ... } U, B.
+		// c :- C.
+		output_->printBasicRule(c, pos_, neg_);
+	}
+	*/
+}
+
+SumAggrLitPrinter::SumAggrLitPrinter(LparseConverter *output)
+{
+	output->regDelayedPrinter(this);
+}
+
+void SumAggrLitPrinter::begin(uint32_t state, bool head, bool sign, bool)
+{
+	lower_    = std::numeric_limits<int32_t>::min();
+	upper_    = std::numeric_limits<int32_t>::max();
+	state_    = state;
+	head_     = head;
+	sign_     = sign;
+}
+
+void SumAggrLitPrinter::end()
+{
+	todo_.insert(TodoMap::value_type(TodoKey(state_, TodoKey::second_type(lower_, upper_)), TodoVal(head_, sign_)));
+}
+
+void SumAggrLitPrinter::finish()
+{
+	foreach(TodoMap::value_type &todo, todo_)
+	{
+		CondLitPrinter::CondMap &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
+	}
+}
+
+/*
+
 void SumPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
 {
 	head_     = head;
@@ -235,7 +347,9 @@ void SumPrinter::end()
 		}
 	}
 }
+*/
 
 }
 
-//GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumPrinter, SumAggrLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::CondLitPrinter, CondLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumAggrLitPrinter, SumAggrLit::Printer, LparseConverter)

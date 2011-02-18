@@ -92,7 +92,7 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 void SumAggrLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
-	printer->begin(domain_.last(), head(), sign_, complete());
+	printer->begin(domain_.lastId(), head(), sign_, complete());
 	if(lower()) { printer->lower(valLower_.number()); }
 	if(upper()) { printer->upper(valUpper_.number()); }
 	printer->end();
