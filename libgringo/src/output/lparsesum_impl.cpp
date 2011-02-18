@@ -75,15 +75,26 @@ void SumAggrLitPrinter::end()
 
 void SumAggrLitPrinter::finish()
 {
-	uint32_t a = output_->symbol();
+
 	foreach(TodoMap::value_type &todo, todo_)
 	{
+		uint32_t a = output_->symbol();
+		RulePrinter *printer = static_cast<RulePrinter*>(output_->printer<Rule::Printer>());
+		if(todo.second.first)
+		{
+			assert(!todo.second.second);
+			printer->setHead(a);
+		}
+		else { printer->addBody(a, todo.second.second); }
+
 		CondLitPrinter::CondMap &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
+		LparseConverter::AtomVec condSyms;
 		foreach(CondLitPrinter::CondMap::value_type &condTerm, conds)
 		{
 			std::sort(condTerm.second.begin(), condTerm.second.end());
 			condTerm.second.erase(std::unique(condTerm.second.begin(), condTerm.second.end()), condTerm.second.end());
 			uint32_t c = output_->symbol();
+			condSyms.push_back(c);
 
 			foreach(CondLitPrinter::Cond &cond, condTerm.second)
 			{
@@ -109,33 +120,30 @@ void SumAggrLitPrinter::finish()
 				   H :- a, B.
 				   a :- L #aggr { c, ... } U.
 				*/
-				/*
-
-				if(!head_.empty())
+				if(!cond.head.empty())
 				{
-					// L #aggr { H:C, ... } U :- B.
-					LparseConverter::AtomVec choiceHead(1, c);
+					// L #aggr { H:C, ... } U :- a.
 
-					pos_.push_back(currentState_->first);
 					// {c} :- a, C.
-					output_->printChoiceRule(choiceHead, pos_, neg_);
-					foreach(uint32_t head, head_)
+					LparseConverter::AtomVec choiceHead(1, c);
+					cond.pos.push_back(a);
+					output_->printChoiceRule(choiceHead, cond.pos, cond.neg);
+					foreach(uint32_t head, cond.head)
 					{
 						// H :- c.
 						output_->printBasicRule(head, choiceHead, LparseConverter::AtomVec());
 					}
-					neg_.push_back(c);
-					foreach(uint32_t head, head_) { pos_.push_back(head); }
 					// :- H, a, C, not c.
-					output_->printBasicRule(output_->falseSymbol(), pos_, neg_);
+					cond.neg.push_back(c);
+					foreach(uint32_t head, cond.head) { cond.pos.push_back(head); }
+					output_->printBasicRule(output_->falseSymbol(), cond.pos, cond.neg);
 				}
 				else
 				{
 					// H :- L #aggr { C, ... } U, B.
 					// c :- C.
-					output_->printBasicRule(c, pos_, neg_);
+					output_->printBasicRule(c, cond.pos, cond.neg);
 				}
-				*/
 			}
 		}
 	}
