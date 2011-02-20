@@ -92,11 +92,13 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("dep-graph" , storeTo(depGraph),               "Dump program dependency graph to file", "<file>")
 
 		("text,t"    , bool_switch(&textOut),           "Print plain text format")
-		("reify"     , bool_switch(&metaOut),           "Print reified text format")
+#pragma message "TODO: re-add this option"
+		//("reify"     , bool_switch(&metaOut),           "Print reified text format")
 		("lparse,l"  , bool_switch(&smodelsOut),        "Print Lparse format")
 
 		("compat"    , bool_switch(&compat),            "Improve compatibility with lparse")
-		("ground,g"  , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
+#pragma message "TODO: re-add this option"
+		//("ground,g"  , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
 		("shift"     , bool_switch(&disjShift),         "Shift disjunctions into the body")
 		("body-order", storeTo(heuristics)->parser(&HeuristicOptions::mapHeuristic)->setImplicit(),
 			"Configure body order heuristic\n"
