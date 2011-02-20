@@ -28,14 +28,16 @@ class AggrLit;
 
 class AggrState
 {
+public:
+	typedef std::pair<uint32_t, ValVec> Substitution;
 private:
-	typedef boost::unordered_map<ValVec,bool> ValVecSet;
-	typedef std::map<Lit*, ValVec> Substitution;
+	typedef boost::unordered_map<ValVec, bool> ValVecSet;
+	typedef std::map<Lit*, Substitution> SubstMap;
 public:
 	AggrState();
 
 	void accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrLit &lit, const ValVec &set, bool fact);
-	ValVec &substitution(Lit *lit);
+	Substitution &substitution(Lit *lit);
 
 	virtual void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact) = 0;
 
@@ -52,8 +54,8 @@ public:
 	virtual ~AggrState();
 
 protected:
-	ValVecSet    sets_;
-	Substitution subst_;
+	ValVecSet sets_;
+	SubstMap  subst_;
 };
 
 class BoundAggrState : public AggrState
@@ -138,7 +140,7 @@ class AggrDomain
 public:
 	AggrDomain();
 	void init(const VarSet &global);
-	AggrState *state(Grounder *g, AggrLit *lit);
+	bool state(Grounder *g, AggrLit *lit);
 	void finish();
 	void markNew();
 	bool hasNew() const;
@@ -172,6 +174,8 @@ public:
 	void sign(bool s);
 	bool sign() const;
 	uint32_t aggrUid() const;
+	bool isNewAggrState() const;
+	void isNewAggrState(bool isNew);
 
 	void add(CondLit *cond);
 	CondLitVec &conds();
@@ -206,6 +210,7 @@ protected:
 	bool            sign_;
 	bool            assign_;
 	bool            fact_;
+	bool            isNewAggrState_;
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
@@ -295,7 +300,7 @@ private:
 
 /////////////////////////////// AggrState ///////////////////////////////
 
-inline ValVec &AggrState::substitution(Lit *lit) { return subst_[lit]; }
+inline AggrState::Substitution &AggrState::substitution(Lit *lit) { return subst_[lit]; }
 
 inline AggrState* new_clone(const AggrState&)
 {
@@ -440,6 +445,10 @@ inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
 
 inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, std::numeric_limits<double>::max()); }
 
+inline bool AggrLit::isNewAggrState() const { return isNewAggrState_; }
+inline void AggrLit::isNewAggrState(bool isNew) { isNewAggrState_ = isNew; }
+
+
 /////////////////////////////// SetLit ///////////////////////////////
 
 inline TermPtrVec *SetLit::terms() { return &terms_; }
@@ -448,7 +457,6 @@ inline bool SetLit::match(Grounder *) { return true; }
 inline bool SetLit::fact() const { return true; }
 
 inline void SetLit::addDomain(Grounder *, bool) { assert(false); }
-inline void SetLit::index(Grounder *, Groundable *, VarSet &) { }
 inline bool SetLit::edbFact() const { return false; }
 inline void SetLit::accept(Printer *) { }
 

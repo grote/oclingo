@@ -112,6 +112,16 @@ namespace
 		bool       finished_;
 	};
 
+	class StateDirtyIndex : public NewOnceIndex
+	{
+	public:
+		StateDirtyIndex(AggrLit &lit);
+		Match firstMatch(Grounder *grounder, int binder);
+		bool hasNew() const;
+	private:
+		AggrLit &lit_;
+	};
+
 }
 
 //////////////////////////////////////// AggrState ////////////////////////////////////////
@@ -124,10 +134,11 @@ void AggrState::accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrL
 	std::pair<ValVecSet::iterator, bool> res = sets_.insert(ValVecSet::value_type(set, false));
 	bool newFact      = !res.first->second && fact;
 	res.first->second = res.first->second || fact;
-	if(res.second && !headVars.empty())
+	if(res.second && head->head())
 	{
-		ValVec &vals = subst_[head];
-		foreach(uint32_t var, headVars) { vals.push_back(g->val(var)); }
+		Substitution &vals = subst_[head];
+		vals.first++;
+		foreach(uint32_t var, headVars) { vals.second.push_back(g->val(var)); }
 	}
 	doAccumulate(g, lit, set, res.second, newFact);
 }
@@ -155,7 +166,7 @@ void AggrDomain::init(const VarSet &global)
 	}
 }
 
-AggrState *AggrDomain::state(Grounder *g, AggrLit *lit)
+bool AggrDomain::state(Grounder *g, AggrLit *lit)
 {
 	ValVec vals;
 	foreach(uint32_t var, global_) { vals.push_back(g->val(var)); }
@@ -164,7 +175,7 @@ AggrState *AggrDomain::state(Grounder *g, AggrLit *lit)
 	if(res.second) { states_.push_back(lit->newAggrState(g)); }
 	lastId_ = vals.size() ? res.first / vals.size() : 0;
 	last_   = &states_[lastId_];
-	return last_;
+	return res.second;
 }
 
 void AggrDomain::finish()
@@ -319,6 +330,12 @@ SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
 {
 }
 
+void SetLit::index(Grounder *g, Groundable *gr, VarSet &)
+{
+	CondLit *cond = static_cast<CondLit*>(gr);
+	gr->instantiator()->append(new StateDirtyIndex(*cond->aggr()));
+}
+
 void SetLit::normalize(Grounder *g, Expander *e)
 {
 	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
@@ -413,6 +430,7 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 	{
 		lits_[i].normalize(g, &bodyExp);
 	}
+	#pragma message "TODO: do something about anonymous variables when converting from lparse style aggregates"
 	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
 }
 
@@ -448,20 +466,20 @@ void CondLit::addDomain(Grounder *g, bool fact)
 	Lit &head = lits_[0];
 	if(!head.sign())
 	{
-		ValVec &vals = aggr_->domain().last()->substitution(&head);
-		if(vals.empty())
-		{
-			head.grounded(g);
-			head.addDomain(g, fact);
-		}
-		for(ValVec::iterator it = vals.begin(); it != vals.end();)
+		// TODO: what about storing only local vars in head vars?
+		g->pushContext();
+		AggrState::Substitution &vals = aggr_->domain().last()->substitution(&head);
+		ValVec::iterator it = vals.second.begin();
+		for(uint32_t i = 0; i < vals.first; i++)
 		{
 			foreach(uint32_t &var, headVars_) { g->val(var, *it++, 0); }
 			head.grounded(g);
 			head.addDomain(g, fact);
 		}
 		foreach(uint32_t &var, headVars_) { g->unbind(var); }
-		vals.clear();
+		vals.second.clear();
+		vals.first = 0;
+		g->popContext();
 	}
 }
 
@@ -704,7 +722,7 @@ AggrState *AggrIndex::current() const { return lit_.domain().last(); }
 
 Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 {
-	lit_.domain().state(g, &lit_);
+	lit_.isNewAggrState(lit_.domain().state(g, &lit_));
 	lit_.ground(g);
 	if(lit_.assign())
 	{
@@ -755,4 +773,18 @@ bool AggrIndex::hasNew() const
 
 AggrIndex::~AggrIndex()
 {
+}
+
+//////////////////////////////////////// StateDirtyIndex ////////////////////////////////////////
+
+StateDirtyIndex::StateDirtyIndex(AggrLit &lit) : lit_(lit) { }
+
+Index::Match StateDirtyIndex::firstMatch(Grounder *, int)
+{
+	return Match(true, lit_.isNewAggrState());
+}
+
+bool StateDirtyIndex::hasNew() const
+{
+	return NewOnceIndex::hasNew() || lit_.isNewAggrState();
 }

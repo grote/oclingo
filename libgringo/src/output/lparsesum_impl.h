@@ -44,7 +44,7 @@ private:
 public:
 	CondLitPrinter(LparseConverter *output);
 	void begin(State state, const ValVec &set);
-	CondMap &state(State state);
+	CondMap *state(State state);
 	void endHead();
 	void trueLit();
 	void print(PredLitRep *l);

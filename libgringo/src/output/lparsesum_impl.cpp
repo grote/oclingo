@@ -66,9 +66,11 @@ void CondLitPrinter::begin(State state, const ValVec &set)
 	current_ = &conds.back();
 }
 
-CondLitPrinter::CondMap &CondLitPrinter::state(State state)
+CondLitPrinter::CondMap *CondLitPrinter::state(State state)
 {
-	return stateMap_.find(state)->second;
+	StateMap::iterator it = stateMap_.find(state);
+	if(it != stateMap_.end()) { return &stateMap_.find(state)->second; }
+	else                      { return 0; }
 }
 
 void CondLitPrinter::endHead()
@@ -127,38 +129,41 @@ void SumAggrLitPrinter::finish()
 		uint32_t a = todo.second.get<0>();
 		SumAggr  aggr(todo.second.get<2>(), todo.first.second.first, todo.first.second.second);
 
-		CondLitPrinter::CondMap &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
-		foreach(CondLitPrinter::CondMap::value_type &condTerm, conds)
+		CondLitPrinter::CondMap *conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
+		if(conds)
 		{
-			std::sort(condTerm.second.begin(), condTerm.second.end());
-			condTerm.second.erase(std::unique(condTerm.second.begin(), condTerm.second.end()), condTerm.second.end());
-			uint32_t hc = output_->symbol();
-			aggr.push(hc, condTerm.first[0].num);
-
-			foreach(CondLitPrinter::Cond &cond, condTerm.second)
+			foreach(CondLitPrinter::CondMap::value_type &condTerm, *conds)
 			{
-				if(!cond.head.empty())
+				std::sort(condTerm.second.begin(), condTerm.second.end());
+				condTerm.second.erase(std::unique(condTerm.second.begin(), condTerm.second.end()), condTerm.second.end());
+				uint32_t hc = output_->symbol();
+				aggr.push(hc, condTerm.first[0].num);
+
+				foreach(CondLitPrinter::Cond &cond, condTerm.second)
 				{
-					// L #aggr { H:C, ... } U :- a.
-					// c :- C, a.
-					uint32_t c = output_->symbol();
-					cond.pos.push_back(a);
-					output_->printBasicRule(c, cond.pos, cond.neg);
-					foreach(uint32_t head, cond.head)
+					if(!cond.head.empty())
 					{
-						LparseConverter::AtomVec pos;
-						// {H} :- c.
-						pos.push_back(c);
-						output_->printChoiceRule(LparseConverter::AtomVec(1, head), pos, LparseConverter::AtomVec());
-						// hc :- H, c.
-						pos.push_back(head);
-						output_->printBasicRule(hc, pos, LparseConverter::AtomVec());
+						// L #aggr { H:C, ... } U :- a.
+						// c :- C, a.
+						uint32_t c = output_->symbol();
+						cond.pos.push_back(a);
+						output_->printBasicRule(c, cond.pos, cond.neg);
+						foreach(uint32_t head, cond.head)
+						{
+							LparseConverter::AtomVec pos;
+							// {H} :- c.
+							pos.push_back(c);
+							output_->printChoiceRule(LparseConverter::AtomVec(1, head), pos, LparseConverter::AtomVec());
+							// hc :- H, c.
+							pos.push_back(head);
+							output_->printBasicRule(hc, pos, LparseConverter::AtomVec());
+						}
 					}
-				}
-				else
-				{
-					// hc :- C.
-					output_->printBasicRule(hc, cond.pos, cond.neg);
+					else
+					{
+						// hc :- C.
+						output_->printBasicRule(hc, cond.pos, cond.neg);
+					}
 				}
 			}
 		}

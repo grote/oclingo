@@ -57,8 +57,7 @@ void Context::unbind(uint32_t index)
 void Context::pushContext()
 {
 	contextStack_.push_back(ContextVec::value_type(contextStack_.back().first, contextStack_.back().second));
-	for(size_t i = 0; i < contextStack_.back().first.size(); i++)
-		this->unbind(i);
+	for(size_t i = 0; i < contextStack_.back().first.size(); i++) { this->unbind(i); }
 }
 
 void Context::popContext()
