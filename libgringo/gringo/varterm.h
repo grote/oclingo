@@ -26,6 +26,7 @@ public:
 	VarTerm(const Loc &loc);
 	VarTerm(const Loc &loc, uint32_t nameId);
 	bool anonymous() const;
+	void nameId(uint32_t nameId) { nameId_ = nameId; }
 	uint32_t nameId() const { return nameId_; }
 	uint32_t index() const { return index_; }
 	uint32_t level() const { return level_; }

@@ -77,6 +77,22 @@ namespace
 		CondLit &cond_;
 	};
 
+	class AnonymousRemover : public PrgVisitor
+	{
+	public:
+		AnonymousRemover(Grounder *g, CondLit &cond);
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(Lit *lit, bool domain);
+	public:
+		static void remove(Grounder *g, CondLit &cond);
+	private:
+		Grounder *grounder_;
+		CondLit  &cond_;
+		uint32_t  vars_;
+	};
+
+
 	class LparseCondLitConverter : public PrgVisitor
 	{
 	public:
@@ -430,8 +446,11 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 	{
 		lits_[i].normalize(g, &bodyExp);
 	}
-	#pragma message "TODO: do something about anonymous variables when converting from lparse style aggregates"
-	if(style_ != STYLE_DLV) { LparseCondLitConverter::convert(g, *this, number); }
+	if(style_ != STYLE_DLV)
+	{
+		AnonymousRemover::remove(g, *this);
+		LparseCondLitConverter::convert(g, *this, number);
+	}
 }
 
 void CondLit::ground(Grounder *g)
@@ -638,6 +657,41 @@ CondBodyExpander::CondBodyExpander(CondLit &cond)
 { }
 
 void CondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
+
+//////////////////////////////////////// LparseCondLitConverter ////////////////////////////////////////
+
+AnonymousRemover::AnonymousRemover(Grounder *g, CondLit &cond)
+	: grounder_(g)
+	, cond_(cond)
+	, vars_(0)
+{
+}
+
+void AnonymousRemover::visit(VarTerm *var, bool)
+{
+	if(var->anonymous())
+	{
+		std::ostringstream oss;
+		oss << "#anonymous(" << vars_++ << ")";
+		var->nameId(grounder_->index(oss.str()));
+	}
+}
+
+void AnonymousRemover::visit(Term* term, bool bind)
+{
+	term->visit(this, bind);
+}
+
+void AnonymousRemover::visit(Lit *lit, bool)
+{
+	lit->visit(this);
+}
+
+void AnonymousRemover::remove(Grounder *g, CondLit &cond)
+{
+	AnonymousRemover ar(g, cond);
+	cond.visit(&ar);
+}
 
 //////////////////////////////////////// LparseCondLitConverter ////////////////////////////////////////
 

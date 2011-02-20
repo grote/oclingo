@@ -132,6 +132,7 @@ void SumAggrLitPrinter::finish()
 		CondLitPrinter::CondMap *conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
 		if(conds)
 		{
+			// TODO: optimize here!!!
 			foreach(CondLitPrinter::CondMap::value_type &condTerm, *conds)
 			{
 				std::sort(condTerm.second.begin(), condTerm.second.end());
