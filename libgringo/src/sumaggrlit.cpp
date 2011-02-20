@@ -100,7 +100,7 @@ void SumAggrLit::accept(::Printer *v)
 
 Lit::Monotonicity SumAggrLit::monotonicity() const
 {
-	if(posWeights_)
+	if(posWeights_ && !head())
 	{
 		if(lower()  && !upper()) { return  sign() ? ANTIMONOTONE : MONOTONE; }
 		if(!lower() &&  upper()) { return !sign() ? ANTIMONOTONE : MONOTONE; }
@@ -110,7 +110,7 @@ Lit::Monotonicity SumAggrLit::monotonicity() const
 
 bool SumAggrLit::fact() const
 {
-	if(posWeights_ && ((lower() && !upper() && !sign()) || (upper() && !lower() && sign()))) { return fact_; }
+	if(posWeights_ && !head() && ((lower() && !upper() && !sign()) || (upper() && !lower() && sign()))) { return fact_; }
 	else { return AggrLit::fact(); }
 }
 
