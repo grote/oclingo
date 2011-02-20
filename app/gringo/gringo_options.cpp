@@ -86,18 +86,17 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	(void)hidden;
 	OptionGroup gringo("Gringo Options");
 
+#pragma message "TODO: re-add options below"
 	gringo.addOptions()
 		("const,c"   , storeTo(consts)->setComposing(), "Replace constant <c> by value <v>\n", "<c>=<v>")
 		("gstats"    , bool_switch(&stats),             "Print extended statistics")
 		("dep-graph" , storeTo(depGraph),               "Dump program dependency graph to file", "<file>")
 
 		("text,t"    , bool_switch(&textOut),           "Print plain text format")
-#pragma message "TODO: re-add this option"
 		//("reify"     , bool_switch(&metaOut),           "Print reified text format")
 		("lparse,l"  , bool_switch(&smodelsOut),        "Print Lparse format")
 
 		("compat"    , bool_switch(&compat),            "Improve compatibility with lparse")
-#pragma message "TODO: re-add this option"
 		//("ground,g"  , bool_switch(&groundInput),       "Enable lightweight mode for ground input")
 		("shift"     , bool_switch(&disjShift),         "Shift disjunctions into the body")
 		("body-order", storeTo(heuristics)->parser(&HeuristicOptions::mapHeuristic)->setImplicit(),
