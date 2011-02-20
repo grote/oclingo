@@ -171,6 +171,7 @@ public:
 	Term *upper() const;
 	void sign(bool s);
 	bool sign() const;
+	uint32_t aggrUid() const;
 
 	void add(CondLit *cond);
 	CondLitVec &conds();
@@ -213,6 +214,7 @@ protected:
 	AggrDomain      domain_;
 	Val             valLower_;
 	Val             valUpper_;
+	uint32_t        aggrUid_;
 };
 
 class SetLit : public Lit
@@ -247,7 +249,9 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(uint32_t state, const ValVec &set) = 0;
+		typedef std::pair<uint32_t, uint32_t> State;
+	public:
+		virtual void begin(State state, const ValVec &set) = 0;
 		virtual void endHead() = 0;
 		virtual void trueLit() = 0;
 		virtual void print(PredLitRep *l) = 0;
@@ -409,6 +413,8 @@ inline AggrState *AggrDomain::last() const { return last_; }
 inline uint32_t AggrDomain::lastId() const { return lastId_; }
 
 /////////////////////////////// AggrLit ///////////////////////////////
+
+inline uint32_t AggrLit::aggrUid() const { return aggrUid_; }
 
 inline Term *AggrLit::assign() const { return assign_ ? lower_.get() : 0; }
 

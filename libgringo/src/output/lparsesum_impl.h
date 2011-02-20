@@ -40,11 +40,11 @@ public:
 	};
 	typedef boost::unordered_map<ValVec, std::vector<Cond> > CondMap;
 private:
-	typedef boost::unordered_map<uint32_t, CondMap> StateMap;
+	typedef boost::unordered_map<State, CondMap> StateMap;
 public:
 	CondLitPrinter(LparseConverter *output);
-	void begin(uint32_t state, const ValVec &set);
-	CondMap &state(uint32_t state);
+	void begin(State state, const ValVec &set);
+	CondMap &state(State state);
 	void endHead();
 	void trueLit();
 	void print(PredLitRep *l);
@@ -60,12 +60,12 @@ private:
 
 class SumAggrLitPrinter : public SumAggrLit::Printer, public DelayedPrinter
 {
-	typedef std::pair<uint32_t, std::pair<int32_t, int32_t> > TodoKey;
+	typedef std::pair<State, std::pair<int32_t, int32_t> > TodoKey;
 	typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
 	typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
 public:
 	SumAggrLitPrinter(LparseConverter *output);
-	void begin(uint32_t state, bool head, bool sign, bool complete);
+	void begin(State state, bool head, bool sign, bool complete);
 	void lower(int32_t l);
 	void upper(int32_t u);
 	void end();
@@ -77,7 +77,7 @@ private:
 private:
 	TodoMap            todo_;
 	LparseConverter   *output_;
-	uint32_t           state_;
+	State              state_;
 	int32_t            lower_;
 	int32_t            upper_;
 	bool               head_;

@@ -57,13 +57,13 @@ namespace plainoutput_impl
 		output_->endRule();
 	}
 
-	void CondLitPrinter::begin(uint32_t state, const ValVec &set)
+	void CondLitPrinter::begin(State state, const ValVec &set)
 	{
 		currentState_ = &stateMap_[state];
 		currentState_->push_back(CondVec::value_type(set, ""));
 	}
 
-	CondLitPrinter::CondVec &CondLitPrinter::state(uint32_t state)
+	CondLitPrinter::CondVec &CondLitPrinter::state(State state)
 	{
 		return stateMap_[state];
 	}
@@ -96,13 +96,13 @@ namespace plainoutput_impl
 		output->regDelayedPrinter(this);
 	}
 
-	void SumAggrLitPrinter::begin(uint32_t state, bool head, bool sign, bool complete)
+	void SumAggrLitPrinter::begin(State state, bool head, bool sign, bool complete)
 	{
 		output_->print();
 		_begin(state, head, sign, complete);
 	}
 
-	void SumAggrLitPrinter::_begin(uint32_t state, bool head, bool sign, bool complete)
+	void SumAggrLitPrinter::_begin(State state, bool head, bool sign, bool complete)
 	{
 		lower_    = std::numeric_limits<int32_t>::min();
 		upper_    = std::numeric_limits<int32_t>::max();

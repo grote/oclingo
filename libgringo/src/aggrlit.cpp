@@ -184,6 +184,7 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
 	, complete_(boost::logic::indeterminate)
 	, parent_(0)
 	, conds_(conds.release())
+	, aggrUid_(0)
 {
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 }
@@ -290,6 +291,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 		conds_[i].normalize(g, i);
 	}
 	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
+	aggrUid_ = g->aggrUid();
 }
 
 void AggrLit::ground(Grounder *g)
@@ -486,7 +488,7 @@ bool CondLit::grounded(Grounder *g)
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(aggr_->domain().lastId(), set);
+	printer->begin(Printer::State(aggr_->aggrUid(), aggr_->domain().lastId()), set);
 	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{

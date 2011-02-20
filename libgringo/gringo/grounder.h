@@ -93,6 +93,7 @@ public:
 	BodyOrderHeuristic& heuristic() const;
 	Module *createModule();
 	void addInternal(Statement *stm);
+	uint32_t aggrUid();
 	
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
@@ -109,6 +110,7 @@ private:
 	ModuleVec              modules_;
 	GroundableVec          queue_;
 	uint32_t               internal_;
+	uint32_t               aggrUids_;
 	bool                   debug_;
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
@@ -132,3 +134,4 @@ inline StatementPtrVec &Module::statements() { return statements_; }
 // ========================== Grounder ==========================
 
 inline TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }
+inline uint32_t Grounder::aggrUid() { return aggrUids_++; }

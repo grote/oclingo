@@ -58,7 +58,7 @@ private:
 
 ////////////////////////////////// CondLitPrinter //////////////////////////////////
 
-void CondLitPrinter::begin(uint32_t state, const ValVec &set)
+void CondLitPrinter::begin(State state, const ValVec &set)
 {
 	isHead_  = true;
 	CondMap::mapped_type &conds = stateMap_.insert(StateMap::value_type(state, StateMap::mapped_type())).first->second.insert(CondMap::value_type(set, CondMap::mapped_type())).first->second;
@@ -66,7 +66,7 @@ void CondLitPrinter::begin(uint32_t state, const ValVec &set)
 	current_ = &conds.back();
 }
 
-CondLitPrinter::CondMap &CondLitPrinter::state(uint32_t state)
+CondLitPrinter::CondMap &CondLitPrinter::state(State state)
 {
 	return stateMap_.find(state)->second;
 }
@@ -84,8 +84,8 @@ void CondLitPrinter::print(PredLitRep *l)
 		assert(!l->sign());
 		current_->head.push_back(sym);
 	}
-	else if(l->sign()) { current_->pos.push_back(sym); }
-	else               { current_->neg.push_back(sym); }
+	else if(l->sign()) { current_->neg.push_back(sym); }
+	else               { current_->pos.push_back(sym); }
 }
 
 ////////////////////////////////// SumAggrLitPrinter //////////////////////////////////
@@ -96,7 +96,7 @@ SumAggrLitPrinter::SumAggrLitPrinter(LparseConverter *output)
 	output->regDelayedPrinter(this);
 }
 
-void SumAggrLitPrinter::begin(uint32_t state, bool head, bool sign, bool)
+void SumAggrLitPrinter::begin(State state, bool head, bool sign, bool)
 {
 	lower_ = std::numeric_limits<int32_t>::min();
 	upper_ = std::numeric_limits<int32_t>::max();
@@ -114,7 +114,7 @@ void SumAggrLitPrinter::end()
 		assert(!sign_);
 		printer->setHead(a);
 	}
-	else { printer->addBody(a, sign_); }
+	else { printer->addBody(a, false); }
 
 	todo_.insert(TodoMap::value_type(TodoKey(state_, TodoKey::second_type(lower_, upper_)), TodoVal(a, head_, sign_)));
 }

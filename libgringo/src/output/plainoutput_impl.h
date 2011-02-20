@@ -75,11 +75,11 @@ namespace plainoutput_impl
 	public:
 		typedef std::vector<std::pair<ValVec, std::string> > CondVec;
 	private:
-		typedef boost::unordered_map<uint32_t, CondVec> StateMap;
+		typedef boost::unordered_map<State, CondVec> StateMap;
 	public:
 		CondLitPrinter(PlainOutput *output) : output_(output) { }
-		void begin(uint32_t state, const ValVec &set);
-		CondVec &state(uint32_t state);
+		void begin(State state, const ValVec &set);
+		CondVec &state(State state);
 		void endHead();
 		void trueLit();
 		void print(PredLitRep *l);
@@ -94,13 +94,13 @@ namespace plainoutput_impl
 
 	class SumAggrLitPrinter : public SumAggrLit::Printer, DelayedPrinter
 	{
-		typedef std::pair<uint32_t, std::pair<int32_t, int32_t> > TodoKey;
+		typedef std::pair<State, std::pair<int32_t, int32_t> > TodoKey;
 		typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
 		typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
 	public:
 		SumAggrLitPrinter(PlainOutput *output);
-		void begin(uint32_t state, bool head, bool sign, bool complete);
-		void _begin(uint32_t state, bool head, bool sign, bool complete);
+		void begin(State state, bool head, bool sign, bool complete);
+		void _begin(State state, bool head, bool sign, bool complete);
 		void lower(int32_t l);
 		void upper(int32_t u);
 		void end();
@@ -112,7 +112,7 @@ namespace plainoutput_impl
 	private:
 		TodoMap            todo_;
 		PlainOutput       *output_;
-		uint32_t           state_;
+		State              state_;
 		int32_t            lower_;
 		int32_t            upper_;
 		bool               head_;

@@ -26,7 +26,9 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(uint32_t state, bool head, bool sign, bool complete) = 0;
+		typedef CondLit::Printer::State State;
+	public:
+		virtual void begin(State state, bool head, bool sign, bool complete) = 0;
 		virtual void lower(int32_t l) = 0;
 		virtual void upper(int32_t u) = 0;
 		virtual void end() = 0;
