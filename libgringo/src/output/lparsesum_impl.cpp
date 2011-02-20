@@ -98,11 +98,11 @@ SumAggrLitPrinter::SumAggrLitPrinter(LparseConverter *output)
 
 void SumAggrLitPrinter::begin(uint32_t state, bool head, bool sign, bool)
 {
-	lower_    = std::numeric_limits<int32_t>::min();
-	upper_    = std::numeric_limits<int32_t>::max();
-	state_    = state;
-	head_     = head;
-	sign_     = sign;
+	lower_ = std::numeric_limits<int32_t>::min();
+	upper_ = std::numeric_limits<int32_t>::max();
+	state_ = state;
+	head_  = head;
+	sign_  = sign;
 }
 
 void SumAggrLitPrinter::end()
@@ -125,7 +125,6 @@ void SumAggrLitPrinter::finish()
 	foreach(TodoMap::value_type &todo, todo_)
 	{
 		uint32_t a = todo.second.get<0>();
-		std::cerr << "a: " << a << std::endl;
 		SumAggr  aggr(todo.second.get<2>(), todo.first.second.first, todo.first.second.second);
 
 		CondLitPrinter::CondMap &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
