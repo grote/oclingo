@@ -6,12 +6,11 @@ details. Gringo-3.x should accept almost all gringo-2.x programs plus some
 language constructs that were not present in previous versions. Additional 
 features include:
  - Relaxed restrictions on programs (safe programs)
- - No domain predicates needed in (stratified) aggregates
+ - No domain predicates needed in aggregates
  - Arbitrary literals in aggregates
  - Lua scripting language to write custom functions
  - #include directives
  - #minimize statements with priorities
- - #domain statements
  - #show/#hide statements with extended functionality
  - #external statements (extends lparse counterpart)
 

@@ -61,7 +61,7 @@ private:
 class SumAggrLitPrinter : public SumAggrLit::Printer, public DelayedPrinter
 {
 	typedef std::pair<uint32_t, std::pair<int32_t, int32_t> > TodoKey;
-	typedef std::pair<bool, bool> TodoVal;
+	typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
 	typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
 public:
 	SumAggrLitPrinter(LparseConverter *output);

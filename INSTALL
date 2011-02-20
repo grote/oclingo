@@ -23,10 +23,10 @@ should be as simple as typing:
 	make
 
 If you want to use a boost library that is not installed in a default 
-location than you can specify its location using environtment variables:
+location, than you can specify its location using environtment variables:
 
-BOOST_ROOT       - The preferred installation prefix for searching for Boost.
-                   Set this if the module has problems finding the proper
+BOOST_ROOT       - Installation prefix for searching for Boost.
+                   Set this if cmake has problems finding the proper
                    Boost installation.
 
 BOOST_INCLUDEDIR - Similar to BOOST_ROOT but sets the path to the include 
@@ -41,8 +41,8 @@ using:
 
 2.1 Customization
 -----------------
-Additional options might be specified to cmake. To get an overview use
-for example cmake-gui or take a look at the main cmake file.
+Additional options might be specified. To get an overview, use for example
+cmake-gui or take a look at the main cmake file.
 
 4 Installation
 --------------
