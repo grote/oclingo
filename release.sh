@@ -35,7 +35,7 @@ for x in gringo clingo iclingo; do
 	cp build/mingw32/bin/$x.exe CHANGES COPYING build/dist/${x}-${version}-win32
 	cp build/static32/bin/$x CHANGES COPYING build/dist/${x}-${version}-x86-linux
 	strip build/dist/${x}-${version}-x86-linux/$x
-	mingw32-strip build/dist/${x}-${version}-win32/$x.exe
+	i586-mingw32msvc-strip build/dist/${x}-${version}-win32/$x.exe
 	(cd build/dist; tar -czf ${x}-${version}-x86-linux.tar.gz ${x}-${version}-x86-linux)
 	(cd build/dist; zip -r  ${x}-${version}-win32.zip ${x}-${version}-win32)
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
