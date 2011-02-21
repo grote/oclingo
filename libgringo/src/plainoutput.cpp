@@ -58,7 +58,7 @@ void PlainOutput::endHead()
 	printedBody_ = false;
 }
 
-#pragma message "something has to be done about that - this sucks!"
+#pragma message "something has to be done about that!"
 void PlainOutput::print()
 {
 	if(head_)
