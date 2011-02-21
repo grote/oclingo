@@ -41,6 +41,6 @@ for x in gringo clingo iclingo; do
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
 	mkdir -p build/dist/${x}/${version}
 	(cd build/dist; scp -r ${x} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
-	scp CHANGES build/dist/${x}-${version}{-win32.zip,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
+	scp CHANGES build/dist/${x}-${version}{-win32.zip,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/README
 done
 
