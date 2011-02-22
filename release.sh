@@ -26,6 +26,7 @@ make -j${cpus} mingw32  target=all
 gringo_gen=$(ls build/static32/libgringo/src/{converter.cpp,converter_impl.cpp,converter_impl.h,parser.cpp,parser_impl.cpp,parser_impl.h})
 rm -rf build/dist
 mkdir -p build/dist
+cp CHANGES README
 for x in gringo clingo iclingo; do
 	rsync --delete --exclude ".svn" -a ${files} build/dist/${x}-${version}-source/
 	sed "s/target=gringo/target=${x}/" < Makefile > build/dist/${x}-${version}-source/Makefile
@@ -41,7 +42,6 @@ for x in gringo clingo iclingo; do
 	rm -rf build/dist/${x}-${version}-{win32,x86-linux,source}
 	mkdir -p build/dist/${x}/${version}
 	(cd build/dist; scp -r ${x} ${username},potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/)
-	cp CHANGES README
 	scp CHANGES build/dist/${x}-${version}{-win32.zip,-x86-linux.tar.gz,-source.tar.gz} rkaminski,potassco@frs.sourceforge.net:/home/frs/project/p/po/potassco/${x}/${version}/
 done
 svn revert README
