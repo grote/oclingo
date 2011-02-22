@@ -9,11 +9,11 @@ gringo 3.0.91
 	  * #min, #max, #avg, #even, and, #odd aggregates
 	  * disjunctions
 	  * conjunctions using ":" in rule bodies
-gringo 3.0.4
 	* raise error if incremental program is not modular
 	* improved/corrected grounding of base/cumulative/volatile parts
 	  (volatile parts still contain glitches, best not define predicates there
 	  or at least attach the incremental variable to them and use them only there)
+	* numerous small bugfixes and new bugs
 gringo 3.0.3
 	* added (default) ODBC support in windows version
 	* fixed bug in simplification of #count/#sum aggregates
