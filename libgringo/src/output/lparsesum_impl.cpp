@@ -340,36 +340,38 @@ void SumAggr::printBody(LparseConverter *output, uint32_t a)
 		}
 		else
 		{
-			if(!hasLower() || !hasUpper() || !sign_)
+			if(hasLower() && !hasUpper())
 			{
-				if(hasLower())
+				uint32_t l = output->symbol();
+				if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
+				else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
+				if(sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, l)); }
+				else      { output->printBasicRule(a, AtomVec(1, l), AtomVec()); }
+			}
+			else if(!hasLower() && hasUpper())
+			{
+				uint32_t u = output->symbol();
+				if(card_) { output->printConstraintRule(u, upper_ + 1, pos_, neg_); }
+				else      { output->printWeightRule(u, upper_ + 1, pos_, neg_, wPos_, wNeg_); }
+				if(!sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, u)); }
+				else
 				{
-					uint32_t l = output->symbol();
-					if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
-					else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
-					if(sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, l)); }
-					else      { output->printBasicRule(a, AtomVec(1, l), AtomVec()); }
-				}
-				if(hasUpper())
-				{
-					uint32_t u = output->symbol();
-					if(card_) { output->printConstraintRule(u, upper_ + 1, pos_, neg_); }
-					else      { output->printWeightRule(u, upper_ + 1, pos_, neg_, wPos_, wNeg_); }
-					if(!sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, u)); }
-					else
-					{
-						uint32_t n = output->symbol();
-						output->printBasicRule(a, AtomVec(), AtomVec(1, n));
-						output->printBasicRule(n, AtomVec(), AtomVec(1, u));
-					}
+					uint32_t n = output->symbol();
+					output->printBasicRule(a, AtomVec(), AtomVec(1, n));
+					output->printBasicRule(n, AtomVec(), AtomVec(1, u));
 				}
 			}
 			else
 			{
 				uint32_t l = output->symbol();
 				uint32_t u = output->symbol();
-				uint32_t n = output->symbol();
-				output->printBasicRule(a, AtomVec(), AtomVec(1, n));
+				uint32_t n;
+				if(sign_)
+				{
+					n = output->symbol();
+					output->printBasicRule(a, AtomVec(), AtomVec(1, n));
+				}
+				else { n = a; }
 				output->printBasicRule(n, LparseConverter::AtomVec(1, l), LparseConverter::AtomVec(1, u));
 				if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
 				else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
