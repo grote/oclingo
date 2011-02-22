@@ -1,5 +1,5 @@
 gringo 3.0.91
-	* experimental support aggregates
+	* experimental aggregates
 	  * dlv-style
 	  * recursive
 	  * non-domain conditions
