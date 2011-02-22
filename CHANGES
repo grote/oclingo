@@ -1,3 +1,14 @@
+gringo 3.0.91
+	* experimental support aggregates
+	  * dlv-style
+	  * recursive
+	  * non-domain conditions
+	* missing features
+	  * ground input reader
+	  * reified output
+	  * #min, #max, #avg, #even, and, #odd aggregates
+	  * disjunctions
+	  * conjunctions using ":" in rule bodies
 gringo 3.0.4
 	* raise error if incremental program is not modular
 	* improved/corrected grounding of base/cumulative/volatile parts
