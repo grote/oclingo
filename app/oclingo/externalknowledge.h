@@ -58,7 +58,7 @@ public:
 	VarVec& getExternals();
 	void endIteration();
 	void endStep();
-	void forgetExternals(int step);
+	void forgetExternals(uint32_t step);
 //	int eraseUidFromExternals(UidValueMap* ext, int uid);
 	void setControllerStep(int step);
 
@@ -84,9 +84,10 @@ private:
 	// externals handling
 	VarVec externals_;
 	VarVec to_freeze_;
-/*	VarVec externals_old_;
-	std::vector<IntSet> externals_per_step_;
-	IntSet facts_;
+//	VarVec externals_old_;
+	std::vector<VarVec> externals_per_step_;
+	uint32_t forget_;
+/*	IntSet facts_;
 	IntSet facts_old_;
 	std::vector<NS_OUTPUT::Atom*> premature_facts_;
 */

@@ -24,10 +24,11 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
+	, forget_(0)
 	, debug_(false)
 {
-//	externals_per_step_.push_back(IntSet());
-//	externals_per_step_.push_back(IntSet());
+	externals_per_step_.push_back(VarVec());
+	externals_per_step_.push_back(VarVec());
 
 	socket_ = NULL;
 	port_ = 25277;
@@ -68,7 +69,7 @@ void ExternalKnowledge::addExternal(uint32_t symbol) {
 	std::cerr << "ADD EXTERNAL " << symbol << std::endl;
 	externals_.push_back(symbol);
 	to_freeze_.push_back(symbol);
-	//externals_per_step_.at(step_).insert(uid);
+	externals_per_step_.at(step_).push_back(symbol);
 }
 
 VarVec* ExternalKnowledge::getFreezers() {
@@ -226,6 +227,10 @@ void ExternalKnowledge::addPrematureKnowledge() {
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
 		}
 	}
+	// forget externals if necessary
+	if(forget_) {
+		forgetExternals(forget_);
+	}
 }
 
 void ExternalKnowledge::setControllerStep(int step) {
@@ -288,27 +293,42 @@ void ExternalKnowledge::endStep() {
 */
 	step_++;
 	std::cerr << "Step: " << step_ << std::endl;
-//	externals_per_step_.push_back(IntSet());
+	externals_per_step_.push_back(VarVec());
 }
 
-void ExternalKnowledge::forgetExternals(int step) {
-	(void) step;
+void ExternalKnowledge::forgetExternals(uint32_t step) {
 	// unfreeze old externals for simplification by clasp
-/*
+
+	if(needsNewStep()) {
+		if(step > forget_) forget_ = step;
+		return;
+	}
+
+	// make sure to not unfreeze more steps than grounded
 	if(step > externals_per_step_.size()-1) {
 		step = externals_per_step_.size()-1;
 	}
 
-	for(int i = 0; i <= step; ++i) {
-		for(IntSet::iterator ext = externals_per_step_.at(i).begin(); ext != externals_per_step_.at(i).end(); ++ext) {
-			if(eraseUidFromExternals(&externals_old_, *ext) > 0) {
-				// external was still old, so needs unfreezing
-				output_->unfreezeAtom(*ext);
+	// check each step for externals to forget
+	for(uint32_t i = 0; i <= step; ++i) {
+		for(VarVec::iterator ext = externals_per_step_.at(i).begin(); ext != externals_per_step_.at(i).end(); ++ext) {
+			VarVec::iterator res = find(externals_.begin(), externals_.end(), *ext);
+			if(res != externals_.end()) {
+				// delete external atom from externals list
+				externals_.erase(res);
+				// sometimes we were about to freeze it which we should not do anymore
+				res = find(to_freeze_.begin(), to_freeze_.end(), *ext);
+				if(res != to_freeze_.end()) {
+					to_freeze_.erase(res);
+				} else {
+					// external was not yet added to program, so needs unfreezing
+					output_->unfreezeAtom(*ext);
+				}
 			}
-		}
+		} // end step for
 		externals_per_step_.at(i).clear();
 	}
-*/
+	forget_ = 0;
 }
 /*
 // TODO is there any better way to do it?

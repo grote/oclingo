@@ -152,7 +152,9 @@ void OnlineParser::setStep(int step) {
 	}
 }
 
-void OnlineParser::forget(int step) { (void) step; }
+void OnlineParser::forget(int step) {
+	output_->getExternalKnowledge().forgetExternals(step);
+}
 
 void OnlineParser::terminate() {
 	terminated_ = true;
