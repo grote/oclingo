@@ -69,7 +69,7 @@ public:
 
 private:
 	void parse(std::istream &sin);
-	PredLitRep *predLitRep(GroundProgramBuilder::StackPtr &stack, Lit &a);
+	void doAdd();
 
 private:
 	std::istream* in_;
@@ -82,5 +82,6 @@ private:
 	oClaspOutput* output_;
 	bool terminated_;
 	bool got_step_;
+	bool volatile_;
 };
 

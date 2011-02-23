@@ -36,6 +36,7 @@ OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	, output_(output)
 	, terminated_(false)
 	, got_step_(false)
+	, volatile_(false)
 { }
 
 OnlineParser::~OnlineParser()
@@ -95,14 +96,20 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 	addVal(Val::create(Val::ID, index));
 }
 
-PredLitRep *OnlineParser::predLitRep(GroundProgramBuilder::StackPtr &stack, Lit &a)
-{
-	Domain *dom = storage()->domain(stack->vals[a.offset].index, a.n);
-	lit_.dom_  = dom;
-	lit_.sign_ = a.sign;
-	lit_.vals_.resize(a.n);
-	std::copy(stack->vals.begin() + a.offset + 1, stack->vals.begin() + a.offset + 1 + a.n, lit_.vals_.begin());
-	return &lit_;
+void OnlineParser::doAdd() {
+	if(stack_->type == EXT_VOLATILE_RULE or stack_->type == EXT_VOLATILE_CONSTRAINT) {
+		std::cerr << "++++ ADD EXT VOL" << std::endl;
+		// TODO change type to uint16_t and use enum Type USER+1 for new type
+
+		Rule::Printer *printer = output_->printer<Rule::Printer>();
+		printer->begin();
+		if(stack_->type == EXT_VOLATILE_RULE)             { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
+		printer->endHead();
+		for(uint32_t i = stack_->n; i >= 1; i--) { printLit(printer, stack_->lits.size() - i, false); }
+		// TODO add volatileAtom symbol() here
+		printer->end();
+		GroundProgramBuilder::pop(stack_->n + (stack_->type == STM_RULE));
+	}
 }
 
 void OnlineParser::add(StackPtr stm) {
@@ -116,6 +123,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 	switch(type)
 	{
 		case STM_RULE:
+		case EXT_VOLATILE_RULE:
 		{
 			StackPtr stack = get(type, n);
 
@@ -160,8 +168,13 @@ void OnlineParser::terminate() {
 	terminated_ = true;
 }
 
-void OnlineParser::setCumulative() { }
-void OnlineParser::setVolatile() { }
+void OnlineParser::setCumulative() {
+	volatile_ = false;
+}
+
+void OnlineParser::setVolatile() {
+	volatile_ = true;
+}
 
 bool OnlineParser::isTerminated() {
 	return terminated_;

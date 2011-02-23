@@ -18,6 +18,8 @@
 
 #include "oclaspoutput.h"
 
+GRINGO_EXPORT_PRINTER(ExtVolPrinter)
+
 oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj) : iClaspOutput(shiftDisj) {
 	ext_ = new ExternalKnowledge(grounder, this, solver);
 	ext_input_ = false;

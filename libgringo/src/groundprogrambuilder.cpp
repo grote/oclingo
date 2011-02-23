@@ -178,6 +178,9 @@ void GroundProgramBuilder::add()
 			output_->show(stack_->type == META_GLOBALSHOW);
 			break;
 		}
+		default: {
+			doAdd();
+		}
 	}
 }
 
