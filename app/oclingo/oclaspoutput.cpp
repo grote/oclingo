@@ -20,9 +20,14 @@
 
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
-oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj) : iClaspOutput(shiftDisj) {
+oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj)
+	: iClaspOutput(shiftDisj)
+	, ext_input_(false)
+	, vol_atom_(0)
+	, vol_atom_old_(0)
+	, vol_atom_freeze_(false)
+{
 	ext_ = new ExternalKnowledge(grounder, this, solver);
-	ext_input_ = false;
 }
 
 ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
@@ -56,8 +61,38 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 	b_->unfreeze(symbol);
 }
 
-void oClaspOutput::doFinalize()
-{
+uint32_t oClaspOutput::getVolAtom() {
+	if(vol_atom_ == vol_atom_old_) {
+		vol_atom_ = symbol();
+		vol_atom_freeze_ = true;
+
+		// TODO check with Roland how to set name
+		//b_->setAtomName(vol_atom_, 0);
+	}
+	std::cerr << "GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+	return vol_atom_;
+}
+
+uint32_t oClaspOutput::getVolAtomAss() {
+	return vol_atom_;
+}
+
+void oClaspOutput::finalizeVolAtom() {
+	// freeze/unfreeze volatile atom and mark it as old
+/*	if(vol_atom_freeze_ && vol_atom_ == vol_atom_old_) {
+		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+		b_->freeze(vol_atom_);
+	}
+	else if(vol_atom_ != vol_atom_old_)  {
+		std::cerr << "UNFREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+		b_->unfreeze(vol_atom_);
+		vol_atom_old_ = vol_atom_;
+	}
+*/	vol_atom_freeze_ = false;
+	vol_atom_old_ = vol_atom_;
+}
+
+void oClaspOutput::doFinalize() {
 	// TODO remove debug loops
 	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
 	{
@@ -88,19 +123,3 @@ void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, 
 	(void) name;
 	ext_->addExternal(atom.symbol);
 }
-
-/*
-void oClaspOutput::initialize()
-{
-	if(!incUid_) { ClaspOutput::initialize(); }
-	else { b_->unfreeze(incUid_); }
-	// create a new uid
-	incUid_ = symbol();
-	b_->freeze(incUid_);
-}
-
-int oClaspOutput::getIncAtom()
-{
-	return incUid_;
-}
-*/

@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2011, Torsten Grote <tgrote@uni-potsdam.de>
 //
 // This file is part of gringo.
 //

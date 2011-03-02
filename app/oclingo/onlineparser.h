@@ -23,6 +23,7 @@
 #include <gringo/groundprogrambuilder.h>
 #include <gringo/lexer_impl.h>
 #include <gringo/locateable.h>
+#include "extvolprinter.h"
 
 class oClaspOutput;
 

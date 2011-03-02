@@ -31,10 +31,16 @@ public:
 	void stopExtInput();
 	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
 	void unfreezeAtom(uint32_t symbol);
+	uint32_t getVolAtom();
+	uint32_t getVolAtomAss();
+	void finalizeVolAtom();
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 private:
 	ExternalKnowledge* ext_;
 	bool ext_input_;
+	uint32_t vol_atom_;
+	uint32_t vol_atom_old_;
+	bool vol_atom_freeze_;
 };

@@ -6,7 +6,7 @@
 #step 1.
 e(1).
 #volatile.
-:- not a.
+:- not b.
 #endstep.
 
 #step 6.

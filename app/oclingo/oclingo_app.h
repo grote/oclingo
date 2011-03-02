@@ -67,7 +67,16 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 		a.push_back(i.find(out->getIncAtom())->lit);
 
 		if(app.clingo.mode == OCLINGO) {
-			VarVec& ass = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().getExternals();
+			oClaspOutput *o_output = dynamic_cast<oClaspOutput*>(out.get());
+
+			// make volatile atom false
+			if(o_output->getVolAtomAss()) {
+				std::cerr << "ASSUMING VOL ATOM " << o_output->getVolAtomAss() << std::endl; std::cerr.flush();
+				// TODO how to set a proper name for vol_atom_?
+				//a.push_back(i.find(o_output->getVolAtomAss())->lit);
+			}
+
+			VarVec& ass = o_output->getExternalKnowledge().getExternals();
 
 			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl; std::cerr.flush();
 
@@ -77,7 +86,7 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 					std::cerr << "ASSUMING " << *lit << " FALSE" << std::endl;
 					a.push_back(~atom->lit);
 					// create conflict to skip solving for next step
-					if(dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge().controllerNeedsNewStep())
+					if(o_output->getExternalKnowledge().controllerNeedsNewStep())
 						a.push_back(atom->lit);
 				}
 			} // end for

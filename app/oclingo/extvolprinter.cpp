@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2011, Torsten Grote <tgrote@uni-potsdam.de>
 //
 // This file is part of gringo.
 //
@@ -16,14 +16,16 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "extvolprinter.h"
+#include "oclaspoutput.h"
 
 using namespace lparseconverter_impl;
 
 void ExtVolPrinter::print() {
 	std::cerr << "<<< PRINT EXT VOL" << std::endl;
-//	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-//	int atom = output_->getIncAtom();
-//	if(atom > 0) { printer->addBody(atom, false); }
+
+	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolAtom();
+	if(atom > 0) { printer->addBody(atom, false); }
 }
 
 GRINGO_REGISTER_PRINTER(ExtVolPrinter, ExtBasePrinter, LparseConverter)

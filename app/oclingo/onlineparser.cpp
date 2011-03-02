@@ -105,7 +105,11 @@ void OnlineParser::doAdd() {
 		if(stack_->type == USER) { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
 		printer->endHead();
 		for(uint32_t i = stack_->n; i >= 1; i--) { printLit(printer, stack_->lits.size() - i, false); }
-		// TODO add volatileAtom symbol() here
+
+		// add volatile atom with special Printer
+		ExtBasePrinter *vol_printer = output_->printer<ExtBasePrinter>();
+		vol_printer->print();
+
 		printer->end();
 		GroundProgramBuilder::pop(stack_->n + (stack_->type == USER));
 	}

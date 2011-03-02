@@ -259,6 +259,9 @@ void ExternalKnowledge::endIteration() {
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
 
+	// unfreeze volatile atom, so we can have fresh one for the next iteration
+	output_->finalizeVolAtom();
+
 	std::cerr << "Controller Step: " << controller_step_ << std::endl;
 }
 
@@ -330,6 +333,7 @@ void ExternalKnowledge::forgetExternals(uint32_t step) {
 	}
 	forget_ = 0;
 }
+
 /*
 // TODO is there any better way to do it?
 int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
