@@ -97,18 +97,17 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 }
 
 void OnlineParser::doAdd() {
-	if(stack_->type == EXT_VOLATILE_RULE or stack_->type == EXT_VOLATILE_CONSTRAINT) {
+	if(stack_->type == USER or stack_->type == USER+1) {
 		std::cerr << "++++ ADD EXT VOL" << std::endl;
-		// TODO change type to uint16_t and use enum Type USER+1 for new type
 
 		Rule::Printer *printer = output_->printer<Rule::Printer>();
 		printer->begin();
-		if(stack_->type == EXT_VOLATILE_RULE)             { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
+		if(stack_->type == USER) { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
 		printer->endHead();
 		for(uint32_t i = stack_->n; i >= 1; i--) { printLit(printer, stack_->lits.size() - i, false); }
 		// TODO add volatileAtom symbol() here
 		printer->end();
-		GroundProgramBuilder::pop(stack_->n + (stack_->type == STM_RULE));
+		GroundProgramBuilder::pop(stack_->n + (stack_->type == USER));
 	}
 }
 
@@ -120,30 +119,25 @@ void OnlineParser::add(StackPtr stm) {
 }
 
 void OnlineParser::add(Type type, uint32_t n) {
-	switch(type)
-	{
-		case STM_RULE:
-		case EXT_VOLATILE_RULE:
-		{
-			StackPtr stack = get(type, n);
+	if(type == STM_RULE) {
+		if(volatile_) type = USER;	// set custom rule type
+		StackPtr stack = get(type, n);
 
-			ExternalKnowledge& ext = output_->getExternalKnowledge();
+		ExternalKnowledge& ext = output_->getExternalKnowledge();
 
-			if(ext.needsNewStep()) {
-				std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
-				ext.addStackPtr(stack);
-			} else {
-				std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
-				output_->startExtInput();
-				GroundProgramBuilder::add(stack);
-				output_->stopExtInput();
-			}
-			break;
+		if(ext.needsNewStep()) {
+			std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
+			ext.addStackPtr(stack);
+		} else {
+			std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
+			output_->startExtInput();
+			GroundProgramBuilder::add(stack);
+			output_->stopExtInput();
 		}
-		default:
-		{
-			GroundProgramBuilder::add(type, n);
-		}
+	}
+	else {
+		if(type == STM_CONSTRAINT && volatile_) type = USER + 1;	// set custom rule type
+		GroundProgramBuilder::add(type, n);
 	}
 }
 

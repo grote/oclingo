@@ -24,7 +24,7 @@
 class GroundProgramBuilder
 {
 public:
-	enum Type
+	enum Type_Enum
 	{
 		LIT,
 		TERM,
@@ -48,14 +48,14 @@ public:
 		STM_MINIMIZE_SET,
 		STM_MAXIMIZE_SET,
 		STM_COMPUTE,
-		EXT_VOLATILE_RULE,
-		EXT_VOLATILE_CONSTRAINT,
 		META_GLOBALSHOW,
 		META_GLOBALHIDE,
 		META_SHOW,
 		META_HIDE,
-		META_EXTERNAL
+		META_EXTERNAL,
+		USER
 	};
+	typedef uint16_t Type;
 
 protected:
 	struct Lit
