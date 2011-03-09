@@ -28,15 +28,14 @@ LuaTerm::LuaTerm(const Loc &loc, uint32_t name, TermPtrVec &args)
 {
 }
 
-void LuaTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+void LuaTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool /*unify*/)
 {
-	(void)unify;
 	for(TermPtrVec::iterator it = args_.begin(); it != args_.end(); it++)
 	{
 		it->normalize(parent, Term::VecRef(args_, it), g, expander, false);
 	}
 	uint32_t var = g->createVar();
-	expander->expand(new LuaLit(loc(), new VarTerm(loc(), var), args_, name_, g->luaIndex(this)), Expander::RANGE);
+	expander->expand(new LuaLit(loc(), new VarTerm(loc(), var), args_, name_, g->luaIndex(loc(), name_)), Expander::RANGE);
 	ref.reset(new VarTerm(loc(), var));
 }
 

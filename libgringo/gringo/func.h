@@ -31,6 +31,8 @@ public:
 	uint32_t name() const { return name_; }
 	const ValVec &args() const { return args_; }
 	int32_t getDepth() const { return depth_; }
+	uint32_t getName() const { return name_; }
+	const ValVec& getArgs() const { return args_; }
 
 protected:
 	uint32_t name_;

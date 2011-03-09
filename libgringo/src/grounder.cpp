@@ -159,9 +159,9 @@ void Grounder::luaExec(const Loc &loc, const std::string &s)
 	luaImpl_->exec(loc, s);
 }
 
-int Grounder::luaIndex(const LuaTerm *term)
+int Grounder::luaIndex(const Loc& loc, uint32_t name)
 {
-	return luaImpl_->index(term->loc(), string(term->name()).c_str());
+	return luaImpl_->index(loc, string(name).c_str());
 }
 
 void Grounder::luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals)

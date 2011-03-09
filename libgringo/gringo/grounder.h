@@ -97,7 +97,7 @@ public:
 	
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
-	int luaIndex(const LuaTerm *term);
+	int luaIndex(const Loc& loc, uint32_t name);
 	lua_State *luaState();
 	void luaPushVal(const Val &val);
 	
