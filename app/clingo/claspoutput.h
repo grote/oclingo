@@ -31,6 +31,7 @@ public:
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	const SymbolMap &symbolMap(uint32_t domId) const;
 	ValRng vals(Domain *dom, uint32_t offset) const;
+	void nameAtoms();
 	~ClaspOutput();
 protected:
 	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
