@@ -73,7 +73,7 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			if(o_output->getVolAtomAss()) {
 				std::cerr << "ASSUMING VOL ATOM " << o_output->getVolAtomAss() << std::endl; std::cerr.flush();
 				// TODO how to set a proper name for vol_atom_?
-				//a.push_back(i.find(o_output->getVolAtomAss())->lit);
+				a.push_back(i.find(o_output->getVolAtomAss())->lit);
 			}
 
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();

@@ -38,6 +38,7 @@ protected:
 	void doFinalize();
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 private:
+	uint32_t unnamedSymbol();
 	ExternalKnowledge* ext_;
 	bool ext_input_;
 	uint32_t vol_atom_;

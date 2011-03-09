@@ -55,6 +55,14 @@ void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &n
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
+uint32_t oClaspOutput::unnamedSymbol() {
+	uint32_t atom = symbol();
+	std::cerr << "GOT NEW SYMBOL FOR VOL ATOM " << atom << std::endl; std::cerr.flush();
+	b_->setAtomName(atom, 0);
+	atomUnnamed_[atom - lastUnnamed_] = false;
+	return atom;
+}
+
 void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 	std::cerr << "UNFREEZE " << symbol << std::endl;
 	std::cerr.flush();
@@ -63,11 +71,8 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 
 uint32_t oClaspOutput::getVolAtom() {
 	if(vol_atom_ == vol_atom_old_) {
-		vol_atom_ = symbol();
+		vol_atom_ = unnamedSymbol();
 		vol_atom_freeze_ = true;
-
-		// TODO check with Roland how to set name
-		//b_->setAtomName(vol_atom_, 0);
 	}
 	std::cerr << "GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 	return vol_atom_;
@@ -78,6 +83,10 @@ uint32_t oClaspOutput::getVolAtomAss() {
 }
 
 void oClaspOutput::finalizeVolAtom() {
+	if(vol_atom_) {
+		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+		b_->freeze(vol_atom_);
+	}
 	// freeze/unfreeze volatile atom and mark it as old
 /*	if(vol_atom_freeze_ && vol_atom_ == vol_atom_old_) {
 		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
@@ -102,7 +111,6 @@ void oClaspOutput::doFinalize() {
 		}
 	}
 
-	ClaspOutput::doFinalize();
 	printExternalTable();
 
 	// add premature knowledge here, so externals are already defined
@@ -115,6 +123,8 @@ void oClaspOutput::doFinalize() {
 		b_->freeze(symbol);
 	}
 	externals->clear();
+
+	ClaspOutput::doFinalize();
 }
 
 void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
