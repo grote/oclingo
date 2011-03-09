@@ -137,17 +137,12 @@ uint32_t ClaspOutput::symbol()
 	return atom;
 }
 
-void ClaspOutput::nameAtoms()
-{
-	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
-	lastUnnamed_+= atomUnnamed_.size();
-	atomUnnamed_.clear();
-}
-
 void ClaspOutput::doFinalize()
 {
 	printSymbolTable();
-	nameAtoms();
+	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
+	lastUnnamed_+= atomUnnamed_.size();
+	atomUnnamed_.clear();
 }
 
 const LparseConverter::SymbolMap &ClaspOutput::symbolMap(uint32_t domId) const
