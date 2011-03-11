@@ -134,34 +134,22 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor setterm  { del($$); }
 
 %type weightlit    { CondLit* }
-%type setweightlit { CondLit* }
 %destructor weightlit    { del($$); }
-%destructor setweightlit { del($$); }
 
 %type condlist       { CondLitVec* }
-%type setcondlist    { CondLitVec* }
 %type ncondlist      { CondLitVec* }
-%type nsetcondlist   { CondLitVec* }
 %type ccondlist      { CondLitVec* }
 %type head_ccondlist { CondLitVec* }
 %type weightlist     { CondLitVec* }
 %type nweightlist    { CondLitVec* }
-%type setweightlist  { CondLitVec* }
-%type nsetweightlist { CondLitVec* }
 %destructor condlist       { del($$); }
-%destructor setcondlist    { del($$); }
 %destructor ncondlist      { del($$); }
-%destructor nsetcondlist   { del($$); }
 %destructor ccondlist      { del($$); }
 %destructor head_ccondlist { del($$); }
 %destructor weightlist     { del($$); }
 %destructor nweightlist    { del($$); }
-%destructor setweightlist  { del($$); }
-%destructor nsetweightlist { del($$); }
-
 
 %type condlit              { CondLit* }
-%type setcondlit           { CondLit* }
 %type ccondlit             { CondLit* }
 %type head_ccondlit        { CondLit* }
 %type head_ccondlit_cond   { CondLit* }
@@ -335,16 +323,6 @@ weightlit(res) ::= lit(lit) ASSIGN term(weight) weightcond(cond).               
 weightlit(res) ::= lit(lit) weightcond(cond).                                     { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
 weightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
 
-nsetweightlist(res) ::= setweightlit(lit).                            { res = vec1(lit); }
-nsetweightlist(res) ::= nsetweightlist(list) COMMA setweightlit(lit). { res = list; res->push_back(lit); }
-setweightlist(res)  ::= .                     { res = new CondLitVec(); }
-setweightlist(res)  ::= nsetweightlist(list). { res = list; }
-
-setweightlit(res) ::= lit(lit) nweightcond(cond) ASSIGN term(weight).                { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE_SET); delete cond; }
-setweightlit(res) ::= lit(lit) ASSIGN term(weight) weightcond(cond).                 { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE_SET); delete cond; }
-setweightlit(res) ::= lit(lit) weightcond(cond).                                     { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE_SET); delete cond; }
-setweightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
-
 nsetterm(res) ::= term(term).                                { res = vec1(term); }
 nsetterm(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
 
@@ -357,11 +335,11 @@ nweightcond(res) ::= COLON literal(lit) nweightcond(list). { res = list; res->pu
 weightcond(res) ::= .                  { res = new LitPtrVec(); }
 weightcond(res) ::= nweightcond(list). { res = list; }
 
-aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC.    { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
-aggr_ass(res) ::= SUM(tok) LCBRAC setweightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
-aggr_ass(res) ::= SUMP(tok) LSBRAC weightlist(list) RSBRAC.    { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
-aggr_ass(res) ::= SUMP(tok) LCBRAC setweightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
-aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.        { res = new SumAggrLit(tok.loc(), *list, false); delete list; }
+aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC.  { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
+aggr_ass(res) ::= SUM(tok) LCBRAC weightlist(list) RCBRAC.  { res = new SumAggrLit(tok.loc(), *list, false, true);  delete list; }
+aggr_ass(res) ::= SUMP(tok) LSBRAC weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  false); delete list; }
+aggr_ass(res) ::= SUMP(tok) LCBRAC weightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  true);  delete list; }
+aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.      { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
 
 //aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
 
@@ -373,17 +351,9 @@ condlist(res)  ::= ncondlist(list). { res = list; }
 condlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
 condlit(res) ::= LOWER setterm(terms) GREATER COLON lit(lit) weightcond(cond). { terms->insert(terms->begin(), ONE(lit->loc())); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
 
-nsetcondlist(res) ::= setcondlit(lit).                          { res = vec1(lit); }
-nsetcondlist(res) ::= nsetcondlist(list) COMMA setcondlit(lit). { res = list; res->push_back(lit); }
-setcondlist(res)  ::= .                   { res = new CondLitVec(); }
-setcondlist(res)  ::= nsetcondlist(list). { res = list; }
-
-setcondlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE_SET); delete cond; }
-setcondlit(res) ::= LOWER setterm(terms) GREATER COLON lit(lit) weightcond(cond). { terms->insert(terms->begin(), ONE(lit->loc())); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
-
-aggr_ass(res) ::= COUNT(tok) LCBRAC setcondlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
-aggr_ass(res) ::= COUNT(tok) LSBRAC condlist(list) RSBRAC.    { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
-aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.          { res = new SumAggrLit(tok.loc(), *list, true); delete list; }
+aggr_ass(res) ::= COUNT(tok) LCBRAC condlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
+aggr_ass(res) ::= COUNT(tok) LSBRAC condlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true, false); delete list; }
+aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
 
 //aggr(res) ::= EVEN(tok) LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, true); delete list; }
 //aggr(res) ::= ODD(tok)  LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, true); delete list; }

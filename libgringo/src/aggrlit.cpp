@@ -203,11 +203,12 @@ void AggrDomain::finish()
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
 
-AggrLit::AggrLit(const Loc &loc, CondLitVec &conds)
+AggrLit::AggrLit(const Loc &loc, CondLitVec &conds, bool set)
 	: Lit(loc)
 	, sign_(false)
 	, assign_(false)
 	, fact_(false)
+	, set_(set)
 	, complete_(boost::logic::indeterminate)
 	, parent_(0)
 	, conds_(conds.release())
@@ -315,9 +316,9 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, expander, false); }
 	for(CondLitVec::size_type i = 0; i < conds_.size(); i++)
 	{
+		conds_[i].aggr_ = this;
 		conds_[i].normalize(g, i);
 	}
-	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
 	aggrUid_ = g->aggrUid();
 }
 
@@ -715,7 +716,7 @@ void LparseCondLitConverter::visit(Term* term, bool bind)
 
 void LparseCondLitConverter::visit(PredLit *pred)
 {
-	if(!ignorePreds_ && cond_.style() == CondLit::STYLE_LPARSE_SET)
+	if(!ignorePreds_ && cond_.style() == CondLit::STYLE_LPARSE && cond_.aggr()->set())
 	{
 		addVars_ = false;
 		std::stringstream ss;
@@ -734,7 +735,7 @@ void LparseCondLitConverter::visit(Lit *lit, bool)
 void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number)
 {
 	LparseCondLitConverter conv(g, cond);
-	if(cond.style() == CondLit::STYLE_LPARSE_SET)
+	if(cond.style() == CondLit::STYLE_LPARSE && cond.aggr()->set())
 	{
 		LitPtrVec::iterator it = cond.lits()->begin();
 		conv.visit(&*it, false);

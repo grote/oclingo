@@ -161,7 +161,7 @@ class AggrLit : public Lit
 private:
 	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
-	AggrLit(const Loc &loc, CondLitVec &conds);
+	AggrLit(const Loc &loc, CondLitVec &conds, bool set);
 
 	virtual AggrState *newAggrState(Grounder *g) = 0;
 
@@ -176,6 +176,7 @@ public:
 	uint32_t aggrUid() const;
 	bool isNewAggrState() const;
 	void isNewAggrState(bool isNew);
+	bool set() const;
 
 	void add(CondLit *cond);
 	CondLitVec &conds();
@@ -211,6 +212,7 @@ protected:
 	bool            assign_;
 	bool            fact_;
 	bool            isNewAggrState_;
+	bool            set_;
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
@@ -263,7 +265,7 @@ public:
 		virtual void end() = 0;
 		virtual ~Printer();
 	};
-	enum Style { STYLE_DLV, STYLE_LPARSE, STYLE_LPARSE_SET };
+	enum Style { STYLE_DLV, STYLE_LPARSE };
 public:
 	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
 	AggrLit *aggr();
@@ -448,6 +450,7 @@ inline Lit::Score AggrLit::score(Grounder *, VarSet &) { return Score(LOWEST, st
 inline bool AggrLit::isNewAggrState() const { return isNewAggrState_; }
 inline void AggrLit::isNewAggrState(bool isNew) { isNewAggrState_ = isNew; }
 
+inline bool AggrLit::set() const { return set_; }
 
 /////////////////////////////// SetLit ///////////////////////////////
 

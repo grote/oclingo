@@ -48,8 +48,8 @@ namespace
 
 //////////////////////////////////////// SumAggrLit ////////////////////////////////////////
 
-SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights)
-	: AggrLit(loc, conds)
+SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights, bool set)
+	: AggrLit(loc, conds, set)
 	, posWeights_(posWeights)
 {
 }

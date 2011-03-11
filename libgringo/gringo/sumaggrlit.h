@@ -35,7 +35,7 @@ public:
 		virtual ~Printer();
 	};
 public:
-	SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights);
+	SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights, bool set);
 	AggrState *newAggrState(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit *clone() const;
