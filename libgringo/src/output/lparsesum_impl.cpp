@@ -284,9 +284,10 @@ void SumAggr::printHead(LparseConverter *output, uint32_t a)
 	}
 	else if(boost::logic::indeterminate(truthValue))
 	{
+		// TODO: more could be done already at a previous place
 		if(pos_.size() == 1 && neg_.size() == 0 && hasLower())
 		{
-			output->printBasicRule(pos_[0], AtomVec(1, a), AtomVec());
+			output->printBasicRule(output->falseSymbol(), AtomVec(1, a), AtomVec(1, pos_[0]));
 		}
 		else
 		{
