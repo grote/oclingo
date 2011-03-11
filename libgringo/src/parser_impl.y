@@ -382,10 +382,19 @@ aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLi
 aggr_num(res) ::= aggr_ass(lit). { res = lit; }
 aggr(res)     ::= aggr_num(lit). { res = lit; }
 
-aggr_atom(res) ::= term(l) aggr_num(aggr) term(u). { res = aggr; res->lower(l); res->upper(u); }
-aggr_atom(res) ::= aggr_num(aggr) term(u).         { res = aggr; res->upper(u); }
-aggr_atom(res) ::= term(l) aggr_num(aggr).         { res = aggr; res->lower(l); }
-aggr_atom(res) ::= aggr(aggr).                     { res = aggr; }
+// TODO: might be a good idea to restructure this to avoid writing down the full crossproduct :)
+aggr_atom(res) ::= term(l) LTHAN aggr_num(aggr).               { res = aggr; res->lower(l); }
+aggr_atom(res) ::= aggr_num(aggr) LTHAN term(u).               { res = aggr; res->upper(u); }
+aggr_atom(res) ::= term(u) GTHAN aggr_num(aggr).               { res = aggr; res->upper(u); }
+aggr_atom(res) ::= aggr_num(aggr) GTHAN term(l).               { res = aggr; res->lower(l); }
+aggr_atom(res) ::= term(u) GTHAN aggr_num(aggr) GTHAN term(l). { res = aggr; res->upper(u); res->lower(l); }
+aggr_atom(res) ::= term(l) LTHAN aggr_num(aggr) LTHAN term(u). { res = aggr; res->upper(u); res->lower(l); }
+aggr_atom(res) ::= term(t) EQUAL aggr_num(aggr).               { res = aggr; res->lower(t->clone()); res->upper(t); }
+aggr_atom(res) ::= aggr_num(aggr) EQUAL term(t).               { res = aggr; res->lower(t->clone()); res->upper(t); }
+aggr_atom(res) ::= term(l) aggr_num(aggr) term(u).             { res = aggr; res->lower(l); res->upper(u); }
+aggr_atom(res) ::= aggr_num(aggr) term(u).                     { res = aggr; res->upper(u); }
+aggr_atom(res) ::= term(l) aggr_num(aggr).                     { res = aggr; res->lower(l); }
+aggr_atom(res) ::= aggr(aggr).                                 { res = aggr; }
 
 predicate(res) ::= MINUS(sign) IDENTIFIER(id) LBRAC termlist(terms) RBRAC. { res = pParser->predLit(sign.loc(), id.index, *terms, true); delete terms; }
 predicate(res) ::= IDENTIFIER(id) LBRAC termlist(terms) RBRAC.             { res = pParser->predLit(id.loc(), id.index, *terms, false); delete terms; }
