@@ -18,7 +18,6 @@
 
 #pragma once
 
-//#include <gringo/gringo.h>
 #include "clingo/claspoutput.h"
 #include "oclingo/externalknowledge.h"
 
@@ -45,5 +44,6 @@ private:
 	ExternalKnowledge* ext_;
 	bool ext_input_;
 	uint32_t vol_atom_;
+	uint32_t vol_atom_frozen_;
 	VarVec vol_atoms_old_;
 };

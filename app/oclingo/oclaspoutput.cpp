@@ -24,6 +24,7 @@ oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shift
 	: iClaspOutput(shiftDisj)
 	, ext_input_(false)
 	, vol_atom_(0)
+	, vol_atom_frozen_(0)
 {
 	ext_ = new ExternalKnowledge(grounder, this, solver);
 }
@@ -90,9 +91,10 @@ VarVec& oClaspOutput::getVolAtomFalseAss() {
 }
 
 void oClaspOutput::finalizeVolAtom() {
-	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
+	if(vol_atom_ && vol_atom_ != vol_atom_frozen_) {
 		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 		b_->freeze(vol_atom_);
+		vol_atom_frozen_ = vol_atom_;
 	}
 
 	// TODO unfreeze old volatile atoms if frozen last step

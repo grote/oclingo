@@ -21,7 +21,7 @@
 using namespace lparseconverter_impl;
 
 void ExtVolPrinter::print() {
-	std::cerr << "<<< PRINT EXT VOL" << std::endl;
+	std::cerr << "<<<< PRINT EXT VOL" << std::endl;
 
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolAtom();

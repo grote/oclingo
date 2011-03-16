@@ -82,7 +82,10 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 				a.push_back(i.find(vol_atom)->lit);
 			}
 
-			o_output->deprecateVolAtom();
+			// only deprecate volatile atom if we want the answer set this step
+			if(!o_output->getExternalKnowledge().needsNewStep()) {
+				o_output->deprecateVolAtom();
+			}
 
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();
 
