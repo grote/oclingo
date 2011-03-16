@@ -63,6 +63,12 @@ uint32_t oClaspOutput::unnamedSymbol() {
 	uint32_t atom = symbol();
 	std::cerr << "GOT NEW SYMBOL FOR VOL ATOM " << atom << std::endl; std::cerr.flush();
 	b_->setAtomName(atom, 0);
+
+	// debug atom name
+//	std::stringstream ss;
+//	ss << "volatom" << atom;
+//	b_->setAtomName(atom, ss.str().data());
+
 	atomUnnamed_[atom - lastUnnamed_] = false;
 	return atom;
 }
@@ -96,8 +102,6 @@ void oClaspOutput::finalizeVolAtom() {
 		b_->freeze(vol_atom_);
 		vol_atom_frozen_ = vol_atom_;
 	}
-
-	// TODO unfreeze old volatile atoms if frozen last step
 }
 
 void oClaspOutput::deprecateVolAtom() {
@@ -107,6 +111,16 @@ void oClaspOutput::deprecateVolAtom() {
 		vol_atoms_old_.push_back(vol_atom_);
 		vol_atom_ = 0;
 	}
+}
+
+// make sure to call between updateProgram and endProgram
+void oClaspOutput::unfreezeOldVolAtoms() {
+	// unfreeze all old volatile atoms
+	std::cerr << "UNFREEZE OLD VOL ATOMS " << vol_atoms_old_.size() << std::endl; std::cerr.flush();
+	foreach(VarVec::value_type atom, vol_atoms_old_) {
+		unfreezeAtom(atom);
+	}
+	vol_atoms_old_.clear();
 }
 
 void oClaspOutput::doFinalize() {

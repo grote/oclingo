@@ -172,6 +172,8 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
+	output_->unfreezeOldVolAtoms();
+
 	if(new_input_) {
 		new_input_ = false;
 
