@@ -24,8 +24,6 @@ oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shift
 	: iClaspOutput(shiftDisj)
 	, ext_input_(false)
 	, vol_atom_(0)
-	, vol_atom_old_(0)
-	, vol_atom_freeze_(false)
 {
 	ext_ = new ExternalKnowledge(grounder, this, solver);
 }
@@ -75,35 +73,37 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 }
 
 uint32_t oClaspOutput::getVolAtom() {
-	if(vol_atom_ == vol_atom_old_) {
+	if(!vol_atoms_old_.size() || vol_atom_ == vol_atoms_old_.back()) {
 		vol_atom_ = unnamedSymbol();
-		vol_atom_freeze_ = true;
 	}
 	std::cerr << "GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 	return vol_atom_;
 }
 
+// IMPORTANT: call after getVolAtomFalseAss()
 uint32_t oClaspOutput::getVolAtomAss() {
+	std::cerr << "GET VOL ATOM ASS " << vol_atoms_old_.size() << std::endl; std::cerr.flush();
+
+	// deprecate vol atom if not null and not already deprecated
+	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
+		vol_atoms_old_.push_back(vol_atom_);
+	}
 	return vol_atom_;
 }
 
+VarVec& oClaspOutput::getVolAtomFalseAss() {
+	return vol_atoms_old_;
+}
+
 void oClaspOutput::finalizeVolAtom() {
+	std::cerr << "FINALIZE VOL ATOM " << std::endl; std::cerr.flush();
+
 	if(vol_atom_) {
 		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 		b_->freeze(vol_atom_);
 	}
-	// freeze/unfreeze volatile atom and mark it as old
-/*	if(vol_atom_freeze_ && vol_atom_ == vol_atom_old_) {
-		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
-		b_->freeze(vol_atom_);
-	}
-	else if(vol_atom_ != vol_atom_old_)  {
-		std::cerr << "UNFREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
-		b_->unfreeze(vol_atom_);
-		vol_atom_old_ = vol_atom_;
-	}
-*/	vol_atom_freeze_ = false;
-	vol_atom_old_ = vol_atom_;
+
+	// TODO unfreeze old volatile atoms if frozen last step
 }
 
 void oClaspOutput::doFinalize() {
