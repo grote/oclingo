@@ -26,6 +26,7 @@ class oClaspOutput : public iClaspOutput
 {
 public:
 	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj);
+	~oClaspOutput();
 	ExternalKnowledge& getExternalKnowledge();
 	void startExtInput();
 	void stopExtInput();

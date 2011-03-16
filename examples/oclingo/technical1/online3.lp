@@ -9,9 +9,24 @@ e(1).
 :- not b.
 #endstep.
 
-#step 6.
+#step 2.
 #volatile.
 :- not a.
+#endstep.
+
+#step 2.
+#volatile.
+:- not b.
+#endstep.
+
+#step 2.
+#volatile.
+:- not a.
+#endstep.
+
+#step 6.
+#volatile.
+:- not b.
 #cumulative.
 e(6).
 #endstep.

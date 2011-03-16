@@ -30,6 +30,11 @@ oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shift
 	ext_ = new ExternalKnowledge(grounder, this, solver);
 }
 
+oClaspOutput::~oClaspOutput()
+{
+	delete ext_; // TODO change pointer
+}
+
 ExternalKnowledge& oClaspOutput::getExternalKnowledge() {
 	assert(ext_);
 	return *ext_;

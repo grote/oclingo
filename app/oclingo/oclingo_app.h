@@ -69,10 +69,9 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 		if(app.clingo.mode == OCLINGO) {
 			oClaspOutput *o_output = dynamic_cast<oClaspOutput*>(out.get());
 
-			// make volatile atom false
+			// assume volatile atom to be true for this iteration
 			if(o_output->getVolAtomAss()) {
 				std::cerr << "ASSUMING VOL ATOM " << o_output->getVolAtomAss() << std::endl; std::cerr.flush();
-				// TODO how to set a proper name for vol_atom_?
 				a.push_back(i.find(o_output->getVolAtomAss())->lit);
 			}
 
