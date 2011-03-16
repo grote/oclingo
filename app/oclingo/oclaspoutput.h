@@ -36,6 +36,7 @@ public:
 	uint32_t getVolAtomAss();
 	VarVec& getVolAtomFalseAss();
 	void finalizeVolAtom();
+	void deprecateVolAtom();
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);

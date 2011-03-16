@@ -73,21 +73,15 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 }
 
 uint32_t oClaspOutput::getVolAtom() {
-	if(!vol_atoms_old_.size() || vol_atom_ == vol_atoms_old_.back()) {
+	if(vol_atom_ == 0) {
 		vol_atom_ = unnamedSymbol();
 	}
-	std::cerr << "GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+	std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 	return vol_atom_;
 }
 
-// IMPORTANT: call after getVolAtomFalseAss()
 uint32_t oClaspOutput::getVolAtomAss() {
 	std::cerr << "GET VOL ATOM ASS " << vol_atoms_old_.size() << std::endl; std::cerr.flush();
-
-	// deprecate vol atom if not null and not already deprecated
-	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
-		vol_atoms_old_.push_back(vol_atom_);
-	}
 	return vol_atom_;
 }
 
@@ -96,14 +90,21 @@ VarVec& oClaspOutput::getVolAtomFalseAss() {
 }
 
 void oClaspOutput::finalizeVolAtom() {
-	std::cerr << "FINALIZE VOL ATOM " << std::endl; std::cerr.flush();
-
-	if(vol_atom_) {
+	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
 		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 		b_->freeze(vol_atom_);
 	}
 
 	// TODO unfreeze old volatile atoms if frozen last step
+}
+
+void oClaspOutput::deprecateVolAtom() {
+	// deprecate vol atom if not null and not already deprecated
+	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
+		std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ DEPRECATE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
+		vol_atoms_old_.push_back(vol_atom_);
+		vol_atom_ = 0;
+	}
 }
 
 void oClaspOutput::doFinalize() {

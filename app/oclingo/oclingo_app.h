@@ -76,11 +76,13 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			}
 
 			// assume volatile atom to be true for this iteration only
-			// Condition: call getVolAtomFalseAss() before
-			if(o_output->getVolAtomAss()) {
-				std::cerr << "ASSUMING TRUE VOL ATOM " << o_output->getVolAtomAss() << std::endl; std::cerr.flush();
-				a.push_back(i.find(o_output->getVolAtomAss())->lit);
+			uint32_t vol_atom = o_output->getVolAtomAss();
+			if(vol_atom) {
+				std::cerr << "ASSUMING TRUE VOL ATOM " << vol_atom << std::endl; std::cerr.flush();
+				a.push_back(i.find(vol_atom)->lit);
 			}
+
+			o_output->deprecateVolAtom();
 
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();
 
