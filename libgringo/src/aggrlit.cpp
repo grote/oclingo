@@ -163,6 +163,56 @@ AggrState::~AggrState()
 {
 }
 
+//////////////////////////////////////// BoundAggrState::Val64 ////////////////////////////////////////
+
+BoundAggrState::Val64::Val64(const int64_t &num)
+	: isNum_(true)
+	, num_(num)
+{ }
+
+BoundAggrState::Val64::Val64(const Val &val)
+	: isNum_(true)
+	, val_(val)
+{ }
+
+int BoundAggrState::Val64::compare(const Val64 &v, Storage *s) const
+{
+	if(isNum_ && v.isNum_)
+	{
+		if(num_ < v.isNum_)      { return -1; }
+		else if(num_ > v.isNum_) { return 1; }
+		else                     { return 0; }
+	}
+	else
+	{
+		if(isNum_)        { return Val::create(Val::NUM, 0).compare(v.val_, s); }
+		else if(v.isNum_) { return val_.compare(Val::create(Val::NUM, 0), s); }
+		else              { return val_.compare(v.val_, s); }
+	}
+}
+
+//////////////////////////////////////// BoundAggrState ////////////////////////////////////////
+
+void BoundAggrState::checkBounds(Grounder *g, AggrLit &lit, const Val64 &min, const Val64 &max, const Val64 &lower, const Val64 &upper)
+{
+	match_ = fact_ = upper.compare(lower, g) <= -(lit.lowerEq_ == lit .upperEq_);
+
+	match_ = match_ || min.compare(lower, g) <= -lit.lowerEq_;
+	match_ = match_ || upper.compare(max, g) <= -lit.upperEq_;
+
+	fact_ = fact_ || max.compare(lower, g) <= -lit.lowerEq_;
+	fact_ = fact_ || upper.compare(min, g) <= -lit.upperEq_;
+
+	//match_ = upper < lower || min < lower || upper < max;
+	//fact_  = upper < lower || max < lower || upper < min;
+	if(!lit.sign())
+	{
+		bool match = !fact_;
+		fact_      = !match_;
+		match_     = match;
+	}
+}
+
 //////////////////////////////////////// AggrDomain ////////////////////////////////////////
 
 AggrDomain::AggrDomain()
@@ -209,6 +259,8 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds, bool set)
 	, assign_(false)
 	, fact_(false)
 	, set_(set)
+	, lowerEq_(true)
+	, upperEq_(true)
 	, complete_(boost::logic::indeterminate)
 	, parent_(0)
 	, conds_(conds.release())
@@ -222,20 +274,23 @@ void AggrLit::doHead(bool head)
 	foreach(CondLit &lit, conds_) { lit.head(head); }
 }
 
-void AggrLit::lower(Term *l) 
+void AggrLit::lower(Term *l, bool eq)
 { 
 	lower_.reset(l); 
+	lowerEq_ = eq;
 }
 
-void AggrLit::upper(Term *u)
+void AggrLit::upper(Term *u, bool eq)
 { 
 	upper_.reset(u);
+	upperEq_ = eq;
 }
 
 void AggrLit::assign(Term *a)
 {
 	lower_.reset(a);
 	assign_ = true;
+	lowerEq_ = upperEq_ = true;
 }
 
 void AggrLit::add(CondLit *cond)

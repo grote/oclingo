@@ -112,9 +112,9 @@ namespace plainoutput_impl
 		head_     = head;
 	}
 
-	void SumAggrLitPrinter::lower(int32_t l) { lower_ = l; }
+	void SumAggrLitPrinter::lower(int32_t l, bool leq) { lower_ = leq ? l : l + 1; }
 
-	void SumAggrLitPrinter::upper(int32_t u) { upper_ = u; }
+	void SumAggrLitPrinter::upper(int32_t u, bool leq) { upper_ = leq ? u : u - 1; }
 
 	void SumAggrLitPrinter::end()
 	{
@@ -178,8 +178,8 @@ namespace plainoutput_impl
 		{
 			if(!val.second.get<1>()) { out() << "#aggr(sum," << val.second.get<0>() << "):-"; }
 			_begin(val.first.first, val.second.get<1>(), val.second.get<2>(), true);
-			lower(val.first.second.first);
-			upper(val.first.second.second);
+			lower(val.first.second.first, true);
+			upper(val.first.second.second, true);
 			end();
 			if(val.second.get<1>()) { out() << ":-#aggr(sum," << val.second.get<0>() << ")"; }
 			out() << ".\n";

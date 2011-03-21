@@ -66,8 +66,8 @@ class SumAggrLitPrinter : public SumAggrLit::Printer, public DelayedPrinter
 public:
 	SumAggrLitPrinter(LparseConverter *output);
 	void begin(State state, bool head, bool sign, bool complete);
-	void lower(int32_t l);
-	void upper(int32_t u);
+	void lower(int32_t l, bool leq);
+	void upper(int32_t u, bool leq);
 	void end();
 	Output *output() const;
 	std::ostream &out() const;
@@ -110,8 +110,8 @@ inline void CondLitPrinter::end() { }
 
 //////////////////////////////// SumAggrLitPrinter ////////////////////////////////
 
-inline void SumAggrLitPrinter::lower(int32_t l) { lower_ = l; }
-inline void SumAggrLitPrinter::upper(int32_t u) { upper_ = u; }
+inline void SumAggrLitPrinter::lower(int32_t l, bool leq) { lower_ = leq ? l : l + 1; }
+inline void SumAggrLitPrinter::upper(int32_t u, bool leq) { upper_ = leq ? u : u - 1; }
 inline Output *SumAggrLitPrinter::output() const { return output_; }
 inline std::ostream &SumAggrLitPrinter::out() const { return output_->out(); }
 

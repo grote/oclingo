@@ -60,6 +60,23 @@ protected:
 
 class BoundAggrState : public AggrState
 {
+protected:
+	class Val64
+	{
+	public:
+		Val64(const int64_t &num);
+		Val64(const Val &val);
+		int compare(const Val64 &v, Storage *s) const;
+
+	private:
+		bool isNum_;
+		union
+		{
+			int64_t num_;
+			Val     val_;
+		};
+	};
+
 public:
 	BoundAggrState();
 
@@ -76,10 +93,7 @@ public:
 	virtual ~BoundAggrState();
 
 protected:
-	template<class T>
-	void checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper);
-	template<class T, class P>
-	void checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt);
+	void checkBounds(Grounder *g, AggrLit &lit, const Val64 &min, const Val64 &max, const Val64 &lower, const Val64 &upper);
 
 private:
 	bool locked_;
@@ -158,6 +172,7 @@ private:
 
 class AggrLit : public Lit
 {
+	friend class BoundAggrState;
 private:
 	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
@@ -165,8 +180,8 @@ public:
 
 	virtual AggrState *newAggrState(Grounder *g) = 0;
 
-	void lower(Term *l);
-	void upper(Term *u);
+	void lower(Term *l, bool eq = true);
+	void upper(Term *u, bool eq = true);
 	void assign(Term *a);
 	Term *assign() const;
 	Term *lower() const;
@@ -213,6 +228,8 @@ protected:
 	bool            fact_;
 	bool            isNewAggrState_;
 	bool            set_;
+	bool            lowerEq_;
+	bool            upperEq_;
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
@@ -332,25 +349,6 @@ inline void BoundAggrState::lock() { locked_ = true; }
 
 inline bool BoundAggrState::bindFirst(Val *) { return locked_ || match_; }
 inline bool BoundAggrState::bindNext(Val *) { return false; }
-
-template <class T>
-void BoundAggrState::checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper)
-{
-	checkBounds<T, std::less<T> >(lit, min, max, lower, upper, std::less<T>());
-}
-
-template <class T, class P>
-void BoundAggrState::checkBounds(AggrLit &lit, const T &min, const T &max, const T &lower, const T &upper, const P &lt)
-{
-	match_ = lt(upper, lower) || lt(min, lower) || lt(upper, max);
-	fact_  = lt(upper, lower) || lt(max, lower) || lt(upper, min);
-	if(!lit.sign())
-	{
-		bool match = !fact_;
-		fact_      = !match_;
-		match_     = match;
-	}
-}
 
 inline BoundAggrState::~BoundAggrState() { }
 

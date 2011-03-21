@@ -101,8 +101,8 @@ namespace plainoutput_impl
 		SumAggrLitPrinter(PlainOutput *output);
 		void begin(State state, bool head, bool sign, bool complete);
 		void _begin(State state, bool head, bool sign, bool complete);
-		void lower(int32_t l);
-		void upper(int32_t u);
+		void lower(int32_t l, bool leq);
+		void upper(int32_t u, bool leq);
 		void end();
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }

@@ -93,8 +93,8 @@ void SumAggrLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
 	printer->begin(Printer::State(aggrUid(), domain_.lastId()), head(), sign_, complete());
-	if(lower()) { printer->lower(valLower_.number()); }
-	if(upper()) { printer->upper(valUpper_.number()); }
+	if(lower()) { printer->lower(valLower_.number(), lowerEq_); }
+	if(upper()) { printer->upper(valUpper_.number(), upperEq_); }
 	printer->end();
 }
 
@@ -160,9 +160,9 @@ void SumBoundAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bo
 		if(weight < 0) { max_ += weight; }
 		else           { min_ += weight; }
 	}
-	int64_t lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
-	int64_t upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
-	checkBounds(lit, min_, max_, lower, upper);
+	Val64 lower(lit.lower() ? (int64_t)lit.lower()->val(g).number() : std::numeric_limits<int64_t>::min());
+	Val64 upper(lit.upper() ? (int64_t)lit.upper()->val(g).number() : std::numeric_limits<int64_t>::max());
+	checkBounds(g, lit, min_, max_, lower, upper);
 }
 
 void SumBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
