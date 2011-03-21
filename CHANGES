@@ -1,4 +1,6 @@
-gringo 3.0.91
+gringo 3.0.92 (beta version)
+	* permit ==, <, <=, >, and >= to compare with bounds in aggregates
+gringo 3.0.91 (beta version)
 	* experimental aggregates
 	  * dlv-style
 	  * recursive
