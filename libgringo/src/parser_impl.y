@@ -34,7 +34,7 @@
 
 #include "gringo/sumaggrlit.h"
 #include "gringo/avgaggrlit.h"
-#include "gringo/junctionaggrlit.h"
+#include "gringo/junctionlit.h"
 #include "gringo/minmaxaggrlit.h"
 #include "gringo/parityaggrlit.h"
 
@@ -104,10 +104,12 @@ boost::ptr_vector<T> *vec1(T *x)
 %type lit          { Lit* }
 %type literal      { Lit* }
 %type body_literal { Lit* }
+%type conjunction  { Lit* }
 %destructor head         { del($$); }
 %destructor lit          { del($$); }
 %destructor literal      { del($$); }
 %destructor body_literal { del($$); }
+%destructor conjunction  { del($$); }
 
 %type predicate { PredLit* }
 %type predlit   { PredLit* }
@@ -119,9 +121,11 @@ boost::ptr_vector<T> *vec1(T *x)
 %type body  { LitPtrVec* }
 %type nbody { LitPtrVec* }
 %type cond  { LitPtrVec* }
+%type ncond { LitPtrVec* }
 %destructor body  { del($$); }
 %destructor nbody { del($$); }
 %destructor cond  { del($$); }
+%destructor ncond { del($$); }
 
 %type op { MathTerm::Func* }
 %destructor op { del($$); }
@@ -176,13 +180,11 @@ boost::ptr_vector<T> *vec1(T *x)
 %type aggr_ass    { AggrLit* }
 %type aggr_num    { AggrLit* }
 %type aggr_atom   { AggrLit* }
-%type conjunction { AggrLit* }
 %type disjunction { AggrLit* }
 %destructor aggr        { del($$); }
 %destructor aggr_ass    { del($$); }
 %destructor aggr_num    { del($$); }
 %destructor aggr_atom   { del($$); }
-%destructor conjunction { del($$); }
 %destructor disjunction { del($$); }
 
 %left SEM.
@@ -236,8 +238,11 @@ inv_part ::= . { pParser->invPart(); }
 signed(res) ::= IDENTIFIER(id).              { res = id; }
 signed(res) ::= MINUS(minus) IDENTIFIER(id). { res = minus; res.index = GRD->index(std::string("-") + GRD->string(id.index)); }
 
-cond(res) ::= .                              { res = new LitPtrVec(); }
-cond(res) ::= COLON literal(lit) cond(list). { res = list; res->push_back(lit); }
+ncond(res) ::= COLON lit(lit).             { res = vec1<Lit>(lit); }
+ncond(res) ::= ncond(cond) COLON lit(lit). { res = cond; cond->push_back(lit); }
+
+cond(res) ::= .            { res = new LitPtrVec(); }
+cond(res) ::= ncond(list). { res = list; }
 
 var_list(res) ::= VARIABLE(var).                      { res = new VarSigVec(); res->push_back(VarSig(var.loc(), var.index)); }
 var_list(res) ::= var_list(list) COMMA VARIABLE(var). { list->push_back(VarSig(var.loc(), var.index)); res = list; }
@@ -271,7 +276,7 @@ body_literal(res) ::= aggr_atom(lit).                     { res = lit; }
 body_literal(res) ::= NOT aggr_atom(lit).                 { res = lit; lit->sign(true); }
 body_literal(res) ::= VARIABLE(var) ASSIGN aggr_ass(lit). { res = lit; lit->assign(new VarTerm(var.loc(), var.index)); }
 body_literal(res) ::= term(a) CASSIGN aggr_ass(lit).      { res = lit; lit->assign(a); }
-//body_literal(res) ::= conjunction(lit).                   { res = lit; }
+body_literal(res) ::= conjunction(lit).                   { res = lit; }
 
 cmp(res) ::= GREATER. { res = RelLit::GREATER; }
 cmp(res) ::= LOWER.   { res = RelLit::LOWER; }
@@ -316,16 +321,6 @@ term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; r
 term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
 term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
 
-nweightlist(res) ::= weightlit(lit).                         { res = vec1(lit); }
-nweightlist(res) ::= nweightlist(list) COMMA weightlit(lit). { res = list; res->push_back(lit); }
-weightlist(res)  ::= .                  { res = new CondLitVec(); }
-weightlist(res)  ::= nweightlist(list). { res = list; }
-
-weightlit(res) ::= lit(lit) nweightcond(cond) ASSIGN term(weight).                { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
-weightlit(res) ::= lit(lit) ASSIGN term(weight) weightcond(cond).                 { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
-weightlit(res) ::= lit(lit) weightcond(cond).                                     { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
-weightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
-
 nsetterm(res) ::= term(term).                                { res = vec1(term); }
 nsetterm(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
 
@@ -338,35 +333,43 @@ nweightcond(res) ::= COLON literal(lit) nweightcond(list). { res = list; res->pu
 weightcond(res) ::= .                  { res = new LitPtrVec(); }
 weightcond(res) ::= nweightcond(list). { res = list; }
 
-aggr_ass(res) ::= SUM(tok) LSBRAC weightlist(list) RSBRAC.  { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
-aggr_ass(res) ::= SUM(tok) LCBRAC weightlist(list) RCBRAC.  { res = new SumAggrLit(tok.loc(), *list, false, true);  delete list; }
-aggr_ass(res) ::= SUMP(tok) LSBRAC weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  false); delete list; }
-aggr_ass(res) ::= SUMP(tok) LCBRAC weightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  true);  delete list; }
-aggr_ass(res) ::= LSBRAC(tok) weightlist(list) RSBRAC.      { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
+weightlit(res) ::= lit(lit) nweightcond(cond) ASSIGN term(weight).                { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
+weightlit(res) ::= lit(lit) ASSIGN term(weight) weightcond(cond).                 { std::auto_ptr<TermPtrVec> terms(vec1(weight)); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
+weightlit(res) ::= lit(lit) weightcond(cond).                                     { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
+weightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
 
-//aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
+condlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
+condlit(res) ::= LOWER setterm(terms) GREATER COLON lit(lit) weightcond(cond). { terms->insert(terms->begin(), ONE(lit->loc())); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
+
+nweightlist(res) ::= weightlit(lit).                         { res = vec1(lit); }
+nweightlist(res) ::= nweightlist(list) COMMA weightlit(lit). { res = list; res->push_back(lit); }
+weightlist(res)  ::= .                  { res = new CondLitVec(); }
+weightlist(res)  ::= nweightlist(list). { res = list; }
 
 ncondlist(res) ::= condlit(lit).                       { res = vec1(lit); }
 ncondlist(res) ::= ncondlist(list) COMMA condlit(lit). { res = list; res->push_back(lit); }
 condlist(res)  ::= .                { res = new CondLitVec(); }
 condlist(res)  ::= ncondlist(list). { res = list; }
 
-condlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_LPARSE); delete cond; }
-condlit(res) ::= LOWER setterm(terms) GREATER COLON lit(lit) weightcond(cond). { terms->insert(terms->begin(), ONE(lit->loc())); cond->insert(cond->begin(), lit); res = new CondLit(lit->loc(), *terms, *cond, CondLit::STYLE_DLV); delete cond; delete terms; }
+aggr_ass(res) ::= SUM(tok)   LSBRAC      weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
+aggr_ass(res) ::= SUM(tok)   LCBRAC      weightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, false, true);  delete list; }
+aggr_ass(res) ::= SUMP(tok)  LSBRAC      weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  false); delete list; }
+aggr_ass(res) ::= SUMP(tok)  LCBRAC      weightlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true,  true);  delete list; }
+aggr_ass(res) ::=            LSBRAC(tok) weightlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, false, false); delete list; }
+aggr_ass(res) ::= COUNT(tok) LCBRAC      condlist(list)   RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
+aggr_ass(res) ::= COUNT(tok) LSBRAC      condlist(list)   RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true, false); delete list; }
+aggr_ass(res) ::=            LCBRAC(tok) condlist(list)   RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
+//aggr_ass(res) ::= MIN(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, false); delete list; }
+//aggr_ass(res) ::= MAX(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, true); delete list; }
 
-aggr_ass(res) ::= COUNT(tok) LCBRAC condlist(list) RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
-aggr_ass(res) ::= COUNT(tok) LSBRAC condlist(list) RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true, false); delete list; }
-aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
+//aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
 
 //aggr(res) ::= EVEN(tok) LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, true); delete list; }
 //aggr(res) ::= ODD(tok)  LCBRAC condlist(list) RCBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, true); delete list; }
 //aggr(res) ::= EVEN(tok) LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, false); delete list; }
 //aggr(res) ::= ODD(tok)  LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, false); delete list; }
 
-//ccondlit(res) ::= lit(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
-//ccondlist(res) ::= ccondlit(lit). { res = new CondLitVec(); res->push_back(lit); }
-
-//conjunction(res) ::= ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
+conjunction(res) ::= lit(lit) ncond(list). { res = new JunctionLit(list->at(0).loc(), lit, *list); delete list; }
 
 //head_ccondlit_nocond(res) ::= predicate(lit).                   { LitPtrVec cond; res = new CondLit(lit->loc(), lit, ONE(lit->loc()), cond); }
 //head_ccondlit_cond(res)   ::= predicate(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
@@ -378,9 +381,6 @@ aggr_ass(res) ::= LCBRAC(tok) condlist(list) RCBRAC.       { res = new SumAggrLi
 //head_ccondlist(res) ::= head_ccondlist(list) VBAR head_ccondlit(lit).       { res = list; res->push_back(lit); }
 
 //disjunction(res) ::= head_ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
-
-//aggr_ass(res) ::= MIN(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, false); delete list; }
-//aggr_ass(res) ::= MAX(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, true); delete list; }
 
 aggr_num(res) ::= aggr_ass(lit). { res = lit; }
 aggr(res)     ::= aggr_num(lit). { res = lit; }
