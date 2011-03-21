@@ -105,11 +105,13 @@ boost::ptr_vector<T> *vec1(T *x)
 %type literal      { Lit* }
 %type body_literal { Lit* }
 %type conjunction  { Lit* }
+%type disjunction  { Lit* }
 %destructor head         { del($$); }
 %destructor lit          { del($$); }
 %destructor literal      { del($$); }
 %destructor body_literal { del($$); }
 %destructor conjunction  { del($$); }
+%destructor disjunction  { del($$); }
 
 %type predicate { PredLit* }
 %type predlit   { PredLit* }
@@ -145,27 +147,19 @@ boost::ptr_vector<T> *vec1(T *x)
 
 %type condlist       { CondLitVec* }
 %type ncondlist      { CondLitVec* }
-%type ccondlist      { CondLitVec* }
-%type head_ccondlist { CondLitVec* }
 %type weightlist     { CondLitVec* }
 %type nweightlist    { CondLitVec* }
 %destructor condlist       { del($$); }
 %destructor ncondlist      { del($$); }
-%destructor ccondlist      { del($$); }
-%destructor head_ccondlist { del($$); }
 %destructor weightlist     { del($$); }
 %destructor nweightlist    { del($$); }
 
-%type condlit              { CondLit* }
-%type ccondlit             { CondLit* }
-%type head_ccondlit        { CondLit* }
-%type head_ccondlit_cond   { CondLit* }
-%type head_ccondlit_nocond { CondLit* }
-%destructor condlit              { del($$); }
-%destructor ccondlit             { del($$); }
-%destructor head_ccondlit        { del($$); }
-%destructor head_ccondlit_cond   { del($$); }
-%destructor head_ccondlit_nocond { del($$); }
+%type condlit       { CondLit* }
+%destructor condlit { del($$); }
+
+%type disjlist       { JunctionCondVec* }
+%destructor disjlist { del($$); }
+
 
 %type weightcond    { LitPtrVec* }
 %type nweightcond   { LitPtrVec* }
@@ -180,12 +174,10 @@ boost::ptr_vector<T> *vec1(T *x)
 %type aggr_ass    { AggrLit* }
 %type aggr_num    { AggrLit* }
 %type aggr_atom   { AggrLit* }
-%type disjunction { AggrLit* }
 %destructor aggr        { del($$); }
 %destructor aggr_ass    { del($$); }
 %destructor aggr_num    { del($$); }
 %destructor aggr_atom   { del($$); }
-%destructor disjunction { del($$); }
 
 %left SEM.
 %left DOTS.
@@ -253,7 +245,7 @@ rule(res) ::= head(head).               { LitPtrVec v; res = new Rule(head->loc(
 
 head(res) ::= predicate(pred).  { res = pred; }
 head(res) ::= aggr_atom(lit).   { res = lit; }
-//head(res) ::= disjunction(lit). { res = lit; }
+head(res) ::= disjunction(lit). { res = lit; }
 
 nbody(res) ::= body_literal(lit).                   { res = vec1(lit); }
 nbody(res) ::= nbody(body) COMMA body_literal(lit). { res = body; res->push_back(lit); }
@@ -369,18 +361,13 @@ aggr_ass(res) ::=            LCBRAC(tok) condlist(list)   RCBRAC. { res = new Su
 //aggr(res) ::= EVEN(tok) LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, false); delete list; }
 //aggr(res) ::= ODD(tok)  LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, false); delete list; }
 
-conjunction(res) ::= lit(lit) ncond(list). { res = new JunctionLit(list->at(0).loc(), lit, *list); delete list; }
+conjunction(res) ::= lit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
 
-//head_ccondlit_nocond(res) ::= predicate(lit).                   { LitPtrVec cond; res = new CondLit(lit->loc(), lit, ONE(lit->loc()), cond); }
-//head_ccondlit_cond(res)   ::= predicate(lit) nweightcond(cond). { res = new CondLit(lit->loc(), lit, ONE(lit->loc()), *cond); delete cond; }
-//head_ccondlit(res) ::= head_ccondlit_nocond(lit). { res = lit; }
-//head_ccondlit(res) ::= head_ccondlit_cond(lit).   { res = lit; }
+disjlist(res) ::= VBAR predicate(lit) cond(cond).                { res = vec1<JunctionCond>(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
+disjlist(res) ::= disjlist(list) VBAR predicate(lit) cond(cond). { res = list; list->push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
 
-//head_ccondlist(res) ::= head_ccondlit_cond(lit).                            { res = new CondLitVec(); res->push_back(lit); }
-//head_ccondlist(res) ::= head_ccondlit_nocond(lit) VBAR head_ccondlit(lit2). { res = new CondLitVec(); res->push_back(lit); res->push_back(lit2); }
-//head_ccondlist(res) ::= head_ccondlist(list) VBAR head_ccondlit(lit).       { res = list; res->push_back(lit); }
-
-//disjunction(res) ::= head_ccondlist(list). { res = new JunctionAggrLit(list->at(0).loc(), *list); delete list; }
+disjunction(res) ::= predicate(lit) cond(cond) disjlist(list). { list->insert(list->begin(), new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), *list); delete list; }
+disjunction(res) ::= predicate(lit) ncond(cond).               { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
 
 aggr_num(res) ::= aggr_ass(lit). { res = lit; }
 aggr(res)     ::= aggr_num(lit). { res = lit; }

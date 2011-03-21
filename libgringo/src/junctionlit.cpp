@@ -17,10 +17,23 @@
 
 #include "gringo/junctionlit.h"
 
-JunctionLit::JunctionLit(const Loc &loc, Lit *head, LitPtrVec &body)
-	: Lit(loc)
-	, head_(head)
+///////////////////////////// JunctionCond /////////////////////////////
+
+JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
+	: head_(head)
 	, body_(body)
+{
+}
+
+JunctionCond::~JunctionCond()
+{
+}
+
+///////////////////////////// JunctionLit /////////////////////////////
+
+JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
+	: Lit(loc)
+	, conds_(conds)
 {
 }
 

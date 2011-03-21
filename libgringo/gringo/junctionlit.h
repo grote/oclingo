@@ -21,6 +21,17 @@
 #include <gringo/lit.h>
 #include <gringo/printer.h>
 
+class JunctionCond
+{
+public:
+	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
+	~JunctionCond();
+
+private:
+	clone_ptr<Lit> head_;
+	LitPtrVec      body_;
+};
+
 class JunctionLit : public Lit
 {
 public:
@@ -32,7 +43,7 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	JunctionLit(const Loc &loc, Lit *head, LitPtrVec &body);
+	JunctionLit(const Loc &loc, JunctionCondVec &conds);
 
 	void normalize(Grounder *g, Expander *expander);
 
@@ -52,6 +63,6 @@ public:
 	~JunctionLit();
 
 private:
-	clone_ptr<Lit> head_;
-	LitPtrVec      body_;
+	JunctionCondVec conds_;
+
 };
