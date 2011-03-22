@@ -441,7 +441,7 @@ void Builder::analyze(Grounder *g)
 		{
 			foreach(Todo *todo, pred.provide())
 			{
-				if(!todo->lit->complete())
+				if(!todo->lit->complete() && pred.component() == todo->provided)
 				{
 					pred.pred()->provide(todo->lit);
 				}

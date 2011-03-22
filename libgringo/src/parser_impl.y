@@ -160,7 +160,6 @@ boost::ptr_vector<T> *vec1(T *x)
 %type disjlist       { JunctionCondVec* }
 %destructor disjlist { del($$); }
 
-
 %type weightcond    { LitPtrVec* }
 %type nweightcond   { LitPtrVec* }
 %type priolit_cond  { LitPtrVec* }
@@ -413,7 +412,6 @@ prio_list ::= nprio_list.
 
 nprio_list ::= weightedpriolit(lit).                 { pParser->add(lit); }
 nprio_list ::= weightedpriolit(lit) COMMA prio_list. { pParser->add(lit); }
-
 
 prio_set ::= .
 prio_set ::= nprio_set.
