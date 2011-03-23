@@ -17,6 +17,29 @@
 
 #include "gringo/junctionlit.h"
 
+// - analysis
+//   - literals after : have to be stratified
+//   - no restriction to head literal
+// - matching
+//   - if not global vars in map
+//     - ground all conditionals
+//     - add to (multi) map global vars -> vars(head)
+//   - if conjunction
+//     - loop over stored vars
+//       - mark as finished if head matches
+//     - if all vars marked
+//       - the conjunction matches
+//     - else
+//       - do not match
+//   - if disjunction
+//     - always match
+// - printing
+//   - start printing
+//   - loop over stored vars
+//     - set substitution to vars
+//     - print the head
+//   - end printing
+
 ///////////////////////////// JunctionCond /////////////////////////////
 
 JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
