@@ -25,23 +25,22 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	, output_(output)
 	, solver_(solver)
 	, forget_(0)
+	, socket_(NULL)
+	, port_(25277)
+	, reading_(false)
+	, new_input_(false)
+	, my_post_(true)
+	, solver_stopped_(false)
+	, step_(0)
+	, controller_step_(1)
+	, model_(false)
 	, debug_(false)
 {
 	externals_per_step_.push_back(VarVec());
 	externals_per_step_.push_back(VarVec());
 
-	socket_ = NULL;
-	port_ = 25277;
-	reading_ = false;
-	new_input_ = false;
-
 	post_ = new ExternalKnowledge::PostPropagator(this);
-	my_post_ = true;
-	solver_stopped_ = false;
 
-	step_ = 0;
-	controller_step_ = 1;
-	model_ = false;
 //	debug_ = grounder_->options().debug;
 }
 
@@ -66,7 +65,6 @@ void ExternalKnowledge::removePostPropagator() {
 }
 
 void ExternalKnowledge::addExternal(uint32_t symbol) {
-	std::cerr << "ADD EXTERNAL " << symbol << std::endl;
 	externals_.push_back(symbol);
 	to_freeze_.push_back(symbol);
 	externals_per_step_.at(step_).push_back(symbol);
@@ -214,7 +212,6 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	// don't freeze added head and unfreeze it if necessary
 	it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
 	if(it != to_freeze_.end()) {
-		std::cerr << "REMOVED FROM FREEZE LIST " << symbol << std::endl;
 		to_freeze_.erase(it);
 	} else {
 		output_->unfreezeAtom(symbol);
@@ -237,21 +234,14 @@ void ExternalKnowledge::addPrematureKnowledge() {
 }
 
 void ExternalKnowledge::setControllerStep(int step) {
-	std::cerr << "SET CONTROLLER STEP TO " << step << std::endl;
 	controller_step_ = step;
 }
 
 bool ExternalKnowledge::needsNewStep() {
-	std::cerr << "DO I NEED NEW STEP? " << controller_step_ << " > " << step_;
-	std::cerr << " RULE STACK SIZE: " << stacks_.size() << std::endl;
 	return
 			step_ == 0 ||				// is first iteration
 			controller_step_ > step_ ||	// controller wants to progress step count
 			stacks_.size() > 0;			// rule stack not empty
-}
-
-bool ExternalKnowledge::controllerNeedsNewStep() {
-	return controller_step_ > step_;
 }
 
 VarVec& ExternalKnowledge::getExternals() {
@@ -264,39 +254,11 @@ void ExternalKnowledge::endIteration() {
 
 	// unfreeze volatile atom, so we can have fresh one for the next iteration
 	output_->finalizeVolAtom();
-
-	std::cerr << "Controller Step: " << controller_step_ << std::endl;
 }
 
 void ExternalKnowledge::endStep() {
-	// add previously added premature facts
-	if(controller_step_ <= step_) {
-/*
-		for(std::vector<NS_OUTPUT::Atom*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
-			if(checkFact(*i)) {
-				addNewFact(*i);
-			} else {
-				std::stringstream emsg;
-				emsg << "Warning: Fact added for step " << controller_step_ << " has not been declared external and is now lost.";
-				std::cerr << emsg.str() << std::endl;
-				sendToClient(emsg.str());
-				delete *i;
-			}
-		}
-		premature_facts_.clear();
-*/
-	}
-
 	endIteration();
-/*
-	externals_old_.swap(externals_);
-	externals_.clear();
 
-	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
-		// freeze new external atoms, facts have been deleted already in addNewAtom()
-		output_->printExternalRule(i->second, i->first.first);
-	}
-*/
 	step_++;
 	std::cerr << "Step: " << step_ << std::endl;
 	externals_per_step_.push_back(VarVec());
@@ -336,25 +298,6 @@ void ExternalKnowledge::forgetExternals(uint32_t step) {
 	}
 	forget_ = 0;
 }
-
-/*
-// TODO is there any better way to do it?
-int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
-	std::vector<UidValueMap::iterator> del;
-
-	for(UidValueMap::iterator i = ext->begin(); i != ext->end(); ++i) {
-		if(i->second == uid) {
-			del.push_back(i);
-		}
-	}
-
-	for(std::vector<UidValueMap::iterator>::iterator i = del.begin(); i != del.end(); ++i) {
-		ext->erase(*i);
-	}
-
-	return del.size();
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////////
 // ExternalKnowledge::PostPropagator

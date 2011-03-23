@@ -69,6 +69,7 @@ void oClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOp
 	using namespace ProgramOptions;
 	if(M == OCLINGO)
 	{
+		// TODO actually use this option!
 		OptionGroup online_opts("Online Options");
 		online_opts.addOptions()("port", storeTo(online.port), "Port oclingo daemon should listen to\n", "<num>");
 		root.addOptions(online_opts);
@@ -137,7 +138,8 @@ void oClingoConfig::initStep(Clasp::ClaspFacade& f)
 	{
 		f.config()->solver->reduceLearnts(1.0f);
 	}
-	std::cout << "Iteration: " << f.step()+1 << std::endl;
+
+	if(f.step()) std::cout << "Iteration: " << f.step() << std::endl;
 }
 
 bool oClingoConfig::nextStep(Clasp::ClaspFacade& f)

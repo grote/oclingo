@@ -61,21 +61,13 @@ void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &n
 
 uint32_t oClaspOutput::unnamedSymbol() {
 	uint32_t atom = symbol();
-	std::cerr << "GOT NEW SYMBOL FOR VOL ATOM " << atom << std::endl; std::cerr.flush();
 	b_->setAtomName(atom, 0);
-
-	// debug atom name
-//	std::stringstream ss;
-//	ss << "volatom" << atom;
-//	b_->setAtomName(atom, ss.str().data());
-
 	atomUnnamed_[atom - lastUnnamed_] = false;
+
 	return atom;
 }
 
 void oClaspOutput::unfreezeAtom(uint32_t symbol) {
-	std::cerr << "UNFREEZE " << symbol << std::endl;
-	std::cerr.flush();
 	b_->unfreeze(symbol);
 }
 
@@ -83,12 +75,10 @@ uint32_t oClaspOutput::getVolAtom() {
 	if(vol_atom_ == 0) {
 		vol_atom_ = unnamedSymbol();
 	}
-	std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ GET VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 	return vol_atom_;
 }
 
 uint32_t oClaspOutput::getVolAtomAss() {
-	std::cerr << "GET VOL ATOM ASS " << vol_atoms_old_.size() << std::endl; std::cerr.flush();
 	return vol_atom_;
 }
 
@@ -98,7 +88,6 @@ VarVec& oClaspOutput::getVolAtomFalseAss() {
 
 void oClaspOutput::finalizeVolAtom() {
 	if(vol_atom_ && vol_atom_ != vol_atom_frozen_) {
-		std::cerr << "FREEZE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 		b_->freeze(vol_atom_);
 		vol_atom_frozen_ = vol_atom_;
 	}
@@ -107,7 +96,6 @@ void oClaspOutput::finalizeVolAtom() {
 void oClaspOutput::deprecateVolAtom() {
 	// deprecate vol atom if not null and not already deprecated
 	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
-		std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ DEPRECATE VOL ATOM " << vol_atom_ << std::endl; std::cerr.flush();
 		vol_atoms_old_.push_back(vol_atom_);
 		vol_atom_ = 0;
 	}
@@ -116,7 +104,6 @@ void oClaspOutput::deprecateVolAtom() {
 // make sure to call between updateProgram and endProgram
 void oClaspOutput::unfreezeOldVolAtoms() {
 	// unfreeze all old volatile atoms
-	std::cerr << "UNFREEZE OLD VOL ATOMS " << vol_atoms_old_.size() << std::endl; std::cerr.flush();
 	foreach(VarVec::value_type atom, vol_atoms_old_) {
 		unfreezeAtom(atom);
 	}
@@ -124,15 +111,6 @@ void oClaspOutput::unfreezeOldVolAtoms() {
 }
 
 void oClaspOutput::doFinalize() {
-	// TODO remove debug loops
-	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
-	{
-		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin(); it != newSymbols_[domId].end(); it++)
-		{
-			std::cerr << "NEW SYMBOL: " << it->symbol << std::endl;
-		}
-	}
-
 	printExternalTable();
 
 	// add premature knowledge here, so externals are already defined
@@ -141,7 +119,6 @@ void oClaspOutput::doFinalize() {
 	// freeze externals that were not defined with premature knowledge
 	VarVec* externals = ext_->getFreezers();
 	foreach(uint32_t symbol, *externals) {
-		std::cerr << "FREEZE " << symbol << std::endl; std::cerr.flush();
 		b_->freeze(symbol);
 	}
 	externals->clear();

@@ -69,20 +69,9 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 		if(app.clingo.mode == OCLINGO) {
 			oClaspOutput *o_output = dynamic_cast<oClaspOutput*>(out.get());
 
-			// TODO still needed?
-			// assume old volatile atoms to be false
-/*			foreach(VarVec::value_type atom, o_output->getVolAtomFalseAss()) {
-				std::cerr << "ASSUMING FALSE VOL ATOM " << atom << std::endl; std::cerr.flush();
-				//a.push_back(~i.find(atom)->lit);
-				solver->addUnary(~i.find(atom)->lit);
-				//solver->force(~i.find(atom)->lit, 0);
-
-			}
-*/
 			// assume volatile atom to be true for this iteration only
 			uint32_t vol_atom = o_output->getVolAtomAss();
 			if(vol_atom) {
-				std::cerr << "ASSUMING TRUE VOL ATOM " << vol_atom << std::endl; std::cerr.flush();
 				a.push_back(i.find(vol_atom)->lit);
 			}
 
@@ -93,15 +82,12 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();
 
-			std::cerr << "ASSUMPTIONS " << ass.size() << std::endl; std::cerr.flush();
-
 			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
 				Clasp::Atom* atom = i.find(*lit);
 				if(atom) { // atom is not in AtomIndex if hidden with #hide
-					std::cerr << "ASSUMING " << *lit << " FALSE" << std::endl;
 					a.push_back(~atom->lit);
 					// create conflict to skip solving for next step
-					if(o_output->getExternalKnowledge().controllerNeedsNewStep())
+					if(o_output->getExternalKnowledge().needsNewStep())
 						a.push_back(atom->lit);
 				}
 			} // end for
@@ -150,7 +136,6 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 		else if(app.clingo.mode == OCLINGO) {
 			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
 
-			std::cerr << "READ in OCLINGO mode" << std::endl;
 			if(solver->hasConflict()) {
 				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
@@ -161,23 +146,19 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
-					std::cerr << "preparing new step" << std::endl;
 					// TODO explore incStep/iQuery/goal use to ground to #step
-					std::cerr << ">>>> INC STEP <<<<" << std::endl;
 					if(config.incStep > 1) out->initialize(); // gives new IncUid for volatiles
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 					out->finalize();
 					config.incStep++;
 				} else {
-					std::cerr << "preparing new iteration" << std::endl;
 					ext.endIteration();
 				}
 			}
-			std::cerr << "preparing reception of new ext knowledge" << std::endl;
+			// get new external input
 			ext.get();
 		} else {
-			std::cerr << ">>>> INC STEP <<<<" << std::endl;
 			out->initialize();
 			config.incStep++;
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
@@ -185,11 +166,6 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 		}
 	}
 	release();
-
-	// reset solver state
-//	std::cerr << "RESET SOLVER STATS" << std::endl;
-//	s.stats.solve.reset();
-
 	return true;
 }
 

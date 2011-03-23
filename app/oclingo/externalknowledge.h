@@ -54,12 +54,10 @@ public:
 	void addHead(uint32_t symbol);
 	void addPrematureKnowledge();
 	bool needsNewStep();
-	bool controllerNeedsNewStep();
 	VarVec& getExternals();
 	void endIteration();
 	void endStep();
 	void forgetExternals(uint32_t step);
-//	int eraseUidFromExternals(UidValueMap* ext, int uid);
 	void setControllerStep(int step);
 
 protected:
@@ -84,13 +82,9 @@ private:
 	// externals handling
 	VarVec externals_;
 	VarVec to_freeze_;
-//	VarVec externals_old_;
 	std::vector<VarVec> externals_per_step_;
 	uint32_t forget_;
-/*	IntSet facts_;
-	IntSet facts_old_;
-	std::vector<NS_OUTPUT::Atom*> premature_facts_;
-*/
+
 	// socket stuff
 	boost::asio::io_service io_service_;
 	boost::asio::ip::tcp::socket* socket_;

@@ -83,7 +83,6 @@ void OnlineParser::parse()
 	{
 		ParseException ex;
 		foreach(ErrorTok &tok, errors_) {
-			std::cerr << "THROW ERROR!! ";
 			ex.add(StrLoc(storage(), tok.first), tok.second);
 		}
 		throw ex;
@@ -98,8 +97,6 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 
 void OnlineParser::doAdd() {
 	if(stack_->type == USER or stack_->type == USER+1) {
-		std::cerr << "++++ ADD EXT VOL" << std::endl;
-
 		Rule::Printer *printer = output_->printer<Rule::Printer>();
 		printer->begin();
 		if(stack_->type == USER) { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
@@ -116,7 +113,6 @@ void OnlineParser::doAdd() {
 }
 
 void OnlineParser::add(StackPtr stm) {
-	std::cerr << "ADDING RULE FROM STACK" << std::endl;
 	output_->startExtInput();
 	GroundProgramBuilder::add(stm);
 	output_->stopExtInput();
@@ -130,10 +126,8 @@ void OnlineParser::add(Type type, uint32_t n) {
 		ExternalKnowledge& ext = output_->getExternalKnowledge();
 
 		if(ext.needsNewStep()) {
-			std::cerr << "NEED NEW STEP BEFORE ADDING RULE. ADDING TO STACK" << std::endl;
 			ext.addStackPtr(stack);
 		} else {
-			std::cerr << "ADDING RULE/HEAD!!!" << std::endl;
 			output_->startExtInput();
 			GroundProgramBuilder::add(stack);
 			output_->stopExtInput();
