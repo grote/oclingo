@@ -209,6 +209,7 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	VarVec::iterator it = find(externals_.begin(), externals_.end(), symbol);
 	assert(it != externals_.end()); // call checkHead() first
 	externals_.erase(it);
+	// TODO do we want to keep it if this is a volatile rule?
 
 	// don't freeze added head and unfreeze it if necessary
 	it = find(to_freeze_.begin(), to_freeze_.end(), symbol);

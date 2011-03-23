@@ -62,7 +62,7 @@ neg_down(t) :- not down(t).
 % currentFloor is inertial if elevator did not move
 currentFloor(F, t) :- currentFloor(F, t-1), not up(t-1), not down(t-1).
 
-#external ext_on(F1, t) : floor(F1).
+#external ext_on/2.
 
 %%%%%%%%%%%%%%%%%%%%
 % Elevator control %

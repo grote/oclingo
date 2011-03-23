@@ -3,7 +3,7 @@
 
 #cumulative t.
 
-#external e(t).
+#external e/1.
 
 a(t) :- not na(t).
 na(t) :- not a(t).

@@ -16,7 +16,7 @@ loc(table).
 
 #cumulative t.
 
-#external rain(B1, B2, t) : rblock(B1) : nblock(B2).
+#external rain/3.
 
 % move one block each step
 1 { move(B, L, t) : block(B) : loc(L) : B!=L } 1 :- not goal(t).

@@ -5,7 +5,7 @@ b :- not a.
 
 #cumulative t.
 
-#external e(t).
+#external e/1.
 
 c(t) :- e(t).
 step(t).

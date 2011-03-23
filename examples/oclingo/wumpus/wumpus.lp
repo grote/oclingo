@@ -49,8 +49,8 @@ wumpus_at(X, Y, t) :- wumpus_at(X, Y+1, t-1), field(X, Y), wumpus_moves(down, t-
 wumpus_at(X, Y, t) :- wumpus_at(X+1, Y, t-1), field(X, Y), wumpus_moves(left, t-1).
 wumpus_at(X, Y, t) :- wumpus_at(X-1, Y, t-1), field(X, Y), wumpus_moves(right, t-1).
 
-#external wumpus_moves(D, t-1) : direction(D).
-#external agent_moves(D, t) : direction(D).
+#external wumpus_moves/2.
+#external agent_moves/2.
 
 % wumpus waits if it doesn't move
 wumpus_at(X, Y, t) :- wumpus_at(X, Y, t-1), field(X, Y), not wumpus_moves(D, t-1) : direction(D).

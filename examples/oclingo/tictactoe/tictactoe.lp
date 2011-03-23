@@ -22,7 +22,7 @@ turn(x,t) :- turn(o,t-1).
 % Each player marks once if game is not over
 1 { mark(X,Y,P,t-1) : field(X,Y) } 1 :- turn(P,t-1), not win(P2,t-1) : player(P2).
 
-#external ext_mark(X,Y,P,t-1) : field(X,Y) : player(P).
+#external ext_mark/4.
 
 mark(X,Y,P,t-1) :- ext_mark(X,Y,P,t-1), field(X,Y), player(P).
 

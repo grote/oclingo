@@ -92,7 +92,7 @@ uint32_t LparseConverter::symbol(PredLitRep *l)
 	{
 		// spend a new symbol if the symbol itself did not occur in a head yet
 		uint32_t sym = res.first->second;
-		if(sym < undefined_.size() && undefined_[sym])
+		if(sym < undefined_.size() && undefined_[sym] && external_.find(Signature(l->dom()->nameId(), l->dom()->arity())) == external_.end())
 		{
 			sym = symbol();
 			res.first->second = sym;
