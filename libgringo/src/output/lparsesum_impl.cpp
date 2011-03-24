@@ -56,9 +56,9 @@ private:
 
 }
 
-////////////////////////////////// CondLitPrinter //////////////////////////////////
+////////////////////////////////// AggrCondPrinter //////////////////////////////////
 
-void CondLitPrinter::begin(State state, const ValVec &set)
+void AggrCondPrinter::begin(State state, const ValVec &set)
 {
 	isHead_  = true;
 	CondMap::mapped_type &conds = stateMap_.insert(StateMap::value_type(state, StateMap::mapped_type())).first->second.insert(CondMap::value_type(set, CondMap::mapped_type())).first->second;
@@ -66,19 +66,19 @@ void CondLitPrinter::begin(State state, const ValVec &set)
 	current_ = &conds.back();
 }
 
-CondLitPrinter::CondMap *CondLitPrinter::state(State state)
+AggrCondPrinter::CondMap *AggrCondPrinter::state(State state)
 {
 	StateMap::iterator it = stateMap_.find(state);
 	if(it != stateMap_.end()) { return &stateMap_.find(state)->second; }
 	else                      { return 0; }
 }
 
-void CondLitPrinter::endHead()
+void AggrCondPrinter::endHead()
 {
 	isHead_ = false;
 }
 
-void CondLitPrinter::print(PredLitRep *l)
+void AggrCondPrinter::print(PredLitRep *l)
 {
 	uint32_t sym = output_->symbol(l);
 	if(isHead_)
@@ -129,18 +129,18 @@ void SumAggrLitPrinter::finish()
 		uint32_t a = todo.second.get<0>();
 		SumAggr  aggr(todo.second.get<2>(), todo.first.second.first, todo.first.second.second);
 
-		CondLitPrinter::CondMap *conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(todo.first.first);
+		AggrCondPrinter::CondMap *conds = static_cast<AggrCondPrinter*>(output()->printer<AggrCond::Printer>())->state(todo.first.first);
 		if(conds)
 		{
 			// TODO: optimize here!!!
-			foreach(CondLitPrinter::CondMap::value_type &condTerm, *conds)
+			foreach(AggrCondPrinter::CondMap::value_type &condTerm, *conds)
 			{
 				std::sort(condTerm.second.begin(), condTerm.second.end());
 				condTerm.second.erase(std::unique(condTerm.second.begin(), condTerm.second.end()), condTerm.second.end());
 				uint32_t hc = output_->symbol();
 				aggr.push(hc, condTerm.first[0].num);
 
-				foreach(CondLitPrinter::Cond &cond, condTerm.second)
+				foreach(AggrCondPrinter::Cond &cond, condTerm.second)
 				{
 					if(!cond.head.empty())
 					{
@@ -385,5 +385,5 @@ void SumAggr::printBody(LparseConverter *output, uint32_t a)
 
 }
 
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::CondLitPrinter, CondLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::AggrCondPrinter, AggrCond::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumAggrLitPrinter, SumAggrLit::Printer, LparseConverter)

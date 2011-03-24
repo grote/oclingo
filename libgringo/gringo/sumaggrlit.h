@@ -26,7 +26,7 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		typedef CondLit::Printer::State State;
+		typedef AggrCond::Printer::State State;
 	public:
 		virtual void begin(State state, bool head, bool sign, bool complete) = 0;
 		virtual void lower(int32_t l, bool leq) = 0;
@@ -35,7 +35,7 @@ public:
 		virtual ~Printer();
 	};
 public:
-	SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights, bool set);
+	SumAggrLit(const Loc &loc, AggrCondVec &conds, bool posWeights, bool set);
 	AggrState *newAggrState(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit *clone() const;

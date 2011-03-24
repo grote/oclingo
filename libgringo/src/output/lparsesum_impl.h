@@ -26,7 +26,7 @@ namespace lparseconverter_impl
 
 class RulePrinter;
 
-class CondLitPrinter : public CondLit::Printer
+class AggrCondPrinter : public AggrCond::Printer
 {
 public:
 	struct Cond
@@ -42,7 +42,7 @@ public:
 private:
 	typedef boost::unordered_map<State, CondMap> StateMap;
 public:
-	CondLitPrinter(LparseConverter *output);
+	AggrCondPrinter(LparseConverter *output);
 	void begin(State state, const ValVec &set);
 	CondMap *state(State state);
 	void endHead();
@@ -84,9 +84,9 @@ private:
 	bool               sign_;
 };
 
-//////////////////////////////// CondLitPrinter::Cond ////////////////////////////////
+//////////////////////////////// AggrCondPrinter::Cond ////////////////////////////////
 
-inline bool CondLitPrinter::Cond::operator<(const Cond &c) const
+inline bool AggrCondPrinter::Cond::operator<(const Cond &c) const
 {
 	if(head != c.head) { return head < c.head; }
 	if(pos != c.pos)   { return pos < c.pos; }
@@ -94,18 +94,18 @@ inline bool CondLitPrinter::Cond::operator<(const Cond &c) const
 	return false;
 }
 
-inline bool CondLitPrinter::Cond::operator==(const Cond &c) const
+inline bool AggrCondPrinter::Cond::operator==(const Cond &c) const
 {
 	return head == c.head && pos == c.pos && neg == c.neg;
 }
 
-//////////////////////////////// CondLitPrinter ////////////////////////////////
+//////////////////////////////// AggrCondPrinter ////////////////////////////////
 
-inline CondLitPrinter::CondLitPrinter(LparseConverter *output) : output_(output) { }
-inline void CondLitPrinter::CondLitPrinter::trueLit() { }
-inline Output *CondLitPrinter::output() const { return output_; }
-inline std::ostream &CondLitPrinter::out() const { return output_->out(); }
-inline void CondLitPrinter::end() { }
+inline AggrCondPrinter::AggrCondPrinter(LparseConverter *output) : output_(output) { }
+inline void AggrCondPrinter::AggrCondPrinter::trueLit() { }
+inline Output *AggrCondPrinter::output() const { return output_; }
+inline std::ostream &AggrCondPrinter::out() const { return output_->out(); }
+inline void AggrCondPrinter::end() { }
 
 
 //////////////////////////////// SumAggrLitPrinter ////////////////////////////////

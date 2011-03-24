@@ -27,7 +27,7 @@
 #include <gringo/index.h>
 #include <gringo/output.h>
 
-ParityAggrLit::ParityAggrLit(const Loc &loc, CondLitVec &conds, bool even, bool set)
+ParityAggrLit::ParityAggrLit(const Loc &loc, AggrCondVec &conds, bool even, bool set)
 	: AggrLit(loc, conds, set, true)
 	, even_(even)
 	, set_(set)
@@ -41,7 +41,7 @@ bool ParityAggrLit::match(Grounder *grounder)
 	fixed_ = true;
 	if(set_) uniques_.clear();
 
-	foreach(CondLit &lit, conds_) lit.ground(grounder);
+	foreach(AggrCond &lit, conds_) lit.ground(grounder);
 
 	if(head() && factOnly_) fact_ = (even_ == fixed_);
 	else fact_ = factOnly_;
@@ -71,7 +71,7 @@ void ParityAggrLit::accept(::Printer *v)
 { 
 	Printer *printer = v->output()->printer<Printer>();
 	printer->begin(head(), sign_, even_==fixed_, set_);
-	foreach(CondLit &lit, conds_) lit.accept(printer);
+	foreach(AggrCond &lit, conds_) lit.accept(printer);
 	printer->end();
 }
 
@@ -88,7 +88,7 @@ void ParityAggrLit::print(Storage *sto, std::ostream &out) const
 	if(set_) out << "{";
 	else out << "[";
 	bool comma = false;
-	foreach(const CondLit &lit, conds_)
+	foreach(const AggrCond &lit, conds_)
 	{
 		if(comma) out << ",";
 		else comma = true;

@@ -57,28 +57,28 @@ namespace plainoutput_impl
 		output_->endRule();
 	}
 
-	void CondLitPrinter::begin(State state, const ValVec &set)
+	void AggrCondPrinter::begin(State state, const ValVec &set)
 	{
 		currentState_ = &stateMap_[state];
 		currentState_->push_back(CondVec::value_type(set, ""));
 	}
 
-	CondLitPrinter::CondVec &CondLitPrinter::state(State state)
+	AggrCondPrinter::CondVec &AggrCondPrinter::state(State state)
 	{
 		return stateMap_[state];
 	}
 
-	void CondLitPrinter::endHead()
+	void AggrCondPrinter::endHead()
 	{
 	}
 
-	void CondLitPrinter::trueLit()
+	void AggrCondPrinter::trueLit()
 	{
 		if(!currentState_->back().second.empty()) { currentState_->back().second += ":"; }
 		currentState_->back().second += "#true";
 	}
 
-	void CondLitPrinter::print(PredLitRep *l)
+	void AggrCondPrinter::print(PredLitRep *l)
 	{
 		std::ostringstream os;
 		output_->print(l, os);
@@ -86,7 +86,7 @@ namespace plainoutput_impl
 		currentState_->back().second += os.str();
 	}
 
-	void CondLitPrinter::end()
+	void AggrCondPrinter::end()
 	{
 	}
 
@@ -122,10 +122,10 @@ namespace plainoutput_impl
 		if(complete_)
 		{
 			if(sign_) { out() << "not "; }
-			CondLitPrinter::CondVec &conds = static_cast<CondLitPrinter*>(output()->printer<CondLit::Printer>())->state(state_);
+			AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()->printer<AggrCond::Printer>())->state(state_);
 			typedef boost::unordered_map<ValVec, uint32_t> SetMap;
 			SetMap map;
-			foreach(CondLitPrinter::CondVec::value_type &cond, conds)
+			foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 			{
 				std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.first, 0));
 				if(!res.second) { res.first->second = 1; }
@@ -140,7 +140,7 @@ namespace plainoutput_impl
 			out() << "[";
 			uint32_t uid = 2;
 			bool printed = false;
-			foreach(CondLitPrinter::CondVec::value_type &cond, conds)
+			foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 			{
 				int32_t weight = cond.first.front().num;
 				if(!cond.second.empty() && cond.second != "#true" && weight != 0)
@@ -355,7 +355,7 @@ namespace plainoutput_impl
 GRINGO_REGISTER_PRINTER(plainoutput_impl::DisplayPrinter, Display::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
-GRINGO_REGISTER_PRINTER(plainoutput_impl::CondLitPrinter, CondLit::Printer, PlainOutput)
+GRINGO_REGISTER_PRINTER(plainoutput_impl::AggrCondPrinter, AggrCond::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, PlainOutput)
 /*
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, PlainOutput)

@@ -67,7 +67,7 @@ using boost::logic::tribool;
 
 class ArgTerm;
 class BodyOrderHeuristic;
-class CondLit;
+class AggrCond;
 class ConstTerm;
 class Domain;
 class Expander;
@@ -129,7 +129,7 @@ typedef std::map<uint32_t,uint32_t> VarMap;
 typedef std::set<uint32_t> VarSet;
 typedef std::pair<uint32_t, uint32_t> Signature;
 typedef boost::ptr_unordered_map<Signature, Domain> DomainMap;
-typedef boost::ptr_vector<CondLit> CondLitVec;
+typedef boost::ptr_vector<AggrCond> AggrCondVec;
 typedef boost::ptr_vector<JunctionCond> JunctionCondVec;
 typedef boost::iterator_range<ValVec::const_iterator> ValRng;
 typedef boost::iterator_range<StatementPtrVec::iterator> StatementRng;
@@ -145,6 +145,6 @@ Lit* new_clone(const Lit& a);
 WeightLit* new_clone(const WeightLit& a);
 Instantiator* new_clone(const Instantiator& a);
 LitDep::GrdNode* new_clone(const LitDep::GrdNode& a);
-CondLit* new_clone(const CondLit& a);
+AggrCond* new_clone(const AggrCond& a);
 
 #endif

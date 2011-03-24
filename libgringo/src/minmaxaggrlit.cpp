@@ -73,7 +73,7 @@ namespace
 	}
 }
 
-MinMaxAggrLit::MinMaxAggrLit(const Loc &loc, CondLitVec &conds, bool max)
+MinMaxAggrLit::MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, bool max)
 	: AggrLit(loc, conds, false, true)
 	, max_(max)
 {
@@ -107,7 +107,7 @@ bool MinMaxAggrLit::match(Grounder *grounder)
 	valUpper_ = fixed_ = min();
 	vals_ = 0;
 	
-	foreach(CondLit &lit, conds_) lit.ground(grounder);
+	foreach(AggrCond &lit, conds_) lit.ground(grounder);
 
 	if(head() && !factOnly_) return true;
 	// all too low (or empty) or facts too high
@@ -128,7 +128,7 @@ void MinMaxAggrLit::matchAssign(Grounder *grounder, boost::unordered_set<Val> &v
 	upperBound_ = valLower_ = max();
 	vals_ = &vals;
 
-	foreach(CondLit &lit, conds_) lit.ground(grounder);
+	foreach(AggrCond &lit, conds_) lit.ground(grounder);
 
 	fact_ = factOnly_;
 	if(fixed_ == min()) vals.insert(min());
@@ -177,7 +177,7 @@ void MinMaxAggrLit::accept(::Printer *v)
 		if(max_ && valUpper_.compare(upperBound_, v->output()->storage()) > 0) printer->upper(upperBound_);
 		if(!max_ && fixed_.compare(lowerBound_, v->output()->storage()) > 0) printer->upper(lowerBound_);
 	}
-	foreach(CondLit &lit, conds_) lit.accept(printer);
+	foreach(AggrCond &lit, conds_) lit.accept(printer);
 	printer->end();
 }
 
@@ -197,7 +197,7 @@ void MinMaxAggrLit::print(Storage *sto, std::ostream &out) const
 	}
 	if(max_) out << "#max[";
 	else out << "#min[";
-	foreach(const CondLit &lit, conds_)
+	foreach(const AggrCond &lit, conds_)
 	{
 		if(comma) out << ",";
 		else comma = true;

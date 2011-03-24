@@ -35,7 +35,7 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	MinMaxAggrLit(const Loc &loc, CondLitVec &conds, bool count);
+	MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, bool count);
 
 	bool match(Grounder *grounder);
 	void matchAssign(Grounder *grounder, boost::unordered_set<Val> &vals);

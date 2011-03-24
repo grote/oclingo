@@ -34,7 +34,7 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	JunctionAggrLit(const Loc &loc, CondLitVec &conds);
+	JunctionAggrLit(const Loc &loc, AggrCondVec &conds);
 
 	bool match(Grounder *grounder);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);

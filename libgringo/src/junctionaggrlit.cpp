@@ -28,7 +28,7 @@
 #include <gringo/output.h>
 #include <gringo/litdep.h>
 
-JunctionAggrLit::JunctionAggrLit(const Loc &loc, CondLitVec &conds)
+JunctionAggrLit::JunctionAggrLit(const Loc &loc, AggrCondVec &conds)
 	: AggrLit(loc, conds, true, false)
 {
 }
@@ -39,7 +39,7 @@ bool JunctionAggrLit::match(Grounder *grounder)
 	hasFact_  = false;
 	factOnly_ = true;
 	uniques_.clear();
-	foreach(CondLit &lit, conds_) lit.ground(static_cast<Grounder*>(grounder));
+	foreach(AggrCond &lit, conds_) lit.ground(static_cast<Grounder*>(grounder));
 	fact_ = head() ? hasFact_ : factOnly_ && !hasFalse_;
 	return !hasFalse_ || head();
 }
@@ -55,7 +55,7 @@ void JunctionAggrLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
 	printer->begin(head());
-	foreach(CondLit &lit, conds_) lit.accept(printer);
+	foreach(AggrCond &lit, conds_) lit.accept(printer);
 	printer->end();
 }
 
@@ -67,7 +67,7 @@ Lit *JunctionAggrLit::clone() const
 void JunctionAggrLit::print(Storage *sto, std::ostream &out) const
 {
 	bool comma = false;
-	foreach(const CondLit &lit, conds_)
+	foreach(const AggrCond &lit, conds_)
 	{
 		if(comma) { out << (head() ? "|" : ","); }
 		else      { comma = true; }
@@ -97,24 +97,24 @@ namespace
 	class CondHeadExpander : public Expander
 	{
 	public:
-		CondHeadExpander(JunctionAggrLit &aggr, CondLit *cond, Expander &ruleExpander);
+		CondHeadExpander(JunctionAggrLit &aggr, AggrCond *cond, Expander &ruleExpander);
 		void expand(Lit *lit, Type type);
 	private:
 		JunctionAggrLit &aggr_;
-		CondLit         *cond_;
+		AggrCond         *cond_;
 		Expander        &ruleExp_;
 	};
 
 	class CondBodyExpander : public Expander
 	{
 	public:
-		CondBodyExpander(CondLit &cond);
+		CondBodyExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
-		CondLit &cond_;
+		AggrCond &cond_;
 	};
 
-	CondHeadExpander::CondHeadExpander(JunctionAggrLit &aggr, CondLit *cond, Expander &ruleExpander)
+	CondHeadExpander::CondHeadExpander(JunctionAggrLit &aggr, AggrCond *cond, Expander &ruleExpander)
 		: aggr_(aggr)
 		, cond_(cond)
 		, ruleExp_(ruleExpander)
@@ -132,14 +132,14 @@ namespace
 			{
 				LitPtrVec body;
 				foreach(const Lit &l, cond_->body()) body.push_back(l.clone());
-				std::auto_ptr<CondLit> cond(new CondLit(cond_->loc(), lit, cond_->weight()->clone(), body));
+				std::auto_ptr<AggrCond> cond(new AggrCond(cond_->loc(), lit, cond_->weight()->clone(), body));
 				if(aggr_.head())
 				{
-					CondLitVec lits;
-					foreach(const CondLit &l, aggr_.conds())
+					AggrCondVec lits;
+					foreach(const AggrCond &l, aggr_.conds())
 					{
 						if(&l == cond_) lits.push_back(cond);
-						else lits.push_back(new CondLit(l));
+						else lits.push_back(new AggrCond(l));
 					}
 					JunctionAggrLit *lit(new JunctionAggrLit(aggr_.loc(), lits));
 					ruleExp_.expand(lit, type);
@@ -156,7 +156,7 @@ namespace
 		}
 	}
 
-	CondBodyExpander::CondBodyExpander(CondLit &cond)
+	CondBodyExpander::CondBodyExpander(AggrCond &cond)
 		: cond_(cond)
 	{
 	}
@@ -174,7 +174,7 @@ void JunctionAggrLit::normalize(Grounder *g, Expander *expander)
 	assert(!(assign_ && head()));
 	if(lower_.get()) lower_->normalize(this, Term::PtrRef(lower_), g, expander, assign_);
 	if(upper_.get()) upper_->normalize(this, Term::PtrRef(upper_), g, expander, false);
-	for(CondLitVec::size_type i = 0; i < conds_.size(); i++)
+	for(AggrCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
 		CondHeadExpander headExp(*this, &conds_[i], *expander);
 		CondBodyExpander bodyExp(conds_[i]);

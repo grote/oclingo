@@ -53,59 +53,59 @@ namespace
 	class CondHeadExpander : public Expander
 	{
 	public:
-		CondHeadExpander(CondLit &cond);
+		CondHeadExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
-		CondLit &cond_;
+		AggrCond &cond_;
 	};
 
 	class CondSetExpander : public Expander
 	{
 	public:
-		CondSetExpander(CondLit &cond);
+		CondSetExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
-		CondLit &cond_;
+		AggrCond &cond_;
 	};
 
 	class CondBodyExpander : public Expander
 	{
 	public:
-		CondBodyExpander(CondLit &cond);
+		CondBodyExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
-		CondLit &cond_;
+		AggrCond &cond_;
 	};
 
 	class AnonymousRemover : public PrgVisitor
 	{
 	public:
-		AnonymousRemover(Grounder *g, CondLit &cond);
+		AnonymousRemover(Grounder *g, AggrCond &cond);
 		void visit(VarTerm *var, bool bind);
 		void visit(Term* term, bool bind);
 		void visit(Lit *lit, bool domain);
 	public:
-		static void remove(Grounder *g, CondLit &cond);
+		static void remove(Grounder *g, AggrCond &cond);
 	private:
 		Grounder *grounder_;
-		CondLit  &cond_;
+		AggrCond  &cond_;
 		uint32_t  vars_;
 	};
 
 
-	class LparseCondLitConverter : public PrgVisitor
+	class LparseAggrCondConverter : public PrgVisitor
 	{
 	public:
-		LparseCondLitConverter(Grounder *g, CondLit &cond);
+		LparseAggrCondConverter(Grounder *g, AggrCond &cond);
 		void visit(VarTerm *var, bool bind);
 		void visit(Term* term, bool bind);
 		void visit(PredLit *pred);
 		void visit(Lit *lit, bool domain);
 	public:
-		static void convert(Grounder *g, CondLit &cond, uint32_t number);
+		static void convert(Grounder *g, AggrCond &cond, uint32_t number);
 	private:
 		Grounder *grounder_;
-		CondLit  &cond_;
+		AggrCond  &cond_;
 		VarSet    vars_;
 		bool      addVars_;
 		bool      ignorePreds_;
@@ -253,7 +253,7 @@ void AggrDomain::finish()
 
 //////////////////////////////////////// AggrLit ////////////////////////////////////////
 
-AggrLit::AggrLit(const Loc &loc, CondLitVec &conds, bool set)
+AggrLit::AggrLit(const Loc &loc, AggrCondVec &conds, bool set)
 	: Lit(loc)
 	, sign_(false)
 	, assign_(false)
@@ -266,12 +266,12 @@ AggrLit::AggrLit(const Loc &loc, CondLitVec &conds, bool set)
 	, conds_(conds.release())
 	, aggrUid_(0)
 {
-	foreach(CondLit &lit, conds_) { lit.aggr_ = this; }
+	foreach(AggrCond &lit, conds_) { lit.aggr_ = this; }
 }
 
 void AggrLit::doHead(bool head)
 {
-	foreach(CondLit &lit, conds_) { lit.head(head); }
+	foreach(AggrCond &lit, conds_) { lit.head(head); }
 }
 
 void AggrLit::lower(Term *l, bool eq)
@@ -293,7 +293,7 @@ void AggrLit::assign(Term *a)
 	lowerEq_ = upperEq_ = true;
 }
 
-void AggrLit::add(CondLit *cond)
+void AggrLit::add(AggrCond *cond)
 {
 	conds_.push_back(cond);
 }
@@ -303,7 +303,7 @@ void AggrLit::addDomain(Grounder *g, bool)
 	assert(head());
 	if(domain_.last()->match())
 	{
-		foreach(CondLit &lit, conds_) { lit.addDomain(g, false); }
+		foreach(AggrCond &lit, conds_) { lit.addDomain(g, false); }
 	}
 }
 
@@ -318,7 +318,7 @@ bool AggrLit::complete() const
 	if(boost::logic::indeterminate(complete_))
 	{
 		complete_ = true;
-		foreach(const CondLit &lit, conds_)
+		foreach(const AggrCond &lit, conds_)
 		{
 			if(!lit.complete())
 			{
@@ -337,7 +337,7 @@ bool AggrLit::fact() const
 
 void AggrLit::finish(Grounder *g)
 {
-	foreach(CondLit &lit, conds_) { lit.finish(g); }
+	foreach(AggrCond &lit, conds_) { lit.finish(g); }
 }
 
 void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
@@ -347,7 +347,7 @@ void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 	GlobalsCollector::collect(*this, global, parent_->level());
 	if(head())
 	{
-		foreach(CondLit &lit, conds_) { lit.initHead(); }
+		foreach(AggrCond &lit, conds_) { lit.initHead(); }
 	}
 	// NOTE: this possibly reinitializes the domain
 	//       but the set of global variables always stays the same
@@ -358,7 +358,7 @@ void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
 
 void AggrLit::visit(PrgVisitor *visitor)
 {
-	foreach(CondLit &lit, conds_) { visitor->visit(&lit, head()); }
+	foreach(AggrCond &lit, conds_) { visitor->visit(&lit, head()); }
 	if(lower_.get()) { visitor->visit(lower_.get(), assign_); }
 	if(upper_.get()) { visitor->visit(upper_.get(), false); }
 }
@@ -369,7 +369,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	assert(!(assign_ && head()));
 	if(lower_.get()) { lower_->normalize(this, Term::PtrRef(lower_), g, expander, assign_); }
 	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, expander, false); }
-	for(CondLitVec::size_type i = 0; i < conds_.size(); i++)
+	for(AggrCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
 		conds_[i].aggr_ = this;
 		conds_[i].normalize(g, i);
@@ -379,7 +379,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 
 void AggrLit::ground(Grounder *g)
 {
-	foreach(CondLit &lit, conds_) { lit.ground(g); }
+	foreach(AggrCond &lit, conds_) { lit.ground(g); }
 	fact_ = domain_.last()->fact();
 }
 
@@ -404,7 +404,7 @@ SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
 
 void SetLit::index(Grounder *g, Groundable *gr, VarSet &)
 {
-	CondLit *cond = static_cast<CondLit*>(gr);
+	AggrCond *cond = static_cast<AggrCond*>(gr);
 	gr->instantiator()->append(new StateDirtyIndex(*cond->aggr()));
 }
 
@@ -441,9 +441,9 @@ SetLit::~SetLit()
 {
 }
 
-//////////////////////////////////////// CondLit ////////////////////////////////////////
+//////////////////////////////////////// AggrCond ////////////////////////////////////////
 
-CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style)
+AggrCond::AggrCond(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style)
 	: Groundable(loc)
 	, style_(style)
 	, set_(loc, terms)
@@ -454,7 +454,7 @@ CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style
 {
 }
 
-void CondLit::head(bool head)
+void AggrCond::head(bool head)
 {
 	head_ = head;
 	// TODO: ugly - a special Lit::method is probably the only way arround? (Lit::positive?)
@@ -462,12 +462,12 @@ void CondLit::head(bool head)
 	if(lit && !lit->sign()) { lit->head(head); }
 }
 
-void CondLit::enqueue(Grounder *g)
+void AggrCond::enqueue(Grounder *g)
 {
 	aggr_->enqueue(g);
 }
 
-bool CondLit::complete() const
+bool AggrCond::complete() const
 {
 	if(boost::logic::indeterminate(complete_))
 	{
@@ -486,7 +486,7 @@ bool CondLit::complete() const
 	return complete_;
 }
 
-void CondLit::normalize(Grounder *g, uint32_t number)
+void AggrCond::normalize(Grounder *g, uint32_t number)
 {
 	assert(!lits_.empty());
 	bool head = lits_[0].head() || style_ != STYLE_DLV;
@@ -505,22 +505,22 @@ void CondLit::normalize(Grounder *g, uint32_t number)
 	if(style_ != STYLE_DLV)
 	{
 		AnonymousRemover::remove(g, *this);
-		LparseCondLitConverter::convert(g, *this, number);
+		LparseAggrCondConverter::convert(g, *this, number);
 	}
 }
 
-void CondLit::ground(Grounder *g)
+void AggrCond::ground(Grounder *g)
 {
 	inst_->ground(g);
 }
 
-void CondLit::visit(PrgVisitor *visitor)
+void AggrCond::visit(PrgVisitor *visitor)
 {
 	visitor->visit(&set_, false);
 	foreach(Lit &lit, lits_) { visitor->visit(&lit, false); }
 }
 
-void CondLit::print(Storage *sto, std::ostream &out) const
+void AggrCond::print(Storage *sto, std::ostream &out) const
 {
 	out << "<";
 	set_.print(sto, out);
@@ -536,7 +536,7 @@ void CondLit::print(Storage *sto, std::ostream &out) const
 
 }
 
-void CondLit::addDomain(Grounder *g, bool fact)
+void AggrCond::addDomain(Grounder *g, bool fact)
 {
 	Lit &head = lits_[0];
 	if(!head.sign())
@@ -558,7 +558,7 @@ void CondLit::addDomain(Grounder *g, bool fact)
 	}
 }
 
-bool CondLit::grounded(Grounder *g)
+bool AggrCond::grounded(Grounder *g)
 {
 	bool fact = true;
 	foreach(Lit &lit, lits_)
@@ -594,23 +594,23 @@ bool CondLit::grounded(Grounder *g)
 	return true;
 }
 
-void CondLit::finish(Grounder *g)
+void AggrCond::finish(Grounder *g)
 {
 	if(!lits_[0].sign()) { lits_[0].finish(g); }
 }
 
-void CondLit::initHead()
+void AggrCond::initHead()
 {
 	if(!lits_[0].sign() && lits_[0].head()) { GlobalsCollector::collect(lits_[0], headVars_, level()); }
 }
 
-CondLit::~CondLit()
+AggrCond::~AggrCond()
 {
 }
 
-CondLit* new_clone(const CondLit& a)
+AggrCond* new_clone(const AggrCond& a)
 {
-	return new CondLit(a);
+	return new AggrCond(a);
 }
 
 //////////////////////////////////////// GlobalsCollector ////////////////////////////////////////
@@ -644,7 +644,7 @@ void GlobalsCollector::visit(Groundable *grd, bool)
 void GlobalsCollector::collect(AggrLit &lit, VarSet &globals, uint32_t level)
 {
 	GlobalsCollector gc(globals, level);
-	foreach(CondLit &cond, lit.conds()) { cond.visit(&gc); }
+	foreach(AggrCond &cond, lit.conds()) { cond.visit(&gc); }
 	if(!lit.assign())
 	{
 		if(lit.lower()) { lit.lower()->visit(&gc, false); }
@@ -662,7 +662,7 @@ void GlobalsCollector::collect(Lit &lit, VarVec &globals, uint32_t level)
 
 //////////////////////////////////////// CondHeadExpander ////////////////////////////////////////
 
-CondHeadExpander::CondHeadExpander(CondLit &cond)
+CondHeadExpander::CondHeadExpander(AggrCond &cond)
 	: cond_(cond)
 { }
 
@@ -679,14 +679,14 @@ void CondHeadExpander::expand(Lit *lit, Expander::Type type)
 			lits.push_back(lit);
 			lits.insert(lits.end(), cond_.lits()->begin() + 1, cond_.lits()->end());
 			TermPtrVec terms(*cond_.terms());
-			cond_.aggr()->add(new CondLit(cond_.loc(), terms, lits, cond_.style()));
+			cond_.aggr()->add(new AggrCond(cond_.loc(), terms, lits, cond_.style()));
 			break;
 	}
 }
 
 //////////////////////////////////////// CondSetExpander ////////////////////////////////////////
 
-CondSetExpander::CondSetExpander(CondLit &cond)
+CondSetExpander::CondSetExpander(AggrCond &cond)
 	: cond_(cond)
 { }
 
@@ -701,22 +701,22 @@ void CondSetExpander::expand(Lit *lit, Expander::Type type)
 		case POOL:
 			std::auto_ptr<SetLit> set(static_cast<SetLit*>(lit));
 			LitPtrVec lits(*cond_.lits());
-			cond_.aggr()->add(new CondLit(cond_.loc(), *set->terms(), lits, cond_.style()));
+			cond_.aggr()->add(new AggrCond(cond_.loc(), *set->terms(), lits, cond_.style()));
 			break;
 	}
 }
 
 //////////////////////////////////////// CondBodyExpander ////////////////////////////////////////
 
-CondBodyExpander::CondBodyExpander(CondLit &cond)
+CondBodyExpander::CondBodyExpander(AggrCond &cond)
 	: cond_(cond)
 { }
 
 void CondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
 
-//////////////////////////////////////// LparseCondLitConverter ////////////////////////////////////////
+//////////////////////////////////////// LparseAggrCondConverter ////////////////////////////////////////
 
-AnonymousRemover::AnonymousRemover(Grounder *g, CondLit &cond)
+AnonymousRemover::AnonymousRemover(Grounder *g, AggrCond &cond)
 	: grounder_(g)
 	, cond_(cond)
 	, vars_(0)
@@ -743,35 +743,35 @@ void AnonymousRemover::visit(Lit *lit, bool)
 	lit->visit(this);
 }
 
-void AnonymousRemover::remove(Grounder *g, CondLit &cond)
+void AnonymousRemover::remove(Grounder *g, AggrCond &cond)
 {
 	AnonymousRemover ar(g, cond);
 	cond.visit(&ar);
 }
 
-//////////////////////////////////////// LparseCondLitConverter ////////////////////////////////////////
+//////////////////////////////////////// LparseAggrCondConverter ////////////////////////////////////////
 
-LparseCondLitConverter::LparseCondLitConverter(Grounder *g, CondLit &cond)
+LparseAggrCondConverter::LparseAggrCondConverter(Grounder *g, AggrCond &cond)
 	: grounder_(g)
 	, cond_(cond)
 	, addVars_(false)
 	, ignorePreds_(false)
 { }
 
-void LparseCondLitConverter::visit(VarTerm *var, bool)
+void LparseAggrCondConverter::visit(VarTerm *var, bool)
 {
 	vars_.insert(var->nameId());
 }
 
-void LparseCondLitConverter::visit(Term* term, bool bind)
+void LparseAggrCondConverter::visit(Term* term, bool bind)
 {
 	if(addVars_) { term->visit(this, bind); }
 	else         { cond_.terms()->push_back(term->clone()); }
 }
 
-void LparseCondLitConverter::visit(PredLit *pred)
+void LparseAggrCondConverter::visit(PredLit *pred)
 {
-	if(!ignorePreds_ && cond_.style() == CondLit::STYLE_LPARSE && cond_.aggr()->set())
+	if(!ignorePreds_ && cond_.style() == AggrCond::STYLE_LPARSE && cond_.aggr()->set())
 	{
 		addVars_ = false;
 		std::stringstream ss;
@@ -781,16 +781,16 @@ void LparseCondLitConverter::visit(PredLit *pred)
 	}
 }
 
-void LparseCondLitConverter::visit(Lit *lit, bool)
+void LparseAggrCondConverter::visit(Lit *lit, bool)
 {
 	addVars_ = true;
 	lit->visit(this);
 }
 
-void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number)
+void LparseAggrCondConverter::convert(Grounder *g, AggrCond &cond, uint32_t number)
 {
-	LparseCondLitConverter conv(g, cond);
-	if(cond.style() == CondLit::STYLE_LPARSE && cond.aggr()->set())
+	LparseAggrCondConverter conv(g, cond);
+	if(cond.style() == AggrCond::STYLE_LPARSE && cond.aggr()->set())
 	{
 		LitPtrVec::iterator it = cond.lits()->begin();
 		conv.visit(&*it, false);
@@ -800,7 +800,7 @@ void LparseCondLitConverter::convert(Grounder *g, CondLit &cond, uint32_t number
 			for(it++; it != cond.lits()->end(); it++) { conv.visit(&*it, false); }
 		}
 	}
-	else if(cond.style() == CondLit::STYLE_LPARSE)
+	else if(cond.style() == AggrCond::STYLE_LPARSE)
 	{
 		foreach(Lit &lit, *cond.lits()) { conv.visit(&lit, false); }
 	}
@@ -871,7 +871,7 @@ void AggrIndex::reset()
 
 void AggrIndex::finish()
 {
-	foreach(CondLit &lit, lit_.conds()) { lit.instantiator()->finish(); }
+	foreach(AggrCond &lit, lit_.conds()) { lit.instantiator()->finish(); }
 	lit_.domain().finish();
 	finished_ = true;
 }

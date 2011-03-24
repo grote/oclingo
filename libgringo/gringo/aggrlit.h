@@ -176,7 +176,7 @@ class AggrLit : public Lit
 private:
 	typedef boost::ptr_vector<AggrState> AggrStates;
 public:
-	AggrLit(const Loc &loc, CondLitVec &conds, bool set);
+	AggrLit(const Loc &loc, AggrCondVec &conds, bool set);
 
 	virtual AggrState *newAggrState(Grounder *g) = 0;
 
@@ -193,8 +193,8 @@ public:
 	void isNewAggrState(bool isNew);
 	bool set() const;
 
-	void add(CondLit *cond);
-	CondLitVec &conds();
+	void add(AggrCond *cond);
+	AggrCondVec &conds();
 	AggrDomain &domain();
 	void enqueue(Grounder *g);
 	void ground(Grounder *g);
@@ -234,7 +234,7 @@ protected:
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
 	Groundable     *parent_;
-	CondLitVec      conds_;
+	AggrCondVec      conds_;
 	AggrDomain      domain_;
 	Val             valLower_;
 	Val             valUpper_;
@@ -266,7 +266,7 @@ private:
 
 SetLit* new_clone(const SetLit& a);
 
-class CondLit : public Groundable
+class AggrCond : public Groundable
 {
 	friend class AggrLit;
 public:
@@ -284,7 +284,7 @@ public:
 	};
 	enum Style { STYLE_DLV, STYLE_LPARSE };
 public:
-	CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
+	AggrCond(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
 	AggrLit *aggr();
 	TermPtrVec *terms();
 	LitPtrVec *lits();
@@ -306,7 +306,7 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	void addDomain(Grounder *g, bool fact);
 
-	~CondLit();
+	~AggrCond();
 private:
 	Style           style_;
 	SetLit          set_;
@@ -439,7 +439,7 @@ inline bool AggrLit::match(Grounder *)
 }
 
 inline AggrDomain &AggrLit::domain() { return domain_; }
-inline CondLitVec &AggrLit::conds() { return conds_; }
+inline AggrCondVec &AggrLit::conds() { return conds_; }
 
 inline Lit::Monotonicity AggrLit::monotonicity() const { return NONMONOTONE; }
 
@@ -461,20 +461,20 @@ inline void SetLit::addDomain(Grounder *, bool) { assert(false); }
 inline bool SetLit::edbFact() const { return false; }
 inline void SetLit::accept(Printer *) { }
 
-/////////////////////////////// CondLit::Printer ///////////////////////////////
+/////////////////////////////// AggrCond::Printer ///////////////////////////////
 
-inline CondLit::Printer::~Printer() { }
+inline AggrCond::Printer::~Printer() { }
 
-/////////////////////////////// CondLit ///////////////////////////////
+/////////////////////////////// AggrCond ///////////////////////////////
 
-inline void CondLit::add(Lit *lit) { lits_.push_back(lit); }
+inline void AggrCond::add(Lit *lit) { lits_.push_back(lit); }
 
-inline AggrLit *CondLit::aggr() { return aggr_; }
+inline AggrLit *AggrCond::aggr() { return aggr_; }
 
-inline TermPtrVec *CondLit::terms() { return set_.terms(); }
+inline TermPtrVec *AggrCond::terms() { return set_.terms(); }
 
-inline LitPtrVec *CondLit::lits() { return &lits_; }
+inline LitPtrVec *AggrCond::lits() { return &lits_; }
 
-inline CondLit::Style CondLit::style() { return style_;  }
+inline AggrCond::Style AggrCond::style() { return style_;  }
 
-inline void CondLit::finish() { }
+inline void AggrCond::finish() { }

@@ -29,7 +29,7 @@ namespace lparseconverter_impl
 GRINGO_EXPORT_PRINTER(RulePrinter)
 GRINGO_EXPORT_PRINTER(OptimizePrinter)
 GRINGO_EXPORT_PRINTER(ComputePrinter)
-GRINGO_EXPORT_PRINTER(CondLitPrinter)
+GRINGO_EXPORT_PRINTER(AggrCondPrinter)
 GRINGO_EXPORT_PRINTER(SumAggrLitPrinter)
 /*
 GRINGO_EXPORT_PRINTER(AvgPrinter)

@@ -33,7 +33,7 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	ParityAggrLit(const Loc &loc, CondLitVec &conds, bool even, bool set);
+	ParityAggrLit(const Loc &loc, AggrCondVec &conds, bool even, bool set);
 
 	bool match(Grounder *grounder);
 	void index(Grounder *g, Groundable *gr, VarSet &bound);

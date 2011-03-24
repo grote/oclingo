@@ -27,7 +27,7 @@
 #include <gringo/index.h>
 #include <gringo/output.h>
 
-AvgAggrLit::AvgAggrLit(const Loc &loc, CondLitVec &conds)
+AvgAggrLit::AvgAggrLit(const Loc &loc, AggrCondVec &conds)
 	: AggrLit(loc, conds, false, true)
 {
 }
@@ -56,7 +56,7 @@ bool AvgAggrLit::match(Grounder *grounder)
 	factOnly_ = true;
 	valLLower_ = valLUpper_ = valULower_ = valUUpper_ = 0;
 
-	foreach(CondLit &lit, conds_) lit.ground(grounder);
+	foreach(AggrCond &lit, conds_) lit.ground(grounder);
 
 	if(head() && !factOnly_) return true;
 	// list contains only facts
@@ -92,7 +92,7 @@ void AvgAggrLit::accept(::Printer *v)
 	printer->begin(head(), sign_);
 	if(lower_.get() || assign_) printer->lower(lowerBound_);
 	if(upper_.get() || assign_) printer->upper(upperBound_);
-	foreach(CondLit &lit, conds_) lit.accept(printer);
+	foreach(AggrCond &lit, conds_) lit.accept(printer);
 	printer->end();
 }
 
@@ -111,7 +111,7 @@ void AvgAggrLit::print(Storage *sto, std::ostream &out) const
 		out << " ";
 	}
 	out << "#avg[";
-	foreach(const CondLit &lit, conds_)
+	foreach(const AggrCond &lit, conds_)
 	{
 		if(comma) out << ",";
 		else comma = true;

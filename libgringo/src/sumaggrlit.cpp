@@ -48,7 +48,7 @@ namespace
 
 //////////////////////////////////////// SumAggrLit ////////////////////////////////////////
 
-SumAggrLit::SumAggrLit(const Loc &loc, CondLitVec &conds, bool posWeights, bool set)
+SumAggrLit::SumAggrLit(const Loc &loc, AggrCondVec &conds, bool posWeights, bool set)
 	: AggrLit(loc, conds, set)
 	, posWeights_(posWeights)
 {
@@ -75,7 +75,7 @@ void SumAggrLit::print(Storage *sto, std::ostream &out) const
 	}
 	bool comma = false;
 	out << "#sum[";
-	foreach(const CondLit &lit, conds_)
+	foreach(const AggrCond &lit, conds_)
 	{
 		if(comma) { out << ","; }
 		else      { comma = true; }

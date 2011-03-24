@@ -35,7 +35,7 @@ public:
 		virtual ~Printer() { }
 	};
 public:
-	AvgAggrLit(const Loc &loc, CondLitVec &conds);
+	AvgAggrLit(const Loc &loc, AggrCondVec &conds);
 
 	bool match(Grounder *grounder);
 	void setValue(int32_t value) { lowerBound_ = upperBound_ = value; }

@@ -70,14 +70,14 @@ namespace plainoutput_impl
 		bool         printed_;
 	};
 
-	class CondLitPrinter : public CondLit::Printer
+	class AggrCondPrinter : public AggrCond::Printer
 	{
 	public:
 		typedef std::vector<std::pair<ValVec, std::string> > CondVec;
 	private:
 		typedef boost::unordered_map<State, CondVec> StateMap;
 	public:
-		CondLitPrinter(PlainOutput *output) : output_(output) { }
+		AggrCondPrinter(PlainOutput *output) : output_(output) { }
 		void begin(State state, const ValVec &set);
 		CondVec &state(State state);
 		void endHead();
