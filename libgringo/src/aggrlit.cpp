@@ -444,7 +444,7 @@ SetLit::~SetLit()
 //////////////////////////////////////// CondLit ////////////////////////////////////////
 
 CondLit::CondLit(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style)
-	: Locateable(loc)
+	: Groundable(loc)
 	, style_(style)
 	, set_(loc, terms)
 	, lits_(lits)

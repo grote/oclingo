@@ -19,9 +19,8 @@
 
 #include <gringo/gringo.h>
 #include <gringo/groundable.h>
-#include <gringo/locateable.h>
 
-class Statement : public Groundable, public Locateable
+class Statement : public Groundable
 {
 public:
 	Statement(const Loc &loc);

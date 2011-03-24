@@ -16,6 +16,8 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "gringo/junctionlit.h"
+#include "gringo/instantiator.h"
+#include "gringo/litdep.h"
 
 // - analysis
 //   - literals after : have to be stratified
@@ -40,12 +42,66 @@
 //     - print the head
 //   - end printing
 
+namespace
+{
+	class CondHeadExpander : public Expander
+	{
+	public:
+		CondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander);
+		void expand(Lit *lit, Type type);
+
+	private:
+		JunctionLit  &aggr_;
+		JunctionCond *cond_;
+		Expander     &ruleExp_;
+	};
+
+	class CondBodyExpander : public Expander
+	{
+	public:
+		CondBodyExpander(JunctionCond &cond);
+		void expand(Lit *lit, Type type);
+	private:
+		JunctionCond &cond_;
+	};
+}
+
 ///////////////////////////// JunctionCond /////////////////////////////
 
 JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
-	: head_(head)
+	: Groundable(loc)
+	, head_(head)
 	, body_(body)
 {
+}
+
+void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp)
+{
+	head_->normalize(g, headExp);
+	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
+	{
+		body_[i].normalize(g, bodyExp);
+	}
+}
+
+bool JunctionCond::grounded(Grounder *g)
+{
+
+}
+
+void JunctionCond::ground(Grounder *g)
+{
+
+}
+
+void JunctionCond::visit(PrgVisitor *visitor)
+{
+
+}
+
+void JunctionCond::print(Storage *sto, std::ostream &out) const
+{
+
 }
 
 JunctionCond::~JunctionCond()
@@ -62,6 +118,12 @@ JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 
 void JunctionLit::normalize(Grounder *g, Expander *expander)
 {
+	for(JunctionCondVec::size_type i = 0; i < conds_.size(); i++)
+	{
+		CondHeadExpander headExp(*this, &conds_[i], *expander);
+		CondBodyExpander bodyExp(conds_[i]);
+		conds_[i].normalize(g, &headExp, &bodyExp);
+	}
 }
 
 bool JunctionLit::match(Grounder *grounder)
@@ -98,4 +160,57 @@ Lit *JunctionLit::clone() const
 
 JunctionLit::~JunctionLit()
 {
+}
+
+///////////////////////////// CondHeadExpander /////////////////////////////
+
+CondHeadExpander::CondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander)
+	: aggr_(aggr)
+	, cond_(cond)
+	, ruleExp_(ruleExpander)
+{
+}
+
+void CondHeadExpander::expand(Lit *lit, Expander::Type type)
+{
+	switch(type)
+	{
+		case RANGE:
+			ruleExp_.expand(lit, type);
+			break;
+		case POOL:
+		{
+			LitPtrVec body;
+			foreach(const Lit &l, cond_->body()) { body.push_back(l.clone()); }
+			std::auto_ptr<JunctionCond> cond(new JunctionCond(cond_->loc(), lit, body));
+			if(aggr_.head())
+			{
+				JunctionCondVec lits;
+				foreach(const JunctionCond &l, aggr_.conds())
+				{
+					if(&l == cond_) lits.push_back(cond);
+					else lits.push_back(new JunctionCond(l));
+				}
+				JunctionLit *lit(new JunctionLit(aggr_.loc(), lits));
+				ruleExp_.expand(lit, type);
+			}
+			else { aggr_.conds().push_back(cond.release()); }
+			break;
+		}
+		case RELATION:
+			cond_->body().push_back(lit);
+			break;
+	}
+}
+
+///////////////////////////// CondBodyExpander /////////////////////////////
+
+CondBodyExpander::CondBodyExpander(JunctionCond &cond)
+	: cond_(cond)
+{
+}
+
+void CondBodyExpander::expand(Lit *lit, Expander::Type)
+{
+	cond_.body().push_back(lit);
 }

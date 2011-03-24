@@ -51,7 +51,7 @@ void Statement::init(Grounder *g)
 }
 
 Statement::Statement(const Loc &loc)
-	: Locateable(loc)
+	: Groundable(loc)
 {
 }
 

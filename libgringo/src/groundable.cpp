@@ -20,8 +20,9 @@
 #include <gringo/litdep.h>
 #include <gringo/grounder.h>
 
-Groundable::Groundable() 
-	: enqueued_(false)
+Groundable::Groundable(const Loc &loc)
+	: Locateable(loc)
+	, enqueued_(false)
 	, level_(0)
 {
 }

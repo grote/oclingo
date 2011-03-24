@@ -18,11 +18,12 @@
 #pragma once
 
 #include <gringo/gringo.h>
+#include <gringo/locateable.h>
 
-class Groundable
+class Groundable : public Locateable
 {
 public:
-	Groundable();
+	Groundable(const Loc &loc);
 	virtual bool grounded(Grounder *g) = 0;
 	virtual void ground(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;

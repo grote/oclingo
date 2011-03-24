@@ -20,13 +20,21 @@
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
 #include <gringo/printer.h>
+#include <gringo/groundable.h>
 
-class JunctionCond
+class JunctionCond : public Groundable
 {
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
-	~JunctionCond();
+	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
+	LitPtrVec &body();
 
+	bool grounded(Grounder *g);
+	void ground(Grounder *g);
+	void visit(PrgVisitor *visitor);
+	void print(Storage *sto, std::ostream &out) const;
+
+	~JunctionCond();
 private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;
@@ -44,6 +52,8 @@ public:
 	};
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
+
+	JunctionCondVec &conds();
 
 	void normalize(Grounder *g, Expander *expander);
 
@@ -66,3 +76,11 @@ private:
 	JunctionCondVec conds_;
 
 };
+
+/////////////////////////// JunctionCond ///////////////////////////
+
+inline LitPtrVec &JunctionCond::body() { return body_; }
+
+/////////////////////////// JunctionLit ///////////////////////////
+
+inline JunctionCondVec &JunctionLit::conds() { return conds_; }

@@ -266,7 +266,7 @@ private:
 
 SetLit* new_clone(const SetLit& a);
 
-class CondLit : public Groundable, public Locateable
+class CondLit : public Groundable
 {
 	friend class AggrLit;
 public:
