@@ -16,13 +16,13 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/statement.h>
-#include <gringo/varcollector.h>
 #include <gringo/lit.h>
 #include <gringo/litdep.h>
 #include <gringo/varterm.h>
 #include <gringo/grounder.h>
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
+#include <gringo/grounder.h>
 
 namespace
 {
@@ -40,6 +40,28 @@ namespace
 		VarSet      bound_;
 		bool        top_;
 		bool        createIndex_;
+	};
+
+	class VarCollector : public PrgVisitor
+	{
+		typedef std::map<uint32_t, VarTerm*> VarMap;
+		typedef std::vector<uint32_t> VarStack;
+		typedef std::vector<Groundable*> GrdQueue;
+	public:
+		VarCollector(Grounder *grounder);
+		void visit(VarTerm *var, bool bind);
+		void visit(Term *term, bool bind);
+		void visit(Lit *lit, bool domain);
+		void visit(Groundable *g, bool choice);
+		uint32_t collect();
+	private:
+		VarMap      varMap_;
+		VarStack    varStack_;
+		GrdQueue    grdQueue_;
+		Groundable *grd_;
+		uint32_t    vars_;
+		uint32_t    level_;
+		Grounder   *grounder_;
 	};
 }
 
@@ -127,4 +149,85 @@ void IndexAdder::add(Grounder *g, Statement *s)
 {
 	IndexAdder adder(g);
 	adder.visit(s, false);
+}
+
+//////////////////////////////// IndexAdder ////////////////////////////////
+
+VarCollector::VarCollector(Grounder *grounder)
+	: vars_(0)
+	, level_(0)
+	, grounder_(grounder)
+{
+}
+
+void VarCollector::visit(VarTerm *var, bool bind)
+{
+	(void)bind;
+	if(var->anonymous())
+	{
+		var->index(vars_, level_, true);
+		grd_->vars().push_back(vars_);
+		vars_++;
+		grounder_->reserve(vars_);
+	}
+	else
+	{
+		std::pair<VarMap::iterator, bool> res = varMap_.insert(VarMap::value_type(var->nameId(), var));
+		if(res.second)
+		{
+			varStack_.push_back(var->nameId());
+			var->index(vars_, level_, true);
+			grd_->vars().push_back(vars_);
+			vars_++;
+			grounder_->reserve(vars_);
+
+		}
+		else var->index(res.first->second->index(), res.first->second->level(), res.first->second->level() == level_);
+	}
+}
+
+void VarCollector::visit(Term *term, bool bind)
+{
+	term->visit(this, bind);
+}
+
+void VarCollector::visit(Lit *lit, bool domain)
+{
+	(void)domain;
+	lit->visit(this);
+}
+
+void VarCollector::visit(Groundable *grd, bool choice)
+{
+	(void)choice;
+	grdQueue_.push_back(grd);
+}
+
+uint32_t VarCollector::collect()
+{
+	level_ = 0;
+	while(grdQueue_.size() > 0)
+	{
+		grd_ = grdQueue_.back();
+		grdQueue_.pop_back();
+		if(grd_)
+		{
+			grdQueue_.push_back(0);
+			varStack_.push_back(std::numeric_limits<uint32_t>::max());
+			grd_->level(level_);
+			grd_->visit(this);
+			level_++;
+		}
+		else
+		{
+			level_--;
+			while(varStack_.back() != std::numeric_limits<uint32_t>::max())
+			{
+				varMap_.erase(varStack_.back());
+				varStack_.pop_back();
+			}
+			varStack_.pop_back();
+		}
+	}
+	return vars_;
 }

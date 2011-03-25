@@ -22,7 +22,6 @@
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
-#include <gringo/varcollector.h>
 #include <gringo/exceptions.h>
 
 RangeLit::RangeLit(const Loc &loc, VarTerm *var, Term *a, Term *b)

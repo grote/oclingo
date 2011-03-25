@@ -103,7 +103,6 @@ class Storage;
 class Streams;
 class Term;
 class TermExpansion;
-class VarCollector;
 class VarTerm;
 class WeightLit;
 

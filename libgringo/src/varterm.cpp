@@ -16,7 +16,6 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/varterm.h>
-#include <gringo/varcollector.h>
 #include <gringo/litdep.h>
 #include <gringo/grounder.h>
 #include <gringo/storage.h>

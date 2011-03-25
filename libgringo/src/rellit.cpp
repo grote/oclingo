@@ -22,7 +22,6 @@
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
-#include <gringo/varcollector.h>
 
 RelLit::RelLit(const Loc &loc, Type t, Term *a, Term *b)
 	: Lit(loc)

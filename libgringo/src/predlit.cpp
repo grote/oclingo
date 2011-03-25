@@ -24,7 +24,6 @@
 #include "gringo/groundable.h"
 #include "gringo/instantiator.h"
 #include "gringo/litdep.h"
-#include "gringo/varcollector.h"
 
 Lit::Score BasicBodyOrderHeuristic::score(Grounder *, VarSet &bound, PredLit *pred)
 {

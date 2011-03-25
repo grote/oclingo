@@ -22,7 +22,6 @@
 #include <gringo/groundable.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
-#include <gringo/varcollector.h>
 #include <gringo/varterm.h>
 #include <gringo/output.h>
 #include <gringo/exceptions.h>
