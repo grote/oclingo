@@ -73,8 +73,8 @@ public:
 	~JunctionLit();
 
 private:
+	bool fact_;
 	JunctionCondVec conds_;
-
 };
 
 /////////////////////////// JunctionCond ///////////////////////////

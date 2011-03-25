@@ -18,6 +18,7 @@
 #include "gringo/junctionlit.h"
 #include "gringo/instantiator.h"
 #include "gringo/litdep.h"
+#include "gringo/index.h"
 
 // - analysis
 //   - literals after : have to be stratified
@@ -96,12 +97,18 @@ void JunctionCond::ground(Grounder *g)
 
 void JunctionCond::visit(PrgVisitor *visitor)
 {
-
+	visitor->visit(head_.get(), false);
+	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
 }
 
 void JunctionCond::print(Storage *sto, std::ostream &out) const
 {
-
+	head_->print(sto, out);
+	foreach(const Lit &lit, body_)
+	{
+		out << ":";
+		lit.print(sto, out);
+	}
 }
 
 JunctionCond::~JunctionCond()
@@ -112,6 +119,7 @@ JunctionCond::~JunctionCond()
 
 JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 	: Lit(loc)
+	, fact_(false)
 	, conds_(conds)
 {
 }
@@ -128,26 +136,52 @@ void JunctionLit::normalize(Grounder *g, Expander *expander)
 
 bool JunctionLit::match(Grounder *grounder)
 {
+	fact_ = false;
+	// ...
 }
 
 bool JunctionLit::fact() const
 {
+	return fact_;
 }
 
 void JunctionLit::print(Storage *sto, std::ostream &out) const
 {
+	bool comma = false;
+	foreach(const JunctionCond &cond, conds_)
+	{
+		if(comma) { out << "|"; }
+		else      { comma = true; }
+		cond.print(sto, out);
+	}
 }
 
 void JunctionLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 {
+	/*
+	parent_ = gr;
+	VarSet global;
+	GlobalsCollector::collect(*this, global, parent_->level());
+	if(head())
+	{
+		foreach(AggrCond &lit, conds_) { lit.initHead(); }
+	}
+	// NOTE: this possibly reinitializes the domain
+	//       but the set of global variables always stays the same
+	domain_.init(global);
+	gr->instantiator()->append(new AggrIndex(*this, bound));
+	if(assign()) { assign()->vars(bound); }
+	*/
 }
 
-Lit::Score JunctionLit::score(Grounder *g, VarSet &bound)
+Lit::Score JunctionLit::score(Grounder *, VarSet &)
 {
+	return Score(LOWEST, 0);
 }
 
 void JunctionLit::visit(PrgVisitor *visitor)
 {
+	foreach(JunctionCond &cond, conds_) { visitor->visit(&cond, head()); }
 }
 
 void JunctionLit::accept(::Printer *v)
@@ -156,6 +190,7 @@ void JunctionLit::accept(::Printer *v)
 
 Lit *JunctionLit::clone() const
 {
+	return new JunctionLit(*this);
 }
 
 JunctionLit::~JunctionLit()
