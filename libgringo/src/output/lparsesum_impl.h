@@ -102,7 +102,7 @@ inline bool AggrCondPrinter::Cond::operator==(const Cond &c) const
 //////////////////////////////// AggrCondPrinter ////////////////////////////////
 
 inline AggrCondPrinter::AggrCondPrinter(LparseConverter *output) : output_(output) { }
-inline void AggrCondPrinter::AggrCondPrinter::trueLit() { }
+inline void AggrCondPrinter::trueLit() { }
 inline Output *AggrCondPrinter::output() const { return output_; }
 inline std::ostream &AggrCondPrinter::out() const { return output_->out(); }
 inline void AggrCondPrinter::end() { }
