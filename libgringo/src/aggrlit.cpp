@@ -236,12 +236,12 @@ bool AggrDomain::state(Grounder *g, AggrLit *lit)
 {
 	ValVec vals;
 	foreach(uint32_t var, global_) { vals.push_back(g->val(var)); }
-	std::pair<const ValVecSet::Index&, bool> res = domain_.insert(vals.begin(), false);
+	ValVecSet::InsertRes res = domain_.insert(vals.begin(), false);
 	// NOTE: inserting a new state does not immediately provide new bindings
-	if(res.second) { states_.push_back(lit->newAggrState(g)); }
-	lastId_ = vals.size() ? res.first / vals.size() : 0;
+	if(res.get<1>()) { states_.push_back(lit->newAggrState(g)); }
+	lastId_ = vals.size() ? res.get<0>() / vals.size() : 0;
 	last_   = &states_[lastId_];
-	return res.second;
+	return res.get<1>();
 }
 
 void AggrDomain::finish()

@@ -16,6 +16,7 @@ public:
 	};
 	typedef ValVec::iterator       iterator;
 	typedef ValVec::const_iterator const_iterator;
+	typedef boost::tuples::tuple<const Index&, bool> InsertRes;
 
 private:
 	struct Cmp
@@ -38,7 +39,7 @@ public:
 	ValVecSet(const ValVecSet &set);
 	ValVecSet &operator=(const ValVecSet &set);
 	const Index &find(const const_iterator &v) const;
-	std::pair<const Index&, bool> insert(const const_iterator &v, bool fact = false);
+	InsertRes insert(const const_iterator &v, bool fact = false);
 	void extend(const ValVecSet &other);
 
 private:

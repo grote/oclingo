@@ -74,7 +74,6 @@ class Expander;
 class Func;
 class Groundable;
 class Grounder;
-class IncConfig;
 class IncLit;
 class Index;
 class Instantiator;
@@ -106,6 +105,7 @@ class TermExpansion;
 class VarTerm;
 class WeightLit;
 
+struct IncConfig;
 struct Loc;
 struct VarDomains;
 

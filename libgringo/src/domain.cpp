@@ -47,8 +47,8 @@ bool Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 	int32_t offset;
 	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
 	{
-		std::pair<const ValVecSet::Index&, bool> res = vals_.insert(v, fact);
-		uint32_t pos = res.first;
+		ValVecSet::InsertRes res = vals_.insert(v, fact);
+		uint32_t pos = res.get<0>();
 		if(pos < lastInsertPos_)
 		{
 			std::stringstream ss;
@@ -65,7 +65,7 @@ bool Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
 			}
 			throw AtomRedefinedException(ss.str());
 		}
-		return res.second;
+		return res.get<1>();
 	}
 	else
 	{

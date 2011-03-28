@@ -68,7 +68,7 @@ const ValVecSet::Index &ValVecSet::find(const const_iterator &v) const
 	else return g_invalid;
 }
 
-std::pair<const ValVecSet::Index&, bool> ValVecSet::insert(const const_iterator &v, bool fact)
+ValVecSet::InsertRes ValVecSet::insert(const const_iterator &v, bool fact)
 {
 	Index idx(vals_.size(), fact);
 	vals_.insert(vals_.end(), v, v + arity_);
@@ -78,7 +78,7 @@ std::pair<const ValVecSet::Index&, bool> ValVecSet::insert(const const_iterator 
 		vals_.resize(idx.index);
 		if(fact) res.first->fact = fact;
 	}
-	return std::pair<const ValVecSet::Index&, bool>(*res.first, res.second);
+	return ValVecSet::InsertRes(*res.first, res.second);
 }
 
 void ValVecSet::extend(const ValVecSet &other)
