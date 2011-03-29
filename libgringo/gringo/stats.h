@@ -91,7 +91,7 @@ public:
 	void visit(Term* term, bool bind);
 	void visit(PredLit *lit);
 	void visit(Lit *lit, bool domain);
-	void visit(Groundable *grd, bool choice);
+	void visit(Formula *grd, bool choice);
 	void visit(Statement *stm);
 
 private: // visitor state

@@ -49,13 +49,20 @@ private:
 	bool finished_;
 };
 
+class Matchable
+{
+public:
+	virtual bool match(Grounder *grounder) = 0;
+	virtual ~Matchable();
+};
+
 class MatchIndex : public NewOnceIndex
 {
 public:
-	MatchIndex(Lit *lit);
+	MatchIndex(Matchable *m);
 	virtual bool first(Grounder *grounder, int binder);
 private:
-	Lit *lit_;
+	Matchable *m_;
 };
 
 // ========================= Index =========================
@@ -93,7 +100,11 @@ inline bool NewOnceIndex::hasNew() const { return !finished_; }
 
 inline NewOnceIndex::~NewOnceIndex() { }
 
+// ========================= Matchable =========================
+
+inline Matchable::~Matchable() { }
+
 // ========================= MatchIndex =========================
-inline MatchIndex::MatchIndex(Lit *lit) : lit_(lit)
+inline MatchIndex::MatchIndex(Matchable *m) : m_(m)
 {
 }

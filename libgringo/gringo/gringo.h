@@ -66,13 +66,14 @@ inline bool unknown(
 using boost::logic::tribool;
 
 class ArgTerm;
+class AggrLit;
 class BodyOrderHeuristic;
 class AggrCond;
 class ConstTerm;
 class Domain;
 class Expander;
 class Func;
-class Groundable;
+class Formula;
 class Grounder;
 class IncLit;
 class Index;
@@ -104,6 +105,7 @@ class Term;
 class TermExpansion;
 class VarTerm;
 class WeightLit;
+class Groundable;
 
 struct IncConfig;
 struct Loc;
@@ -111,7 +113,7 @@ struct VarDomains;
 
 namespace LitDep
 {
-	class GrdNode;
+	class FormulaNode;
 }
 
 typedef std::vector<std::string> StringVec;
@@ -143,7 +145,7 @@ VarTerm* new_clone(const VarTerm& a);
 Lit* new_clone(const Lit& a);
 WeightLit* new_clone(const WeightLit& a);
 Instantiator* new_clone(const Instantiator& a);
-LitDep::GrdNode* new_clone(const LitDep::GrdNode& a);
+LitDep::FormulaNode* new_clone(const LitDep::FormulaNode& a);
 AggrCond* new_clone(const AggrCond& a);
 
 #endif

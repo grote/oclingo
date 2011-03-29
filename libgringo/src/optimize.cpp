@@ -34,7 +34,7 @@ public:
 	bool fact() const { return true; }
 	bool match(Grounder *grounder) { (void)grounder; return true; }
 	void addDomain(Grounder *, bool fact) { (void)fact; assert(false); }
-	void index(Grounder *g, Groundable *gr, VarSet &bound) { (void)g; (void)gr; (void)bound; }
+	Index *index(Grounder *g, Formula *gr, VarSet &bound) { (void)g; (void)gr; (void)bound; }
 	bool edbFact() const { return false; }
 	void normalize(Grounder *g, Expander *expander) { (void)g; (void)expander; assert(false); }
 	void visit(PrgVisitor *visitor)
@@ -64,7 +64,7 @@ Optimize::PrioLit* new_clone(const Optimize::PrioLit& a)
 }
 
 Optimize::Optimize(const Loc &loc, PredLit *head, Term *weight, Term *prio, LitPtrVec &body, bool maximize)
-	: Statement(loc)
+	: SimpleStatement(loc)
 	, head_(head)
 	, prio_(new PrioLit(loc, weight, prio))
 	, body_(body.release())
@@ -83,7 +83,7 @@ Term *Optimize::prio()
 	return prio_->prio().get();
 }
 
-void Optimize::ground(Grounder *g)
+void Optimize::doGround(Grounder *g)
 {
 	#pragma message "optimize statements can be printed right away without storing them!"
 	prios_.clear();

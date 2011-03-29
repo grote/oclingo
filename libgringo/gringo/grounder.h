@@ -78,7 +78,7 @@ class Grounder : public Storage, public Context
 	friend class Module;
 private:
 	class LuaImpl;
-	typedef std::deque<Groundable*> GroundableVec;
+	typedef std::deque<Groundable*> GroundableQueue;
 	typedef boost::ptr_vector<Module> ModuleVec;
 
 public:
@@ -108,7 +108,7 @@ private:
 
 private:
 	ModuleVec              modules_;
-	GroundableVec          queue_;
+	GroundableQueue        queue_;
 	uint32_t               internal_;
 	uint32_t               aggrUids_;
 	bool                   debug_;

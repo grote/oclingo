@@ -21,7 +21,7 @@
 #include <gringo/predlit.h>
 #include <gringo/term.h>
 #include <gringo/grounder.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/instantiator.h>
 #include <gringo/grounder.h>
 #include <gringo/exceptions.h>

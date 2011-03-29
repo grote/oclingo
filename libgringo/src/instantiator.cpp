@@ -16,12 +16,12 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/instantiator.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/index.h>
 #include <gringo/grounder.h>
 
-Instantiator::Instantiator(Groundable *g)
-	: groundable_(g)
+Instantiator::Instantiator(Formula *g)
+	: formula_(g)
 	, new_(1, false)
 {
 }
@@ -66,7 +66,7 @@ void Instantiator::ground(Grounder *g)
 		{
 			if(++l == static_cast<int>(indices_.size()))
 			{
-				if(!groundable_->grounded(g)) { break; }
+				if(!formula_->grounded(g)) { break; }
 				matched.first = false;
 			}
 			else
@@ -77,8 +77,7 @@ void Instantiator::ground(Grounder *g)
 			}
 		}
 	}
-	foreach(uint32_t var, groundable_->vars()) { g->unbind(var); }
-	groundable_->finish();
+	foreach(uint32_t var, formula_->vars()) { g->unbind(var); }
 }
 
 void Instantiator::finish()
@@ -92,14 +91,14 @@ void Instantiator::reset()
 	foreach(Index &index, indices_) { index.reset(); }
 }
 
-void Instantiator::init(Grounder *g, bool enqueue)
+void Instantiator::init(Grounder *g)
 {
 	bool modified = false;
 	foreach(Index &idx, indices_)
 	{
 		modified = idx.init(g) || modified;
 	}
-	if(modified && enqueue) { groundable_->enqueue(g); }
+	if(modified) { formula_->enqueue(g); }
 }
 
 Instantiator::~Instantiator()

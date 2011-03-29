@@ -25,7 +25,7 @@
 #include <gringo/rule.h>
 #include <gringo/streams.h>
 #include <gringo/grounder.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/exceptions.h>
 #include <gringo/display.h>
 #include "parser_impl.h"
@@ -448,7 +448,7 @@ namespace
 		void visit(VarTerm *var, bool bind);
 		void visit(Term *term, bool bind)        { term->visit(this, bind); }
 		void visit(Lit *lit, bool domain)        { (void)domain; lit->visit(this); }
-		void visit(Groundable *grd, bool choice) { (void)choice; grd->visit(this); }
+		void visit(Formula *grd, bool choice) { (void)choice; grd->visit(this); }
 
 	private:
 		Parser    *parser_;
@@ -504,7 +504,7 @@ namespace
 		void visit(VarTerm *var, bool bind);
 		void visit(Term* term, bool bind);
 		void visit(Lit *lit, bool domain);
-		void visit(Groundable *grd, bool choice);
+		void visit(Formula *grd, bool choice);
 
 	private:
 		uint32_t var_;
@@ -547,7 +547,7 @@ namespace
 		if(!found_) { lit->visit(this); }
 	}
 	
-	void IncVarAdder::visit(Groundable *grd, bool)
+	void IncVarAdder::visit(Formula *grd, bool)
 	{
 		if(!found_) { grd->visit(this); }
 	}

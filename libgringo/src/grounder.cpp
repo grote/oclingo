@@ -16,7 +16,7 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/grounder.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/domain.h>
 #include <gringo/printer.h>
 #include <gringo/stmdep.h>
@@ -249,16 +249,16 @@ void Grounder::ground_()
 	while(!queue_.empty())
 	{
 		//std::random_shuffle(queue_.begin(), queue_.end());
-		Groundable *g = queue_.front();
+		Groundable *grd = queue_.front();
 		queue_.pop_front();
-		g->dequeue();
-		g->ground(this);
+		grd->dequeue();
+		grd->ground(this);
 	}
 }
 
-void Grounder::enqueue(Groundable *g)
+void Grounder::enqueue(Groundable *grd)
 {
-	queue_.push_back(g);
+	queue_.push_back(grd);
 }
 
 uint32_t Grounder::createVar()
@@ -285,7 +285,8 @@ void Grounder::addInternal(Statement *s)
 	s->normalize(this);
 	if(optimizeEdb_ && s->edbFact())
 	{
-		s->ground(this);
+		s->enqueue(this);
+		ground_();
 		delete s;
 		stats_.addFact();
 	}

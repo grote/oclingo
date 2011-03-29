@@ -51,6 +51,7 @@ public:
 	ValRng vals() const;
 	ValRng vals(uint32_t top) const;
 	Domain *dom() const { return dom_; }
+	// TODO: remove those functions
 	void push();
 	bool testUnique(PredLitSet &set, Val val=Val::create());
 	void pop();

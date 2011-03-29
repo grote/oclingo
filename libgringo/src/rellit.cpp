@@ -19,7 +19,7 @@
 #include <gringo/term.h>
 #include <gringo/index.h>
 #include <gringo/grounder.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
 
@@ -78,7 +78,7 @@ namespace
 	}
 }
 
-void RelLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+Index *RelLit::index(Grounder *g, Formula *gr, VarSet &bound)
 {
 	(void)g;
 	if(t_ == ASSIGN)
@@ -90,12 +90,11 @@ void RelLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 		if(bind.size() > 0)
 		{
 			AssignIndex *p = new AssignIndex(a_.get(), b_.get(), bind);
-			gr->instantiator()->append(p);
 			bound.insert(bind.begin(), bind.end());
-			return;
+			return p;
 		}
 	}
-	gr->instantiator()->append(new MatchIndex(this));
+	return new MatchIndex(this);
 }
 
 void RelLit::accept(Printer *v)

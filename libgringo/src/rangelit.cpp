@@ -19,7 +19,7 @@
 #include <gringo/varterm.h>
 #include <gringo/index.h>
 #include <gringo/grounder.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
 #include <gringo/exceptions.h>
@@ -97,10 +97,7 @@ namespace
 			current_ = a_->val(grounder).number();
 			upper_   = b_->val(grounder).number();
 		}
-		catch(const Val *val)
-		{
-			numException(grounder, lit_, val);
-		}	
+		catch(const Val *val) { numException(grounder, lit_, val); }
 		return next(grounder, binder);
 	}
 
@@ -115,9 +112,8 @@ namespace
 	}
 }
 
-void RangeLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+Index *RangeLit::index(Grounder *, Formula *gr, VarSet &bound)
 {
-	(void)g;
 	VarSet vars;
 	VarVec bind;
 	var_->vars(vars);
@@ -125,10 +121,10 @@ void RangeLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 	if(bind.size() > 0)
 	{
 		RangeIndex *p = new RangeIndex(var_->index(), this, a_.get(), b_.get(), bind);
-		gr->instantiator()->append(p);
 		bound.insert(bind.begin(), bind.end());
+		return p;
 	}
-	else gr->instantiator()->append(new MatchIndex(this));
+	else { return new MatchIndex(this); }
 }
 
 void RangeLit::accept(Printer *v)

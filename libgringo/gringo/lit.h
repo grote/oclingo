@@ -52,9 +52,7 @@ public:
 
 	virtual void normalize(Grounder *g, Expander *expander) = 0;
 
-	// NOTE: match has to be called before:
-	//       fact, state, grounded, addDomain, forcePrint, and finish!
-	virtual bool match(Grounder *grounder) = 0;
+	// TODO: replace by state function with will tell whether we had a fact
 	virtual bool fact() const = 0;
 
 	bool head() const;
@@ -68,11 +66,11 @@ public:
 	virtual void grounded(Grounder *grounder);
 	virtual void addDomain(Grounder *grounder, bool fact);
 	virtual bool forcePrint();
-	virtual void finish(Grounder *grounder);
+	virtual void endGround(Grounder *grounder);
 
 	virtual void print(Storage *sto, std::ostream &out) const = 0;
 
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound) = 0;
+	virtual Index *index(Grounder *g, Formula *gr, VarSet &bound) = 0;
 	virtual Score score(Grounder *g, VarSet &bound);
 
 	virtual void visit(PrgVisitor *visitor) = 0;
@@ -102,7 +100,6 @@ public:
 	// Note: careful when forwarding this function
 	virtual void normalize(Grounder *g, Expander *expander);
 
-	virtual bool match(Grounder *grounder);
 	virtual bool fact() const;
 
 	virtual bool complete() const;
@@ -113,11 +110,11 @@ public:
 	virtual void grounded(Grounder *grounder);
 	virtual void addDomain(Grounder *grounder, bool fact);
 	virtual bool forcePrint();
-	virtual void finish(Grounder *grounder);
+	virtual void endGround(Grounder *grounder);
 
 	virtual void print(Storage *sto, std::ostream &out) const;
 
-	virtual void index(Grounder *g, Groundable *gr, VarSet &bound);
+	virtual Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	virtual Score score(Grounder *grounder, VarSet &bound);
 
 	virtual void visit(PrgVisitor *visitor);
@@ -159,7 +156,7 @@ inline Lit::Monotonicity Lit::monotonicity() const { return sign() ? ANTIMONOTON
 inline void Lit::grounded(Grounder *) { }
 inline void Lit::addDomain(Grounder *, bool) { }
 inline bool Lit::forcePrint() { return false; }
-inline void Lit::finish(Grounder *) { }
+inline void Lit::endGround(Grounder *) { }
 inline bool Lit::sign() const { return false; }
 
 inline Lit::Score Lit::score(Grounder *, VarSet &) { return Score(HIGHEST, std::numeric_limits<double>::min()); }
@@ -176,7 +173,6 @@ inline Lit::Decorator::Decorator(const Loc &loc) : Lit(loc) { }
 
 inline void Lit::Decorator::normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
 
-inline bool Lit::Decorator::match(Grounder *grounder) { return decorated()->match(grounder); }
 inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
 
 inline bool Lit::Decorator::complete() const { return decorated()->complete(); }
@@ -187,11 +183,11 @@ inline Lit::Monotonicity Lit::Decorator::monotonicity() const { return decorated
 inline void Lit::Decorator::grounded(Grounder *grounder) { decorated()->grounded(grounder); }
 inline void Lit::Decorator::addDomain(Grounder *grounder, bool fact) { decorated()->addDomain(grounder, fact); }
 inline bool Lit::Decorator::forcePrint() { return decorated()->forcePrint(); }
-inline void Lit::Decorator::finish(Grounder *grounder) { decorated()->finish(grounder); }
+inline void Lit::Decorator::endGround(Grounder *grounder) { decorated()->endGround(grounder); }
 
 inline void Lit::Decorator::print(Storage *sto, std::ostream &out) const { decorated()->print(sto, out); }
 
-inline void Lit::Decorator::index(Grounder *g, Groundable *gr, VarSet &bound) { decorated()->index(g, gr, bound); }
+inline Index *Lit::Decorator::index(Grounder *g, Formula *gr, VarSet &bound) { return decorated()->index(g, gr, bound); }
 inline Lit::Score Lit::Decorator::score(Grounder *grounder, VarSet &bound) { return decorated()->score(grounder, bound); }
 
 inline void Lit::Decorator::visit(PrgVisitor *visitor) { decorated()->visit(visitor); }

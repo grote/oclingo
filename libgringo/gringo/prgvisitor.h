@@ -27,6 +27,25 @@ public:
 	virtual void visit(Term* term, bool bind) { (void)term; (void)bind; }
 	virtual void visit(PredLit *pred) { (void)pred; }
 	virtual void visit(Lit *lit, bool domain) { (void)lit; (void)domain; }
-	virtual void visit(Groundable *grd, bool choice) { (void)grd; (void)choice; }
+	virtual void visit(Formula *grd, bool choice) { (void)grd; (void)choice; }
+	virtual ~PrgVisitor() { }
 };
 
+class GlobalsCollector : public PrgVisitor
+{
+private:
+	GlobalsCollector(VarSet &globals, uint32_t level);
+
+	void visit(VarTerm *var, bool bind);
+	void visit(Term* term, bool bind);
+	void visit(Lit *lit, bool domain);
+	void visit(Formula *grd, bool choice);
+
+public:
+	static void collect(AggrLit &lit, VarSet &globals, uint32_t level);
+	static void collect(Lit &lit, VarVec &globals, uint32_t level);
+
+private:
+	VarSet  &globals_;
+	uint32_t level_;
+};

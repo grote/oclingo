@@ -65,15 +65,53 @@ namespace
 	private:
 		JunctionCond &cond_;
 	};
+
+	class JunctionIndex : public Index
+	{
+	public:
+		JunctionIndex(JunctionLit &lit);
+		Match firstMatch(Grounder *grounder, int binder);
+		Match nextMatch(Grounder *grounder, int binder);
+		void reset();
+		void finish();
+		bool hasNew() const;
+		~JunctionIndex();
+	private:
+
+	};
+
+}
+
+///////////////////////////// JunctionLitDomain /////////////////////////////
+
+void JunctionLitDomain::init(Formula *grd, const VarVec &global)
+{
+	grd_    = grd;
+	global_ = global;
+}
+
+///////////////////////////// JunctionCondDomain /////////////////////////////
+
+void JunctionCondDomain::init(JunctionLitDomain &parent, const VarVec &local)
+{
+	parent_ = &parent;
+	local_  = local;
 }
 
 ///////////////////////////// JunctionCond /////////////////////////////
 
 JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
-	: Groundable(loc)
+	: Formula(loc)
 	, head_(head)
 	, body_(body)
 {
+}
+
+void JunctionCond::init(JunctionLitDomain &dom)
+{
+	VarVec local;
+	GlobalsCollector::collect(*head_, local, level());
+	dom_.init(dom, local);
 }
 
 void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp)
@@ -85,14 +123,38 @@ void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp)
 	}
 }
 
+void JunctionCond::enqueue(Grounder *g)
+{
+	// TODO: enqueue parent
+}
+
+void JunctionCond::initInst(Grounder *g)
+{
+	/*
+	// it is ok to do this in createIndex!!!
+	// because the method is called after the JunctionLit::createIndex
+	if(!inst_.get())
+	{
+		inst_.reset(new Instantiator(this));
+		simpleInitInst(g, *inst_);
+	}
+	*/
+
+	/*
+	assert(inst_.get());
+	inst_->init(g);
+	*/
+}
+
 bool JunctionCond::grounded(Grounder *g)
 {
-
+	// modify current table entry
+	return true;
 }
 
 void JunctionCond::ground(Grounder *g)
 {
-
+	// modify current table entry
 }
 
 void JunctionCond::visit(PrgVisitor *visitor)
@@ -134,12 +196,6 @@ void JunctionLit::normalize(Grounder *g, Expander *expander)
 	}
 }
 
-bool JunctionLit::match(Grounder *grounder)
-{
-	fact_ = false;
-	// ...
-}
-
 bool JunctionLit::fact() const
 {
 	return fact_;
@@ -156,22 +212,15 @@ void JunctionLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-void JunctionLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+Index *JunctionLit::index(Grounder *g, Formula *grd, VarSet &)
 {
-	/*
-	parent_ = gr;
-	VarSet global;
-	GlobalsCollector::collect(*this, global, parent_->level());
-	if(head())
-	{
-		foreach(AggrCond &lit, conds_) { lit.initHead(); }
-	}
-	// NOTE: this possibly reinitializes the domain
-	//       but the set of global variables always stays the same
-	domain_.init(global);
-	gr->instantiator()->append(new AggrIndex(*this, bound));
-	if(assign()) { assign()->vars(bound); }
-	*/
+	// Note: no variables are bound
+	VarVec global;
+	GlobalsCollector::collect(*this, global, grd->level());
+	dom_.init(grd, global);
+	foreach(JunctionCond &lit, conds_) { lit.init(dom_); }
+	//return new JunctionIndex(*this);
+	return 0;
 }
 
 Lit::Score JunctionLit::score(Grounder *, VarSet &)
@@ -181,7 +230,10 @@ Lit::Score JunctionLit::score(Grounder *, VarSet &)
 
 void JunctionLit::visit(PrgVisitor *visitor)
 {
-	foreach(JunctionCond &cond, conds_) { visitor->visit(&cond, head()); }
+	foreach(JunctionCond &cond, conds_)
+	{
+		visitor->visit(&cond, head());
+	}
 }
 
 void JunctionLit::accept(::Printer *v)

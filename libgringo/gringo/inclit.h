@@ -47,7 +47,7 @@ public:
 	bool fact() const { return true; }
 	bool forcePrint() { return type_ == VOLATILE; }
 	void accept(::Printer *v);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;

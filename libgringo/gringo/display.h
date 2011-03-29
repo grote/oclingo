@@ -19,9 +19,9 @@
 
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 
-class Display : public Statement
+class Display : public SimpleStatement
 {
 public:
 	class Printer : public ::Printer
@@ -38,7 +38,7 @@ public:
 	PredLit *head() const { return head_.get(); }
 	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
-	void ground(Grounder *g);
+	void doGround(Grounder *g);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);

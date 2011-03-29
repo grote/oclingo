@@ -32,21 +32,21 @@ namespace LitDep
 
 	typedef std::vector<LitNode*> LitNodeVec;
 
-	class GrdNode
+	class FormulaNode
 	{
 	private:
 		typedef boost::ptr_vector<LitNode> LitNodePtrVec;
 		typedef boost::ptr_vector<VarNode> VarNodeVec;
 	public:
-		GrdNode(Groundable *groundable);
+		FormulaNode(Formula *groundable);
 		void append(LitNode *litNode);
 		void append(VarNode *varNode);
 		void reset();
 		bool check(VarTermVec &terms);
 		void order(Grounder *g, PrgVisitor *v, const VarSet &bound);
-		~GrdNode();
+		~FormulaNode();
 	private:
-		Groundable   *groundable_;
+		Formula      *groundable_;
 		LitNodePtrVec litNodes_;
 		VarNodeVec    varNodes_;
 	};
@@ -54,7 +54,7 @@ namespace LitDep
 	class Builder : public PrgVisitor
 	{
 	private:
-		typedef std::vector<GrdNode*> GrdNodeVec;
+		typedef std::vector<FormulaNode*> GrdNodeVec;
 		typedef std::vector<uint32_t> GrdNodeStack;
 		typedef std::vector<LitNode*> LitNodeStack;
 		typedef std::vector<VarNode*> VarNodeVec;
@@ -63,7 +63,7 @@ namespace LitDep
 		void visit(VarTerm *var, bool bind);
 		void visit(Term* term, bool bind);
 		void visit(Lit *lit, bool domain);
-		void visit(Groundable *groundable, bool choice);
+		void visit(Formula *groundable, bool choice);
 		bool check(VarTermVec &terms);
 		~Builder();
 	private:
@@ -74,7 +74,7 @@ namespace LitDep
 	};
 }
 
-inline LitDep::GrdNode* new_clone(const LitDep::GrdNode& a)
+inline LitDep::FormulaNode* new_clone(const LitDep::FormulaNode& a)
 {
 	(void)a;
 	return 0;

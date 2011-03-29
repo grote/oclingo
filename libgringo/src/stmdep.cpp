@@ -18,7 +18,7 @@
 #include <gringo/stmdep.h>
 #include <gringo/domain.h>
 #include <gringo/predlit.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/grounder.h>
 #include <gringo/exceptions.h>
 
@@ -261,7 +261,7 @@ void Builder::visit(Lit *lit, bool domain)
 	lit->visit(this);
 }
 
-void Builder::visit(Groundable *grd, bool choice)
+void Builder::visit(Formula *grd, bool choice)
 {
 	Remember<bool> r1(choice_, choice_ ? true : choice);
 	grd->visit(this);

@@ -18,10 +18,10 @@
 #pragma once
 
 #include <gringo/gringo.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/printer.h>
 
-class Rule : public Statement
+class Rule : public SimpleStatement
 {
 public:
 	class Printer : public ::Printer
@@ -36,7 +36,7 @@ public:
 	Rule(const Loc &loc, Lit *head, LitPtrVec &body);
 	void normalize(Grounder *g);
 	bool grounded(Grounder *g);
-	void ground(Grounder *g);
+	void doGround(Grounder *g);
 	void visit(PrgVisitor *v);
 	void print(Storage *sto, std::ostream &out) const;
 	void append(Lit *l);

@@ -19,8 +19,9 @@
 
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
+#include <gringo/index.h>
 
-class RelLit : public Lit
+class RelLit : public Lit, public Matchable
 {
 public:
 	enum Type { ASSIGN, GREATER, LOWER, EQUAL, GTHAN, LTHAN, INEQUAL };
@@ -29,7 +30,7 @@ public:
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const { return true; }
 	void accept(Printer *v);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool match(Grounder *grounder);
 	void print(Storage *sto, std::ostream &out) const;

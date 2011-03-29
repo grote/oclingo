@@ -25,10 +25,10 @@ class Domain
 private:
 	typedef std::map<int32_t, ValVecSet> OffsetMap;
 public:
-	typedef std::pair<PredIndex*,Groundable*> PredInfo;
+	typedef std::pair<PredIndex*,Formula*> PredInfo;
 	typedef std::vector<PredInfo> PredInfoVec;
 	typedef std::vector<PredIndex*> PredIndexVec;
-	typedef std::vector<Groundable*> GroundableVec;
+	typedef std::vector<Formula*> GroundableVec;
 public:
 	Domain(uint32_t nameId, uint32_t arity, uint32_t domId);
 	const ValVecSet::Index &find(const ValVec::const_iterator &v) const;

@@ -19,7 +19,7 @@
 #include <gringo/term.h>
 #include <gringo/index.h>
 #include <gringo/grounder.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/instantiator.h>
 #include <gringo/litdep.h>
 #include <gringo/varterm.h>
@@ -93,14 +93,14 @@ namespace
 	}
 }
 
-void IncLit::index(Grounder *, Groundable *gr, VarSet &bound)
+Index *IncLit::index(Grounder *, Formula *gr, VarSet &bound)
 {
 	VarSet vars;
 	VarVec bind;
 	var_->vars(vars);
 	std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_insert_iterator<VarVec>(bind));
-	gr->instantiator()->append(new IncIndex(this));
 	bound.insert(bind.begin(), bind.end());
+	return new IncIndex(this);
 }
 
 void IncLit::accept(::Printer *v)

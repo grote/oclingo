@@ -29,14 +29,14 @@
 
 ////////////////////////////// Compute::Head //////////////////////////////
 
-class Compute::Head : public Lit::Decorator
+class Compute::Head : public Lit::Decorator, public Matchable
 {
 public:
 	Head(PredLit *lit);
 	Lit *decorated() const;
 	bool fact() const;
 	bool match(Grounder *grounder);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	Monotonicity monotonicity() const;
 	void visit(PrgVisitor *v);
 	Lit *clone() const;
@@ -69,9 +69,9 @@ bool Compute::Head::match(Grounder *g)
 	return true;
 }
 
-void Compute::Head::index(Grounder *, Groundable *gr, VarSet &)
+Index *Compute::Head::index(Grounder *, Formula *gr, VarSet &)
 {
-	gr->instantiator()->append(new MatchIndex(this));
+	return new MatchIndex(this);
 }
 
 Lit::Monotonicity Compute::Head::monotonicity() const
@@ -97,13 +97,13 @@ Compute::Head::~Head()
 ////////////////////////////// Compute //////////////////////////////
 
 Compute::Compute(const Loc &loc, PredLit *head, LitPtrVec &body)
-	: Statement(loc)
+	: SimpleStatement(loc)
 	, head_(new Head(head))
 	, body_(body.release())
 {
 }
 
-void Compute::ground(Grounder *g)
+void Compute::doGround(Grounder *g)
 {
 	inst_->ground(g);
 }

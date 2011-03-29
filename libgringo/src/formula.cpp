@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/lit.h>
 #include <gringo/litdep.h>
 #include <gringo/varterm.h>
@@ -29,52 +29,89 @@ namespace
 	class IndexAdder : private PrgVisitor
 	{
 	private:
-		IndexAdder(Grounder *g);
-		virtual void visit(Lit *lit, bool domain);
-		virtual void visit(Groundable *grd, bool choice);
+		IndexAdder(Grounder *g, Formula *f, Instantiator &inst);
+		void visit(Lit *lit, bool domain);
+
 	public:
-		static void add(Grounder *g, Statement *s);
+		static void add(Grounder *g, Formula *f, Instantiator &inst);
+
 	private:
-		Grounder   *g_;
-		Groundable *grd_;
-		VarSet      bound_;
-		bool        top_;
-		bool        createIndex_;
+		Grounder     *g_;
+		Formula      *f_;
+		Instantiator &inst_;
+		VarSet        bound_;
 	};
+
+	class FormulaInitializer : private PrgVisitor
+	{
+	private:
+		FormulaInitializer(Grounder *g);
+		void visit(Lit *lit, bool domain);
+		void visit(Formula *f, bool choice);
+
+	public:
+		static void init(Grounder *g, Formula *f);
+
+	private:
+		Grounder *g_;
+	};
+
 
 	class VarCollector : public PrgVisitor
 	{
 		typedef std::map<uint32_t, VarTerm*> VarMap;
 		typedef std::vector<uint32_t> VarStack;
-		typedef std::vector<Groundable*> GrdQueue;
+		typedef std::vector<Formula*> GrdQueue;
 	public:
 		VarCollector(Grounder *grounder);
 		void visit(VarTerm *var, bool bind);
 		void visit(Term *term, bool bind);
 		void visit(Lit *lit, bool domain);
-		void visit(Groundable *g, bool choice);
+		void visit(Formula *g, bool choice);
 		uint32_t collect();
 	private:
 		VarMap      varMap_;
 		VarStack    varStack_;
 		GrdQueue    grdQueue_;
-		Groundable *grd_;
+		Formula *grd_;
 		uint32_t    vars_;
 		uint32_t    level_;
 		Grounder   *grounder_;
 	};
 }
 
+//////////////////////////////// Formula ////////////////////////////////
+
+Formula::Formula(const Loc &loc)
+	: Locateable(loc)
+	, level_(0)
+{
+}
+
+void Formula::litDep(LitDep::FormulaNode *litDep)
+{
+	litDep_.reset(litDep);
+}
+
+Formula::~Formula()
+{
+}
+
+void Formula::simpleInitInst(Grounder *g, Instantiator &inst)
+{
+	IndexAdder::add(g, this, inst);
+}
+
 //////////////////////////////// Statement ////////////////////////////////
+
+Statement::Statement(const Loc &loc)
+	: Formula(loc)
+{
+}
 
 void Statement::init(Grounder *g)
 {
-	IndexAdder::add(g, this);
-}
-
-Statement::Statement(const Loc &loc)
-	: Groundable(loc)
-{
+	FormulaInitializer::init(g, this);
 }
 
 void Statement::check(Grounder *g)
@@ -103,55 +140,89 @@ void Statement::check(Grounder *g)
 	}
 }
 
+//////////////////////////////// SimpleStatement ////////////////////////////////
+
+SimpleStatement::SimpleStatement(const Loc &loc)
+	: Statement(loc)
+	, enqueued_(false)
+{
+
+}
+
+void SimpleStatement::initInst(Grounder *g)
+{
+	if(!inst_.get())
+	{
+		inst_.reset(new Instantiator(this));
+		simpleInitInst(g, *inst_);
+	}
+	inst_->init(g);
+}
+
+void SimpleStatement::enqueue(Grounder *g)
+{
+	if(!enqueued_)
+	{
+		enqueued_ = true;
+		g->enqueue(this);
+	}
+}
+
+void SimpleStatement::ground(Grounder *g)
+{
+	doGround(g);
+	inst_->finish();
+}
+
+SimpleStatement::~SimpleStatement()
+{
+}
+
+//////////////////////////////// FormulaInitializer ////////////////////////////////
+
+FormulaInitializer::FormulaInitializer(Grounder *g)
+	: g_(g)
+{ }
+
+void FormulaInitializer::visit(Lit *lit, bool)
+{
+	lit->visit(this);
+}
+
+void FormulaInitializer::visit(Formula *f, bool)
+{
+	f->initInst(g_);
+	f->visit(this);
+}
+
+void FormulaInitializer::init(Grounder *g, Formula *f)
+{
+	FormulaInitializer init(g);
+	init.visit(f, false);
+}
+
 //////////////////////////////// IndexAdder ////////////////////////////////
 
-IndexAdder::IndexAdder(Grounder *g)
+IndexAdder::IndexAdder(Grounder *g, Formula *f, Instantiator &inst)
 	: g_(g)
-	, grd_(0)
-	, top_(true)
-	, createIndex_(true)
+	, f_(f)
+	, inst_(inst)
 { }
 
 void IndexAdder::visit(Lit *lit, bool)
 {
-	lit->visit(this);
-	if(createIndex_) { lit->index(g_, grd_, bound_); }
+	inst_.append(lit->index(g_, f_, bound_));
 }
 
-void IndexAdder::visit(Groundable *grd, bool)
+void IndexAdder::add(Grounder *g, Formula *f, Instantiator &inst)
 {
-	bool top         = top_;
-	bool createIndex = createIndex_;
-	top_             = false;
-	if(!grd->instantiator())
-	{
-		Groundable *oldGrd(grd_);
-		VarSet      oldBound(bound_);
-		grd_         = grd;
-		createIndex_ = true;
-		grd_->instantiator(new Instantiator(grd_));
-		if(grd_->litDep()) { grd_->litDep()->order(g_, this, bound_); }
-		else               { grd_->visit(this); }
-		grd_->instantiator()->fix();
-		grd_ = oldGrd;
-		std::swap(bound_, oldBound);
-	}
-	else
-	{
-		createIndex_ = false;
-		grd->visit(this);
-	}
-	createIndex_ = createIndex;
-	grd->instantiator()->init(g_, top);
+	IndexAdder adder(g, f, inst);
+	if(f->litDep()) { f->litDep()->order(g, &adder, adder.bound_); }
+	else { f->visit(&adder); }
+	inst.fix();
 }
 
-void IndexAdder::add(Grounder *g, Statement *s)
-{
-	IndexAdder adder(g);
-	adder.visit(s, false);
-}
-
-//////////////////////////////// IndexAdder ////////////////////////////////
+//////////////////////////////// VarCollector ////////////////////////////////
 
 VarCollector::VarCollector(Grounder *grounder)
 	: vars_(0)
@@ -180,9 +251,8 @@ void VarCollector::visit(VarTerm *var, bool bind)
 			grd_->vars().push_back(vars_);
 			vars_++;
 			grounder_->reserve(vars_);
-
 		}
-		else var->index(res.first->second->index(), res.first->second->level(), res.first->second->level() == level_);
+		else { var->index(res.first->second->index(), res.first->second->level(), res.first->second->level() == level_); }
 	}
 }
 
@@ -197,7 +267,7 @@ void VarCollector::visit(Lit *lit, bool domain)
 	lit->visit(this);
 }
 
-void VarCollector::visit(Groundable *grd, bool choice)
+void VarCollector::visit(Formula *grd, bool choice)
 {
 	(void)choice;
 	grdQueue_.push_back(grd);

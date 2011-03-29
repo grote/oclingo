@@ -19,7 +19,7 @@
 #include <gringo/grounder.h>
 #include <gringo/varterm.h>
 #include <gringo/index.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/instantiator.h>
 #include <gringo/prgvisitor.h>
 
@@ -85,9 +85,8 @@ namespace
 	}
 }
 
-void LuaLit::index(Grounder *g, Groundable *gr, VarSet &bound)
+Index *LuaLit::index(Grounder *, Formula *, VarSet &bound)
 {
-	(void)g;
 	VarSet vars;
 	VarVec bind;
 	var_->vars(vars);
@@ -95,10 +94,10 @@ void LuaLit::index(Grounder *g, Groundable *gr, VarSet &bound)
 	if(bind.size() > 0)
 	{
 		LuaIndex *p = new LuaIndex(var_->index(), this, bind);
-		gr->instantiator()->append(p);
 		bound.insert(bind.begin(), bind.end());
+		return p;
 	}
-	else gr->instantiator()->append(new MatchIndex(this));
+	else { return new MatchIndex(this); }
 }
 
 void LuaLit::accept(Printer *v)

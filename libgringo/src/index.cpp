@@ -20,5 +20,5 @@
 
 bool MatchIndex::first(Grounder *grounder, int)
 {
-	return lit_->match(grounder);
+	return m_->match(grounder);
 }

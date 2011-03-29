@@ -19,8 +19,9 @@
 
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
+#include <gringo/index.h>
 
-class RangeLit : public Lit
+class RangeLit : public Lit, public Matchable
 {
 public:
 	RangeLit(const Loc &loc, VarTerm *var, Term *a, Term *b);
@@ -28,7 +29,7 @@ public:
 	bool match(Grounder *grounder);
 	bool fact() const { return true; }
 	void accept(Printer *v);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	Lit::Score score(Grounder *g, VarSet &bound);

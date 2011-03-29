@@ -26,7 +26,7 @@
 #include <gringo/exceptions.h>
 
 Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
-	: Statement(loc)
+	: SimpleStatement(loc)
 	, head_(head)
 	, body_(body.release())
 {
@@ -112,16 +112,15 @@ bool Rule::edbFact() const
 	return body_.size() == 0 && head_.get() && head_->edbFact();
 }
 
-void Rule::ground(Grounder *g)
+void Rule::doGround(Grounder *g)
 {
 	if(inst_.get()) { inst_->ground(g); }
 	else
 	{
 		assert(edbFact());
-		if(head_.get()) { head_->match(g); }
 		grounded(g);
 	}
-	if(head_.get()) { head_->finish(g); }
+	if(head_.get()) { head_->endGround(g); }
 }
 
 void Rule::addDomain(Grounder *g, bool fact)

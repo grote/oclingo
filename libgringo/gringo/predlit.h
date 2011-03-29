@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
 #include <gringo/predlitrep.h>
+#include <gringo/index.h>
 
 struct VarDomains
 {
@@ -56,7 +57,7 @@ public:
 	virtual Lit::Score score(Grounder *g, VarSet &bound, PredLit *pred);
 };
 
-class PredLit : public Lit, public PredLitRep
+class PredLit : public Lit, public PredLitRep, public Matchable
 {
 	using Lit::sign;
 private:
@@ -71,12 +72,12 @@ public:
 	/** \note grounded has to be called before reading top_ or vals_. */
 	void grounded(Grounder *grounder);
 	bool match(Grounder *grounder);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	void visit(PrgVisitor *visitor);
 	bool edbFact() const;
 	void complete(bool complete) { complete_ = complete; }
 	bool complete() const { return complete_; }
-	void finish(Grounder *g);
+	void endGround(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
 	Score score(Grounder *g, VarSet &bound);
 	Lit *clone() const;
@@ -96,7 +97,7 @@ private:
 	bool        complete_;
 	uint32_t    startNew_;
 	PredIndex  *index_;
-	Groundable *parent_;
+	Formula *parent_;
 };
 
 PredLit* new_clone(const PredLit& a);

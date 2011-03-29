@@ -108,7 +108,7 @@ void Stats::visit(Lit *lit, bool domain)
 	}
 }
 
-void Stats::visit(Groundable *grd, bool choice)
+void Stats::visit(Formula *grd, bool choice)
 {
 	(void)choice;
 	grd->visit(this);

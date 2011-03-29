@@ -27,16 +27,17 @@
 #include <gringo/instantiator.h>
 
 External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
-	: Statement(loc)
+	: SimpleStatement(loc)
 	, head_(head)
 	, body_(body.release())
 {
 	head_->head(true);
 }
 
-void External::ground(Grounder *g)
+void External::doGround(Grounder *g)
 {
 	inst_->ground(g);
+	head_->endGround(g);
 }
 
 void External::addDomain(Grounder *g)

@@ -21,7 +21,7 @@
 #include "gringo/grounder.h"
 #include "gringo/domain.h"
 #include "gringo/predindex.h"
-#include "gringo/groundable.h"
+#include "gringo/formula.h"
 #include "gringo/instantiator.h"
 #include "gringo/litdep.h"
 
@@ -106,13 +106,13 @@ bool PredLit::match(Grounder *grounder)
 	else                  { return dom_->find(vals_.begin() + top_).valid(); }
 }
 
-void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
+Index *PredLit::index(Grounder *, Formula *gr, VarSet &bound)
 {
 	parent_ = gr;
 	if(sign() || head() || dom()->external())
 	{
-		gr->instantiator()->append(new MatchIndex(this));
 		index_ = 0;
+		return new MatchIndex(this);
 	}
 	else
 	{
@@ -123,7 +123,7 @@ void PredLit::index(Grounder *, Groundable *gr, VarSet &bound)
 		std::set_difference(vars.begin(), vars.end(), index.begin(), index.end(), std::back_insert_iterator<VarVec>(bind));
 		bound.insert(vars.begin(), vars.end());
 		index_ = new PredIndex(dom_, terms_, index, bind);
-		gr->instantiator()->append(index_);
+		return index_;
 	}
 }
 
@@ -233,7 +233,7 @@ void PredLit::sign(bool sign)
 	PredLitRep::sign(sign);
 }
 
-void PredLit::finish(Grounder *g)
+void PredLit::endGround(Grounder *g)
 {
 	if(startNew_)
 	{

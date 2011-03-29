@@ -20,7 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
 #include <gringo/printer.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 #include <gringo/valvecset.h>
 #include <gringo/index.h>
 
@@ -215,9 +215,9 @@ public:
 
 	void grounded(Grounder *grounder);
 	void addDomain(Grounder *g, bool fact);
-	void finish(Grounder *g);
+	void endGround(Grounder *g);
 
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	Score score(Grounder *g, VarSet &bound);
 
 	void visit(PrgVisitor *visitor);
@@ -233,7 +233,7 @@ protected:
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
-	Groundable     *parent_;
+	Formula     *parent_;
 	AggrCondVec      conds_;
 	AggrDomain      domain_;
 	Val             valLower_;
@@ -252,7 +252,7 @@ public:
 	bool fact() const;
 
 	void addDomain(Grounder *g, bool fact);
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	bool edbFact() const;
 	void normalize(Grounder *g, Expander *e);
 	void visit(PrgVisitor *visitor);
@@ -266,7 +266,7 @@ private:
 
 SetLit* new_clone(const SetLit& a);
 
-class AggrCond : public Groundable
+class AggrCond : public Formula
 {
 	friend class AggrLit;
 public:
@@ -294,9 +294,9 @@ public:
 	void head(bool head);
 	void initHead();
 
-	using Groundable::finish;
+	void initInst(Grounder *g);
 	void finish();
-	void finish(Grounder *g);
+	void endGround(Grounder *g);
 	void enqueue(Grounder *g);
 	void ground(Grounder *g);
 	bool grounded(Grounder *g);
@@ -308,13 +308,14 @@ public:
 
 	~AggrCond();
 private:
-	Style           style_;
-	SetLit          set_;
-	LitPtrVec       lits_;
-	VarVec          headVars_;
-	AggrLit        *aggr_;
-	mutable tribool complete_;
-	bool            head_;
+	Style                   style_;
+	SetLit                  set_;
+	LitPtrVec               lits_;
+	clone_ptr<Instantiator> inst_;
+	VarVec                  headVars_;
+	AggrLit                *aggr_;
+	mutable tribool         complete_;
+	bool                    head_;
 };
 
 /////////////////////////////// AggrState ///////////////////////////////
@@ -476,5 +477,3 @@ inline TermPtrVec *AggrCond::terms() { return set_.terms(); }
 inline LitPtrVec *AggrCond::lits() { return &lits_; }
 
 inline AggrCond::Style AggrCond::style() { return style_;  }
-
-inline void AggrCond::finish() { }

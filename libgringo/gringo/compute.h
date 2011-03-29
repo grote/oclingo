@@ -19,9 +19,9 @@
 
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 
-class Compute : public Statement
+class Compute : public SimpleStatement
 {
 private:
 	class Head;
@@ -37,7 +37,7 @@ public:
 	Compute(const Loc &loc, PredLit *head, LitPtrVec &body);
 	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
-	void ground(Grounder *g);
+	void doGround(Grounder *g);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);

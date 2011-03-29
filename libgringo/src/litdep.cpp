@@ -16,7 +16,7 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/litdep.h>
-#include <gringo/statement.h>
+#include <gringo/formula.h>
 #include <gringo/varterm.h>
 #include <gringo/rellit.h>
 
@@ -150,28 +150,28 @@ bool LitNode::done()
 	return done_ == 0;
 }
 
-GrdNode::GrdNode(Groundable *groundable)
+FormulaNode::FormulaNode(Formula *groundable)
 	: groundable_(groundable)
 { 
 }
 
-void GrdNode::append(LitNode *litNode) 
+void FormulaNode::append(LitNode *litNode) 
 { 
 	litNodes_.push_back(litNode); 
 }
 
-void GrdNode::append(VarNode *varNode) 
+void FormulaNode::append(VarNode *varNode) 
 { 
 	varNodes_.push_back(varNode); 
 }
 
-void GrdNode::reset()
+void FormulaNode::reset()
 {
 	foreach(LitNode &lit, litNodes_) { lit.reset(); }
 	foreach(VarNode &var, varNodes_) { var.reset(); }
 }
 
-bool GrdNode::check(VarTermVec &terms)
+bool FormulaNode::check(VarTermVec &terms)
 {
 	reset();
 	LitNodeVec queue;
@@ -197,7 +197,7 @@ bool GrdNode::check(VarTermVec &terms)
 	return res;
 }
 
-void GrdNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
+void FormulaNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
 {
 	reset();
 	LitNodeVec queue;
@@ -220,7 +220,7 @@ void GrdNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
 	}
 }
 
-GrdNode::~GrdNode()
+FormulaNode::~FormulaNode()
 {
 }
 
@@ -265,11 +265,11 @@ void Builder::visit(Lit *lit, bool domain)
 	lit->visit(this);
 }
 
-void Builder::visit(Groundable *groundable, bool choice)
+void Builder::visit(Formula *groundable, bool choice)
 {
 	(void)choice;
 	grdStack_.push_back(grdNodes_.size());
-	grdNodes_.push_back(new GrdNode(groundable));
+	grdNodes_.push_back(new FormulaNode(groundable));
 	groundable->litDep(grdNodes_.back());
 	litStack_.push_back(0);
 	groundable->visit(this);
@@ -280,7 +280,7 @@ void Builder::visit(Groundable *groundable, bool choice)
 bool Builder::check(VarTermVec &terms)
 {
 	bool res = true;
-	foreach(GrdNode *grd, grdNodes_)
+	foreach(FormulaNode *grd, grdNodes_)
 		if(!grd->check(terms)) res = false;
 	return res;
 }

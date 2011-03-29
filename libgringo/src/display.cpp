@@ -27,14 +27,14 @@
 #include <gringo/instantiator.h>
 
 Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
-	: Statement(loc)
+	: SimpleStatement(loc)
 	, head_(head)
 	, body_(body.release())
 	, show_(show)
 {
 }
 
-void Display::ground(Grounder *g)
+void Display::doGround(Grounder *g)
 {
 	inst_->ground(g);
 }

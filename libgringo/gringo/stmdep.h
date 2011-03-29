@@ -129,7 +129,7 @@ namespace StmDep
 		Builder(Grounder *g);
 		void visit(PredLit *pred);
 		void visit(Lit *lit, bool domain);
-		void visit(Groundable *grd, bool choice);
+		void visit(Formula *grd, bool choice);
 		void visit(Statement *stm);
 		void visit(Module *module);
 		void analyze(Grounder *g);

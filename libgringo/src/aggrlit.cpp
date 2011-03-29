@@ -31,25 +31,6 @@
 
 namespace
 {
-	class GlobalsCollector : public PrgVisitor
-	{
-	private:
-		GlobalsCollector(VarSet &globals, uint32_t level);
-
-		void visit(VarTerm *var, bool bind);
-		void visit(Term* term, bool bind);
-		void visit(Lit *lit, bool domain);
-		void visit(Groundable *grd, bool choice);
-
-	public:
-		static void collect(AggrLit &lit, VarSet &globals, uint32_t level);
-		static void collect(Lit &lit, VarVec &globals, uint32_t level);
-
-	private:
-		VarSet  &globals_;
-		uint32_t level_;
-	};
-
 	class CondHeadExpander : public Expander
 	{
 	public:
@@ -335,25 +316,26 @@ bool AggrLit::fact() const
 	return !head() && complete() && fact_;
 }
 
-void AggrLit::finish(Grounder *g)
+void AggrLit::endGround(Grounder *g)
 {
-	foreach(AggrCond &lit, conds_) { lit.finish(g); }
+	foreach(AggrCond &cond, conds_) { cond.endGround(g); }
 }
 
-void AggrLit::index(Grounder *, Groundable *gr, VarSet &bound)
+Index *AggrLit::index(Grounder *, Formula *gr, VarSet &bound)
 {
 	parent_ = gr;
 	VarSet global;
 	GlobalsCollector::collect(*this, global, parent_->level());
 	if(head())
 	{
-		foreach(AggrCond &lit, conds_) { lit.initHead(); }
+		foreach(AggrCond &cond, conds_) { cond.initHead(); }
 	}
 	// NOTE: this possibly reinitializes the domain
 	//       but the set of global variables always stays the same
 	domain_.init(global);
-	gr->instantiator()->append(new AggrIndex(*this, bound));
+	AggrIndex *idx = new AggrIndex(*this, bound);
 	if(assign()) { assign()->vars(bound); }
+	return idx;
 }
 
 void AggrLit::visit(PrgVisitor *visitor)
@@ -402,10 +384,10 @@ SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
 {
 }
 
-void SetLit::index(Grounder *g, Groundable *gr, VarSet &)
+Index *SetLit::index(Grounder *g, Formula *gr, VarSet &)
 {
 	AggrCond *cond = static_cast<AggrCond*>(gr);
-	gr->instantiator()->append(new StateDirtyIndex(*cond->aggr()));
+	return new StateDirtyIndex(*cond->aggr());
 }
 
 void SetLit::normalize(Grounder *g, Expander *e)
@@ -444,7 +426,7 @@ SetLit::~SetLit()
 //////////////////////////////////////// AggrCond ////////////////////////////////////////
 
 AggrCond::AggrCond(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style)
-	: Groundable(loc)
+	: Formula(loc)
 	, style_(style)
 	, set_(loc, terms)
 	, lits_(lits)
@@ -507,6 +489,21 @@ void AggrCond::normalize(Grounder *g, uint32_t number)
 		AnonymousRemover::remove(g, *this);
 		LparseAggrCondConverter::convert(g, *this, number);
 	}
+}
+
+void AggrCond::initInst(Grounder *g)
+{
+	if(!inst_.get())
+	{
+		inst_.reset(new Instantiator(this));
+		simpleInitInst(g, *inst_);
+	}
+	inst_->init(g);
+}
+
+void AggrCond::finish()
+{
+	inst_->finish();
 }
 
 void AggrCond::ground(Grounder *g)
@@ -594,9 +591,9 @@ bool AggrCond::grounded(Grounder *g)
 	return true;
 }
 
-void AggrCond::finish(Grounder *g)
+void AggrCond::endGround(Grounder *g)
 {
-	if(!lits_[0].sign()) { lits_[0].finish(g); }
+	if(!lits_[0].sign()) { lits_[0].endGround(g); }
 }
 
 void AggrCond::initHead()
@@ -611,53 +608,6 @@ AggrCond::~AggrCond()
 AggrCond* new_clone(const AggrCond& a)
 {
 	return new AggrCond(a);
-}
-
-//////////////////////////////////////// GlobalsCollector ////////////////////////////////////////
-
-GlobalsCollector::GlobalsCollector(VarSet &globals, uint32_t level)
-	: globals_(globals)
-	, level_(level)
-{
-}
-
-void GlobalsCollector::visit(VarTerm *var, bool)
-{
-	if(var->level() <= level_) { globals_.insert(var->index()); }
-}
-
-void GlobalsCollector::visit(Term* term, bool bind)
-{
-	term->visit(this, bind);
-}
-
-void GlobalsCollector::visit(Lit *lit, bool)
-{
-	lit->visit(this);
-}
-
-void GlobalsCollector::visit(Groundable *grd, bool)
-{
-	grd->visit(this);
-}
-
-void GlobalsCollector::collect(AggrLit &lit, VarSet &globals, uint32_t level)
-{
-	GlobalsCollector gc(globals, level);
-	foreach(AggrCond &cond, lit.conds()) { cond.visit(&gc); }
-	if(!lit.assign())
-	{
-		if(lit.lower()) { lit.lower()->visit(&gc, false); }
-		if(lit.upper()) { lit.upper()->visit(&gc, false); }
-	}
-}
-
-void GlobalsCollector::collect(Lit &lit, VarVec &globals, uint32_t level)
-{
-	VarSet set;
-	GlobalsCollector gc(set, level);
-	gc.visit(&lit, false);
-	globals.assign(set.begin(), set.end());
 }
 
 //////////////////////////////////////// CondHeadExpander ////////////////////////////////////////
@@ -871,7 +821,7 @@ void AggrIndex::reset()
 
 void AggrIndex::finish()
 {
-	foreach(AggrCond &lit, lit_.conds()) { lit.instantiator()->finish(); }
+	foreach(AggrCond &cond, lit_.conds()) { cond.finish(); }
 	lit_.domain().finish();
 	finished_ = true;
 }

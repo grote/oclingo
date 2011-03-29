@@ -20,15 +20,67 @@
 #include <gringo/gringo.h>
 #include <gringo/lit.h>
 #include <gringo/printer.h>
-#include <gringo/groundable.h>
+#include <gringo/formula.h>
 
-class JunctionCond : public Groundable
+/*
+JunctionCond::ground
+	- ground the conditionals (depends on current substitution)
+	- this fills a table
+	- check whether all heads match
+*/
+
+class JunctionLitDomain
+{
+public:
+	void init(Formula *grd, const VarVec &global);
+private:
+	VarVec  &global_;
+	Formula *grd_;
+};
+
+class JunctionCondTableEntry
+{
+public:
+
+private:
+	ValVec local_;
+	bool   matched_;
+};
+
+class JunctionCondTable
+{
+	typedef std::vector<JunctionCondTableEntry> Table;
+public:
+
+private:
+	Table    table_;
+	uint32_t matched_;
+	uint32_t fact_;
+};
+
+class JunctionCondDomain
+{
+	typedef boost::unordered_map<ValVec, JunctionCondTable> TableMap;
+public:
+	//JunctionCondDomain();
+	void init(JunctionLitDomain &parent, const VarVec &local);
+
+private:
+	VarVec             local_;
+	TableMap           tableMap_;
+	JunctionLitDomain *parent_;
+};
+
+class JunctionCond : public Formula
 {
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
 	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
 	LitPtrVec &body();
+	void init(JunctionLitDomain &dom);
+	void initInst(Grounder *g);
 
+	void enqueue(Grounder *g);
 	bool grounded(Grounder *g);
 	void ground(Grounder *g);
 	void visit(PrgVisitor *visitor);
@@ -36,8 +88,9 @@ public:
 
 	~JunctionCond();
 private:
-	clone_ptr<Lit> head_;
-	LitPtrVec      body_;
+	clone_ptr<Lit>     head_;
+	LitPtrVec          body_;
+	JunctionCondDomain dom_;
 };
 
 class JunctionLit : public Lit
@@ -57,12 +110,11 @@ public:
 
 	void normalize(Grounder *g, Expander *expander);
 
-	bool match(Grounder *grounder);
 	bool fact() const;
 
 	void print(Storage *sto, std::ostream &out) const;
 
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	Score score(Grounder *g, VarSet &bound);
 
 	void visit(PrgVisitor *visitor);
@@ -73,8 +125,9 @@ public:
 	~JunctionLit();
 
 private:
-	bool fact_;
-	JunctionCondVec conds_;
+	bool              fact_;
+	JunctionCondVec   conds_;
+	JunctionLitDomain dom_;
 };
 
 /////////////////////////// JunctionCond ///////////////////////////

@@ -24,16 +24,16 @@ class Instantiator
 private:
 	typedef std::vector<int> BoolVec;
 public:
-	Instantiator(Groundable *g);
+	Instantiator(Formula *f);
 	void append(Index *i);
 	void fix();
 	void ground(Grounder *g);
 	void reset();
 	void finish();
-	void init(Grounder *g, bool enqueue);
+	void init(Grounder *g);
 	~Instantiator();
 private:
-	Groundable *groundable_;
+	Formula    *formula_;
 	IndexPtrVec indices_;
 	BoolVec     new_;
 };
