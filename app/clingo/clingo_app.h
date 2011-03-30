@@ -468,7 +468,6 @@ void ClingoApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 	doEvent(e, f);
 }
 
-
 template <Mode M>
 void ClingoApp<M>::printResult(ReasonEnd end)
 {
