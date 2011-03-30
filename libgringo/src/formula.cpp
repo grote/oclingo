@@ -171,7 +171,7 @@ void SimpleStatement::enqueue(Grounder *g)
 void SimpleStatement::ground(Grounder *g)
 {
 	doGround(g);
-	inst_->finish();
+	if(inst_.get()) { inst_->finish(); }
 }
 
 SimpleStatement::~SimpleStatement()
