@@ -33,7 +33,7 @@ public:
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
 protected:
-	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
+	virtual void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
 	void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
@@ -43,7 +43,7 @@ protected:
 	void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 	uint32_t symbol();
-	void doFinalize();
+	virtual void doFinalize();
 protected:
 	Clasp::ProgramBuilder *b_;
 	BoolVec  atomUnnamed_;

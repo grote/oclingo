@@ -26,7 +26,7 @@
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
 
-enum Mode { CLASP, CLINGO, ICLINGO };
+enum Mode { CLASP, CLINGO, ICLINGO, OCLINGO };
 
 struct iClingoConfig : public Clasp::IncrementalControl
 {
@@ -82,7 +82,7 @@ void ClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOpt
 {
 	(void)hidden;
 	using namespace ProgramOptions;
-	if(M == ICLINGO)
+	if(M == ICLINGO || M == OCLINGO)
 	{
 		clingoMode = false;
 		OptionGroup incremental("Incremental Computation Options");
@@ -120,7 +120,7 @@ void ClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOpt
 	}
 	OptionGroup basic("Basic Options");
 	basic.addOptions()("clasp",    bool_switch(&claspMode),  "Run in Clasp mode");
-	if(M == ICLINGO)
+	if(M == ICLINGO || M == OCLINGO)
 		basic.addOptions()("clingo",    bool_switch(&clingoMode),  "Run in Clingo mode");
 	root.addOptions(basic,true);
 
@@ -131,7 +131,7 @@ bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, Gri
 {
 	(void)values;
 	(void)opts;
-	if(M == ICLINGO)
+	if(M == ICLINGO || M == OCLINGO)
 	{
 		if (claspMode && clingoMode)
 		{

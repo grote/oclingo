@@ -24,7 +24,7 @@
 class GroundProgramBuilder
 {
 public:
-	enum Type
+	enum Type_Enum
 	{
 		LIT,
 		TERM,
@@ -52,10 +52,12 @@ public:
 		META_GLOBALHIDE,
 		META_SHOW,
 		META_HIDE,
-		META_EXTERNAL
+		META_EXTERNAL,
+		USER
 	};
+	typedef uint16_t Type;
 
-private:
+protected:
 	struct Lit
 	{
 		static Lit create(Type type, uint32_t offset, uint32_t n)
@@ -77,9 +79,11 @@ private:
 	struct Literal : public PredLitRep
 	{
 		friend class GroundProgramBuilder;
+		friend class OnlineParser;
 		Literal() : PredLitRep(false, 0) { }
 	};
 
+public:
 	struct Stack
 	{
 		Type          type;
@@ -92,22 +96,23 @@ private:
 
 public:
 	GroundProgramBuilder(Output *output);
-	void add(Type type, uint32_t n = 0);
+	virtual void add(Type type, uint32_t n = 0);
 	// call instead of add and later use add(StackPtr stm)
 	StackPtr get(Type type, uint32_t n);
-	void add(StackPtr stm);
+	virtual void add(StackPtr stm);
 	void addVal(const Val &val);
 	void addSign();
 	Storage *storage();
 
-private:
+protected:
 	//void printAggrLits(AggrLit::Printer *printer, Lit &a, bool weight);
 	void printLit(Printer *printer, uint32_t offset, bool head);
 	PredLitRep *predLitRep(Lit &a);
 	void pop(uint32_t n);
 	void add();
+	virtual void doAdd() { }
 
-private:
+protected:
 	Output  *output_;
 	StackPtr stack_;
 	Literal  lit_;
