@@ -30,6 +30,7 @@
 #include "clingo/clingo_options.h"
 #include "oclingo/oclingo_options.h"
 #include "clingo/claspoutput.h"
+#include "oclingo/oclaspoutput.h"
 #include "clingo/timer.h"
 #include <iomanip>
 
@@ -93,6 +94,7 @@ protected:
 	// ClaspFacade::Callback interface
 	void state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
 	void event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
+	virtual void doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) { }
 	void warning(const char* msg) { messages.warning.push_back(msg); }
 	// -------------------------------------------------------------------------------------------
 
@@ -169,14 +171,18 @@ template <Mode M>
 FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
-	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO);
+	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO);
 	if (app.clingo.mode == CLINGO)
 	{
 		out.reset(new ClaspOutput(app.gringo.disjShift));
 	}
-	else if(M == ICLINGO)
+	else if(app.clingo.mode == ICLINGO)
 	{
 		out.reset(new iClaspOutput(app.gringo.disjShift));
+	}
+	else
+	{
+		out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift));
 	}
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
 	{
@@ -350,7 +356,8 @@ int ClingoApp<M>::doRun()
 		clingo.iStats = false;
 		clasp.solve(*in_, config_, this);
 	}
-	else { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
+	else if(clingo.mode == ICLINGO) { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
+	else { clasp.solveIncremental(*in_, config_, oclingo.online, this); }
 	timer_[0].stop();
 	printResult(reason_end);
 	if      (clasp.result() == ClaspFacade::result_unsat) { return S_UNSATISFIABLE; }
@@ -458,7 +465,9 @@ void ClingoApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 		}
 		else { out_->initSolve(solver_, f.api(), f.config()->solve.enumerator()); }
 	}
+	doEvent(e, f);
 }
+
 
 template <Mode M>
 void ClingoApp<M>::printResult(ReasonEnd end)

@@ -139,9 +139,9 @@ bool ClingoOptions<M>::validateOptions(ProgramOptions::OptionValues& values, Gri
 			return false;
 		}
 	}
-	if(claspMode)        mode = CLASP;
-	else if(clingoMode)  mode = CLINGO;
-	else                 mode = ICLINGO;
+	if(claspMode)       mode = CLASP;
+	else if(clingoMode) mode = CLINGO;
+	else                mode = ICLINGO;
 	return true;
 }
 
