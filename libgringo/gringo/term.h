@@ -78,10 +78,9 @@ public:
 		{
 			if(a->val_ != b->val_)                         { return false; }
 			if(a->children_.size() != b->children_.size()) { return false; }
-			typedef boost::tuple<AbsTerm::Ref*, AbsTerm::Ref*> TermPair;
-			foreach(const TermPair &tuple, _boost::combine(a->children_, b->children_))
+			for(Children::iterator i = a->children_.begin(), j = b->children_.begin(); i != a->children_.end(); i++, j++)
 			{
-				if(!AbsTerm::unify(*tuple.get<0>(), *tuple.get<1>())) { return false; }
+				if(!AbsTerm::unify(**i, **j)) { return false; }
 			}
 			return true;
 		}

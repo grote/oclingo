@@ -205,9 +205,9 @@ bool PredLit::compatible(PredLit* pred)
 	foreach(const Term &term, pred->terms_) { b.push_back(term.abstract(subst)); }
 	
 	typedef boost::tuple<AbsTerm::Ref*, AbsTerm::Ref*> TermPair;
-	foreach(const TermPair &tuple, _boost::combine(a, b))
-	{
-		if(!AbsTerm::unify(*tuple.get<0>(), *tuple.get<1>())) { return false; }
+	for(std::vector<AbsTerm::Ref*>::iterator i = a.begin(), j = a.begin(); i != a.end(); i++, j++)
+		{
+		if(!AbsTerm::unify(**i, **j)) { return false; }
 	}
 	return true;
 }
