@@ -22,75 +22,49 @@
 #include <gringo/printer.h>
 #include <gringo/formula.h>
 
-/*
-JunctionCond::ground
-	- ground the conditionals (depends on current substitution)
-	- this fills a table
-	- check whether all heads match
-*/
+class JunctionLit;
 
 class JunctionLitDomain
 {
+	typedef std::vector<VarVec> VarVecVec;
 public:
-	void init(Formula *grd, const VarVec &global);
+	JunctionLitDomain();
+
+	bool hasNew() const;
+	void finish();
+	void enqueue(Grounder *g);
+	void state(Grounder *g);
+	void initGlobal(Formula *f, const VarVec &global);
+	void initLocal(uint32_t index, const VarVec &local);
 private:
-	VarVec  &global_;
-	Formula *grd_;
-};
-
-class JunctionCondTableEntry
-{
-public:
-
-private:
-	ValVec local_;
-	bool   matched_;
-};
-
-class JunctionCondTable
-{
-	typedef std::vector<JunctionCondTableEntry> Table;
-public:
-
-private:
-	Table    table_;
-	uint32_t matched_;
-	uint32_t fact_;
-};
-
-class JunctionCondDomain
-{
-	typedef boost::unordered_map<ValVec, JunctionCondTable> TableMap;
-public:
-	//JunctionCondDomain();
-	void init(JunctionLitDomain &parent, const VarVec &local);
-
-private:
-	VarVec             local_;
-	TableMap           tableMap_;
-	JunctionLitDomain *parent_;
+	VarVec    global_;
+	VarVecVec local_;
+	Formula  *f_;
+	bool      new_;
 };
 
 class JunctionCond : public Formula
 {
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
-	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp);
 	LitPtrVec &body();
 	void init(JunctionLitDomain &dom);
-	void initInst(Grounder *g);
+	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index);
 
-	void enqueue(Grounder *g);
-	bool grounded(Grounder *g);
+	void finish();
 	void ground(Grounder *g);
+	void initInst(Grounder *g);
+	void enqueue(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 
 	~JunctionCond();
 private:
-	clone_ptr<Lit>     head_;
-	LitPtrVec          body_;
-	JunctionCondDomain dom_;
+	clone_ptr<Lit>          head_;
+	LitPtrVec               body_;
+	clone_ptr<Instantiator> inst_;
+	uint32_t                index_;
+	JunctionLit            *parent_;
 };
 
 class JunctionLit : public Lit
@@ -106,6 +80,13 @@ public:
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
 
+
+
+	BoolPair ground(Grounder *g);
+	void enqueue(Grounder *g);
+	bool groundedCond(Grounder *grounder, uint32_t index);
+
+	JunctionLitDomain &domain();
 	JunctionCondVec &conds();
 
 	void normalize(Grounder *g, Expander *expander);
@@ -114,7 +95,7 @@ public:
 
 	void print(Storage *sto, std::ostream &out) const;
 
-	Index *index(Grounder *g, Formula *gr, VarSet &bound);
+	Index *index(Grounder *g, Formula *f, VarSet &bound);
 	Score score(Grounder *g, VarSet &bound);
 
 	void visit(PrgVisitor *visitor);
@@ -125,10 +106,14 @@ public:
 	~JunctionLit();
 
 private:
+	bool              match_;
 	bool              fact_;
 	JunctionCondVec   conds_;
 	JunctionLitDomain dom_;
 };
+
+/////////////////////////// JunctionLitDomain ///////////////////////////
+inline bool JunctionLitDomain::hasNew() const { return new_; }
 
 /////////////////////////// JunctionCond ///////////////////////////
 
@@ -137,3 +122,5 @@ inline LitPtrVec &JunctionCond::body() { return body_; }
 /////////////////////////// JunctionLit ///////////////////////////
 
 inline JunctionCondVec &JunctionLit::conds() { return conds_; }
+inline JunctionLitDomain &JunctionLit::domain() { return dom_; }
+

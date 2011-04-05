@@ -22,7 +22,7 @@
 class Index
 {
 public:
-	typedef std::pair<bool, bool> Match;
+	typedef BoolPair Match;
 public:
 	virtual Match firstMatch(Grounder *grounder, int binder) = 0;
 	virtual Match nextMatch(Grounder *grounder, int binder) = 0;

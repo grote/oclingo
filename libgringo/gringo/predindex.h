@@ -38,8 +38,8 @@ public:
 	PredIndex(Domain *dom, const TermPtrVec &terms, const VarVec &index, const VarVec &bind);
 	void bind(Grounder *grounder, int binder);
 	bool extend(Grounder *grounder, ValVec::const_iterator vals);
-	std::pair<bool, bool> firstMatch(Grounder *grounder, int binder);
-	std::pair<bool, bool> nextMatch(Grounder *grounder, int binder);
+	BoolPair firstMatch(Grounder *grounder, int binder);
+	BoolPair nextMatch(Grounder *grounder, int binder);
 	void reset();
 	void finish();
 	bool hasNew() const;

@@ -25,9 +25,6 @@ class Formula : public Locateable
 public:
 	Formula(const Loc &loc);
 
-	// TODO: remove that one!!!
-	virtual bool grounded(Grounder *g) = 0;
-
 	virtual void initInst(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
 	virtual void print(Storage *sto, std::ostream &out) const = 0;
@@ -38,21 +35,21 @@ public:
 	void level(uint32_t level);
 	void litDep(LitDep::FormulaNode *litDep);
 	LitDep::FormulaNode *litDep();
+
 	void simpleInitInst(Grounder *g, Instantiator &inst);
 
 	virtual ~Formula();
 
 protected:
-	uint32_t                      level_;
+	uint32_t                       level_;
 	clone_ptr<LitDep::FormulaNode> litDep_;
-	VarVec                        vars_;
+	VarVec                         vars_;
 };
 
 class Groundable
 {
 public:
 	virtual void ground(Grounder *g) = 0;
-	virtual void dequeue() = 0;
 	virtual ~Groundable();
 };
 
@@ -75,11 +72,11 @@ class SimpleStatement : public Statement, public Groundable
 public:
 	SimpleStatement(const Loc &loc);
 
+	virtual bool grounded(Grounder *g) = 0;
+
 	void initInst(Grounder *g);
 	void ground(Grounder *g);
-	void init(Grounder *g);
 	void enqueue(Grounder *g);
-	void dequeue();
 
 	virtual ~SimpleStatement();
 
@@ -107,7 +104,3 @@ inline Groundable::~Groundable() { }
 inline bool Statement::edbFact() const { return false; }
 inline bool Statement::choice() const { return false; }
 inline Statement::~Statement() { }
-
-///////////////////////////////////// SimpleStatement /////////////////////////////////////
-
-inline void SimpleStatement::dequeue() { enqueued_ = false; }

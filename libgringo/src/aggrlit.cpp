@@ -495,10 +495,10 @@ void AggrCond::initInst(Grounder *g)
 {
 	if(!inst_.get())
 	{
-		inst_.reset(new Instantiator(this));
+		inst_.reset(new Instantiator(vars(), boost::bind(&AggrCond::grounded, this, _1)));
 		simpleInitInst(g, *inst_);
 	}
-	inst_->init(g);
+	if(inst_->init(g)) { enqueue(g); }
 }
 
 void AggrCond::finish()

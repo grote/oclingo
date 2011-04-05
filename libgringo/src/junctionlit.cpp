@@ -75,27 +75,50 @@ namespace
 		void reset();
 		void finish();
 		bool hasNew() const;
-		~JunctionIndex();
 	private:
-
+		JunctionLit &lit_;
+		bool         finished_;
 	};
 
 }
 
 ///////////////////////////// JunctionLitDomain /////////////////////////////
 
-void JunctionLitDomain::init(Formula *grd, const VarVec &global)
+JunctionLitDomain::JunctionLitDomain()
+	: f_(0)
+	, new_(false)
 {
-	grd_    = grd;
+}
+
+void JunctionLitDomain::finish()
+{
+	new_ = false;
+}
+
+void JunctionLitDomain::initGlobal(Formula *f, const VarVec &global)
+{
+	f_      = f;
 	global_ = global;
 }
 
-///////////////////////////// JunctionCondDomain /////////////////////////////
-
-void JunctionCondDomain::init(JunctionLitDomain &parent, const VarVec &local)
+void JunctionLitDomain::initLocal(uint32_t index, const VarVec &local)
 {
-	parent_ = &parent;
-	local_  = local;
+	if(local_.size() <= index)
+	{
+		local_.resize(index);
+		local_[index] = local;
+	}
+}
+
+void JunctionLitDomain::enqueue(Grounder *g)
+{
+	new_ = true;
+	f_->enqueue(g);
+}
+
+void JunctionLitDomain::state(Grounder *g)
+{
+	#pragma message "implement me!!!"
 }
 
 ///////////////////////////// JunctionCond /////////////////////////////
@@ -104,18 +127,27 @@ JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
 	: Formula(loc)
 	, head_(head)
 	, body_(body)
+	, index_(0)
+	, parent_(0)
 {
+}
+
+void JunctionCond::finish()
+{
+	inst_->finish();
 }
 
 void JunctionCond::init(JunctionLitDomain &dom)
 {
 	VarVec local;
 	GlobalsCollector::collect(*head_, local, level());
-	dom_.init(dom, local);
+	dom.initLocal(index_, local);
 }
 
-void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp)
+void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index)
 {
+	parent_ = parent;
+	index_  = index;
 	head_->normalize(g, headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
@@ -125,36 +157,21 @@ void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp)
 
 void JunctionCond::enqueue(Grounder *g)
 {
-	// TODO: enqueue parent
+	parent_->enqueue(g);
 }
 
 void JunctionCond::initInst(Grounder *g)
 {
-	/*
-	// it is ok to do this in createIndex!!!
-	// because the method is called after the JunctionLit::createIndex
 	if(!inst_.get())
 	{
-		inst_.reset(new Instantiator(this));
-		simpleInitInst(g, *inst_);
+		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
 	}
-	*/
-
-	/*
-	assert(inst_.get());
-	inst_->init(g);
-	*/
-}
-
-bool JunctionCond::grounded(Grounder *g)
-{
-	// modify current table entry
-	return true;
+	if(inst_->init(g)) { enqueue(g); }
 }
 
 void JunctionCond::ground(Grounder *g)
 {
-	// modify current table entry
+	inst_->ground(g);
 }
 
 void JunctionCond::visit(PrgVisitor *visitor)
@@ -181,9 +198,19 @@ JunctionCond::~JunctionCond()
 
 JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 	: Lit(loc)
+	, match_(false)
 	, fact_(false)
 	, conds_(conds)
 {
+}
+
+BoolPair JunctionLit::ground(Grounder *g)
+{
+	match_     = true;
+	fact_      = true;
+	dom_.state(g);
+	foreach(JunctionCond &cond, conds_) { cond.ground(g); }
+	return std::make_pair(match_, match_ && fact_);
 }
 
 void JunctionLit::normalize(Grounder *g, Expander *expander)
@@ -192,7 +219,7 @@ void JunctionLit::normalize(Grounder *g, Expander *expander)
 	{
 		CondHeadExpander headExp(*this, &conds_[i], *expander);
 		CondBodyExpander bodyExp(conds_[i]);
-		conds_[i].normalize(g, &headExp, &bodyExp);
+		conds_[i].normalize(g, &headExp, &bodyExp, this, i);
 	}
 }
 
@@ -212,20 +239,24 @@ void JunctionLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-Index *JunctionLit::index(Grounder *g, Formula *grd, VarSet &)
+Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 {
 	// Note: no variables are bound
 	VarVec global;
-	GlobalsCollector::collect(*this, global, grd->level());
-	dom_.init(grd, global);
-	foreach(JunctionCond &lit, conds_) { lit.init(dom_); }
-	//return new JunctionIndex(*this);
-	return 0;
+	GlobalsCollector::collect(*this, global, f->level());
+	dom_.initGlobal(f, global);
+	foreach(JunctionCond &cond, conds_) { cond.init(dom_); }
+	return new JunctionIndex(*this);
 }
 
 Lit::Score JunctionLit::score(Grounder *, VarSet &)
 {
 	return Score(LOWEST, 0);
+}
+
+void JunctionLit::enqueue(Grounder *g)
+{
+	dom_.enqueue(g);
 }
 
 void JunctionLit::visit(PrgVisitor *visitor)
@@ -243,6 +274,11 @@ void JunctionLit::accept(::Printer *v)
 Lit *JunctionLit::clone() const
 {
 	return new JunctionLit(*this);
+}
+
+bool JunctionLit::groundedCond(Grounder *grounder, uint32_t index)
+{
+	#pragma message "implement me!";
 }
 
 JunctionLit::~JunctionLit()
@@ -300,4 +336,39 @@ CondBodyExpander::CondBodyExpander(JunctionCond &cond)
 void CondBodyExpander::expand(Lit *lit, Expander::Type)
 {
 	cond_.body().push_back(lit);
+}
+
+///////////////////////////// CondBodyExpander /////////////////////////////
+
+JunctionIndex::JunctionIndex(JunctionLit &lit)
+	: lit_(lit)
+	, finished_(false)
+{
+}
+
+Index::Match JunctionIndex::firstMatch(Grounder *grounder, int binder)
+{
+	return lit_.ground(grounder);
+}
+
+Index::Match JunctionIndex::nextMatch(Grounder *grounder, int binder)
+{
+	return Match(false, false);
+}
+
+void JunctionIndex::reset()
+{
+	finished_ = false;
+}
+
+void JunctionIndex::finish()
+{
+	foreach(JunctionCond &cond, lit_.conds()) { cond.finish(); }
+	lit_.domain().finish();
+	finished_ = true;
+}
+
+bool JunctionIndex::hasNew() const
+{
+	return !finished_ || lit_.domain().hasNew();
 }

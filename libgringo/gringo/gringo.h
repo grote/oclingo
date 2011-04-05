@@ -29,6 +29,8 @@
 #include <boost/unordered/unordered_set.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -138,6 +140,7 @@ typedef std::vector<VarSig> VarSigVec;
 typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
 typedef std::auto_ptr<BodyOrderHeuristic> BodyOrderHeuristicPtr;
 typedef std::auto_ptr<Module> ModulePtr;
+typedef std::pair<bool, bool> BoolPair;
 
 Term* new_clone(const Term& a);
 VarTerm* new_clone(const VarTerm& a);

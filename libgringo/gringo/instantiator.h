@@ -21,21 +21,24 @@
 
 class Instantiator
 {
+public:
+	typedef boost::function1<bool, Grounder*> GroundedCallback;
 private:
 	typedef std::vector<int> BoolVec;
 public:
-	Instantiator(Formula *f);
+	Instantiator(const VarVec &vars, const GroundedCallback &grounded);
 	void append(Index *i);
 	void fix();
 	void ground(Grounder *g);
 	void reset();
 	void finish();
-	void init(Grounder *g);
+	bool init(Grounder *g);
 	~Instantiator();
 private:
-	Formula    *formula_;
-	IndexPtrVec indices_;
-	BoolVec     new_;
+	VarVec           vars_;
+	GroundedCallback grounded_;
+	IndexPtrVec      indices_;
+	BoolVec          new_;
 };
    
 inline Instantiator* new_clone(const Instantiator&)

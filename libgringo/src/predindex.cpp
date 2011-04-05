@@ -92,7 +92,7 @@ void PredIndex::bind(Grounder *grounder, int binder)
 		grounder->val(var, *j++, binder);
 }
 
-std::pair<bool, bool> PredIndex::firstMatch(Grounder *grounder, int binder)
+BoolPair PredIndex::firstMatch(Grounder *grounder, int binder)
 {
 	#pragma message "re-add on-demand index creation?"
 	uint32_t find = indexVec_.size() - index_.size();
@@ -111,7 +111,7 @@ std::pair<bool, bool> PredIndex::firstMatch(Grounder *grounder, int binder)
 	else return std::make_pair(false, false);
 }
 
-std::pair<bool, bool> PredIndex::nextMatch(Grounder *grounder, int binder)
+BoolPair PredIndex::nextMatch(Grounder *grounder, int binder)
 {
 	current_++;
 	if(current_ != end_)

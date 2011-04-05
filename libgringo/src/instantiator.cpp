@@ -20,8 +20,9 @@
 #include <gringo/index.h>
 #include <gringo/grounder.h>
 
-Instantiator::Instantiator(Formula *g)
-	: formula_(g)
+Instantiator::Instantiator(const VarVec &vars, const GroundedCallback &grounded)
+	: vars_(vars)
+	, grounded_(grounded)
 	, new_(1, false)
 {
 }
@@ -49,7 +50,7 @@ void Instantiator::ground(Grounder *g)
 	}
 	
 	int l                         = -1;
-	std::pair<bool, bool> matched = std::make_pair(true, false);
+	BoolPair matched = std::make_pair(true, false);
 	
 	for(;;)
 	{
@@ -66,7 +67,7 @@ void Instantiator::ground(Grounder *g)
 		{
 			if(++l == static_cast<int>(indices_.size()))
 			{
-				if(!formula_->grounded(g)) { break; }
+				if(!grounded_(g)) { break; }
 				matched.first = false;
 			}
 			else
@@ -77,7 +78,7 @@ void Instantiator::ground(Grounder *g)
 			}
 		}
 	}
-	foreach(uint32_t var, formula_->vars()) { g->unbind(var); }
+	foreach(uint32_t var, vars_) { g->unbind(var); }
 }
 
 void Instantiator::finish()
@@ -91,14 +92,14 @@ void Instantiator::reset()
 	foreach(Index &index, indices_) { index.reset(); }
 }
 
-void Instantiator::init(Grounder *g)
+bool Instantiator::init(Grounder *g)
 {
 	bool modified = false;
 	foreach(Index &idx, indices_)
 	{
 		modified = idx.init(g) || modified;
 	}
-	if(modified) { formula_->enqueue(g); }
+	return modified;
 }
 
 Instantiator::~Instantiator()

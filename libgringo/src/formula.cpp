@@ -73,7 +73,7 @@ namespace
 		VarMap      varMap_;
 		VarStack    varStack_;
 		GrdQueue    grdQueue_;
-		Formula *grd_;
+		Formula    *grd_;
 		uint32_t    vars_;
 		uint32_t    level_;
 		Grounder   *grounder_;
@@ -153,10 +153,10 @@ void SimpleStatement::initInst(Grounder *g)
 {
 	if(!inst_.get())
 	{
-		inst_.reset(new Instantiator(this));
+		inst_.reset(new Instantiator(vars(), boost::bind(&SimpleStatement::grounded, this, _1)));
 		simpleInitInst(g, *inst_);
 	}
-	inst_->init(g);
+	if(inst_->init(g)) { enqueue(g); }
 }
 
 void SimpleStatement::enqueue(Grounder *g)
@@ -170,6 +170,7 @@ void SimpleStatement::enqueue(Grounder *g)
 
 void SimpleStatement::ground(Grounder *g)
 {
+	enqueued_ = false;
 	doGround(g);
 	if(inst_.get()) { inst_->finish(); }
 }

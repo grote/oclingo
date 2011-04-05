@@ -251,7 +251,6 @@ void Grounder::ground_()
 		//std::random_shuffle(queue_.begin(), queue_.end());
 		Groundable *grd = queue_.front();
 		queue_.pop_front();
-		grd->dequeue();
 		grd->ground(this);
 	}
 }
