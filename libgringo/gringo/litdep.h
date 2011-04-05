@@ -37,13 +37,14 @@ namespace LitDep
 	private:
 		typedef boost::ptr_vector<LitNode> LitNodePtrVec;
 		typedef boost::ptr_vector<VarNode> VarNodeVec;
+		typedef boost::function1<void, Lit *> AddIndexCallback;
 	public:
 		FormulaNode(Formula *groundable);
 		void append(LitNode *litNode);
 		void append(VarNode *varNode);
 		void reset();
 		bool check(VarTermVec &terms);
-		void order(Grounder *g, PrgVisitor *v, const VarSet &bound);
+		void order(Grounder *g, const AddIndexCallback &cb, const VarSet &bound);
 		~FormulaNode();
 	private:
 		Formula      *groundable_;

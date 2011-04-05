@@ -218,7 +218,9 @@ void IndexAdder::visit(Lit *lit, bool)
 void IndexAdder::add(Grounder *g, Formula *f, Instantiator &inst)
 {
 	IndexAdder adder(g, f, inst);
-	if(f->litDep()) { f->litDep()->order(g, &adder, adder.bound_); }
+	// TODO: think about putting local/global vars in formula!
+	if(f->level() > 0) { GlobalsCollector::collect(*f, adder.bound_, f->level() - 1); }
+	if(f->litDep()) { f->litDep()->order(g, boost::bind(&IndexAdder::visit, &adder, _1, false), adder.bound_); }
 	else { f->visit(&adder); }
 	inst.fix();
 }

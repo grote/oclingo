@@ -197,7 +197,7 @@ bool FormulaNode::check(VarTermVec &terms)
 	return res;
 }
 
-void FormulaNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
+void FormulaNode::order(Grounder *g, const AddIndexCallback &cb, const VarSet &b)
 {
 	reset();
 	LitNodeVec queue;
@@ -213,8 +213,7 @@ void FormulaNode::order(Grounder *g, PrgVisitor *v, const VarSet &b)
 		LitNodeVec::iterator min = std::min_element(queue.begin(), queue.end(), LitNodeCmp());
 		LitNode *lit = *min;
 		queue.erase(min);
-		v->visit(lit->lit(), false);
-		//lit->lit()->index(g, groundable_, bound);
+		cb(lit->lit());
 		lit->check(queue);
 		lit->lit()->position = position++;
 	}

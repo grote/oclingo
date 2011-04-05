@@ -67,6 +67,11 @@ namespace
 		JunctionLitDomain &dom_;
 	};
 
+	void addIndex(Instantiator *inst, Grounder *g, Formula *f, VarSet &bound, Lit *head, Lit *lit)
+	{
+		if(lit != head) { inst->append(lit->index(g, f, bound)); }
+	}
+
 }
 
 ///////////////////////////// JunctionLitDomain /////////////////////////////
@@ -154,6 +159,10 @@ void JunctionCond::initInst(Grounder *g)
 	{
 		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
 		inst_->append(new JunctionStateNewIndex(parent_->domain()));
+		VarSet bound;
+		GlobalsCollector::collect(*head_, bound, level() - 1);
+		foreach(Lit &lit, body_) { GlobalsCollector::collect(lit, bound, level() - 1); }
+		litDep_->order(g, boost::bind<void>(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
 	}
 	if(inst_->init(g)) { enqueue(g); }
 }
@@ -267,7 +276,7 @@ Lit *JunctionLit::clone() const
 
 bool JunctionLit::groundedCond(Grounder *grounder, uint32_t index)
 {
-	#pragma message "implement me!";
+	#pragma message "implement me!"
 }
 
 JunctionLit::~JunctionLit()
@@ -378,4 +387,3 @@ bool JunctionStateNewIndex::hasNew() const
 {
 	return NewOnceIndex::hasNew() || dom_.newState();
 }
-

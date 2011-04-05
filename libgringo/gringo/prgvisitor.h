@@ -43,7 +43,9 @@ private:
 
 public:
 	static void collect(AggrLit &lit, VarSet &globals, uint32_t level);
+	static void collect(Lit &lit, VarSet &globals, uint32_t level);
 	static void collect(Lit &lit, VarVec &globals, uint32_t level);
+	static void collect(Formula &f, VarSet &globals, uint32_t level);
 
 private:
 	VarSet  &globals_;

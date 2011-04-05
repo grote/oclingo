@@ -58,10 +58,22 @@ void GlobalsCollector::collect(AggrLit &lit, VarSet &globals, uint32_t level)
 	}
 }
 
+void GlobalsCollector::collect(Lit &lit, VarSet &globals, uint32_t level)
+{
+	GlobalsCollector gc(globals, level);
+	gc.visit(&lit, false);
+}
+
 void GlobalsCollector::collect(Lit &lit, VarVec &globals, uint32_t level)
 {
 	VarSet set;
-	GlobalsCollector gc(set, level);
-	gc.visit(&lit, false);
+	collect(lit, set, level);
 	globals.assign(set.begin(), set.end());
 }
+
+void GlobalsCollector::collect(Formula &f, VarSet &globals, uint32_t level)
+{
+	GlobalsCollector gc(globals, level);
+	gc.visit(&f, false);
+}
+
