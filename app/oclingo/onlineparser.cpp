@@ -23,6 +23,7 @@
 #include <gringo/storage.h>
 #include <gringo/exceptions.h>
 #include <gringo/streams.h>
+#include "oclingo/externalknowledge.h"
 
 void *onlineparserAlloc(void *(*mallocProc)(size_t));
 void onlineparserFree(void *p, void (*freeProc)(void*));

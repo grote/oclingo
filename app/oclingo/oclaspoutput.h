@@ -19,7 +19,8 @@
 #pragma once
 
 #include "clingo/claspoutput.h"
-#include "oclingo/externalknowledge.h"
+
+class ExternalKnowledge;
 
 class oClaspOutput : public iClaspOutput
 {

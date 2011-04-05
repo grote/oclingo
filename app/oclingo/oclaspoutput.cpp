@@ -17,6 +17,7 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "oclaspoutput.h"
+#include "oclingo/externalknowledge.h"
 
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
