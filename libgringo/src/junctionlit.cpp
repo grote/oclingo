@@ -157,12 +157,12 @@ void JunctionCond::initInst(Grounder *g)
 {
 	if(!inst_.get())
 	{
+		assert(level() > 0);
 		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
 		inst_->append(new JunctionStateNewIndex(parent_->domain()));
 		VarSet bound;
-		GlobalsCollector::collect(*head_, bound, level() - 1);
-		foreach(Lit &lit, body_) { GlobalsCollector::collect(lit, bound, level() - 1); }
-		litDep_->order(g, boost::bind<void>(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
+		GlobalsCollector::collect(*this, bound, level() - 1);
+		litDep_->order(g, boost::bind(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
 	}
 	if(inst_->init(g)) { enqueue(g); }
 }

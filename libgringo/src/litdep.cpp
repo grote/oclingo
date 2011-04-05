@@ -197,7 +197,7 @@ bool FormulaNode::check(VarTermVec &terms)
 	return res;
 }
 
-void FormulaNode::order(Grounder *g, const AddIndexCallback &cb, const VarSet &b)
+void FormulaNode::order(Grounder *g, const AddIndexCallback &cb, VarSet &bound)
 {
 	reset();
 	LitNodeVec queue;
@@ -205,7 +205,6 @@ void FormulaNode::order(Grounder *g, const AddIndexCallback &cb, const VarSet &b
 	{
 		if(lit.done()) { queue.push_back(&lit); }
 	}
-	VarSet bound(b);
 	uint32_t position = 0;
 	while(!queue.empty())
 	{

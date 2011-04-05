@@ -44,7 +44,7 @@ namespace LitDep
 		void append(VarNode *varNode);
 		void reset();
 		bool check(VarTermVec &terms);
-		void order(Grounder *g, const AddIndexCallback &cb, const VarSet &bound);
+		void order(Grounder *g, const AddIndexCallback &cb, VarSet &bound);
 		~FormulaNode();
 	private:
 		Formula      *groundable_;
