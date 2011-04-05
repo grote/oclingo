@@ -20,29 +20,6 @@
 #include "gringo/litdep.h"
 #include "gringo/index.h"
 
-// - analysis
-//   - literals after : have to be stratified
-//   - no restriction to head literal
-// - matching
-//   - if not global vars in map
-//     - ground all conditionals
-//     - add to (multi) map global vars -> vars(head)
-//   - if conjunction
-//     - loop over stored vars
-//       - mark as finished if head matches
-//     - if all vars marked
-//       - the conjunction matches
-//     - else
-//       - do not match
-//   - if disjunction
-//     - always match
-// - printing
-//   - start printing
-//   - loop over stored vars
-//     - set substitution to vars
-//     - print the head
-//   - end printing
-
 namespace
 {
 	class CondHeadExpander : public Expander
@@ -80,6 +57,16 @@ namespace
 		bool         finished_;
 	};
 
+	class JunctionStateNewIndex : public NewOnceIndex
+	{
+	public:
+		JunctionStateNewIndex(JunctionLitDomain &dom);
+		Match firstMatch(Grounder *g, int binder);
+		bool hasNew() const;
+	private:
+		JunctionLitDomain &dom_;
+	};
+
 }
 
 ///////////////////////////// JunctionLitDomain /////////////////////////////
@@ -87,6 +74,7 @@ namespace
 JunctionLitDomain::JunctionLitDomain()
 	: f_(0)
 	, new_(false)
+	, newState_(false)
 {
 }
 
@@ -165,6 +153,7 @@ void JunctionCond::initInst(Grounder *g)
 	if(!inst_.get())
 	{
 		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
+		inst_->append(new JunctionStateNewIndex(parent_->domain()));
 	}
 	if(inst_->init(g)) { enqueue(g); }
 }
@@ -372,3 +361,21 @@ bool JunctionIndex::hasNew() const
 {
 	return !finished_ || lit_.domain().hasNew();
 }
+
+///////////////////////////// JunctionStateNewIndex /////////////////////////////
+
+JunctionStateNewIndex::JunctionStateNewIndex(JunctionLitDomain &dom)
+	: dom_(dom)
+{
+}
+
+Index::Match JunctionStateNewIndex::firstMatch(Grounder *, int)
+{
+	return Match(true, dom_.newState());
+}
+
+bool JunctionStateNewIndex::hasNew() const
+{
+	return NewOnceIndex::hasNew() || dom_.newState();
+}
+

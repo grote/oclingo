@@ -31,6 +31,7 @@ public:
 	JunctionLitDomain();
 
 	bool hasNew() const;
+	bool newState() const;
 	void finish();
 	void enqueue(Grounder *g);
 	void state(Grounder *g);
@@ -41,6 +42,7 @@ private:
 	VarVecVec local_;
 	Formula  *f_;
 	bool      new_;
+	bool      newState_;
 };
 
 class JunctionCond : public Formula
@@ -114,6 +116,7 @@ private:
 
 /////////////////////////// JunctionLitDomain ///////////////////////////
 inline bool JunctionLitDomain::hasNew() const { return new_; }
+inline bool JunctionLitDomain::newState() const { return newState_; }
 
 /////////////////////////// JunctionCond ///////////////////////////
 
