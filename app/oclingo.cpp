@@ -16,6 +16,15 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "oclingo/oclingo_app.h"
+#include "oclingo/oclaspoutput.h"
+
+template <>
+void FromGringo<OCLINGO>::otherOutput()
+{
+	out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift));
+}
+
+
 
 int main(int argc, char **argv)
 {

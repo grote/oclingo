@@ -30,7 +30,6 @@
 #include "clingo/clingo_options.h"
 #include "oclingo/oclingo_options.h"
 #include "clingo/claspoutput.h"
-#include "oclingo/oclaspoutput.h"
 #include "clingo/timer.h"
 #include <iomanip>
 
@@ -130,6 +129,7 @@ struct FromGringo : public Clasp::Input
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 
 	FromGringo(ClingoApp<M> &app, Streams& str);
+	void otherOutput();
 	Format format() const { return Clasp::Input::SMODELS; }
 	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { return api ? api->createMinimize(s, heu) : 0; }
 	void getAssumptions(Clasp::LitVec& a);
@@ -168,6 +168,12 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <Mode M>
+void FromGringo<M>::otherOutput()
+{
+	assert(false);
+}
+
+template <Mode M>
 FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
@@ -180,10 +186,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	{
 		out.reset(new iClaspOutput(app.gringo.disjShift));
 	}
-	else
-	{
-		out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift));
-	}
+	else { otherOutput(); }
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
 	{
 		storage.reset(new Storage(out.get()));
