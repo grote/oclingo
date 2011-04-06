@@ -76,4 +76,3 @@ void GlobalsCollector::collect(Formula &f, VarSet &globals, uint32_t level)
 	GlobalsCollector gc(globals, level);
 	gc.visit(&f, false);
 }
-

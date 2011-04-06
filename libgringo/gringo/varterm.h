@@ -32,7 +32,7 @@ public:
 	uint32_t level() const { return level_; }
 	void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
 	AbsTerm::Ref* abstract(Substitution& subst) const;
-	void index(uint32_t index, uint32_t level, bool local) { level_ = level; index_ = index; local_ = local; }
+	void index(uint32_t index, uint32_t level) { level_ = level; index_ = index; }
 	Val val(Grounder *grounder) const;
 	bool constant() const { return false; }
 	bool unify(Grounder *grounder, const Val &v, int binder) const;
@@ -43,8 +43,7 @@ public:
 private:
 	uint32_t nameId_;
 	uint32_t index_;
-	uint32_t level_ : 31;
-	uint32_t local_ : 1;
+	uint32_t level_;
 };
 
 inline VarTerm* new_clone(const VarTerm& a)

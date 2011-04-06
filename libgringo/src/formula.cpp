@@ -239,7 +239,7 @@ void VarCollector::visit(VarTerm *var, bool bind)
 	(void)bind;
 	if(var->anonymous())
 	{
-		var->index(vars_, level_, true);
+		var->index(vars_, level_);
 		grd_->vars().push_back(vars_);
 		vars_++;
 		grounder_->reserve(vars_);
@@ -250,12 +250,12 @@ void VarCollector::visit(VarTerm *var, bool bind)
 		if(res.second)
 		{
 			varStack_.push_back(var->nameId());
-			var->index(vars_, level_, true);
+			var->index(vars_, level_);
 			grd_->vars().push_back(vars_);
 			vars_++;
 			grounder_->reserve(vars_);
 		}
-		else { var->index(res.first->second->index(), res.first->second->level(), res.first->second->level() == level_); }
+		else { var->index(res.first->second->index(), res.first->second->level()); }
 	}
 }
 

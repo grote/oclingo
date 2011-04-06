@@ -24,7 +24,6 @@ VarTerm::VarTerm(const Loc &loc)
 	: Term(loc)
 	, nameId_(std::numeric_limits<uint32_t>::max())
 	, level_(0)
-	, local_(true)
 {
 }
 
@@ -32,7 +31,6 @@ VarTerm::VarTerm(const Loc &loc, uint32_t nameId)
 	: Term(loc)
 	, nameId_(nameId)
 	, level_(0)
-	, local_(true)
 {
 }
 
@@ -69,7 +67,6 @@ void VarTerm::visit(PrgVisitor *v, bool bind)
 
 void VarTerm::vars(VarSet &vars) const
 {
-	//if(local_) vars.insert(index_);
 	vars.insert(index_);
 }
 

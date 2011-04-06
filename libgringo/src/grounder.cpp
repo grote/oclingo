@@ -222,7 +222,7 @@ void Grounder::ground(Module &module)
 	{
 		if(debug_)
 		{
-			std::cerr << "% begin component (" << component.statements.size() << ")" << std::endl;
+			std::cerr << "%  begin component (" << component.statements.size() << ")" << std::endl;
 		}
 		foreach(Statement *statement, component.statements)
 		{
@@ -230,12 +230,12 @@ void Grounder::ground(Module &module)
 			statement->init(this);
 			if(debug_)
 			{
-				std::cerr << "% ";
+				std::cerr << "%   ";
 				statement->print(this, std::cerr);
 				std::cerr << std::endl;
 			}
-			ground_();
 		}
+		ground_();
 	}
 	output()->endGround();
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))

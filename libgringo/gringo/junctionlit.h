@@ -24,25 +24,45 @@
 
 class JunctionLit;
 
+struct JunctionState
+{
+	JunctionState();
+
+	bool   match;
+	bool   fact;
+	bool   isNew;
+	ValVec vals;
+};
+
 class JunctionLitDomain
 {
 	typedef std::vector<VarVec> VarVecVec;
+	typedef boost::unordered_map<ValVec, JunctionState>  StateMap;
 public:
 	JunctionLitDomain();
 
+	void state(Grounder *g);
+	void accumulate(Grounder *g, uint32_t index);
+	BoolPair match(Grounder *g);
+
+	bool fact() const;
 	bool hasNew() const;
 	bool newState() const;
 	void finish();
 	void enqueue(Grounder *g);
-	void state(Grounder *g);
+
 	void initGlobal(Formula *f, const VarVec &global);
-	void initLocal(uint32_t index, const VarVec &local);
+	void initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head);
 private:
-	VarVec    global_;
-	VarVecVec local_;
-	Formula  *f_;
-	bool      new_;
-	bool      newState_;
+	VarVec         global_;
+	VarVecVec      local_;
+	LitVec         heads_;
+	StateMap       state_;
+	IndexPtrVec    indices_;
+	JunctionState *current_;
+	Formula       *f_;
+	bool           new_;
+	bool           newState_;
 };
 
 class JunctionCond : public Formula
@@ -50,7 +70,7 @@ class JunctionCond : public Formula
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
 	LitPtrVec &body();
-	void init(JunctionLitDomain &dom);
+	void init(Grounder *g, JunctionLitDomain &dom);
 	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index);
 
 	void finish();
@@ -81,8 +101,6 @@ public:
 	};
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
-
-
 
 	BoolPair ground(Grounder *g);
 	void enqueue(Grounder *g);

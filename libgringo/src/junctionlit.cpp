@@ -19,6 +19,7 @@
 #include "gringo/instantiator.h"
 #include "gringo/litdep.h"
 #include "gringo/index.h"
+#include "gringo/grounder.h"
 
 namespace
 {
@@ -74,6 +75,14 @@ namespace
 
 }
 
+///////////////////////////// JunctionState /////////////////////////////
+JunctionState::JunctionState()
+	: match(false)
+	, fact(false)
+	, isNew(true)
+{
+}
+
 ///////////////////////////// JunctionLitDomain /////////////////////////////
 
 JunctionLitDomain::JunctionLitDomain()
@@ -83,8 +92,17 @@ JunctionLitDomain::JunctionLitDomain()
 {
 }
 
+bool JunctionLitDomain::fact() const
+{
+	return current_->fact;
+}
+
 void JunctionLitDomain::finish()
 {
+	foreach(StateMap::reference ref, state_)
+	{
+		if(ref.second.match) { ref.second.isNew = false; }
+	}
 	new_ = false;
 }
 
@@ -94,13 +112,19 @@ void JunctionLitDomain::initGlobal(Formula *f, const VarVec &global)
 	global_ = global;
 }
 
-void JunctionLitDomain::initLocal(uint32_t index, const VarVec &local)
+void JunctionLitDomain::initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head)
 {
 	if(local_.size() <= index)
 	{
-		local_.resize(index);
-		local_[index] = local;
+
+		heads_.push_back(&head);
+		local_.push_back(VarVec());
+		VarSet bound;
+		GlobalsCollector::collect(head, bound, f->level());
+		std::set_difference(bound.begin(), bound.end(), global_.begin(), global_.end(), std::back_inserter(local_.back()));
+		indices_.push_back(head.index(g, f, bound));
 	}
+
 }
 
 void JunctionLitDomain::enqueue(Grounder *g)
@@ -111,7 +135,46 @@ void JunctionLitDomain::enqueue(Grounder *g)
 
 void JunctionLitDomain::state(Grounder *g)
 {
-	#pragma message "implement me!!!"
+	ValVec global;
+	foreach(uint32_t var, global_) { global.push_back(g->val(var)); }
+	current_ = &state_[global];
+}
+
+void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
+{
+	current_->vals.push_back(Val::create(Val::ID, index));
+	foreach(uint32_t var, local_[index]) { current_->vals.push_back(g->val(var)); }
+}
+
+BoolPair JunctionLitDomain::match(Grounder *g)
+{
+	foreach(Index &idx, indices_) { idx.init(g); }
+	if(!current_->match)
+	{
+		current_->match = true;
+		current_->fact  = true;
+		for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
+		{
+			uint32_t index = it->index;
+			foreach(uint32_t var, local_[index]) { g->val(var, *++it, 0); }
+			if(!indices_[index].firstMatch(g, 0).first)
+			{
+				current_->match = false;
+				current_->fact  = false;
+				break;
+			}
+			if(current_->fact)
+			{
+				heads_[index]->grounded(g);
+				current_->fact = heads_[index]->fact();
+			}
+		}
+		foreach(VarVec &vars, local_)
+		{
+			foreach(uint32_t var, vars) { g->unbind(var); }
+		}
+	}
+	return BoolPair(current_->match, current_->match && current_->isNew);
 }
 
 ///////////////////////////// JunctionCond /////////////////////////////
@@ -123,6 +186,7 @@ JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
 	, index_(0)
 	, parent_(0)
 {
+	head_->head(true);
 }
 
 void JunctionCond::finish()
@@ -130,11 +194,9 @@ void JunctionCond::finish()
 	inst_->finish();
 }
 
-void JunctionCond::init(JunctionLitDomain &dom)
+void JunctionCond::init(Grounder *g, JunctionLitDomain &dom)
 {
-	VarVec local;
-	GlobalsCollector::collect(*head_, local, level());
-	dom.initLocal(index_, local);
+	dom.initLocal(g, this, index_, *head_);
 }
 
 void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index)
@@ -204,11 +266,9 @@ JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 
 BoolPair JunctionLit::ground(Grounder *g)
 {
-	match_     = true;
-	fact_      = true;
 	dom_.state(g);
 	foreach(JunctionCond &cond, conds_) { cond.ground(g); }
-	return std::make_pair(match_, match_ && fact_);
+	return dom_.match(g);
 }
 
 void JunctionLit::normalize(Grounder *g, Expander *expander)
@@ -223,7 +283,7 @@ void JunctionLit::normalize(Grounder *g, Expander *expander)
 
 bool JunctionLit::fact() const
 {
-	return fact_;
+	return dom_.fact();
 }
 
 void JunctionLit::print(Storage *sto, std::ostream &out) const
@@ -243,7 +303,7 @@ Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 	VarVec global;
 	GlobalsCollector::collect(*this, global, f->level());
 	dom_.initGlobal(f, global);
-	foreach(JunctionCond &cond, conds_) { cond.init(dom_); }
+	foreach(JunctionCond &cond, conds_) { cond.init(g, dom_); }
 	return new JunctionIndex(*this);
 }
 
@@ -267,6 +327,7 @@ void JunctionLit::visit(PrgVisitor *visitor)
 
 void JunctionLit::accept(::Printer *v)
 {
+	#pragma message "implement me!"
 }
 
 Lit *JunctionLit::clone() const
@@ -276,7 +337,8 @@ Lit *JunctionLit::clone() const
 
 bool JunctionLit::groundedCond(Grounder *grounder, uint32_t index)
 {
-	#pragma message "implement me!"
+	dom_.accumulate(grounder, index);
+	return true;
 }
 
 JunctionLit::~JunctionLit()

@@ -33,6 +33,8 @@ public:
 	virtual ~Index();
 };
 
+inline Index *new_clone(const Index &) { return 0; }
+
 class NewOnceIndex : public Index
 {
 public:
