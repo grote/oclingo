@@ -171,8 +171,17 @@ void SimpleStatement::enqueue(Grounder *g)
 void SimpleStatement::ground(Grounder *g)
 {
 	enqueued_ = false;
-	doGround(g);
-	if(inst_.get()) { inst_->finish(); }
+	if(inst_.get())
+	{
+		inst_->ground(g);
+		inst_->finish();
+	}
+	else
+	{
+		assert(edbFact());
+		grounded(g);
+	}
+	endGround(g);
 }
 
 SimpleStatement::~SimpleStatement()

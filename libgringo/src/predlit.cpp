@@ -242,7 +242,10 @@ void PredLit::endGround(Grounder *g)
 			// NOTE: atm pred->index_ might be zero for e.g. negative literals
 			//       I think that I'll need indices for negative predicates too
 			//       during incremnetal grounding
-			if(pred->index_ && dom_->extend(g, pred->index_, startNew_ - 1)) { pred->parent_->enqueue(g); }
+			if(pred->index_ && dom_->extend(g, pred->index_, startNew_ - 1))
+			{
+				pred->parent_->enqueue(g);
+			}
 		}
 		startNew_ = 0;
 	}

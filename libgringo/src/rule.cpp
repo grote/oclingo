@@ -112,14 +112,8 @@ bool Rule::edbFact() const
 	return body_.size() == 0 && head_.get() && head_->edbFact();
 }
 
-void Rule::doGround(Grounder *g)
+void Rule::endGround(Grounder *g)
 {
-	if(inst_.get()) { inst_->ground(g); }
-	else
-	{
-		assert(edbFact());
-		grounded(g);
-	}
 	if(head_.get()) { head_->endGround(g); }
 }
 

@@ -47,7 +47,7 @@ public:
 	PredLit *head() const { return head_.get(); }
 	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
-	void doGround(Grounder *g);
+	void ground(Grounder *g);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);

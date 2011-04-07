@@ -81,7 +81,7 @@ public:
 	virtual ~SimpleStatement();
 
 protected:
-	virtual void doGround(Grounder *g) = 0;
+	virtual void endGround(Grounder *g);
 
 protected:
 	clone_ptr<Instantiator> inst_;
@@ -104,3 +104,7 @@ inline Groundable::~Groundable() { }
 inline bool Statement::edbFact() const { return false; }
 inline bool Statement::choice() const { return false; }
 inline Statement::~Statement() { }
+
+///////////////////////////////////// SimpleStatement /////////////////////////////////////
+
+inline void SimpleStatement::endGround(Grounder *) { }

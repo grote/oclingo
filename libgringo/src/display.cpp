@@ -34,11 +34,6 @@ Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
 {
 }
 
-void Display::doGround(Grounder *g)
-{
-	inst_->ground(g);
-}
-
 bool Display::grounded(Grounder *g)
 {
 	head_->grounded(g);

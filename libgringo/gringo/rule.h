@@ -36,7 +36,7 @@ public:
 	Rule(const Loc &loc, Lit *head, LitPtrVec &body);
 	void normalize(Grounder *g);
 	bool grounded(Grounder *g);
-	void doGround(Grounder *g);
+	void endGround(Grounder *g);
 	void visit(PrgVisitor *v);
 	void print(Storage *sto, std::ostream &out) const;
 	void append(Lit *l);

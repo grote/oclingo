@@ -37,7 +37,6 @@ public:
 	Compute(const Loc &loc, PredLit *head, LitPtrVec &body);
 	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
-	void doGround(Grounder *g);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);

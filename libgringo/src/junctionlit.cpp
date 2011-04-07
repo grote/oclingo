@@ -137,7 +137,9 @@ void JunctionLitDomain::state(Grounder *g)
 {
 	ValVec global;
 	foreach(uint32_t var, global_) { global.push_back(g->val(var)); }
-	current_ = &state_[global];
+	std::pair<StateMap::iterator, bool> res = state_.insert(StateMap::value_type(global, JunctionState()));
+	newState_ = res.second;
+	current_  = &res.first->second;
 }
 
 void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
@@ -148,7 +150,12 @@ void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
 
 BoolPair JunctionLitDomain::match(Grounder *g)
 {
+	#pragma message "handle disjunctions!!!"
+	// disjunctions always match!
+	// disjunctions are never new!
 	foreach(Index &idx, indices_) { idx.init(g); }
+	// TODO: this is unnerving
+	foreach(Lit *head, heads_) { head->head(false); }
 	if(!current_->match)
 	{
 		current_->match = true;
@@ -174,6 +181,7 @@ BoolPair JunctionLitDomain::match(Grounder *g)
 			foreach(uint32_t var, vars) { g->unbind(var); }
 		}
 	}
+	foreach(Lit *head, heads_) { head->head(true); }
 	return BoolPair(current_->match, current_->match && current_->isNew);
 }
 

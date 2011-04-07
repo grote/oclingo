@@ -83,8 +83,9 @@ Term *Optimize::prio()
 	return prio_->prio().get();
 }
 
-void Optimize::doGround(Grounder *g)
+void Optimize::ground(Grounder *g)
 {
+	enqueued_ = false;
 	#pragma message "optimize statements can be printed right away without storing them!"
 	prios_.clear();
 	head_->clear();

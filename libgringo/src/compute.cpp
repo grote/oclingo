@@ -103,11 +103,6 @@ Compute::Compute(const Loc &loc, PredLit *head, LitPtrVec &body)
 {
 }
 
-void Compute::doGround(Grounder *g)
-{
-	inst_->ground(g);
-}
-
 bool Compute::grounded(Grounder *g)
 {
 	Printer *printer = g->output()->printer<Printer>();

@@ -34,9 +34,8 @@ External::External(const Loc &loc, PredLit *head, LitPtrVec &body)
 	head_->head(true);
 }
 
-void External::doGround(Grounder *g)
+void External::endGround(Grounder *g)
 {
-	inst_->ground(g);
 	head_->endGround(g);
 }
 
