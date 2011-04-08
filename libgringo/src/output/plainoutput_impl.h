@@ -21,7 +21,7 @@
 #include <gringo/rule.h>
 #include <gringo/sumaggrlit.h>
 #include <gringo/avgaggrlit.h>
-#include <gringo/junctionaggrlit.h>
+#include <gringo/junctionlit.h>
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/parityaggrlit.h>
 #include <gringo/optimize.h>
@@ -187,23 +187,19 @@ namespace plainoutput_impl
 		bool               printedLit_;
 		std::ostringstream aggr_;
 	};
+	*/
 
-	class JunctionAggrLitPrinter : public JunctionAggrLit::Printer
+	class JunctionLitPrinter : public JunctionLit::Printer
 	{
 	public:
-		JunctionAggrLitPrinter(PlainOutput *output) : output_(output) { }
+		JunctionLitPrinter(PlainOutput *output) : output_(output) { }
 		void begin(bool head);
-		void weight(const Val &v) { (void)v; }
 		void print(PredLitRep *l);
-		void end() {}
-		Output *output() const { return output_; }
-		std::ostream &out() const { return output_->out(); }
+		void end() { }
+		PlainOutput *output() const { return output_; }
 	private:
-		PlainOutput       *output_;
-		bool               printed_;
-		std::ostringstream aggr_;
+		PlainOutput *output_;
 	};
-	*/
 
 	class OptimizePrinter : public Optimize::Printer
 	{

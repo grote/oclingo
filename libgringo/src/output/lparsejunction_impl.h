@@ -17,16 +17,14 @@
 
 #pragma once
 
-/*
-
 #include <gringo/gringo.h>
-#include <gringo/junctionaggrlit.h>
+#include <gringo/junctionlit.h>
 #include <gringo/lparseconverter.h>
 
 namespace lparseconverter_impl
 {
 
-class JunctionPrinter : public JunctionAggrLit::Printer
+class JunctionPrinter : public JunctionLit::Printer
 {
 public:
 	JunctionPrinter(LparseConverter *output) : output_(output) { }
@@ -35,7 +33,6 @@ public:
 	void weight(const Val &v) { (void)v; }
 	void end();
 	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter           *output_;
 	LparseConverter::AtomVec   pos_;
@@ -44,5 +41,3 @@ private:
 };
 
 }
-
-*/

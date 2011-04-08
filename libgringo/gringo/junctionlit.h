@@ -44,6 +44,7 @@ public:
 	void state(Grounder *g);
 	void accumulate(Grounder *g, uint32_t index);
 	BoolPair match(Grounder *g);
+	void print(Printer *p);
 
 	bool fact() const;
 	bool hasNew() const;
@@ -51,7 +52,7 @@ public:
 	void finish();
 	void enqueue(Grounder *g);
 
-	void initGlobal(Formula *f, const VarVec &global);
+	void initGlobal(Grounder *g, Formula *f, const VarVec &global);
 	void initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head);
 private:
 	VarVec         global_;
@@ -59,6 +60,7 @@ private:
 	LitVec         heads_;
 	StateMap       state_;
 	IndexPtrVec    indices_;
+	Grounder      *g_;
 	JunctionState *current_;
 	Formula       *f_;
 	bool           new_;

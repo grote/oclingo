@@ -21,8 +21,6 @@
 #include <gringo/domain.h>
 #include <gringo/storage.h>
 
-/*
-
 namespace lparseconverter_impl
 {
 
@@ -37,8 +35,8 @@ void JunctionPrinter::print(PredLitRep *l)
 {
 	uint32_t sym = output_->symbol(l);
 	assert(sym > 0);
-	if(l->sign()) neg_.push_back(sym);
-	else pos_.push_back(sym);
+	if(l->sign()) { neg_.push_back(sym); }
+	else          { pos_.push_back(sym); }
 }
 
 void JunctionPrinter::end()
@@ -46,8 +44,8 @@ void JunctionPrinter::end()
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	if(head_)
 	{
-		if(pos_.size() == 1 && neg_.size() == 0) printer->setHead(pos_[0]);
-		else if(!output_->shiftDisjunctions()) printer->setHead(pos_, false);
+		if(pos_.size() == 1 && neg_.size() == 0) { printer->setHead(pos_[0]); }
+		else if(!output_->shiftDisjunctions()) { printer->setHead(pos_, false); }
 		else
 		{
 			// add replacement as head
@@ -58,7 +56,9 @@ void JunctionPrinter::end()
 			for(size_t i = 0; i < pos_.size(); i++)
 			{
 				LparseConverter::AtomVec neg;
-				for(size_t k = 0; k < pos_.size(); k++) if(k != i) neg.push_back(pos_[k]);
+				for(size_t k = 0; k < pos_.size(); k++) {
+					if(k != i) { neg.push_back(pos_[k]); }
+				}
 				output_->printBasicRule(pos_[i], LparseConverter::AtomVec(1, d), neg);
 			}
 
@@ -66,15 +66,11 @@ void JunctionPrinter::end()
 	}
 	else
 	{
-		for(size_t i = 0; i < pos_.size(); i++)
-			printer->addBody(pos_[i], false);
-		for(size_t i = 0; i < neg_.size(); i++)
-			printer->addBody(neg_[i], true);
+		for(size_t i = 0; i < pos_.size(); i++) { printer->addBody(pos_[i], false); }
+		for(size_t i = 0; i < neg_.size(); i++) { printer->addBody(neg_[i], true); }
 	}
 }
 
 }
 
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionAggrLit::Printer, LparseConverter)
-
-*/
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionLit::Printer, LparseConverter)

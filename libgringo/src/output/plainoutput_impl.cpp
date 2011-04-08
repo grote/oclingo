@@ -311,19 +311,18 @@ namespace plainoutput_impl
 		if(set_) out() << "{" << aggr_.str() << "}";
 		else out() << "[" << aggr_.str() << "]";
 	}
-
-	void JunctionAggrLitPrinter::begin(bool)
-	{
-	}
-
-	void JunctionAggrLitPrinter::print(PredLitRep *l)
-	{
-		output_->print();
-		output_->print(l, out());
-	}
-	
 	*/
 
+	void JunctionLitPrinter::begin(bool)
+	{
+	}
+
+	void JunctionLitPrinter::print(PredLitRep *l)
+	{
+		output_->print();
+		output_->print(l, output_->out());
+	}
+	
 	void OptimizePrinter::begin(bool maximize, bool set)
 	{
 		set_ = set;
@@ -361,8 +360,8 @@ GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ParityAggrLitPrinter, ParityAggrLit::Printer, PlainOutput)
-GRINGO_REGISTER_PRINTER(plainoutput_impl::JunctionAggrLitPrinter, JunctionAggrLit::Printer, PlainOutput)
 */
+GRINGO_REGISTER_PRINTER(plainoutput_impl::JunctionLitPrinter, JunctionLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::OptimizePrinter, Optimize::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::IncPrinter, IncLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ComputePrinter, Compute::Printer, PlainOutput)

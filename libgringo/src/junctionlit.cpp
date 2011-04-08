@@ -20,6 +20,7 @@
 #include "gringo/litdep.h"
 #include "gringo/index.h"
 #include "gringo/grounder.h"
+#include "gringo/output.h"
 
 namespace
 {
@@ -106,8 +107,9 @@ void JunctionLitDomain::finish()
 	new_ = false;
 }
 
-void JunctionLitDomain::initGlobal(Formula *f, const VarVec &global)
+void JunctionLitDomain::initGlobal(Grounder *g, Formula *f, const VarVec &global)
 {
+	g_      = g;
 	f_      = f;
 	global_ = global;
 }
@@ -183,6 +185,26 @@ BoolPair JunctionLitDomain::match(Grounder *g)
 	}
 	foreach(Lit *head, heads_) { head->head(true); }
 	return BoolPair(current_->match, current_->match && current_->isNew);
+}
+
+void JunctionLitDomain::print(Printer *p)
+{
+	// note: just for bodies
+	if(!current_->fact)
+	{
+		foreach(Lit *head, heads_) { head->head(false); }
+		for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
+		{
+			uint32_t index = it->index;
+			foreach(uint32_t var, local_[index]) { g_->val(var, *++it, 0); }
+			heads_[index]->grounded(g_);
+			if(!heads_[index]->fact()) { heads_[index]->accept(p); }
+		}
+		foreach(VarVec &vars, local_)
+		{
+			foreach(uint32_t var, vars) { g_->unbind(var); }
+		}
+	}
 }
 
 ///////////////////////////// JunctionCond /////////////////////////////
@@ -310,7 +332,7 @@ Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 	// Note: no variables are bound
 	VarVec global;
 	GlobalsCollector::collect(*this, global, f->level());
-	dom_.initGlobal(f, global);
+	dom_.initGlobal(g, f, global);
 	foreach(JunctionCond &cond, conds_) { cond.init(g, dom_); }
 	return new JunctionIndex(*this);
 }
@@ -335,7 +357,11 @@ void JunctionLit::visit(PrgVisitor *visitor)
 
 void JunctionLit::accept(::Printer *v)
 {
-	#pragma message "implement me!"
+	Printer *printer = v->output()->printer<Printer>();
+	printer->begin(head());
+	dom_.print(printer);
+	printer->end();
+
 }
 
 Lit *JunctionLit::clone() const
