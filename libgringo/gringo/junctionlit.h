@@ -52,7 +52,7 @@ public:
 	void finish();
 	void enqueue(Grounder *g);
 
-	void initGlobal(Grounder *g, Formula *f, const VarVec &global);
+	void initGlobal(Grounder *g, Formula *f, const VarVec &global, bool head_);
 	void initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head);
 private:
 	VarVec         global_;
@@ -65,6 +65,7 @@ private:
 	Formula       *f_;
 	bool           new_;
 	bool           newState_;
+	bool           head_;
 };
 
 class JunctionCond : public Formula

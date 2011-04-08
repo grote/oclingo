@@ -45,7 +45,7 @@ void JunctionPrinter::end()
 	if(head_)
 	{
 		if(pos_.size() == 1 && neg_.size() == 0) { printer->setHead(pos_[0]); }
-		else if(!output_->shiftDisjunctions()) { printer->setHead(pos_, false); }
+		else if(!output_->shiftDisjunctions())   { printer->setHead(pos_, false); }
 		else
 		{
 			// add replacement as head
@@ -56,7 +56,8 @@ void JunctionPrinter::end()
 			for(size_t i = 0; i < pos_.size(); i++)
 			{
 				LparseConverter::AtomVec neg;
-				for(size_t k = 0; k < pos_.size(); k++) {
+				for(size_t k = 0; k < pos_.size(); k++)
+				{
 					if(k != i) { neg.push_back(pos_[k]); }
 				}
 				output_->printBasicRule(pos_[i], LparseConverter::AtomVec(1, d), neg);

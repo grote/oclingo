@@ -90,6 +90,7 @@ JunctionLitDomain::JunctionLitDomain()
 	: f_(0)
 	, new_(false)
 	, newState_(false)
+	, head_(false)
 {
 }
 
@@ -107,8 +108,9 @@ void JunctionLitDomain::finish()
 	new_ = false;
 }
 
-void JunctionLitDomain::initGlobal(Grounder *g, Formula *f, const VarVec &global)
+void JunctionLitDomain::initGlobal(Grounder *g, Formula *f, const VarVec &global, bool head)
 {
+	head_   = head;
 	g_      = g;
 	f_      = f;
 	global_ = global;
@@ -152,58 +154,65 @@ void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
 
 BoolPair JunctionLitDomain::match(Grounder *g)
 {
-	#pragma message "handle disjunctions!!!"
-	// disjunctions always match!
-	// disjunctions are never new!
-	foreach(Index &idx, indices_) { idx.init(g); }
-	// TODO: this is unnerving
-	foreach(Lit *head, heads_) { head->head(false); }
-	if(!current_->match)
+	if(head_)
 	{
 		current_->match = true;
-		current_->fact  = true;
-		for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
-		{
-			uint32_t index = it->index;
-			foreach(uint32_t var, local_[index]) { g->val(var, *++it, 0); }
-			if(!indices_[index].firstMatch(g, 0).first)
-			{
-				current_->match = false;
-				current_->fact  = false;
-				break;
-			}
-			if(current_->fact)
-			{
-				heads_[index]->grounded(g);
-				current_->fact = heads_[index]->fact();
-			}
-		}
-		foreach(VarVec &vars, local_)
-		{
-			foreach(uint32_t var, vars) { g->unbind(var); }
-		}
+		current_->fact  = false;
+		current_->isNew = true;
 	}
-	foreach(Lit *head, heads_) { head->head(true); }
+	else
+	{
+		foreach(Index &idx, indices_) { idx.init(g); }
+		// TODO: this is unnerving
+		foreach(Lit *head, heads_) { head->head(false); }
+		if(!current_->match)
+		{
+			current_->match = true;
+			current_->fact  = true;
+			for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
+			{
+				uint32_t index = it->index;
+				foreach(uint32_t var, local_[index]) { g->val(var, *++it, 0); }
+				if(!indices_[index].firstMatch(g, 0).first)
+				{
+					current_->match = false;
+					current_->fact  = false;
+					break;
+				}
+				if(current_->fact)
+				{
+					heads_[index]->grounded(g);
+					current_->fact = heads_[index]->fact();
+				}
+			}
+			foreach(VarVec &vars, local_)
+			{
+				foreach(uint32_t var, vars) { g->unbind(var); }
+			}
+		}
+		foreach(Lit *head, heads_) { head->head(true); }
+	}
 	return BoolPair(current_->match, current_->match && current_->isNew);
 }
 
 void JunctionLitDomain::print(Printer *p)
 {
 	// note: just for bodies
-	if(!current_->fact)
+	if(!current_->fact || head_)
 	{
-		foreach(Lit *head, heads_) { head->head(false); }
+		if(!head_) { foreach(Lit *head, heads_) { head->head(false); } }
 		for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
 		{
 			uint32_t index = it->index;
 			foreach(uint32_t var, local_[index]) { g_->val(var, *++it, 0); }
 			heads_[index]->grounded(g_);
-			if(!heads_[index]->fact()) { heads_[index]->accept(p); }
+			if(head_ || !heads_[index]->fact()) { heads_[index]->accept(p); }
 		}
 		foreach(VarVec &vars, local_)
 		{
 			foreach(uint32_t var, vars) { g_->unbind(var); }
 		}
+		if(!head_) { foreach(Lit *head, heads_) { head->head(true); } }
 	}
 }
 
@@ -254,7 +263,14 @@ void JunctionCond::initInst(Grounder *g)
 		inst_->append(new JunctionStateNewIndex(parent_->domain()));
 		VarSet bound;
 		GlobalsCollector::collect(*this, bound, level() - 1);
-		litDep_->order(g, boost::bind(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
+		if(litDep_.get())
+		{
+			litDep_->order(g, boost::bind(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
+		}
+		else
+		{
+			foreach(Lit &lit, body_) { inst_->append(lit.index(g, this, bound)); }
+		}
 	}
 	if(inst_->init(g)) { enqueue(g); }
 }
@@ -332,7 +348,7 @@ Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 	// Note: no variables are bound
 	VarVec global;
 	GlobalsCollector::collect(*this, global, f->level());
-	dom_.initGlobal(g, f, global);
+	dom_.initGlobal(g, f, global, head());
 	foreach(JunctionCond &cond, conds_) { cond.init(g, dom_); }
 	return new JunctionIndex(*this);
 }
