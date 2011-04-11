@@ -196,7 +196,7 @@ void LparseConverter::addCompute(PredLitRep *l)
 	else computePos_.push_back(symbol(l));
 }
 
-void LparseConverter::endGround()
+void LparseConverter::endModule()
 {
 	newSymbolsDone_.resize(newSymbols_.size());
 	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)

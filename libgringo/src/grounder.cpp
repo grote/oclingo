@@ -236,8 +236,9 @@ void Grounder::ground(Module &module)
 			}
 		}
 		ground_();
+		output()->endComponent();
 	}
-	output()->endGround();
+	output()->endModule();
 	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 	{
 		dom.second->fix();

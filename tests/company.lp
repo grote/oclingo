@@ -10,8 +10,9 @@ controls(X,Y) :- 51 [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y 
 *%
 
 % make that one as good as the above!!!
-controls(X,Y) :- 51 [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y ], company(X), company(Y), X != Y.
-%controls(X,Y) :- not [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y ] 50, company(X), company(Y), X != Y.
+controls1(X,Y) :- 51 #sum+ [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls1(X,Z) : X != Y ], company(X), company(Y), X != Y.
+controls2(X,Y) :- 51 #sum [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls2(X,Z) : X != Y ], company(X), company(Y), X != Y.
+controls3(X,Y) :- not [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls3(X,Z) : X != Y ] 50, company(X), company(Y), X != Y.
 
 company(c1).
 company(c2).

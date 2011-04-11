@@ -29,9 +29,11 @@ Instantiator::Instantiator(const VarVec &vars, const GroundedCallback &grounded)
 
 void Instantiator::append(Index *i)
 {
-	assert(i);
-	indices_.push_back(i);
-	new_.push_back(false);
+	if(i)
+	{
+		indices_.push_back(i);
+		new_.push_back(false);
+	}
 }
 
 void Instantiator::fix()

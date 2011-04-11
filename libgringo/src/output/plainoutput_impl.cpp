@@ -162,27 +162,21 @@ namespace plainoutput_impl
 		}
 		else
 		{
-			out() << "#aggr(sum," << todo_.size() << ")";
-			todo_.insert(TodoMap::value_type(TodoKey(state_, TodoKey::second_type(lower_, upper_)), TodoVal(todo_.size(), head_, sign_)));
+			uint32_t todo = output_->delay();
+			todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lower_, upper_)));
 		}
-	}
-
-	bool SumAggrLitPrinter::todoCmp(const TodoMap::value_type *a, const TodoMap::value_type *b)
-	{
-		return a->second.get<0>() < b->second.get<0>();
 	}
 
 	void SumAggrLitPrinter::finish()
 	{
 		foreach(TodoMap::value_type &val, todo_)
 		{
-			if(!val.second.get<1>()) { out() << "#aggr(sum," << val.second.get<0>() << "):-"; }
-			_begin(val.first.first, val.second.get<1>(), val.second.get<2>(), true);
-			lower(val.first.second.first, true);
-			upper(val.first.second.second, true);
+			output_->startDelayed(val.first);
+			_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true);
+			lower(val.second.get<3>(), true);
+			upper(val.second.get<4>(), true);
 			end();
-			if(val.second.get<1>()) { out() << ":-#aggr(sum," << val.second.get<0>() << ")"; }
-			out() << ".\n";
+			output_->endDelayed(val.first);
 		}
 		todo_.clear();
 	}
@@ -325,7 +319,7 @@ namespace plainoutput_impl
 	
 	void OptimizePrinter::begin(bool maximize, bool set)
 	{
-		set_ = set;
+		set_   = set;
 		comma_ = false;
 		out() << (maximize ? "#maximize" : "#minimize");
 		out() << (set_ ? "{" : "[");
@@ -333,16 +327,17 @@ namespace plainoutput_impl
 
 	void OptimizePrinter::print(PredLitRep *l, int32_t weight, int32_t prio)
 	{
-		if(comma_) out() << ",";
-		else comma_ = true;
+		if(comma_) { out() << ","; }
+		else       { comma_ = true; }
 		output_->print(l, out());
-		if(!set_) out() << "=" << weight;
+		if(!set_) { out() << "=" << weight; }
 		out() << "@" << prio;
 	}
 
 	void OptimizePrinter::end()
 	{
 		out() << (set_ ? "}.\n" : "].\n");
+		output_->endStatement();
 	}
 
 	void ComputePrinter::print(PredLitRep *l)

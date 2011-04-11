@@ -42,6 +42,7 @@ GRINGO_EXPORT_PRINTER(IncPrinter)
 
 PlainOutput::PlainOutput(std::ostream *out)
 	: Output(out)
+	, delays_(0)
 {
 	initPrinters<PlainOutput>();
 }
@@ -63,27 +64,62 @@ void PlainOutput::print()
 {
 	if(head_)
 	{
-		if(printedHead_) { *out_ << "|"; }
+		if(printedHead_) { buffer_ << "|"; }
 		printedHead_ = true;
 	}
 	else
 	{
-		if(printedBody_) { *out_ << ","; }
-		else             { *out_ << ":-"; }
+		if(printedBody_) { buffer_ << ","; }
+		else             { buffer_ << ":-"; }
 		printedBody_ = true;
 	}
 }
 
+std::ostream &PlainOutput::out()
+{
+	return buffer_;
+}
+
 void PlainOutput::endRule()
 {
-	if(!printedHead_ && !printedBody_) { *out_ << ":-"; }
-	*out_ << ".\n";
+	if(!printedHead_ && !printedBody_) { buffer_ << ":-"; }
+	buffer_ << ".\n";
+	endStatement();
+}
+
+uint32_t PlainOutput::delay()
+{
+	delayed_.push_back(buffer_.str());
+	buffer_.str("");
+	delays_ = true;
+	return delayed_.size() - 1;
+}
+
+void PlainOutput::startDelayed(uint32_t offset)
+{
+	buffer_ << delayed_[offset];
+}
+
+void PlainOutput::endDelayed(uint32_t offset)
+{
+	delayed_[offset] = buffer_.str();
+	buffer_.str("");
+}
+
+void PlainOutput::endStatement()
+{
+	if(!delays_) { *out_ << buffer_.str(); }
+	else
+	{
+		delayed_.push_back(buffer_.str());
+		delays_ = false;
+	}
+	buffer_.str("");
 }
 
 void PlainOutput::print(PredLitRep *l, std::ostream &out)
 {
-	if(l->sign())
-		out << "not ";
+	if(l->sign()) {  out << "not "; }
 	out << storage()->string(l->dom()->nameId());
 	if(l->vals().size() > 0)
 	{
@@ -98,6 +134,13 @@ void PlainOutput::print(PredLitRep *l, std::ostream &out)
 	}
 }
 
+void PlainOutput::endComponent()
+{
+	Output::endComponent();
+	foreach(std::string &s, delayed_) { *out_ << s; }
+	delayed_.clear();
+}
+
 void PlainOutput::finalize()
 {
 	Output::finalize();
@@ -108,14 +151,14 @@ void PlainOutput::finalize()
 		{
 			const std::string &name  = s_->string(i->second->nameId());
 			uint32_t           arity = i->second->arity();
-			out() << "#external " << name << "/" << arity << ".\n";
+			*out_ << "#external " << name << "/" << arity << ".\n";
 		}
 	}
 	if(!compute_.str().empty())
 	{
-		out() << "#compute{";
-		out() << compute_.str();
-		out() << "}.\n";
+		*out_ << "#compute{";
+		*out_ << compute_.str();
+		*out_ << "}.\n";
 		compute_.str("");
 	}
 }

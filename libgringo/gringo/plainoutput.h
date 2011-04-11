@@ -24,20 +24,30 @@ class PlainOutput : public Output
 {
 public:
 	PlainOutput(std::ostream *out);
+	std::ostream &out();
 	void beginRule();
 	void endHead();
 	void print();
 	void endRule();
+	void endStatement();
+	uint32_t delay();
+	void startDelayed(uint32_t offset);
+	void endDelayed(uint32_t offset);
+	void printDelayed(uint32_t offset);
 	void print(PredLitRep *l, std::ostream &out);
 	void finalize();
 	void doShow(bool s);
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void addCompute(PredLitRep *l);
+	void endComponent();
 	~PlainOutput();
 private:
-	bool head_;
-	bool printedHead_;
-	bool printedBody_;
+	bool              head_;
+	bool              printedHead_;
+	bool              printedBody_;
+	bool              delays_;
+	StringVec         delayed_;
+	std::stringstream buffer_;
 	std::stringstream compute_;
 
 };

@@ -156,20 +156,27 @@ BoundAggrState::Val64::Val64(const Val &val)
 	, val_(val)
 { }
 
+BoundAggrState::Val64 BoundAggrState::Val64::create(const uint64_t &num)
+{
+	return Val64(num);
+}
+
+BoundAggrState::Val64 BoundAggrState::Val64::create(const Val &val)
+{
+	if(val.type == Val::NUM) { return Val64(val.num); }
+	else                     { return Val64(val);     }
+}
+
+
 int BoundAggrState::Val64::compare(const Val64 &v, Storage *s) const
 {
 	if(isNum_ && v.isNum_)
 	{
-		if(num_ < v.isNum_)      { return -1; }
-		else if(num_ > v.isNum_) { return 1; }
-		else                     { return 0; }
+		if(num_ < v.num_)      { return -1; }
+		else if(num_ > v.num_) { return 1; }
+		else                   { return 0; }
 	}
-	else
-	{
-		if(isNum_)        { return Val::create(Val::NUM, 0).compare(v.val_, s); }
-		else if(v.isNum_) { return val_.compare(Val::create(Val::NUM, 0), s); }
-		else              { return val_.compare(v.val_, s); }
-	}
+	else { return val_.compare(v.val_, s); }
 }
 
 //////////////////////////////////////// BoundAggrState ////////////////////////////////////////

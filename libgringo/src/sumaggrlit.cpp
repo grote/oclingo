@@ -160,9 +160,9 @@ void SumBoundAggrState::accumulate(Grounder *g, AggrLit &lit, int32_t weight, bo
 		if(weight < 0) { max_ += weight; }
 		else           { min_ += weight; }
 	}
-	Val64 lower(lit.lower() ? Val64(lit.lower()->val(g)) : Val64(std::numeric_limits<int64_t>::min()));
-	Val64 upper(lit.upper() ? Val64(lit.upper()->val(g)) : Val64(std::numeric_limits<int64_t>::max()));
-	checkBounds(g, lit, min_, max_, lower, upper);
+	Val64 lower(lit.lower() ? Val64::create(lit.lower()->val(g)) : Val64::create(std::numeric_limits<int64_t>::min()));
+	Val64 upper(lit.upper() ? Val64::create(lit.upper()->val(g)) : Val64::create(std::numeric_limits<int64_t>::max()));
+	checkBounds(g, lit, Val64::create(min_), Val64::create(max_), lower, upper);
 }
 
 void SumBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)

@@ -94,9 +94,8 @@ namespace plainoutput_impl
 
 	class SumAggrLitPrinter : public SumAggrLit::Printer, DelayedPrinter
 	{
-		typedef std::pair<State, std::pair<int32_t, int32_t> > TodoKey;
-		typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
-		typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
+		typedef boost::tuples::tuple<State, bool, bool, int32_t, int32_t> TodoVal;
+		typedef boost::unordered_map<uint32_t, TodoVal> TodoMap;
 	public:
 		SumAggrLitPrinter(PlainOutput *output);
 		void begin(State state, bool head, bool sign, bool complete);
@@ -107,8 +106,6 @@ namespace plainoutput_impl
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 		void finish();
-	private:
-		static bool todoCmp(const TodoMap::value_type *a, const TodoMap::value_type *b);
 	private:
 		TodoMap            todo_;
 		PlainOutput       *output_;

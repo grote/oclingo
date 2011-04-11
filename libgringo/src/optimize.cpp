@@ -205,7 +205,7 @@ void Optimize::visit(PrgVisitor *visitor)
 {
 	visitor->visit(static_cast<Lit*>(head_.get()), false);
 	visitor->visit(prio_.get(), false);
-	foreach(Lit &lit, body_) visitor->visit(&lit, true);
+	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
 }
 
 void Optimize::print(Storage *sto, std::ostream &out) const

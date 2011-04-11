@@ -63,11 +63,14 @@ class BoundAggrState : public AggrState
 protected:
 	class Val64
 	{
-	public:
+	private:
 		Val64(const int64_t &num);
 		Val64(const Val &val);
-		int compare(const Val64 &v, Storage *s) const;
 
+	public:
+		int compare(const Val64 &v, Storage *s) const;
+		static Val64 create(const uint64_t &num);
+		static Val64 create(const Val &val);
 	private:
 		bool isNum_;
 		union

@@ -73,8 +73,6 @@ public:
 	std::ostream &out() const;
 	void finish();
 private:
-	static bool todoCmp(const TodoMap::value_type *a, const TodoMap::value_type *b);
-private:
 	TodoMap            todo_;
 	LparseConverter   *output_;
 	State              state_;
