@@ -19,7 +19,6 @@
 #include <gringo/rule.h>
 #include <gringo/sumaggrlit.h>
 #include <gringo/avgaggrlit.h>
-#include <gringo/junctionaggrlit.h>
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/parityaggrlit.h>
 #include <gringo/optimize.h>

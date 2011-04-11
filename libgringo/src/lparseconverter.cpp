@@ -21,7 +21,6 @@
 #include <gringo/storage.h>
 #include <gringo/rule.h>
 #include <gringo/sumaggrlit.h>
-#include <gringo/junctionaggrlit.h>
 
 namespace lparseconverter_impl
 {

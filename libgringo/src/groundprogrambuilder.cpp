@@ -26,7 +26,6 @@
 #include <gringo/avgaggrlit.h>
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/parityaggrlit.h>
-#include <gringo/junctionaggrlit.h>
 #include <gringo/external.h>
 #include <gringo/display.h>
 
