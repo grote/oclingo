@@ -31,6 +31,7 @@
 
 #include "gringo/predlit.h"
 #include "gringo/rellit.h"
+#include "gringo/booleanlit.h"
 
 #include "gringo/sumaggrlit.h"
 #include "gringo/avgaggrlit.h"
@@ -257,6 +258,8 @@ predlit(res) ::= NOT(tok) predicate(pred). { res = pred; pred->sign(true); pred-
 
 lit(res) ::= predlit(pred).            { res = pred; }
 lit(res) ::= term(a) cmp(cmp) term(b). { res = new RelLit(a->loc(), cmp, a, b); }
+lit(res) ::= TRUE(tok).                { res = new BooleanLit(tok.loc(), true); }
+lit(res) ::= FALSE(tok).               { res = new BooleanLit(tok.loc(), false); }
 
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b); }

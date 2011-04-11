@@ -104,6 +104,8 @@ start:
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
 		ANONYMOUS        { return PARSER_ANONYMOUS; }
 		STRING           { token_.index = g_->index(g_->unquote(string(1,1))); return PARSER_STRING; }
+		"#true"          { return PARSER_TRUE; }
+		"#false"         { return PARSER_FALSE; }
 		"#sum"           { return PARSER_SUM; }
 		"#sum+"          { return PARSER_SUMP; }
 		"#count"         { return PARSER_COUNT; }

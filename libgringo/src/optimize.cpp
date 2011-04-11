@@ -34,7 +34,7 @@ public:
 	bool fact() const { return true; }
 	bool match(Grounder *grounder) { (void)grounder; return true; }
 	void addDomain(Grounder *, bool fact) { (void)fact; assert(false); }
-	Index *index(Grounder *g, Formula *gr, VarSet &bound) { (void)g; (void)gr; (void)bound; }
+	Index *index(Grounder *g, Formula *gr, VarSet &bound) { (void)g; (void)gr; (void)bound; return 0; }
 	bool edbFact() const { return false; }
 	void normalize(Grounder *g, Expander *expander) { (void)g; (void)expander; assert(false); }
 	void visit(PrgVisitor *visitor)
