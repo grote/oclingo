@@ -92,29 +92,44 @@ namespace plainoutput_impl
 		CondVec           *currentState_;
 	};
 
-	class SumAggrLitPrinter : public SumAggrLit::Printer, DelayedPrinter
+	template <class T>
+	class AggrLitPrinter : public AggrLit::Printer<T>, public DelayedPrinter
 	{
-		typedef boost::tuples::tuple<State, bool, bool, int32_t, int32_t> TodoVal;
+		typedef AggrCond::Printer::State State;
+		typedef boost::tuples::tuple<State, bool, bool, bool, bool, Val, Val> TodoVal;
 		typedef boost::unordered_map<uint32_t, TodoVal> TodoMap;
 	public:
-		SumAggrLitPrinter(PlainOutput *output);
+		AggrLitPrinter(PlainOutput *output);
 		void begin(State state, bool head, bool sign, bool complete);
 		void _begin(State state, bool head, bool sign, bool complete);
-		void lower(int32_t l, bool leq);
-		void upper(int32_t u, bool leq);
+		void lower(const Val &l, bool leq);
+		void upper(const Val &u, bool leq);
 		void end();
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 		void finish();
-	private:
+		virtual bool simplify(const Val &weight) = 0;
+		virtual void func() = 0;
+		virtual ~AggrLitPrinter();
+	protected:
 		TodoMap            todo_;
 		PlainOutput       *output_;
 		State              state_;
-		int32_t            lower_;
-		int32_t            upper_;
+		Val                lower_;
+		Val                upper_;
+		bool               lleq_;
+		bool               uleq_;
 		bool               head_;
 		bool               sign_;
 		bool               complete_;
+	};
+
+	class SumAggrLitPrinter : public AggrLitPrinter<SumAggrLit>
+	{
+	public:
+		SumAggrLitPrinter(PlainOutput *output);
+		bool simplify(const Val &weight);
+		void func();
 	};
 
 	/*

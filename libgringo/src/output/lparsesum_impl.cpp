@@ -386,4 +386,4 @@ void SumAggr::printBody(LparseConverter *output, uint32_t a)
 }
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::AggrCondPrinter, AggrCond::Printer, LparseConverter)
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumAggrLitPrinter, SumAggrLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumAggrLitPrinter, AggrLit::Printer<SumAggrLit>, LparseConverter)

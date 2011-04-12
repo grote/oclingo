@@ -23,18 +23,6 @@
 class SumAggrLit : public AggrLit
 {
 public:
-	class Printer : public ::Printer
-	{
-	public:
-		typedef AggrCond::Printer::State State;
-	public:
-		virtual void begin(State state, bool head, bool sign, bool complete) = 0;
-		virtual void lower(int32_t l, bool leq) = 0;
-		virtual void upper(int32_t u, bool leq) = 0;
-		virtual void end() = 0;
-		virtual ~Printer();
-	};
-public:
 	SumAggrLit(const Loc &loc, AggrCondVec &conds, bool posWeights, bool set);
 	AggrState *newAggrState(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
@@ -46,7 +34,3 @@ public:
 private:
 	bool posWeights_;
 };
-
-////////////////////////////// SumAggrLit::Printer //////////////////////////////
-
-inline SumAggrLit::Printer::~Printer() { }

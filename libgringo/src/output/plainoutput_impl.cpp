@@ -90,97 +90,158 @@ namespace plainoutput_impl
 	{
 	}
 
-	SumAggrLitPrinter::SumAggrLitPrinter(PlainOutput *output)
+	//////////////////////////////////////// AggrLitPrinter ////////////////////////////////////////
+
+	template <class T>
+	AggrLitPrinter<T>::AggrLitPrinter(PlainOutput *output)
 		: output_(output)
 	{
 		output->regDelayedPrinter(this);
 	}
 
-	void SumAggrLitPrinter::begin(State state, bool head, bool sign, bool complete)
+	template <class T>
+	void AggrLitPrinter<T>::begin(State state, bool head, bool sign, bool complete)
 	{
 		output_->print();
 		_begin(state, head, sign, complete);
 	}
 
-	void SumAggrLitPrinter::_begin(State state, bool head, bool sign, bool complete)
+	template <class T>
+	void AggrLitPrinter<T>::_begin(State state, bool head, bool sign, bool complete)
 	{
-		lower_    = std::numeric_limits<int32_t>::min();
-		upper_    = std::numeric_limits<int32_t>::max();
+		lower_    = Val::inf();
+		upper_    = Val::sup();
+		lleq_     = true;
+		uleq_     = true;
 		sign_     = sign;
 		complete_ = complete;
 		state_    = state;
 		head_     = head;
 	}
 
-	void SumAggrLitPrinter::lower(int32_t l, bool leq) { lower_ = leq ? l : l + 1; }
-
-	void SumAggrLitPrinter::upper(int32_t u, bool leq) { upper_ = leq ? u : u - 1; }
-
-	void SumAggrLitPrinter::end()
+	template <class T>
+	void AggrLitPrinter<T>::lower(const Val &l, bool leq)
 	{
-		// Note: the latter part can be reused for other aggregates!
+		lower_ = l;
+		lleq_  = leq;
+	}
+
+	template <class T>
+	void AggrLitPrinter<T>::upper(const Val &u, bool leq)
+	{
+		upper_ = u;
+		uleq_  = leq;
+	}
+
+	template <class T>
+	void AggrLitPrinter<T>::end()
+	{
 		if(complete_)
 		{
-			if(sign_) { out() << "not "; }
-			AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()->printer<AggrCond::Printer>())->state(state_);
+			// simplification
+			AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()-> template printer<AggrCond::Printer>())->state(state_);
 			typedef boost::unordered_map<ValVec, uint32_t> SetMap;
+			enum { SINGLE=0, MULTI=1, REMOVED=2 };
 			SetMap map;
 			foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 			{
-				std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.first, 0));
-				if(!res.second) { res.first->second = 1; }
-				else if(cond.second.empty() || cond.second == "#true")
-				{
-					int32_t weight = cond.first.front().num;
-					if(lower_ != std::numeric_limits<int32_t>::min()) { lower_ -= weight; }
-					if(upper_ != std::numeric_limits<int32_t>::max()) { upper_ -= weight; }
-				}
+				std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.first, SINGLE));
+				if(!res.second)                                                                          { res.first->second = MULTI; }
+				else if((cond.second.empty() || cond.second == "#true") && simplify(cond.first.front())) { res.first->second = REMOVED; }
 			}
-			if(lower_ != std::numeric_limits<int32_t>::min()) { out() << lower_; }
+			// printing
+			if(sign_) { out() << "not "; }
+			if(lower_.type != Val::INF)
+			{
+				lower_.print(output_->storage(), out());
+				if(!lleq_) { out() << "<"; }
+			}
+			func();
 			out() << "[";
-			uint32_t uid = 2;
+			uint32_t uid = REMOVED + 1;
 			bool printed = false;
 			foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 			{
-				int32_t weight = cond.first.front().num;
-				if(!cond.second.empty() && cond.second != "#true" && weight != 0)
+				SetMap::iterator it = map.find(cond.first);
+				if(it->second != 2)
 				{
-					SetMap::iterator it = map.find(cond.first);
+					const Val &weight = cond.first.front();
 					if(it->second == 1) { it->second = uid++; }
-					if(printed) { out() << ","; }
+					if(printed)
+					{
+						out() << ",";
+						printed = true;
+					}
 					if(it->second > 0)
 					{
-						out() << "<" << weight << "," << (it->second - 2) << ">:";
+						out() << "<";
+						weight.print(output()->storage(), out());
+						out() << "," << (it->second - REMOVED) << ">:" << cond.second;
 					}
-					out() << cond.second;
-					if(it->second == 0 && weight != 1) { out() << "=" << weight; }
-					printed = true;
+					else
+					{
+						out() << cond.second;
+						if(weight != Val::create(Val::NUM, 1))
+						{
+							out() << "=";
+							weight.print(output_->storage(), out());
+						}
+					}
 				}
 			}
 			out() << "]";
-			if(upper_ != std::numeric_limits<int32_t>::max()) { out() << upper_; }
+			if(upper_.type != Val::SUP)
+			{
+				if(!uleq_) { out() << "<"; }
+				upper_.print(output_->storage(), out());
+			}
 		}
 		else
 		{
 			uint32_t todo = output_->delay();
-			todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lower_, upper_)));
+			todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lleq_, uleq_, lower_, upper_)));
 		}
 	}
 
-	void SumAggrLitPrinter::finish()
+	template <class T>
+	void AggrLitPrinter<T>::finish()
 	{
 		foreach(TodoMap::value_type &val, todo_)
 		{
 			output_->startDelayed(val.first);
 			_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true);
-			lower(val.second.get<3>(), true);
-			upper(val.second.get<4>(), true);
+			lower(val.second.get<5>(), val.second.get<3>());
+			upper(val.second.get<6>(), val.second.get<4>());
 			end();
 			output_->endDelayed(val.first);
 		}
 		todo_.clear();
 	}
-	
+
+	template <class T>
+	AggrLitPrinter<T>::~AggrLitPrinter()
+	{
+	}
+
+	//////////////////////////////////////// SumAggrLitPrinter ////////////////////////////////////////
+
+	SumAggrLitPrinter::SumAggrLitPrinter(PlainOutput *output)
+		: AggrLitPrinter<SumAggrLit>(output)
+	{
+	}
+
+	bool SumAggrLitPrinter::simplify(const Val &weight)
+	{
+		assert(weight.type == Val::NUM);
+		if(lower_.type == Val::NUM) { lower_.num -= weight.num; }
+		if(upper_.type == Val::NUM) { upper_.num -= weight.num; }
+		return true;
+	}
+
+	void SumAggrLitPrinter::func()
+	{
+	}
+
 	/*
 
 	void AvgAggrLitPrinter::begin(bool head, bool sign)
@@ -350,7 +411,7 @@ GRINGO_REGISTER_PRINTER(plainoutput_impl::DisplayPrinter, Display::Printer, Plai
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AggrCondPrinter, AggrCond::Printer, PlainOutput)
-GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, SumAggrLit::Printer, PlainOutput)
+GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, AggrLit::Printer<SumAggrLit>, PlainOutput)
 /*
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, PlainOutput)

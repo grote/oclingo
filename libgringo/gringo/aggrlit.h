@@ -173,76 +173,7 @@ private:
 	bool         new_;    // wheather there is (possibly) a new match
 };
 
-class AggrLit : public Lit
-{
-	friend class BoundAggrState;
-private:
-	typedef boost::ptr_vector<AggrState> AggrStates;
-public:
-	AggrLit(const Loc &loc, AggrCondVec &conds, bool set);
-
-	virtual AggrState *newAggrState(Grounder *g) = 0;
-
-	void lower(Term *l, bool eq = true);
-	void upper(Term *u, bool eq = true);
-	void assign(Term *a);
-	Term *assign() const;
-	Term *lower() const;
-	Term *upper() const;
-	void sign(bool s);
-	bool sign() const;
-	uint32_t aggrUid() const;
-	bool isNewAggrState() const;
-	void isNewAggrState(bool isNew);
-	bool set() const;
-
-	void add(AggrCond *cond);
-	AggrCondVec &conds();
-	AggrDomain &domain();
-	void enqueue(Grounder *g);
-	void ground(Grounder *g);
-
-	~AggrLit();
-
-	// Lit interface
-	virtual void normalize(Grounder *g, Expander *expander);
-
-	void doHead(bool head);
-
-	bool match(Grounder *grounder);
-
-	bool complete() const;
-
-	virtual bool fact() const;
-	virtual Monotonicity monotonicity() const;
-
-	void grounded(Grounder *grounder);
-	void addDomain(Grounder *g, bool fact);
-	void endGround(Grounder *g);
-
-	Index *index(Grounder *g, Formula *gr, VarSet &bound);
-	Score score(Grounder *g, VarSet &bound);
-
-	void visit(PrgVisitor *visitor);
-
-protected:
-	bool            sign_;
-	bool            assign_;
-	bool            fact_;
-	bool            isNewAggrState_;
-	bool            set_;
-	bool            lowerEq_;
-	bool            upperEq_;
-	mutable tribool complete_;
-	clone_ptr<Term> lower_;
-	clone_ptr<Term> upper_;
-	Formula     *parent_;
-	AggrCondVec      conds_;
-	AggrDomain      domain_;
-	Val             valLower_;
-	Val             valUpper_;
-	uint32_t        aggrUid_;
-};
+class AggrLit;
 
 class SetLit : public Lit
 {
@@ -319,6 +250,90 @@ private:
 	AggrLit                *aggr_;
 	mutable tribool         complete_;
 	bool                    head_;
+};
+
+class AggrLit : public Lit
+{
+public:
+	template <class T>
+	class Printer : public ::Printer
+	{
+	public:
+		typedef AggrCond::Printer::State State;
+	public:
+		virtual void begin(State state, bool head, bool sign, bool complete) = 0;
+		virtual void lower(const Val &l, bool leq) = 0;
+		virtual void upper(const Val &u, bool leq) = 0;
+		virtual void end() = 0;
+		virtual ~Printer();
+	};
+	friend class BoundAggrState;
+private:
+	typedef boost::ptr_vector<AggrState> AggrStates;
+public:
+	AggrLit(const Loc &loc, AggrCondVec &conds, bool set);
+
+	virtual AggrState *newAggrState(Grounder *g) = 0;
+
+	void lower(Term *l, bool eq = true);
+	void upper(Term *u, bool eq = true);
+	void assign(Term *a);
+	Term *assign() const;
+	Term *lower() const;
+	Term *upper() const;
+	void sign(bool s);
+	bool sign() const;
+	uint32_t aggrUid() const;
+	bool isNewAggrState() const;
+	void isNewAggrState(bool isNew);
+	bool set() const;
+
+	void add(AggrCond *cond);
+	AggrCondVec &conds();
+	AggrDomain &domain();
+	void enqueue(Grounder *g);
+	void ground(Grounder *g);
+
+	~AggrLit();
+
+	// Lit interface
+	virtual void normalize(Grounder *g, Expander *expander);
+
+	void doHead(bool head);
+
+	bool match(Grounder *grounder);
+
+	bool complete() const;
+
+	virtual bool fact() const;
+	virtual Monotonicity monotonicity() const;
+
+	void grounded(Grounder *grounder);
+	void addDomain(Grounder *g, bool fact);
+	void endGround(Grounder *g);
+
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
+	Score score(Grounder *g, VarSet &bound);
+
+	void visit(PrgVisitor *visitor);
+
+protected:
+	bool            sign_;
+	bool            assign_;
+	bool            fact_;
+	bool            isNewAggrState_;
+	bool            set_;
+	bool            lowerEq_;
+	bool            upperEq_;
+	mutable tribool complete_;
+	clone_ptr<Term> lower_;
+	clone_ptr<Term> upper_;
+	Formula     *parent_;
+	AggrCondVec      conds_;
+	AggrDomain      domain_;
+	Val             valLower_;
+	Val             valUpper_;
+	uint32_t        aggrUid_;
 };
 
 /////////////////////////////// AggrState ///////////////////////////////
@@ -480,3 +495,8 @@ inline TermPtrVec *AggrCond::terms() { return set_.terms(); }
 inline LitPtrVec *AggrCond::lits() { return &lits_; }
 
 inline AggrCond::Style AggrCond::style() { return style_;  }
+
+////////////////////////////// SumAggrLit::Printer //////////////////////////////
+
+template <class T>
+inline AggrLit::Printer<T>::~Printer() { }

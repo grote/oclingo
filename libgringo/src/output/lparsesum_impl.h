@@ -58,7 +58,7 @@ private:
 	bool             isHead_;
 };
 
-class SumAggrLitPrinter : public SumAggrLit::Printer, public DelayedPrinter
+class SumAggrLitPrinter : public AggrLit::Printer<SumAggrLit>, public DelayedPrinter
 {
 	typedef std::pair<State, std::pair<int32_t, int32_t> > TodoKey;
 	typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
@@ -66,8 +66,8 @@ class SumAggrLitPrinter : public SumAggrLit::Printer, public DelayedPrinter
 public:
 	SumAggrLitPrinter(LparseConverter *output);
 	void begin(State state, bool head, bool sign, bool complete);
-	void lower(int32_t l, bool leq);
-	void upper(int32_t u, bool leq);
+	void lower(const Val &l, bool leq);
+	void upper(const Val &u, bool leq);
 	void end();
 	Output *output() const;
 	std::ostream &out() const;
@@ -108,8 +108,8 @@ inline void AggrCondPrinter::end() { }
 
 //////////////////////////////// SumAggrLitPrinter ////////////////////////////////
 
-inline void SumAggrLitPrinter::lower(int32_t l, bool leq) { lower_ = leq ? l : l + 1; }
-inline void SumAggrLitPrinter::upper(int32_t u, bool leq) { upper_ = leq ? u : u - 1; }
+inline void SumAggrLitPrinter::lower(const Val &l, bool leq) { lower_ = leq ? l.num : l.num + 1; }
+inline void SumAggrLitPrinter::upper(const Val &u, bool leq) { upper_ = leq ? u.num : u.num - 1; }
 inline Output *SumAggrLitPrinter::output() const { return output_; }
 inline std::ostream &SumAggrLitPrinter::out() const { return output_->out(); }
 

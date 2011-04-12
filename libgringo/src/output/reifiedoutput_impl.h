@@ -67,7 +67,7 @@ namespace reifiedoutput_impl
 		bool           printed_;
 	};
 
-	class SumAggrLitPrinter : public SumAggrLit::Printer
+	class SumAggrLitPrinter : public AggrLit::Printer<SumAggrLit>
 	{
 	public:
 		SumAggrLitPrinter(ReifiedOutput *output) : output_(output) { }
