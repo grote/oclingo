@@ -17,57 +17,30 @@
 
 #pragma once
 
-/*
-
 #include <gringo/gringo.h>
-#include <gringo/sumaggrlit.h>
+#include <gringo/aggrlit.h>
 
 class MinMaxAggrLit : public AggrLit
 {
 public:
-	class Printer : public AggrLit::Printer
-	{
-	public:
-		virtual void begin(bool head, bool sign, bool max) = 0;
-		virtual void lower(const Val &l) = 0;
-		virtual void upper(const Val &u) = 0;
-		virtual void end() = 0;
-		virtual ~Printer() { }
-	};
+	enum Type { MINIMUM, MAXIMUM };
 public:
-	MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, bool count);
-
-	bool match(Grounder *grounder);
-	void matchAssign(Grounder *grounder, boost::unordered_set<Val> &vals);
-	void setValue(const Val &value) { lowerBound_ = upperBound_ = value; }
-	void index(Grounder *g, Groundable *gr, VarSet &bound);
-	void accept(::Printer *v);
-	Lit *clone() const;
+	MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, Type type, bool set);
+	AggrState *newAggrState(Grounder *g);
 	void print(Storage *sto, std::ostream &out) const;
-	tribool accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*);
+	Lit *clone() const;
+	void accept(::Printer *v);
+	Monotonicity monotonicity() const;
+	bool fact() const;
+	void checkWeight(Grounder *g, const Val &weight);
+	Type type() const;
 private:
-	//! standard comparison between two weights (inverted for \#min)
-	int cmp(const Val& a, const Val& b, Storage *s);
-	//! infimum (supremum for \#min)
-	Val min();
-	//! supremum (infimum for \#min)
-	Val max();
-	//! whether all evaluated literals are facts
-	bool    factOnly_;
-	//! smallest weight of evaluated facts (biggest for \#min)
-	Val fixed_;
-	//! whether the aggregate is a \#min or \#max aggregate
-	bool    max_;
-	//! biggest weight of all evaluated literals (smallest bound for \#min)
-	Val valUpper_;
-	//! smallest weight of all evaluated literals (biggest bound for \#min)
-	Val valLower_;
-	//! upper bound (lower bound for \#min)
-	Val upperBound_;
-	//! lower bound (upper bound for \#min)
-	Val lowerBound_;
-	//! values to be assigned
-	boost::unordered_set<Val> *vals_;
+	template<uint32_t T>
+	void _accept(::Printer *v);
+private:
+	Type type_;
 };
 
-*/
+/////////////////////////////////// MinMaxAggrLit ///////////////////////////////////
+
+inline MinMaxAggrLit::Type MinMaxAggrLit::type() const { return type_; }

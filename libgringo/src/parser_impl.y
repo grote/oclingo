@@ -315,8 +315,8 @@ term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; r
 term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
 term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
 
-nsetterm(res) ::= term(term).                                { res = vec1(term); }
-nsetterm(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
+nsetterm(res) ::= term(term).                      { res = vec1(term); }
+nsetterm(res) ::= termlist(list) COMMA term(term). { res = list; list->push_back(term); }
 
 setterm(res) ::= .               { res = new TermPtrVec(); }
 setterm(res) ::= nsetterm(term). { res = term; }
@@ -353,8 +353,10 @@ aggr_ass(res) ::=            LSBRAC(tok) weightlist(list) RSBRAC. { res = new Su
 aggr_ass(res) ::= COUNT(tok) LCBRAC      condlist(list)   RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
 aggr_ass(res) ::= COUNT(tok) LSBRAC      condlist(list)   RSBRAC. { res = new SumAggrLit(tok.loc(), *list, true, false); delete list; }
 aggr_ass(res) ::=            LCBRAC(tok) condlist(list)   RCBRAC. { res = new SumAggrLit(tok.loc(), *list, true, true); delete list; }
-//aggr_ass(res) ::= MIN(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, false); delete list; }
-//aggr_ass(res) ::= MAX(tok) LSBRAC weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, true); delete list; }
+aggr_ass(res) ::= MIN(tok)   LSBRAC      weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, MinMaxAggrLit::MINIMUM, false); delete list; }
+aggr_ass(res) ::= MIN(tok)   LCBRAC      weightlist(list) RCBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, MinMaxAggrLit::MINIMUM, false); delete list; }
+aggr_ass(res) ::= MAX(tok)   LSBRAC      weightlist(list) RSBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, MinMaxAggrLit::MAXIMUM, true); delete list; }
+aggr_ass(res) ::= MAX(tok)   LCBRAC      weightlist(list) RCBRAC. { res = new MinMaxAggrLit(tok.loc(), *list, MinMaxAggrLit::MAXIMUM, true); delete list; }
 
 //aggr_num(res) ::= AVG(tok) LSBRAC weightlist(list) RSBRAC. { res = new AvgAggrLit(tok.loc(), *list); delete list; }
 

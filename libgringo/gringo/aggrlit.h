@@ -255,7 +255,7 @@ private:
 class AggrLit : public Lit
 {
 public:
-	template <class T>
+	template <class Tag, uint32_t Type = 0>
 	class Printer : public ::Printer
 	{
 	public:
@@ -498,5 +498,5 @@ inline AggrCond::Style AggrCond::style() { return style_;  }
 
 ////////////////////////////// SumAggrLit::Printer //////////////////////////////
 
-template <class T>
-inline AggrLit::Printer<T>::~Printer() { }
+template <class T, uint32_t Type>
+inline AggrLit::Printer<T, Type>::~Printer() { }

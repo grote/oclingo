@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-/*
-
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/term.h>
 #include <gringo/predlit.h>
@@ -29,178 +27,61 @@
 
 namespace
 {
-	class MinMaxIndex : public NewOnceIndex
+	class MinMaxBoundAggrState : public BoundAggrState
 	{
 	public:
-		MinMaxIndex(MinMaxAggrLit *lit_, const VarVec &bind);
-		bool first(Grounder *grounder, int binder);
-		bool next(Grounder *grounder, int binder);
+		MinMaxBoundAggrState(Grounder *g, MinMaxAggrLit &lit);
+		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
+		void accumulate(Grounder *g, AggrLit &lit, const Val &val, bool isNew, bool newFact);
 	private:
-		MinMaxAggrLit *lit_;
-		VarVec         bind_;
-		//! whether the supremum (true) or infimum (false) should be included
-		tribool        border_;
-		boost::unordered_set<Val>           vals_;
-		boost::unordered_set<Val>::iterator current_;
+		Val min_;
+		Val max_;
 	};
 
-	MinMaxIndex::MinMaxIndex(MinMaxAggrLit *lit, const VarVec &bind)
-		: lit_(lit)
-		, bind_(bind)
+	class MinMaxAssignAggrState : public AssignAggrState
 	{
-	}
-
-	bool MinMaxIndex::first(Grounder *grounder, int binder)
-	{
-		vals_.clear();
-		lit_->matchAssign(grounder, vals_);
-		current_ = vals_.begin();
-		return next(grounder, binder);
-	}
-
-	bool MinMaxIndex::next(Grounder *grounder, int binder)
-	{
-		while(current_ != vals_.end())
-		{
-			lit_->setValue(*current_);
-			foreach(uint32_t var, bind_) grounder->unbind(var);
-			if(lit_->assign()->unify(grounder, *current_++, binder))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
+	public:
+		MinMaxAssignAggrState(MinMaxAggrLit::Type type);
+		void doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact);
+	private:
+		MinMaxAggrLit::Type type_;
+		Val                 fixed_;
+	};
 }
 
-MinMaxAggrLit::MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, bool max)
-	: AggrLit(loc, conds, false, true)
-	, max_(max)
+//////////////////////////////////////// MinMaxAggrLit ////////////////////////////////////////
+
+MinMaxAggrLit::MinMaxAggrLit(const Loc &loc, AggrCondVec &conds, Type type, bool set)
+	: AggrLit(loc, conds, set)
+	, type_(type)
 {
 }
 
-int MinMaxAggrLit::cmp(const Val &a, const Val &b, Storage *s)
+AggrState *MinMaxAggrLit::newAggrState(Grounder *g)
 {
-	return max_ ? a.compare(b, s) : -a.compare(b, s);
-}
-
-Val MinMaxAggrLit::min()
-{
-	return max_ ? Val::inf() : Val::sup();
-}
-
-Val MinMaxAggrLit::max()
-{
-	return max_ ? Val::sup() : Val::inf();
-}
-
-bool MinMaxAggrLit::match(Grounder *grounder)
-{
-	lowerBound_ = lower_.get() ? lower_->val(grounder) : Val::inf();
-	upperBound_ = upper_.get() ? upper_->val(grounder) : Val::sup();
-	if(!max_) std::swap(lowerBound_, upperBound_);
-	if(assign_) upperBound_ = lowerBound_;
-
-	fact_     = false;
-	factOnly_ = true;
-	valLower_ = max();
-	valUpper_ = fixed_ = min();
-	vals_ = 0;
-	
-	foreach(AggrCond &lit, conds_) lit.ground(grounder);
-
-	if(head() && !factOnly_) return true;
-	// all too low (or empty) or facts too high
-	if(cmp(valUpper_, lowerBound_, grounder) < 0 || cmp(fixed_, upperBound_, grounder) > 0)  return (fact_ = sign_) || head();
-	// facts above lower bound and all under upper bound
-	if(cmp(fixed_, lowerBound_, grounder) >= 0 && cmp(valUpper_, upperBound_, grounder) <= 0)  return (fact_ = !sign_) || head();
-	// else
-	return true;
-}
-
-void MinMaxAggrLit::matchAssign(Grounder *grounder, boost::unordered_set<Val> &vals)
-{
-	assert(!head());
-	assert(!sign_);
-	fact_     = false;
-	factOnly_ = true;
-	lowerBound_ = valUpper_ = fixed_ = min();
-	upperBound_ = valLower_ = max();
-	vals_ = &vals;
-
-	foreach(AggrCond &lit, conds_) lit.ground(grounder);
-
-	fact_ = factOnly_;
-	if(fixed_ == min()) vals.insert(min());
-	else
-	{
-		boost::unordered_set<Val>::iterator i = vals.begin();
-		while(i != vals.end())
-		{
-			if(cmp(*i, fixed_, grounder) < 0) i = vals.erase(i);
-			else ++ i;
-		}
-	}
-}
-
-void MinMaxAggrLit::index(Grounder *g, Groundable *gr, VarSet &bound)
-{
-	(void)g;
-	if(assign_)
-	{
-		VarSet vars;
-		VarVec bind;
-		lower_->vars(vars);
-		std::set_difference(vars.begin(), vars.end(), bound.begin(), bound.end(), std::back_insert_iterator<VarVec>(bind));
-		if(bind.size() > 0)
-		{
-			MinMaxIndex *p = new MinMaxIndex(this, bind);
-			gr->instantiator()->append(p);
-			bound.insert(bind.begin(), bind.end());
-			return;
-		}
-	}
-	gr->instantiator()->append(new MatchIndex(this));
-}
-
-void MinMaxAggrLit::accept(::Printer *v)
-{ 
-	Printer *printer = v->output()->printer<Printer>();
-	printer->begin(head(), sign_, max_);
-	if(lower_.get() || assign_)
-	{
-		if(max_ && fixed_.compare(lowerBound_, v->output()->storage()) < 0) printer->lower(lowerBound_);
-		if(!max_ && valUpper_.compare(upperBound_, v->output()->storage()) < 0) printer->lower(upperBound_);
-	}
-	if(upper_.get() || assign_)
-	{
-		if(max_ && valUpper_.compare(upperBound_, v->output()->storage()) > 0) printer->upper(upperBound_);
-		if(!max_ && fixed_.compare(lowerBound_, v->output()->storage()) > 0) printer->upper(lowerBound_);
-	}
-	foreach(AggrCond &lit, conds_) lit.accept(printer);
-	printer->end();
+	if(assign()) { return new MinMaxAssignAggrState(type_); }
+	else         { return new MinMaxBoundAggrState(g, *this); }
 }
 
 Lit *MinMaxAggrLit::clone() const
-{ 
+{
 	return new MinMaxAggrLit(*this);
 }
 
 void MinMaxAggrLit::print(Storage *sto, std::ostream &out) const
-{ 
+{
 	if(sign_) out << "not ";
-	bool comma = false;
 	if(lower_.get())
 	{
 		lower_->print(sto, out);
 		out << (assign_ ? ":=" : " ");
 	}
-	if(max_) out << "#max[";
-	else out << "#min[";
+	bool comma = false;
+	out << "#" << (type_ == MINIMUM ? "min" : "max") << "[";
 	foreach(const AggrCond &lit, conds_)
 	{
-		if(comma) out << ",";
-		else comma = true;
+		if(comma) { out << ","; }
+		else      { comma = true; }
 		lit.print(sto, out);
 	}
 	out << "]";
@@ -211,22 +92,114 @@ void MinMaxAggrLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-tribool MinMaxAggrLit::accumulate(Grounder *g, const Val &weight, Lit &lit) throw(const Val*)
+template<uint32_t T>
+void MinMaxAggrLit::_accept(::Printer *v)
 {
-	(void)g;
-	if(cmp(valLower_, weight, g) > 0) valLower_ = weight;
-	if(cmp(valUpper_, weight, g) < 0) valUpper_ = weight;
-	if(lit.fact())
-	{
-		if(cmp(fixed_, weight, g) < 0) fixed_ = weight;
-		if(cmp(fixed_, upperBound_, g) > 0) return false;
-	}
-	else factOnly_ = false;
-	if(vals_)
-	{
-		vals_->insert(Val(weight));
-	}
-	return unknown;
+	Printer<MinMaxAggrLit, T> *printer = v->output()->printer<Printer<MinMaxAggrLit, T> >();
+	printer->begin(AggrCond::Printer::State(aggrUid(), domain_.lastId()), head(), sign_, complete());
+	if(lower()) { printer->lower(valLower_, lowerEq_); }
+	if(upper()) { printer->upper(valUpper_, upperEq_); }
+	printer->end();
 }
 
-*/
+void MinMaxAggrLit::accept(::Printer *v)
+{
+	if(type_ == MINIMUM) { _accept<MINIMUM>(v); }
+	else                 { _accept<MAXIMUM>(v); }
+}
+
+Lit::Monotonicity MinMaxAggrLit::monotonicity() const
+{
+	if(!head())
+	{
+		if(lower()  && !upper()) { return ( sign() ^ (type_ == MINIMUM)) ? ANTIMONOTONE : MONOTONE; }
+		if(!lower() &&  upper()) { return (!sign() ^ (type_ == MINIMUM)) ? ANTIMONOTONE : MONOTONE; }
+	}
+	return NONMONOTONE;
+}
+
+bool MinMaxAggrLit::fact() const
+{
+	return
+		(
+			fact_ &&
+			!head() &&
+			(
+				(lower() && !upper() && (!sign() ^ (type_ == MINIMUM))) ||
+				(upper() && !lower() && ( sign() ^ (type_ == MINIMUM)))
+			)
+		) ||
+		AggrLit::fact();
+}
+
+//////////////////////////////////////// MinMaxBoundAggrState ////////////////////////////////////////
+
+MinMaxBoundAggrState::MinMaxBoundAggrState(Grounder *g, MinMaxAggrLit &lit)
+	: min_(lit.type() == MinMaxAggrLit::MAXIMUM ? Val::inf() : Val::sup())
+	, max_(lit.type() == MinMaxAggrLit::MAXIMUM ? Val::inf() : Val::sup())
+{
+	accumulate(g, lit, lit.type() == MinMaxAggrLit::MAXIMUM ? Val::inf() : Val::sup(), true, true);
+}
+
+void MinMaxBoundAggrState::accumulate(Grounder *g, AggrLit &lit, const Val &val, bool isNew, bool newFact)
+{
+	if(static_cast<MinMaxAggrLit&>(lit).type() == MinMaxAggrLit::MAXIMUM)
+	{
+		if(newFact && min_.compare(val, g) < 0) { min_ = val; }
+		if(isNew   && max_.compare(val, g) < 0) { max_ = val; }
+	}
+	else
+	{
+		if(newFact && max_.compare(val, g) > 0) { max_ = val; }
+		if(isNew   && min_.compare(val, g) > 0) { min_ = val; }
+	}
+	Val lower(lit.lower() ? lit.lower()->val(g) : Val::inf());
+	Val upper(lit.upper() ? lit.upper()->val(g) : Val::sup());
+	checkBounds(g, lit, Val64::create(min_), Val64::create(max_), Val64::create(lower), Val64::create(upper));
+}
+
+void MinMaxBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &set, bool isNew, bool newFact)
+{
+	accumulate(g, lit, set[0], isNew, newFact);
+}
+
+//////////////////////////////////////// MinMaxAssignAggrState ////////////////////////////////////////
+
+MinMaxAssignAggrState::MinMaxAssignAggrState(MinMaxAggrLit::Type type)
+	: type_(type)
+	, fixed_(type == MinMaxAggrLit::MAXIMUM ? Val::inf() : Val::sup())
+{
+	fact_  = true;
+	assign_.push_back(fixed_);
+
+}
+
+void MinMaxAssignAggrState::doAccumulate(Grounder *g, AggrLit &, const ValVec &set, bool isNew, bool newFact)
+{
+	if(type_ == MinMaxAggrLit::MAXIMUM ? set[0].compare(fixed_, g) > 0 : set[0].compare(fixed_, g) < 0)
+	{
+		bool found;
+		if(newFact)
+		{
+			found                 = false;
+			fixed_                = set[0];
+			AssignVec::iterator j = assign_.begin();
+			for(AssignVec::iterator i = j; i != assign_.end(); i++)
+			{
+				int cmp = i->val.compare(fixed_, g);
+				if(type_ == MinMaxAggrLit::MAXIMUM ? cmp >= 0 : cmp <= 0)
+				{
+					if(cmp == 0) { found = true; }
+					*j++ = *i;
+				}
+			}
+			assign_.erase(j, assign_.end());
+		}
+		else if(isNew)
+		{
+			found = std::find(assign_.begin(), assign_.end(), Assign(set[0])) != assign_.end();
+		}
+		if(!found) { assign_.push_back(set[0]); }
+		fact_ = assign_.size() == 1;
+	}
+}

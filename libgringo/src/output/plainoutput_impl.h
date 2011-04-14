@@ -92,7 +92,7 @@ namespace plainoutput_impl
 		CondVec           *currentState_;
 	};
 
-	template <class T>
+	template <class T, uint32_t Type = 0>
 	class AggrLitPrinter : public AggrLit::Printer<T>, public DelayedPrinter
 	{
 		typedef AggrCond::Printer::State State;
@@ -132,6 +132,26 @@ namespace plainoutput_impl
 		void func();
 	};
 
+	template <uint32_t Type>
+	class MinMaxAggrLitPrinter : public AggrLitPrinter<MinMaxAggrLit, Type>
+	{
+	public:
+		MinMaxAggrLitPrinter(PlainOutput *output);
+		bool simplify(const Val &weight);
+		void func();
+	};
+
+	struct MinAggrLitPrinter : MinMaxAggrLitPrinter<MinMaxAggrLit::MINIMUM>
+	{
+		MinAggrLitPrinter(PlainOutput *output) : MinMaxAggrLitPrinter<MinMaxAggrLit::MINIMUM>(output) { }
+	};
+
+	struct MaxAggrLitPrinter : MinMaxAggrLitPrinter<MinMaxAggrLit::MAXIMUM>
+	{
+		MaxAggrLitPrinter(PlainOutput *output) : MinMaxAggrLitPrinter<MinMaxAggrLit::MAXIMUM>(output) { }
+	};
+
+
 	/*
 	class AvgAggrLitPrinter : public AvgAggrLit::Printer
 	{
@@ -151,30 +171,6 @@ namespace plainoutput_impl
 		int32_t            lower_;
 		bool               sign_;
 		bool               count_;
-		bool               hasUpper_;
-		bool               hasLower_;
-		bool               printedLit_;
-		std::ostringstream aggr_;
-	};
-
-	class MinMaxAggrLitPrinter : public MinMaxAggrLit::Printer
-	{
-	public:
-		MinMaxAggrLitPrinter(PlainOutput *output) : output_(output) { }
-		void begin(bool head, bool sign, bool max);
-		void weight(const Val &v);
-		void lower(const Val &l);
-		void upper(const Val &u);
-		void print(PredLitRep *l);
-		void end();
-		Output *output() const { return output_; }
-		std::ostream &out() const { return output_->out(); }
-	private:
-		PlainOutput       *output_;
-		Val                upper_;
-		Val                lower_;
-		bool               sign_;
-		bool               max_;
 		bool               hasUpper_;
 		bool               hasLower_;
 		bool               printedLit_;

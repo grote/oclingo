@@ -92,22 +92,22 @@ namespace plainoutput_impl
 
 	//////////////////////////////////////// AggrLitPrinter ////////////////////////////////////////
 
-	template <class T>
-	AggrLitPrinter<T>::AggrLitPrinter(PlainOutput *output)
+	template <class T, uint32_t Type>
+	AggrLitPrinter<T, Type>::AggrLitPrinter(PlainOutput *output)
 		: output_(output)
 	{
 		output->regDelayedPrinter(this);
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::begin(State state, bool head, bool sign, bool complete)
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool complete)
 	{
 		output_->print();
 		_begin(state, head, sign, complete);
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::_begin(State state, bool head, bool sign, bool complete)
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::_begin(State state, bool head, bool sign, bool complete)
 	{
 		lower_    = Val::inf();
 		upper_    = Val::sup();
@@ -119,22 +119,22 @@ namespace plainoutput_impl
 		head_     = head;
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::lower(const Val &l, bool leq)
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::lower(const Val &l, bool leq)
 	{
 		lower_ = l;
 		lleq_  = leq;
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::upper(const Val &u, bool leq)
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::upper(const Val &u, bool leq)
 	{
 		upper_ = u;
 		uleq_  = leq;
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::end()
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::end()
 	{
 		if(complete_)
 		{
@@ -167,20 +167,19 @@ namespace plainoutput_impl
 				{
 					const Val &weight = cond.first.front();
 					if(it->second == 1) { it->second = uid++; }
-					if(printed)
-					{
-						out() << ",";
-						printed = true;
-					}
+					if(printed) { out() << ","; }
+					else        { printed = true; }
 					if(it->second > 0)
 					{
 						out() << "<";
 						weight.print(output()->storage(), out());
 						out() << "," << (it->second - REMOVED) << ">:" << cond.second;
+						if(cond.second.empty()) { out() << "#true"; }
 					}
 					else
 					{
 						out() << cond.second;
+						if(cond.second.empty()) { out() << "#true"; }
 						if(weight != Val::create(Val::NUM, 1))
 						{
 							out() << "=";
@@ -203,8 +202,8 @@ namespace plainoutput_impl
 		}
 	}
 
-	template <class T>
-	void AggrLitPrinter<T>::finish()
+	template <class T, uint32_t Type>
+	void AggrLitPrinter<T, Type>::finish()
 	{
 		foreach(TodoMap::value_type &val, todo_)
 		{
@@ -218,8 +217,8 @@ namespace plainoutput_impl
 		todo_.clear();
 	}
 
-	template <class T>
-	AggrLitPrinter<T>::~AggrLitPrinter()
+	template <class T, uint32_t Type>
+	AggrLitPrinter<T, Type>::~AggrLitPrinter()
 	{
 	}
 
@@ -240,6 +239,26 @@ namespace plainoutput_impl
 
 	void SumAggrLitPrinter::func()
 	{
+	}
+
+	//////////////////////////////////////// MinMaxAggrLitPrinter ////////////////////////////////////////
+
+	template <uint32_t Type>
+	MinMaxAggrLitPrinter<Type>::MinMaxAggrLitPrinter(PlainOutput *output)
+		: AggrLitPrinter<MinMaxAggrLit, Type>(output)
+	{
+	}
+
+	template <uint32_t Type>
+	bool MinMaxAggrLitPrinter<Type>::simplify(const Val &)
+	{
+		return false;
+	}
+
+	template <uint32_t Type>
+	void MinMaxAggrLitPrinter<Type>::func()
+	{
+		this->template out() << (Type == MinMaxAggrLit::MAXIMUM ? "#max" : "#min");
 	}
 
 	/*
@@ -285,52 +304,6 @@ namespace plainoutput_impl
 		if(hasLower_) out() << lower_;
 		out() << "#avg[" << aggr_.str() << "]";
 		if(hasUpper_) out() << upper_;
-	}
-
-	void MinMaxAggrLitPrinter::begin(bool head, bool sign, bool max)
-	{
-		(void)head;
-		output_->print();
-		aggr_.str("");
-		sign_       = sign;
-		max_        = max;
-		hasUpper_   = false;
-		hasLower_   = false;
-		printedLit_ = false;
-	}
-
-	void MinMaxAggrLitPrinter::weight(const Val &v)
-	{
-		aggr_ << "=";
-		v.print(output_->storage(), aggr_);
-	}
-
-	void MinMaxAggrLitPrinter::lower(const Val &l)
-	{
-		hasLower_ = true;
-		lower_    = l;
-	}
-
-	void MinMaxAggrLitPrinter::upper(const Val &u)
-	{
-		hasUpper_ = true;
-		upper_    = u;
-	}
-
-	void MinMaxAggrLitPrinter::print(PredLitRep *l)
-	{
-		if(printedLit_) aggr_ << ",";
-		else printedLit_ = true;
-		output_->print(l, aggr_);
-	}
-
-	void MinMaxAggrLitPrinter::end()
-	{
-		if(sign_) out() << "not ";
-		if(hasLower_) lower_.print(output_->storage(), out());
-		if(max_) out() << "#max[" << aggr_.str() << "]";
-		else out() << "#min[" << aggr_.str() << "]";
-		if(hasUpper_) upper_.print(output_->storage(), out());
 	}
 
 	void ParityAggrLitPrinter::begin(bool head, bool sign, bool even, bool set)
@@ -412,6 +385,10 @@ GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, Pl
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AggrCondPrinter, AggrCond::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::SumAggrLitPrinter, AggrLit::Printer<SumAggrLit>, PlainOutput)
+typedef AggrLit::Printer<MinMaxAggrLit, MinMaxAggrLit::MINIMUM> MinPrinterBase;
+typedef AggrLit::Printer<MinMaxAggrLit, MinMaxAggrLit::MAXIMUM> MaxPrinterBase;
+GRINGO_REGISTER_PRINTER(plainoutput_impl::MinAggrLitPrinter, MinPrinterBase, PlainOutput)
+GRINGO_REGISTER_PRINTER(plainoutput_impl::MaxAggrLitPrinter, MaxPrinterBase, PlainOutput)
 /*
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AvgAggrLitPrinter, AvgAggrLit::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::MinMaxAggrLitPrinter, MinMaxAggrLit::Printer, PlainOutput)
