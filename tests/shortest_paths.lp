@@ -36,10 +36,10 @@ open(J,S+1) :- open(J,S), open(I,S) : edge(J,I) : reach(I).
 dist(G,0)   :- goal(G).
 dist(J,S+1) :- dist(I,S), edge(J,I), open(J,S).
 
-first(MS) :- MS := #min [ <S> : dist(I,S) : start(I) ].
+first(MS) :- MS := #min { <S> : dist(I,S) : start(I) }.
 
 path(I,1)    :- start(I), not first(#supremum).
-path(MJ,S+1) :- first(D), path(I,S), S <= D, MJ := #min [ <J> : dist(J,D-S) : edge(I,J) ].
+path(MJ,S+1) :- first(D), path(I,S), S <= D, MJ := #min { <J> : dist(J,D-S) : edge(I,J) }.
 
 #hide.
 #show path/2.
