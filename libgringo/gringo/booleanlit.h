@@ -47,6 +47,6 @@ inline void BooleanLit::accept(Printer *) { }
 inline Index *BooleanLit::index(Grounder *, Formula *, VarSet &) { return new MatchIndex(this); }
 inline void BooleanLit::visit(PrgVisitor *) { }
 inline bool BooleanLit::match(Grounder *) { return truth_; }
-inline void BooleanLit::print(Storage *, std::ostream &out) const { out << truth_ ? "#true" : "#false"; }
+inline void BooleanLit::print(Storage *, std::ostream &out) const { out << (truth_ ? "#true" : "#false"); }
 inline BooleanLit *BooleanLit::clone() const { return new BooleanLit(*this); }
 inline BooleanLit::~BooleanLit() { }

@@ -1,5 +1,5 @@
 target=gringo-app
-cmake_options=-DWITH_LUA=shipped -DWITH_LUASQL=1
+cmake_options=-DWITH_LUA=shipped
 
 all: release
 

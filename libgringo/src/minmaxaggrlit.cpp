@@ -199,6 +199,7 @@ void MinMaxAssignAggrState::doAccumulate(Grounder *g, AggrLit &, const ValVec &s
 		{
 			found = std::find(assign_.begin(), assign_.end(), Assign(set[0])) != assign_.end();
 		}
+		else { found = true; }
 		if(!found) { assign_.push_back(set[0]); }
 		fact_ = assign_.size() == 1;
 	}
