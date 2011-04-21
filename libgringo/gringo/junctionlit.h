@@ -31,6 +31,7 @@ struct JunctionState
 	bool   match;
 	bool   fact;
 	bool   isNew;
+	bool   groundSwitch;
 	ValVec vals;
 };
 
@@ -41,7 +42,7 @@ class JunctionLitDomain
 public:
 	JunctionLitDomain();
 
-	void state(Grounder *g);
+	bool state(Grounder *g);
 	void accumulate(Grounder *g, uint32_t index);
 	BoolPair match(Grounder *g);
 	void print(Printer *p);
@@ -66,6 +67,7 @@ private:
 	bool           new_;
 	bool           newState_;
 	bool           head_;
+	bool           groundSwitch_;
 };
 
 class JunctionCond : public Formula

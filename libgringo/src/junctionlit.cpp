@@ -81,6 +81,7 @@ JunctionState::JunctionState()
 	: match(false)
 	, fact(false)
 	, isNew(true)
+	, groundSwitch(true)
 {
 }
 
@@ -91,6 +92,7 @@ JunctionLitDomain::JunctionLitDomain()
 	, new_(false)
 	, newState_(false)
 	, head_(false)
+	, groundSwitch_(true)
 {
 }
 
@@ -101,9 +103,11 @@ bool JunctionLitDomain::fact() const
 
 void JunctionLitDomain::finish()
 {
+	groundSwitch_ = !groundSwitch_;
 	foreach(StateMap::reference ref, state_)
 	{
 		if(ref.second.match) { ref.second.isNew = false; }
+		ref.second.groundSwitch = groundSwitch_;
 	}
 	new_ = false;
 }
@@ -137,13 +141,24 @@ void JunctionLitDomain::enqueue(Grounder *g)
 	f_->enqueue(g);
 }
 
-void JunctionLitDomain::state(Grounder *g)
+bool JunctionLitDomain::state(Grounder *g)
 {
 	ValVec global;
 	foreach(uint32_t var, global_) { global.push_back(g->val(var)); }
 	std::pair<StateMap::iterator, bool> res = state_.insert(StateMap::value_type(global, JunctionState()));
 	newState_ = res.second;
 	current_  = &res.first->second;
+	if(newState_)
+	{
+		current_->groundSwitch = !groundSwitch_;
+		return true;
+	}
+	else
+	{
+		bool oldSwitch = current_->groundSwitch;
+		current_->groundSwitch = !groundSwitch_;
+		return oldSwitch == groundSwitch_;
+	}
 }
 
 void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
@@ -312,8 +327,10 @@ JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 
 BoolPair JunctionLit::ground(Grounder *g)
 {
-	dom_.state(g);
-	foreach(JunctionCond &cond, conds_) { cond.ground(g); }
+	if(dom_.state(g))
+	{
+		foreach(JunctionCond &cond, conds_) { cond.ground(g); }
+	}
 	return dom_.match(g);
 }
 
