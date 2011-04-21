@@ -17,8 +17,6 @@
 
 #pragma once
 
-/*
-
 #include <gringo/gringo.h>
 #include <gringo/sumaggrlit.h>
 #include <gringo/minmaxaggrlit.h>
@@ -27,34 +25,29 @@
 
 namespace lparseconverter_impl
 {
-class MinMaxPrinter : public MinMaxAggrLit::Printer
+
+template <uint32_t Type>
+class MinMaxAggrLitPrinter : public AggrLit::Printer<MinMaxAggrLit, Type>
 {
 public:
-	MinMaxPrinter(LparseConverter *output) : output_(output) { }
-	void begin(bool head, bool sign, bool max);
-	void lower(const Val &l);
-	void upper(const Val &u);
-	void print(PredLitRep *l);
-	void weight(const Val &v);
+	MinMaxAggrLitPrinter(LparseConverter *output);
+	void begin(State state, bool head, bool sign, bool complete);
+	void _begin(State state, bool head, bool sign, bool complete);
+	void lower(const Val &l, bool leq);
+	void upper(const Val &u, bool leq);
 	void end();
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 	std::ostream &out() const { return output_->out(); }
-private:
-	//! prints a choice or constraint
-	void addConstraint(tribool bound, bool head, bool sign, RulePrinter &printer);
-	LparseConverter           *output_;
-	std::vector<int32_t>       lits_;
-	std::vector<bool>          signs_;
-	ValVec                     weights_;
-	bool                       head_;
-	bool                       sign_;
-	bool                       hasLower_;
-	bool                       hasUpper_;
-	Val                        lower_;
-	Val                        upper_;
-	bool                       max_;
+protected:
+	LparseConverter   *output_;
+	State              state_;
+	Val                lower_;
+	Val                upper_;
+	bool               lleq_;
+	bool               uleq_;
+	bool               head_;
+	bool               sign_;
+	bool               complete_;
 };
 
 }
-
-*/

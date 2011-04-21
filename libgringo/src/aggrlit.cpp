@@ -124,6 +124,7 @@ namespace
 //////////////////////////////////////// AggrState ////////////////////////////////////////
 
 AggrState::AggrState()
+	: groundSwitch(true)
 { }
 
 void AggrState::accumulate(Grounder *g, Lit *head, const VarVec &headVars, AggrLit &lit, const ValVec &set, bool fact)
@@ -207,6 +208,7 @@ AggrDomain::AggrDomain()
 	: domain_(0)
 	, last_(0)
 	, new_(false)
+	, groundSwitch_(true)
 {
 }
 
@@ -220,7 +222,7 @@ void AggrDomain::init(const VarSet &global)
 	}
 }
 
-bool AggrDomain::state(Grounder *g, AggrLit *lit)
+BoolPair AggrDomain::state(Grounder *g, AggrLit *lit)
 {
 	ValVec vals;
 	foreach(uint32_t var, global_) { vals.push_back(g->val(var)); }
@@ -229,13 +231,27 @@ bool AggrDomain::state(Grounder *g, AggrLit *lit)
 	if(res.get<1>()) { states_.push_back(lit->newAggrState(g)); }
 	lastId_ = vals.size() ? res.get<0>() / vals.size() : 0;
 	last_   = &states_[lastId_];
-	return res.get<1>();
+	if(res.get<1>())
+	{
+		last_->groundSwitch = !groundSwitch_;
+		return BoolPair(true, true);
+	}
+	else
+	{
+		bool oldSwitch = last_->groundSwitch;
+		last_->groundSwitch = !groundSwitch_;
+		return BoolPair(false, oldSwitch == groundSwitch_);
+	}
 }
 
 void AggrDomain::finish()
 {
-	// TODO: could be done more efficiently (vector + markings)
-	foreach(AggrState &state, states_) { state.finish(); }
+	groundSwitch_ = !groundSwitch_;
+	foreach(AggrState &state, states_)
+	{
+		state.finish();
+		state.groundSwitch = groundSwitch_;
+	}
 	new_ = false;
 }
 
@@ -366,9 +382,12 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	aggrUid_ = g->aggrUid();
 }
 
-void AggrLit::ground(Grounder *g)
+void AggrLit::ground(Grounder *g, bool isNew)
 {
-	foreach(AggrCond &lit, conds_) { lit.ground(g); }
+	if(isNew)
+	{
+		foreach(AggrCond &lit, conds_) { lit.ground(g); }
+	}
 	fact_ = domain_.last()->fact();
 }
 
@@ -789,8 +808,9 @@ AggrState *AggrIndex::current() const { return lit_.domain().last(); }
 
 Index::Match AggrIndex::firstMatch(Grounder *g, int binder)
 {
-	lit_.isNewAggrState(lit_.domain().state(g, &lit_));
-	lit_.ground(g);
+	BoolPair isNew = lit_.domain().state(g, &lit_);
+	lit_.isNewAggrState(isNew.first);
+	lit_.ground(g, isNew.second);
 	if(lit_.assign())
 	{
 		assert(!lit_.head());
@@ -828,6 +848,7 @@ void AggrIndex::reset()
 
 void AggrIndex::finish()
 {
+	// TODO: continue here!
 	foreach(AggrCond &cond, lit_.conds()) { cond.finish(); }
 	lit_.domain().finish();
 	finished_ = true;

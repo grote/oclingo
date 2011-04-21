@@ -1,8 +1,11 @@
 = ToDo =
 	* Higher Priorit
-			* [ ] Reimplement aggrgate printers
-			* [ ] PlainAggregatePrinter
-			* [ ] LparseAggregatePrinter
+		* [ ] Reimplement aggrgate printers
+		* [ ] PlainAggregatePrinter
+		* [ ] LparseAggregatePrinter
+		* [ ] Make hooks during grounding clearer
+			* begin ground
+			* end ground
 	* High Priority
 		* [ ] cleanup code/interfaces
 			* [ ] remove push/pop/testUnique/move/clear from literals

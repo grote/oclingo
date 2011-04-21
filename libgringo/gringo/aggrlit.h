@@ -56,6 +56,8 @@ public:
 protected:
 	ValVecSet sets_;
 	SubstMap  subst_;
+public:
+	bool groundSwitch;
 };
 
 class BoundAggrState : public AggrState
@@ -157,7 +159,7 @@ class AggrDomain
 public:
 	AggrDomain();
 	void init(const VarSet &global);
-	bool state(Grounder *g, AggrLit *lit);
+	BoolPair state(Grounder *g, AggrLit *lit);
 	void finish();
 	void markNew();
 	bool hasNew() const;
@@ -171,6 +173,7 @@ private:
 	uint32_t     lastId_;
 	AggrState   *last_;
 	bool         new_;    // wheather there is (possibly) a new match
+	bool         groundSwitch_;
 };
 
 class AggrLit;
@@ -292,7 +295,7 @@ public:
 	AggrCondVec &conds();
 	AggrDomain &domain();
 	void enqueue(Grounder *g);
-	void ground(Grounder *g);
+	void ground(Grounder *g, bool isNew);
 
 	~AggrLit();
 

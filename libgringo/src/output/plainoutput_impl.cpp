@@ -157,38 +157,25 @@ namespace plainoutput_impl
 				if(!lleq_) { out() << "<"; }
 			}
 			func();
-			out() << "[";
+			out() << "{";
 			uint32_t uid = REMOVED + 1;
 			bool printed = false;
 			foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 			{
 				SetMap::iterator it = map.find(cond.first);
-				if(it->second != 2)
+				if(it->second != REMOVED)
 				{
 					const Val &weight = cond.first.front();
-					if(it->second == 1) { it->second = uid++; }
+					if(it->second <= REMOVED) { it->second = uid++; }
 					if(printed) { out() << ","; }
 					else        { printed = true; }
-					if(it->second > 0)
-					{
-						out() << "<";
-						weight.print(output()->storage(), out());
-						out() << "," << (it->second - REMOVED) << ">:" << cond.second;
-						if(cond.second.empty()) { out() << "#true"; }
-					}
-					else
-					{
-						out() << cond.second;
-						if(cond.second.empty()) { out() << "#true"; }
-						if(weight != Val::create(Val::NUM, 1))
-						{
-							out() << "=";
-							weight.print(output_->storage(), out());
-						}
-					}
+					out() << "<";
+					weight.print(output()->storage(), out());
+					out() << "," << (it->second - REMOVED) << ">:" << cond.second;
+					if(cond.second.empty()) { out() << "#true"; }
 				}
 			}
-			out() << "]";
+			out() << "}";
 			if(upper_.type != Val::SUP)
 			{
 				if(!uleq_) { out() << "<"; }
@@ -239,6 +226,7 @@ namespace plainoutput_impl
 
 	void SumAggrLitPrinter::func()
 	{
+		out() << "#sum";
 	}
 
 	//////////////////////////////////////// MinMaxAggrLitPrinter ////////////////////////////////////////
