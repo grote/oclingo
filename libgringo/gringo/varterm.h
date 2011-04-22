@@ -35,6 +35,7 @@ public:
 	void index(uint32_t index, uint32_t level) { level_ = level; index_ = index; }
 	Val val(Grounder *grounder) const;
 	bool constant() const { return false; }
+	bool unifiable() const;
 	bool unify(Grounder *grounder, const Val &v, int binder) const;
 	void vars(VarSet &vars) const;
 	void visit(PrgVisitor *visitor, bool bind);
@@ -51,3 +52,4 @@ inline VarTerm* new_clone(const VarTerm& a)
 	return static_cast<VarTerm*>(a.clone());
 }
 
+inline bool VarTerm::unifiable() const { return true; }

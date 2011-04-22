@@ -40,6 +40,18 @@ namespace
 			return r;
 		}
 	}
+
+	void catchVal(Grounder *g, const MathTerm *term, const Val*val)
+	{
+		std::ostringstream oss;
+		oss << "cannot convert ";
+		val->print(g, oss);
+		oss << " to integer";
+		std::string str(oss.str());
+		oss.str("");
+		term->print(g, oss);
+		throw TypeException(str, StrLoc(g, term->loc()), oss.str());
+	}
 }
 
 MathTerm::MathTerm(const Loc &loc, const Func &f, Term *a, Term *b) :
@@ -47,44 +59,69 @@ MathTerm::MathTerm(const Loc &loc, const Func &f, Term *a, Term *b) :
 {
 }
 
-Val MathTerm::val(Grounder *grounder) const
+Val MathTerm::val(Grounder *g) const
 {
 	try
 	{
 		// TODO: what about moving all the functions into Val
 		switch(f_)
 		{
-			case PLUS:  return Val::create(Val::NUM, a_->val(grounder).number() + b_->val(grounder).number()); break;
-			case MINUS: return Val::create(Val::NUM, a_->val(grounder).number() - b_->val(grounder).number()); break;
-			case MULT:  return Val::create(Val::NUM, a_->val(grounder).number() * b_->val(grounder).number()); break;
-			case DIV:   return Val::create(Val::NUM, a_->val(grounder).number() / b_->val(grounder).number()); break;
-			case MOD:   return Val::create(Val::NUM, a_->val(grounder).number() % b_->val(grounder).number()); break;
-			case POW:   return Val::create(Val::NUM, ipow(a_->val(grounder).number(), b_->val(grounder).number())); break;
-			case AND:   return Val::create(Val::NUM, a_->val(grounder).number() & b_->val(grounder).number()); break;
-			case XOR:   return Val::create(Val::NUM, a_->val(grounder).number() ^ b_->val(grounder).number()); break;
-			case OR:    return Val::create(Val::NUM, a_->val(grounder).number() | b_->val(grounder).number()); break;
-			case ABS:   return Val::create(Val::NUM, std::abs(a_->val(grounder).number())); break;
+			case PLUS:  return Val::create(Val::NUM, a_->val(g).number() + b_->val(g).number()); break;
+			case MINUS: return Val::create(Val::NUM, a_->val(g).number() - b_->val(g).number()); break;
+			case MULT:  return Val::create(Val::NUM, a_->val(g).number() * b_->val(g).number()); break;
+			case DIV:   return Val::create(Val::NUM, a_->val(g).number() / b_->val(g).number()); break;
+			case MOD:   return Val::create(Val::NUM, a_->val(g).number() % b_->val(g).number()); break;
+			case POW:   return Val::create(Val::NUM, ipow(a_->val(g).number(), b_->val(g).number())); break;
+			case AND:   return Val::create(Val::NUM, a_->val(g).number() & b_->val(g).number()); break;
+			case XOR:   return Val::create(Val::NUM, a_->val(g).number() ^ b_->val(g).number()); break;
+			case OR:    return Val::create(Val::NUM, a_->val(g).number() | b_->val(g).number()); break;
+			case ABS:   return Val::create(Val::NUM, std::abs(a_->val(g).number())); break;
 		}
 	}
-	catch(const Val *val)
-	{
-		std::ostringstream oss;
-		oss << "cannot convert ";
-		val->print(grounder, oss);
-		oss << " to integer";
-		std::string str(oss.str());
-		oss.str("");
-		print(grounder, oss);
-		throw TypeException(str, StrLoc(grounder, loc()), oss.str());
-	}
+	catch(const Val *val) { catchVal(g, this, val); }
 	assert(false);
 	return Val::create();
 }
 
-bool MathTerm::unify(Grounder *grounder, const Val &v, int binder) const
+bool MathTerm::unify(Grounder *g, const Val &v, int binder) const
 {
-	(void)binder;
-	if(constant()) return v == val(grounder);
+	if(constant()) { return v == val(g); }
+	else if(b_->constant())
+	{
+		assert(a_->unifiable());
+		try
+		{
+			switch(f_)
+			{
+				case PLUS:  { return v.type == Val::NUM && a_->unify(g, Val::create(Val::NUM, v.num - b_->val(g).number()), binder); }
+				case MINUS: { return v.type == Val::NUM && a_->unify(g, Val::create(Val::NUM, v.num + b_->val(g).number()), binder); }
+				case MULT:
+				{
+					int32_t b = b_->val(g).number();
+					return v.type == Val::NUM && v.num % b == 0 && a_->unify(g, Val::create(Val::NUM, v.num / b), binder);
+				}
+				default: { break; }
+			}
+		} catch(const Val *val) { catchVal(g, this, val); }
+	}
+	else
+	{
+		assert(a_->constant() && b_->unifiable());
+		try
+		{
+			switch(f_)
+			{
+				case PLUS:  { return v.type == Val::NUM && b_->unify(g, Val::create(Val::NUM, v.num - a_->val(g).number()), binder); }
+				case MINUS: { return v.type == Val::NUM && b_->unify(g, Val::create(Val::NUM, a_->val(g).number() - v.num), binder); }
+				case MULT:
+				{
+					int32_t a = a_->val(g).number();
+					return v.type == Val::NUM && v.num % a == 0 && b_->unify(g, Val::create(Val::NUM, v.num / a), binder);
+				}
+				default: { break; }
+			}
+		} catch(const Val *val) { catchVal(g, this, val); }
+	}
 	assert(false);
 	return false;
 }
@@ -97,9 +134,8 @@ void MathTerm::vars(VarSet &v) const
 
 void MathTerm::visit(PrgVisitor *visitor, bool bind)
 {
-	(void)bind;
-	visitor->visit(a_.get(), false);
-	if(b_.get()) visitor->visit(b_.get(), false);
+	visitor->visit(a_.get(), bind && unifiable());
+	if(b_.get()) { visitor->visit(b_.get(), bind && unifiable()); }
 }
 
 bool MathTerm::constant() const
@@ -132,6 +168,33 @@ void MathTerm::print(Storage *sto, std::ostream &out) const
 	}
 }
 
+bool MathTerm::unifiable() const
+{
+	if(constant()) { return true; }
+	switch(f_)
+	{
+		case PLUS:
+		case MINUS:
+		{
+			return (a_->unifiable() && b_->constant()) || (b_->unifiable() && a_->constant());
+		}
+		case MULT:
+		{
+			if(a_->unifiable() && b_->constant())
+			{
+				Val b = b_->val(0);
+				return b.type != Val::NUM || b.num != 0;
+			}
+			else if(b_->unifiable() && a_->constant())
+			{
+				Val a = a_->val(0);
+				return a.type != Val::NUM || a.num != 0;
+			}
+		}
+		default: { return false; }
+	}
+}
+
 void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
 {
 	if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
@@ -140,7 +203,7 @@ void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 	{
 		ref.reset(new ConstTerm(loc(), val(g)));
 	}
-	else if(unify)
+	else if(unify && !unifiable())
 	{
 		uint32_t var = g->createVar();
 		expander->expand(new RelLit(a_->loc(), RelLit::ASSIGN, new VarTerm(a_->loc(), var), this), Expander::RELATION);
