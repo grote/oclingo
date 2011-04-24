@@ -26,7 +26,6 @@ set(USE_STATIC_LIBS "${USE_STATIC_LIBS}" CACHE BOOL "Link statically")
 
 include(cmake/re2c.cmake)
 include(cmake/lemon.cmake)
-include(cmake/macros.cmake)
 include(cmake/PCHSupport.cmake)
 include(CheckCXXCompilerFlag)
 
