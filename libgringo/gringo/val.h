@@ -20,8 +20,13 @@
 #include <stdint.h>
 #include <cassert>
 #include <boost/functional/hash/hash.hpp>
+#include <vector>
 
 class Storage;
+
+struct Val;
+
+typedef std::vector<Val> ValVec;
 
 struct Val
 {
@@ -35,6 +40,8 @@ struct Val
 	inline bool operator==(const Val &v) const;
 	bool operator!=(const Val &v) const { return !operator ==(v); }
 	int compare(const Val &v, Storage *s) const;
+	int compare(const int64_t &v) const;
+	static int compare(Storage *s, ValVec const &a, ValVec const &b);
 	void print(Storage *sto, std::ostream &out) const;
 	int number() const;
 	uint32_t type;
@@ -43,6 +50,7 @@ struct Val
 		int num;
 		uint32_t index;
 	};
+
 };
 
 Val Val::create()
@@ -116,4 +124,3 @@ inline int Val::number() const
 }
 
 inline size_t hash_value(const Val &v) { return v.hash(); }
-

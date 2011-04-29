@@ -24,6 +24,10 @@
 namespace lparseconverter_impl
 {
 
+typedef std::vector<int32_t>       LitVec;
+typedef std::pair<int32_t,int32_t> WeightLit;
+typedef std::vector<WeightLit>     WeightLitVec;
+
 class RulePrinter;
 
 class AggrCondPrinter : public AggrCond::Printer
@@ -31,14 +35,13 @@ class AggrCondPrinter : public AggrCond::Printer
 public:
 	struct Cond
 	{
-		LparseConverter::AtomVec head;
-		LparseConverter::AtomVec pos;
-		LparseConverter::AtomVec neg;
+		void simplify();
 
-		bool operator<(const Cond &c) const;
-		bool operator==(const Cond &c) const;
+		typedef std::pair<uint32_t, LitVec> HeadLits;
+		typedef std::vector<HeadLits> HeadLitsVec;
+		HeadLitsVec lits;
 	};
-	typedef boost::unordered_map<ValVec, std::vector<Cond> > CondMap;
+	typedef std::map<ValVec, Cond, boost::function2<bool, ValVec, ValVec> > CondMap;
 private:
 	typedef boost::unordered_map<State, CondMap> StateMap;
 public:
@@ -49,68 +52,78 @@ public:
 	void trueLit();
 	void print(PredLitRep *l);
 	void end();
-	Output *output() const;
+	LparseConverter *output() const;
 	std::ostream &out() const;
 private:
 	LparseConverter *output_;
 	Cond            *current_;
 	StateMap         stateMap_;
-	bool             isHead_;
 };
 
 class SumAggrLitPrinter : public AggrLit::Printer<SumAggrLit>, public DelayedPrinter
 {
-	typedef std::pair<State, std::pair<int32_t, int32_t> > TodoKey;
-	typedef boost::tuples::tuple<uint32_t, bool, bool> TodoVal;
+public:
+	struct TodoKey
+	{
+		TodoKey();
+		TodoKey(State state);
+		bool operator==(const TodoKey &k) const;
+
+		State state;
+		Val   lower;
+		Val   upper;
+		bool  lleq;
+		bool  uleq;
+	};
+
+	struct TodoVal
+	{
+		TodoVal();
+		TodoVal(uint32_t symbol, bool head);
+
+		uint32_t symbol;
+		bool     head;
+	};
+
+	typedef LparseConverter::AtomVec AtomVec;
+	typedef std::vector<AggrCondPrinter::Cond*> CondVec;
 	typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
+	typedef std::vector<std::pair<ValVec, AggrCondPrinter::Cond*> > SetCondVec;
 public:
 	SumAggrLitPrinter(LparseConverter *output);
 	void begin(State state, bool head, bool sign, bool complete);
 	void lower(const Val &l, bool leq);
 	void upper(const Val &u, bool leq);
 	void end();
-	Output *output() const;
+	static void combine(SetCondVec::value_type &a, const SetCondVec::value_type &b);
+	static bool analyze(const SetCondVec::value_type &a, int64_t &min, int64_t &max, int64_t &fix);
+	void printAggr(const TodoKey &key, const TodoVal &val, SetCondVec &condVec);
+	LparseConverter *output() const;
 	std::ostream &out() const;
+	int32_t finishCond(int32_t aggrSym, CondVec &conds);
 	void finish();
+
 private:
-	TodoMap            todo_;
 	LparseConverter   *output_;
-	State              state_;
-	int32_t            lower_;
-	int32_t            upper_;
-	bool               head_;
-	bool               sign_;
+	TodoMap            todo_;
+	TodoKey            key_;
+	TodoVal            val_;
 };
 
-//////////////////////////////// AggrCondPrinter::Cond ////////////////////////////////
-
-inline bool AggrCondPrinter::Cond::operator<(const Cond &c) const
-{
-	if(head != c.head) { return head < c.head; }
-	if(pos != c.pos)   { return pos < c.pos; }
-	if(neg != c.neg)   { return neg < c.neg; }
-	return false;
-}
-
-inline bool AggrCondPrinter::Cond::operator==(const Cond &c) const
-{
-	return head == c.head && pos == c.pos && neg == c.neg;
-}
+size_t hash_value(const SumAggrLitPrinter::TodoKey &v);
 
 //////////////////////////////// AggrCondPrinter ////////////////////////////////
 
 inline AggrCondPrinter::AggrCondPrinter(LparseConverter *output) : output_(output) { }
 inline void AggrCondPrinter::trueLit() { }
-inline Output *AggrCondPrinter::output() const { return output_; }
+inline LparseConverter *AggrCondPrinter::output() const { return output_; }
 inline std::ostream &AggrCondPrinter::out() const { return output_->out(); }
 inline void AggrCondPrinter::end() { }
 
 
 //////////////////////////////// SumAggrLitPrinter ////////////////////////////////
 
-inline void SumAggrLitPrinter::lower(const Val &l, bool leq) { lower_ = leq ? l.num : l.num + 1; }
-inline void SumAggrLitPrinter::upper(const Val &u, bool leq) { upper_ = leq ? u.num : u.num - 1; }
-inline Output *SumAggrLitPrinter::output() const { return output_; }
+inline LparseConverter *SumAggrLitPrinter::output() const { return output_; }
 inline std::ostream &SumAggrLitPrinter::out() const { return output_->out(); }
 
 

@@ -125,7 +125,6 @@ typedef boost::ptr_vector<Term> TermPtrVec;
 typedef std::vector<Lit*> LitVec;
 typedef std::vector<VarTerm*> VarTermVec;
 typedef std::vector<std::string> StringVec;
-typedef std::vector<Val> ValVec;
 typedef std::vector<uint32_t> VarVec;
 typedef std::map<uint32_t,uint32_t> VarMap;
 typedef std::set<uint32_t> VarSet;

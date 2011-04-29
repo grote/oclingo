@@ -184,7 +184,7 @@ int BoundAggrState::Val64::compare(const Val64 &v, Storage *s) const
 
 void BoundAggrState::checkBounds(Grounder *g, AggrLit &lit, const Val64 &min, const Val64 &max, const Val64 &lower, const Val64 &upper)
 {
-	match_ = fact_ = upper.compare(lower, g) <= -(lit.lowerEq_ == lit .upperEq_);
+	match_ = fact_ = upper.compare(lower, g) <= -(lit.lowerEq_ && lit .upperEq_);
 
 	match_ = match_ || min.compare(lower, g) <= -lit.lowerEq_;
 	match_ = match_ || upper.compare(max, g) <= -lit.upperEq_;
@@ -608,10 +608,12 @@ bool AggrCond::grounded(Grounder *g)
 	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{
-		if(!head)       { printer->endHead(); }
 		if(!lit.fact()) { lit.accept(printer); }
 		else if(head)   { printer->trueLit(); }
-		head = false;
+		if(head) {
+			printer->endHead();
+			head = false;
+		}
 	}
 	printer->end();
 	return true;

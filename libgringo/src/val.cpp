@@ -50,3 +50,26 @@ int Val::compare(const Val &v, Storage *s) const
 	}
 	return s->compare(type, index, v.index);
 }
+
+int Val::compare(const int64_t &v) const
+{
+	if(type != NUM) return type < NUM ? -1 : 1;
+	if(num < v) { return -1; }
+	if(num > v) { return 1; }
+	else        { return 0; }
+}
+
+int Val::compare(Storage *s, const ValVec &a, const ValVec &b)
+{
+	if(a.size() < b.size())      { return -1; }
+	else if(a.size() > b.size()) { return 1; }
+	else
+	{
+		for(ValVec::const_iterator i = a.begin(), j = b.begin(); i != a.end(); i++, j++)
+		{
+			int cmp = i->compare(*j, s);
+			if(cmp != 0) { return cmp; }
+		}
+		return 0;
+	}
+}
