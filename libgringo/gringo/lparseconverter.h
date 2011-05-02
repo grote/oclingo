@@ -72,7 +72,8 @@ public:
 	void printSymbolTable();
 	void printExternalTable();
 	bool shiftDisjunctions() const { return shiftDisjunctions_; }
-	void addCompute(PredLitRep *l);
+	void addCompute(PredLitRep *l);\
+	void printBasicRule(int head, uint n, ...);
 	virtual ~LparseConverter();
 public:
 	virtual void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg) = 0;

@@ -45,34 +45,6 @@ T combine_adjacent(T first, T last, P p, C c)
 	}
 	return ++result;
 }
-class SumAggr
-{
-	typedef LparseConverter::AtomVec AtomVec;
-	typedef LparseConverter::WeightVec WeightVec;
-
-public:
-
-	SumAggr(const SumAggrLitPrinter::TodoKey &key, const SumAggrLitPrinter::TodoVal &val);
-
-	tribool simplify();
-	// TODO: merge!!
-	void printHead(LparseConverter *output, uint32_t a);
-	void printBody(LparseConverter *output, uint32_t a);
-	bool hasUpper() const;
-	bool hasLower() const;
-
-	void push(uint32_t p, int32_t w);
-
-private:
-
-	AtomVec   pos_;
-	AtomVec   neg_;
-	WeightVec wPos_;
-	WeightVec wNeg_;
-	int32_t   lower_;
-	int32_t   upper_;
-	bool      card_;
-};
 
 }
 
@@ -240,10 +212,92 @@ bool SumAggrLitPrinter::analyze(const SetCondVec::value_type &a, int64_t &min, i
 	}
 	else
 	{
-		if(w < 0) { min+= w; }
-		else      { max+= w; }
+		if(w < 0)  { min+= w; }
+		else       { max+= w; }
 		return false;
 	}
+}
+
+void SumAggrLitPrinter::printCond(bool &single, int32_t &c, int32_t cond, uint32_t head)
+{
+	bool complex = cond != 0 && head != 0;
+	if(c == 0)
+	{
+		if(complex)
+		{
+			c = output()->symbol();
+			single = false;
+		}
+		else if(cond != 0) { c = cond; }
+		else if(head != 0) { c = head; }
+	}
+	if(complex || (head != 0 && head != c) || (cond != 0 && cond != c))
+	{
+		if(single)
+		{
+			int32_t cc = c;
+			c          = output()->symbol();
+			output()->printBasicRule(c, 1, cc);
+			single = false;
+		}
+		output()->printBasicRule(c, 2, cond, head);
+	}
+}
+
+void SumAggrLitPrinter::getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms)
+{
+	LitVec::iterator it = conds.begin();
+	foreach(SetCondVec::value_type &cond, condVec)
+	{
+		bool    single  = true;
+		int32_t c       = 0;
+		foreach(Cond::HeadLits &hl, cond.second->lits) { printCond(single, c, *it++, hl.first); }
+		condSyms.push_back(c);
+	}
+}
+
+void SumAggrLitPrinter::printSum(uint32_t sym, int64_t bound, LitVec &condSyms, SetCondVec &condVec)
+{
+	LitVec::iterator it = condSyms.begin();
+	AtomVec pos, neg;
+	LparseConverter::WeightVec wPos, wNeg;
+	int64_t max  = 0;
+	int32_t maxi = 0;
+	bool card    = true;
+	foreach(SetCondVec::value_type &cond, condVec)
+	{
+		int32_t condSym = *it++;
+		int32_t weight  = cond.first[0].num;
+		if(condSym == 0) { bound -= weight; }
+		else
+		{
+			if(weight < 0)
+			{
+				// TODO: issue a warning
+				condSym*= -1;
+				weight *= -1;
+				bound  += weight;
+			}
+			if(condSym > 0)
+			{
+				pos.push_back(condSym);
+				wPos.push_back(weight);
+			}
+			else if(condSym < 0)
+			{
+				neg.push_back(-condSym);
+				wNeg.push_back(weight);
+			}
+			if(weight != 1) { card = false; }
+			max+= weight;
+			maxi = std::max(maxi, weight);
+		}
+	}
+	if(bound > max)             { }
+	else if(bound <= 0)         { output()->printBasicRule(sym, 0); }
+	else if(max - maxi < bound) { output()->printBasicRule(sym, pos, neg); }
+	else if(card)               { output()->printConstraintRule(sym, bound, pos, neg); }
+	else                        { output()->printWeightRule(sym, bound, pos, neg, wPos, wNeg); }
 }
 
 void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCondVec &condVec)
@@ -255,9 +309,9 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 	condVec.erase(std::remove_if(condVec.begin(), condVec.end(), boost::bind(&SumAggrLitPrinter::analyze, _1, boost::ref(min), boost::ref(max), boost::ref(fix))), condVec.end());
 
 	// aggregate generic
-	if(key.lower.compare(max) > -!key.lleq || key.upper.compare(min) < !key.lleq || key.upper.compare(key.lower, output()->storage()) < !(key.lleq && key.uleq))
+	if(key.lower.compare(max) > -!key.lleq || key.upper.compare(min) < !key.uleq || key.upper.compare(key.lower, output()->storage()) < !(key.lleq && key.uleq))
 	{
-		if(val.head) { output()->printBasicRule(output()->falseSymbol(), AtomVec(1, val.symbol), AtomVec()); }
+		if(val.head) { output()->printBasicRule(output()->falseSymbol(), 1, val.symbol); }
 	}
 	else
 	{
@@ -269,13 +323,13 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 		{
 			assert(hasUpper != hasLower);
 			uint32_t cur = 0;
-			bool     ass = false;
-			foreach(AggrCondPrinter::Cond::HeadLits hl, condVec.back().second->lits)
+			singleton    = false;
+			foreach(Cond::HeadLits hl, condVec.back().second->lits)
 			{
-				if(!ass)
+				if(hl.first != 0 && cur == 0)
 				{
-					cur = hl.first;
-					ass = true;
+					cur       = hl.first;
+					singleton = true;
 				}
 				if(hl.first == 0 || cur != hl.first)
 				{
@@ -295,6 +349,7 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 			}
 			else
 			{
+				int32_t noHead = 0;
 				foreach(AggrCondPrinter::Cond::HeadLits &hl, cond.second->lits)
 				{
 					if(hl.first != 0 || hasBound)
@@ -309,7 +364,17 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 						{
 							if(hl.second.size() > 1)
 							{
-								uint32_t cond = output()->symbol();
+								uint32_t cond;
+								if(hl.first == 0)
+								{
+									if(noHead == 0)
+									{
+										cond   = output()->symbol();
+										noHead = cond;
+									}
+									else { cond = noHead; }
+								}
+								else { cond = output()->symbol(); }
 								output()->printBasicRule(cond, pos, neg);
 								pos.clear();
 								neg.clear();
@@ -344,14 +409,8 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 			{
 				assert(trivChoice.size() == 1);
 				uint32_t head = trivChoice.back();
-				if(hasLower) { output()->printBasicRule(head, AtomVec(1, val.symbol), AtomVec()); }
-				else
-				{
-					AtomVec pos;
-					pos.push_back(val.symbol);
-					pos.push_back(head);
-					output()->printBasicRule(output()->falseSymbol(), pos, AtomVec());
-				}
+				if(hasLower) { output()->printBasicRule(head, 1, val.symbol); }
+				else         { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, head); }
 			}
 			else { output()->printChoiceRule(trivChoice, AtomVec(1, val.symbol), AtomVec()); }
 		}
@@ -359,15 +418,34 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 		{
 			if(!hasBound)
 			{
-				if(!val.head) { output()->printBasicRule(val.symbol, AtomVec(), AtomVec()); }
+				if(!val.head) { output()->printBasicRule(val.symbol, 0); }
 			}
 			else
 			{
 				// aggregate specific
-				std::cerr << "todo: " << val.symbol << std::endl;
-				// create cond lits for checking:
-				// if head:   :- not l { cond lits } u, a.
-				// else:    a :-     l { cond lits } u.
+				uint32_t l = 0, u = 0;
+				LitVec condSyms;
+				getCondSyms(conds, condVec, condSyms);
+				if(hasLower)
+				{
+					assert(key.lower.type == Val::NUM);
+					l = !hasUpper && !val.head ? val.symbol : output()->symbol();
+					int64_t lower = key.lower.num - !key.lleq - fix;
+					printSum(l, lower, condSyms, condVec);
+				}
+				if(hasUpper)
+				{
+					assert(key.upper.type == Val::NUM);
+					u = output()->symbol();
+					int64_t upper = key.upper.num + !key.uleq - fix + 1;
+					printSum(u, upper, condSyms, condVec);
+				}
+				if(val.head)
+				{
+					if(l != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, -l); }
+					if(u != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, u); }
+				}
+				else if(l != val.symbol) { output()->printBasicRule(val.symbol, 2, l, -u); }
 			}
 		}
 	}
@@ -388,216 +466,6 @@ void SumAggrLitPrinter::finish()
 	}
 	todo_.clear();
 }
-
-////////////////////////////////// SumAggr //////////////////////////////////
-
-/*
-SumAggr::SumAggr(TodoKey &key, TodoVal &val)
-	: key(key)
-	, val(val)
-	, card_(false)
-{
-}
-
-void SumAggr::push(uint32_t p, int32_t w)
-{
-	pos_.push_back(p);
-	wPos_.push_back(w);
-}
-
-bool SumAggr::hasUpper() const
-{
-	return upper_;
-}
-
-bool SumAggr::hasLower() const
-{
-	return lower_ != std::numeric_limits<int32_t>::min();
-}
-
-tribool SumAggr::simplify()
-{
-	int64_t sum = 0;
-	size_t j = 0;
-	card_ = true;
-	for(size_t i = 0; i < pos_.size(); i++)
-	{
-		if(wPos_[i] < 0)
-		{
-			lower_-= wPos_[i];
-			upper_-= wPos_[i];
-			neg_.push_back(pos_[i]);
-			wNeg_.push_back(-wPos_[i]);
-		}
-		else if(wPos_[i] > 0)
-		{
-			card_ = card_ && wPos_[i] == 1;
-			if(j < i)
-			{
-				pos_[j]  = pos_[i];
-				wPos_[j] = wPos_[i];
-			}
-			sum+= wPos_[j++];
-		}
-	}
-	pos_.resize(j);
-	wPos_.resize(j);
-	j = 0;
-	for(size_t i = 0; i < neg_.size(); i++)
-	{
-		if(wNeg_[i] < 0)
-		{
-			card_ = card_ && wNeg_[i] == -1;
-			lower_-= wNeg_[i];
-			upper_-= wNeg_[i];
-			sum   -= wNeg_[i];
-			pos_.push_back(neg_[i]);
-			wPos_.push_back(-wNeg_[i]);
-		}
-		else if(wNeg_[i] > 0)
-		{
-			card_ = card_ && wNeg_[i] == 1;
-			if(j < i)
-			{
-				neg_[j]  = neg_[i];
-				wNeg_[j] = wNeg_[i];
-			}
-			sum+= wNeg_[j++];
-		}
-	}
-	neg_.resize(j);
-	wNeg_.resize(j);
-
-	// turn into count aggregate (important for optimizations later on)
-	if(wNeg_.size() + wPos_.size() == 1 && sum > 1)
-	{
-		if(hasLower())             { lower_ = (lower_ + sum - 1) / sum; }
-		if(hasUpper())             { upper_ = upper_ / sum; }
-		if(wPos_.size() > 0)      { wPos_[0] = 1; }
-		else if(wNeg_.size() > 0) { wNeg_[0] = 1; }
-		sum = 1;
-	}
-
-	// TODO: multiple occurrences of the same literal could be combined
-	//       in the head even between true and false literals!!!
-	if(hasLower() && lower_ <= 0)   { lower_ = std::numeric_limits<int32_t>::min(); }
-	if(hasUpper() && upper_ >= sum) { upper_ = std::numeric_limits<int32_t>::max(); }
-	if(hasUpper() && hasLower() && lower_ > upper_) { return sign_; }
-	if((upper_ < 0) || (sum < lower_))              { return sign_; }
-	else if(!hasLower() && !hasUpper())             { return !sign_; }
-	else                                            { return unknown; }
-}
-
-void SumAggr::printHead(LparseConverter *output, uint32_t a)
-{
-	tribool truthValue = simplify();
-
-	assert(!sign_);
-	if(!truthValue)
-	{
-		output->printBasicRule(output->falseSymbol(), AtomVec(1, a), AtomVec());
-	}
-	else if(boost::logic::indeterminate(truthValue))
-	{
-		// TODO: more could be done already at a previous place
-		if(pos_.size() == 1 && neg_.size() == 0 && hasLower())
-		{
-			output->printBasicRule(output->falseSymbol(), AtomVec(1, a), AtomVec(1, pos_[0]));
-		}
-		else
-		{
-			assert(hasLower() || hasUpper());
-			if(hasLower())
-			{
-				uint32_t l = output->symbol();
-				if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
-				else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
-				output->printBasicRule(output->falseSymbol(), AtomVec(1, a), AtomVec(1, l));
-			}
-			if(hasUpper())
-			{
-				uint32_t u = output->symbol();
-				if(card_) { output->printConstraintRule(u, upper_ + 1, pos_, neg_); }
-				else      { output->printWeightRule(u, upper_ + 1, pos_, neg_, wPos_, wNeg_); }
-				LparseConverter::AtomVec pos;
-				pos.push_back(u);
-				pos.push_back(a);
-				output->printBasicRule(output->falseSymbol(), pos, AtomVec());
-			}
-		}
-	}
-}
-
-void SumAggr::printBody(LparseConverter *output, uint32_t a)
-{
-	tribool truthValue = simplify();
-	if(truthValue)
-	{
-		output->printBasicRule(a, AtomVec(), AtomVec());
-	}
-	else if(boost::logic::indeterminate(truthValue))
-	{
-		if(pos_.size() == 1 && neg_.empty() && hasLower())
-		{
-			if(sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, pos_[0])); }
-			else      { output->printBasicRule(a, AtomVec(1, pos_[0]), AtomVec()); }
-		}
-		else if(pos_.size() == 1 && neg_.empty() && !sign_ && hasUpper())
-		{
-			output->printBasicRule(a, AtomVec(), AtomVec(1, pos_[0]));
-		}
-		else if(pos_.empty() && neg_.size() == 1 && !sign_ && hasLower())
-		{
-			output->printBasicRule(a, AtomVec(), AtomVec(1, neg_[0]));
-		}
-		else if(pos_.empty() && neg_.size() == 1 &&  sign_ && hasUpper())
-		{
-			output->printBasicRule(a, AtomVec(), AtomVec(1, neg_[0]));
-		}
-		else
-		{
-			if(hasLower() && !hasUpper())
-			{
-				uint32_t l = output->symbol();
-				if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
-				else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
-				if(sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, l)); }
-				else      { output->printBasicRule(a, AtomVec(1, l), AtomVec()); }
-			}
-			else if(!hasLower() && hasUpper())
-			{
-				uint32_t u = output->symbol();
-				if(card_) { output->printConstraintRule(u, upper_ + 1, pos_, neg_); }
-				else      { output->printWeightRule(u, upper_ + 1, pos_, neg_, wPos_, wNeg_); }
-				if(!sign_) { output->printBasicRule(a, AtomVec(), AtomVec(1, u)); }
-				else
-				{
-					uint32_t n = output->symbol();
-					output->printBasicRule(a, AtomVec(), AtomVec(1, n));
-					output->printBasicRule(n, AtomVec(), AtomVec(1, u));
-				}
-			}
-			else
-			{
-				uint32_t l = output->symbol();
-				uint32_t u = output->symbol();
-				uint32_t n;
-				if(sign_)
-				{
-					n = output->symbol();
-					output->printBasicRule(a, AtomVec(), AtomVec(1, n));
-				}
-				else { n = a; }
-				output->printBasicRule(n, LparseConverter::AtomVec(1, l), LparseConverter::AtomVec(1, u));
-				if(card_) { output->printConstraintRule(l, lower_, pos_, neg_); }
-				else      { output->printWeightRule(l, lower_, pos_, neg_, wPos_, wNeg_); }
-				if(card_) { output->printConstraintRule(u, upper_ + 1, pos_, neg_); }
-				else      { output->printWeightRule(u, upper_ + 1, pos_, neg_, wPos_, wNeg_); }
-			}
-		}
-	}
-}
-*/
 
 }
 

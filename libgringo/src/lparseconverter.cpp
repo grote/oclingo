@@ -22,6 +22,8 @@
 #include <gringo/rule.h>
 #include <gringo/sumaggrlit.h>
 
+#include <stdarg.h>
+
 namespace lparseconverter_impl
 {
 
@@ -224,6 +226,21 @@ void LparseConverter::finalize()
 	doFinalize();
 	newSymbols_.clear();
 	newSymbolsDone_.clear();
+}
+
+void LparseConverter::printBasicRule(int head, uint n, ...)
+{
+	AtomVec pos, neg;
+	va_list vl;
+	va_start(vl, n);
+	for (uint i = 0; i < n; i++)
+	{
+		int32_t v = va_arg(vl, int32_t);
+		if(v > 0)      { pos.push_back(v); }
+		else if(v < 0) { neg.push_back(-v); }
+	}
+	va_end(vl);
+	printBasicRule(head, pos, neg);
 }
 
 LparseConverter::~LparseConverter()

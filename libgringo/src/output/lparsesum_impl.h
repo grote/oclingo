@@ -89,6 +89,7 @@ public:
 	typedef std::vector<AggrCondPrinter::Cond*> CondVec;
 	typedef boost::unordered_map<TodoKey, TodoVal> TodoMap;
 	typedef std::vector<std::pair<ValVec, AggrCondPrinter::Cond*> > SetCondVec;
+	typedef AggrCondPrinter::Cond Cond;
 public:
 	SumAggrLitPrinter(LparseConverter *output);
 	void begin(State state, bool head, bool sign, bool complete);
@@ -98,6 +99,9 @@ public:
 	static void combine(SetCondVec::value_type &a, const SetCondVec::value_type &b);
 	static bool analyze(const SetCondVec::value_type &a, int64_t &min, int64_t &max, int64_t &fix);
 	void printAggr(const TodoKey &key, const TodoVal &val, SetCondVec &condVec);
+	void printSum(uint32_t sym, int64_t bound, LitVec &conds, SetCondVec &condVec);
+	void printCond(bool &single, int32_t &c, int32_t cond, uint32_t head);
+	void getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms);
 	LparseConverter *output() const;
 	std::ostream &out() const;
 	int32_t finishCond(int32_t aggrSym, CondVec &conds);
