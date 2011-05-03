@@ -289,7 +289,7 @@ void SumAggrLitPrinter::printSum(uint32_t sym, int64_t bound, LitVec &condSyms, 
 				wNeg.push_back(weight);
 			}
 			if(weight != 1) { card = false; }
-			max+= weight;
+			max += weight;
 			maxi = std::max(maxi, weight);
 		}
 	}
@@ -430,14 +430,14 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 				{
 					assert(key.lower.type == Val::NUM);
 					l = !hasUpper && !val.head ? val.symbol : output()->symbol();
-					int64_t lower = key.lower.num - !key.lleq - fix;
+					int64_t lower = key.lower.num + !key.lleq - fix;
 					printSum(l, lower, condSyms, condVec);
 				}
 				if(hasUpper)
 				{
 					assert(key.upper.type == Val::NUM);
 					u = output()->symbol();
-					int64_t upper = key.upper.num + !key.uleq - fix + 1;
+					int64_t upper = key.upper.num - !key.uleq - fix + 1;
 					printSum(u, upper, condSyms, condVec);
 				}
 				if(val.head)
