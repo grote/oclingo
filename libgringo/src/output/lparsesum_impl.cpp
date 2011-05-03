@@ -46,6 +46,22 @@ T combine_adjacent(T first, T last, P p, C c)
 	return ++result;
 }
 
+struct CondEqual
+{
+	bool operator()(const SumAggrLitPrinter::SetCondVec::value_type &a, const SumAggrLitPrinter::SetCondVec::value_type &b)
+	{
+		return a.second->lits == b.second->lits;
+	}
+};
+
+struct CondLess
+{
+	bool operator()(const SumAggrLitPrinter::SetCondVec::value_type &a, const SumAggrLitPrinter::SetCondVec::value_type &b)
+	{
+		return a.second->lits < b.second->lits;
+	}
+};
+
 }
 
 ////////////////////////////////// AggrCondPrinter::Cond //////////////////////////////////
@@ -90,13 +106,13 @@ void AggrCondPrinter::print(PredLitRep *l)
 	current_->lits.back().second.push_back(l->sign() ? -sym : sym);
 }
 
-////////////////////////////////// SumAggrLitPrinter::TodoKey //////////////////////////////////
+////////////////////////////////// AggrTodoKey //////////////////////////////////
 
-SumAggrLitPrinter::TodoKey::TodoKey()
+AggrTodoKey::AggrTodoKey()
 {
 }
 
-SumAggrLitPrinter::TodoKey::TodoKey(State state)
+AggrTodoKey::AggrTodoKey(State state)
 	: state(state)
 	, lower(Val::inf())
 	, upper(Val::sup())
@@ -105,7 +121,7 @@ SumAggrLitPrinter::TodoKey::TodoKey(State state)
 {
 }
 
-bool SumAggrLitPrinter::TodoKey::operator==(const TodoKey &k) const
+bool AggrTodoKey::operator==(const AggrTodoKey &k) const
 {
 	return
 		state == k.state &&
@@ -115,7 +131,7 @@ bool SumAggrLitPrinter::TodoKey::operator==(const TodoKey &k) const
 		uleq  == k.uleq;
 }
 
-size_t hash_value(const SumAggrLitPrinter::TodoKey &v)
+size_t hash_value(const AggrTodoKey &v)
 {
 	size_t hash = 0;
 	boost::hash_combine(hash, v.state);
@@ -126,13 +142,13 @@ size_t hash_value(const SumAggrLitPrinter::TodoKey &v)
 	return hash;
 }
 
-////////////////////////////////// SumAggrLitPrinter::TodoVal //////////////////////////////////
+////////////////////////////////// AggrTodoVal //////////////////////////////////
 
-SumAggrLitPrinter::TodoVal::TodoVal()
+AggrTodoVal::AggrTodoVal()
 {
 }
 
-SumAggrLitPrinter::TodoVal::TodoVal(uint32_t symbol, bool head)
+AggrTodoVal::AggrTodoVal(uint32_t symbol, bool head)
 	: symbol(symbol)
 	, head(head)
 {
@@ -140,17 +156,19 @@ SumAggrLitPrinter::TodoVal::TodoVal(uint32_t symbol, bool head)
 
 ////////////////////////////////// SumAggrLitPrinter //////////////////////////////////
 
-SumAggrLitPrinter::SumAggrLitPrinter(LparseConverter *output)
+template <class T, uint32_t Type>
+AggrLitPrinter<T, Type>::AggrLitPrinter(LparseConverter *output)
 	: output_(output)
 {
 	output->regDelayedPrinter(this);
 }
 
-void SumAggrLitPrinter::begin(State state, bool head, bool sign, bool)
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool)
 {
-	key_ = TodoKey(state);
-	val_ = TodoVal(output_->symbol(), head);
-	RulePrinter *printer = static_cast<RulePrinter*>(output()->printer<Rule::Printer>());
+	key_ = AggrTodoKey(state);
+	val_ = AggrTodoVal(output_->symbol(), head);
+	RulePrinter *printer = static_cast<RulePrinter*>(output()->template printer<Rule::Printer>());
 	if(head)
 	{
 		assert(!sign);
@@ -159,66 +177,28 @@ void SumAggrLitPrinter::begin(State state, bool head, bool sign, bool)
 	else { printer->addBody(val_.symbol, sign); }
 }
 
-void SumAggrLitPrinter::lower(const Val &l, bool leq)
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::lower(const Val &l, bool leq)
 {
 	key_.lower = l;
 	key_.lleq  = leq;
 }
 
-void SumAggrLitPrinter::upper(const Val &u, bool leq)
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::upper(const Val &u, bool leq)
 {
 	key_.upper = u;
 	key_.uleq  = leq;
 }
 
-void SumAggrLitPrinter::end()
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::end()
 {
 	todo_.insert(TodoMap::value_type(key_, val_));
 }
 
-namespace
-{
-	struct CondEqual
-	{
-		bool operator()(const SumAggrLitPrinter::SetCondVec::value_type &a, const SumAggrLitPrinter::SetCondVec::value_type &b)
-		{
-			return a.second->lits == b.second->lits;
-		}
-	};
-
-	struct CondLess
-	{
-		bool operator()(const SumAggrLitPrinter::SetCondVec::value_type &a, const SumAggrLitPrinter::SetCondVec::value_type &b)
-		{
-			return a.second->lits < b.second->lits;
-		}
-	};
-}
-
-void SumAggrLitPrinter::combine(SetCondVec::value_type &a, const SetCondVec::value_type &b)
-{
-	a.first[0].num+= b.first[0].num;
-}
-
-bool SumAggrLitPrinter::analyze(const SetCondVec::value_type &a, int64_t &min, int64_t &max, int64_t &fix)
-{
-	int32_t w = a.first[0].num;
-	if(a.second->lits.empty())
-	{
-		fix+= w;
-		min+= w;
-		max+= w;
-		return true;
-	}
-	else
-	{
-		if(w < 0)  { min+= w; }
-		else       { max+= w; }
-		return false;
-	}
-}
-
-void SumAggrLitPrinter::printCond(bool &single, int32_t &c, int32_t cond, uint32_t head)
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::handleCond(bool &single, int32_t &c, int32_t cond, uint32_t head)
 {
 	bool complex = cond != 0 && head != 0;
 	if(c == 0)
@@ -244,84 +224,44 @@ void SumAggrLitPrinter::printCond(bool &single, int32_t &c, int32_t cond, uint32
 	}
 }
 
-void SumAggrLitPrinter::getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms)
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms)
 {
 	LitVec::iterator it = conds.begin();
 	foreach(SetCondVec::value_type &cond, condVec)
 	{
 		bool    single  = true;
 		int32_t c       = 0;
-		foreach(Cond::HeadLits &hl, cond.second->lits) { printCond(single, c, *it++, hl.first); }
+		foreach(Cond::HeadLits &hl, cond.second->lits) { handleCond(single, c, *it++, hl.first); }
 		condSyms.push_back(c);
 	}
 }
 
-void SumAggrLitPrinter::printSum(uint32_t sym, int64_t bound, LitVec &condSyms, SetCondVec &condVec)
+template <class T, uint32_t Type>
+template <class W>
+AggrBoundCheck AggrLitPrinter<T, Type>::checkBounds(const AggrTodoKey &key, const W &min, const W &max)
 {
-	LitVec::iterator it = condSyms.begin();
-	AtomVec pos, neg;
-	LparseConverter::WeightVec wPos, wNeg;
-	int64_t max  = 0;
-	int32_t maxi = 0;
-	bool card    = true;
-	foreach(SetCondVec::value_type &cond, condVec)
-	{
-		int32_t condSym = *it++;
-		int32_t weight  = cond.first[0].num;
-		if(condSym == 0) { bound -= weight; }
-		else
-		{
-			if(weight < 0)
-			{
-				// TODO: issue a warning
-				condSym*= -1;
-				weight *= -1;
-				bound  += weight;
-			}
-			if(condSym > 0)
-			{
-				pos.push_back(condSym);
-				wPos.push_back(weight);
-			}
-			else if(condSym < 0)
-			{
-				neg.push_back(-condSym);
-				wNeg.push_back(weight);
-			}
-			if(weight != 1) { card = false; }
-			max += weight;
-			maxi = std::max(maxi, weight);
-		}
-	}
-	if(bound > max)             { }
-	else if(bound <= 0)         { output()->printBasicRule(sym, 0); }
-	else if(max - maxi < bound) { output()->printBasicRule(sym, pos, neg); }
-	else if(card)               { output()->printConstraintRule(sym, bound, pos, neg); }
-	else                        { output()->printWeightRule(sym, bound, pos, neg, wPos, wNeg); }
+	Storage *s = output()->storage();
+	bool isFalse  = key.lower.compare(max, s) > -!key.lleq || key.upper.compare(min, s) < !key.uleq || key.upper.compare(key.lower, s) < !(key.lleq && key.uleq);
+	bool hasLower = !isFalse && key.lower.compare(min, s) > -!key.lleq;
+	bool hasUpper = !isFalse && key.upper.compare(max, s) <  !key.uleq;
+	return AggrBoundCheck(isFalse, hasLower, hasUpper);
 }
 
-void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCondVec &condVec)
+template <class T, uint32_t Type>
+bool AggrLitPrinter<T, Type>::handleAggr(const AggrBoundCheck &b, const AggrTodoVal &val, SetCondVec &condVec, LitVec &conds)
 {
-	// aggregate specific
-	std::sort(condVec.begin(), condVec.end(), CondLess());
-	condVec.erase(combine_adjacent(condVec.begin(), condVec.end(), CondEqual(), &SumAggrLitPrinter::combine), condVec.end());
-	int64_t min = 0, max = 0, fix = 0;
-	condVec.erase(std::remove_if(condVec.begin(), condVec.end(), boost::bind(&SumAggrLitPrinter::analyze, _1, boost::ref(min), boost::ref(max), boost::ref(fix))), condVec.end());
-
-	// aggregate generic
-	if(key.lower.compare(max) > -!key.lleq || key.upper.compare(min) < !key.uleq || key.upper.compare(key.lower, output()->storage()) < !(key.lleq && key.uleq))
+	if(b.isFalse)
 	{
 		if(val.head) { output()->printBasicRule(output()->falseSymbol(), 1, val.symbol); }
 	}
 	else
 	{
-		bool hasLower  = key.lower.compare(min) > -!key.lleq;
-		bool hasUpper  = key.upper.compare(max) <  !key.uleq;
-		bool hasBound  = hasLower || hasUpper;
+		bool hasBound  = b.hasLower || b.hasUpper;
 		bool singleton = hasBound && condVec.size() == 1;
 		if(singleton)
 		{
-			assert(hasUpper != hasLower);
+			assert(b.hasUpper != b.hasLower);
 			uint32_t cur = 0;
 			singleton    = false;
 			foreach(Cond::HeadLits hl, condVec.back().second->lits)
@@ -338,14 +278,13 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 				}
 			}
 		}
-		LitVec  conds;
 		AtomVec trivChoice;
 		foreach(SetCondVec::value_type &cond, condVec)
 		{
 			if(cond.second->lits.size() == 1 && cond.second->lits.back().first != 0 && cond.second->lits.back().second.empty())
 			{
 				trivChoice.push_back(cond.second->lits.back().first);
-				if(hasLower || hasUpper) { conds.push_back(0); }
+				if(b.hasLower || b.hasUpper) { conds.push_back(0); }
 			}
 			else
 			{
@@ -391,7 +330,7 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 							else if(!singleton)   { output()->printChoiceRule(AtomVec(1, hl.first), pos, neg); }
 							else
 							{
-								if(hasLower) { output()->printBasicRule(hl.first, pos, neg); }
+								if(b.hasLower) { output()->printBasicRule(hl.first, pos, neg); }
 								else
 								{
 									pos.push_back(hl.first);
@@ -409,7 +348,7 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 			{
 				assert(trivChoice.size() == 1);
 				uint32_t head = trivChoice.back();
-				if(hasLower) { output()->printBasicRule(head, 1, val.symbol); }
+				if(b.hasLower) { output()->printBasicRule(head, 1, val.symbol); }
 				else         { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, head); }
 			}
 			else { output()->printChoiceRule(trivChoice, AtomVec(1, val.symbol), AtomVec()); }
@@ -420,42 +359,18 @@ void SumAggrLitPrinter::printAggr(const TodoKey &key, const TodoVal &val, SetCon
 			{
 				if(!val.head) { output()->printBasicRule(val.symbol, 0); }
 			}
-			else
-			{
-				// aggregate specific
-				uint32_t l = 0, u = 0;
-				LitVec condSyms;
-				getCondSyms(conds, condVec, condSyms);
-				if(hasLower)
-				{
-					assert(key.lower.type == Val::NUM);
-					l = !hasUpper && !val.head ? val.symbol : output()->symbol();
-					int64_t lower = key.lower.num + !key.lleq - fix;
-					printSum(l, lower, condSyms, condVec);
-				}
-				if(hasUpper)
-				{
-					assert(key.upper.type == Val::NUM);
-					u = output()->symbol();
-					int64_t upper = key.upper.num - !key.uleq - fix + 1;
-					printSum(u, upper, condSyms, condVec);
-				}
-				if(val.head)
-				{
-					if(l != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, -l); }
-					if(u != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, u); }
-				}
-				else if(l != val.symbol) { output()->printBasicRule(val.symbol, 2, l, -u); }
-			}
+			else { return true; }
 		}
 	}
+	return false;
 }
 
-void SumAggrLitPrinter::finish()
+template <class T, uint32_t Type>
+void AggrLitPrinter<T, Type>::finish()
 {
 	foreach(TodoMap::value_type &todo, todo_)
 	{
-		AggrCondPrinter::CondMap *conds = static_cast<AggrCondPrinter*>(output()->printer<AggrCond::Printer>())->state(todo.first.state);
+		AggrCondPrinter::CondMap *conds = static_cast<AggrCondPrinter*>(output()->template printer<AggrCond::Printer>())->state(todo.first.state);
 		if(conds)
 		{
 			foreach(AggrCondPrinter::CondMap::value_type &c, *conds) { c.second.simplify(); }
@@ -465,6 +380,135 @@ void SumAggrLitPrinter::finish()
 		}
 	}
 	todo_.clear();
+}
+
+template <class T, uint32_t Type>
+LparseConverter *AggrLitPrinter<T, Type>::output() const
+{
+	return output_;
+}
+
+template <class T, uint32_t Type>
+std::ostream &AggrLitPrinter<T, Type>::out() const
+{
+	return output_->out();
+}
+
+template <class T, uint32_t Type>
+AggrLitPrinter<T, Type>::~AggrLitPrinter()
+{
+}
+
+////////////////////////////////// SumAggrLitPrinter //////////////////////////////////
+
+SumAggrLitPrinter::SumAggrLitPrinter(LparseConverter *output)
+	: AggrLitPrinter<SumAggrLit>(output)
+{
+}
+
+void SumAggrLitPrinter::combine(SetCondVec::value_type &a, const SetCondVec::value_type &b)
+{
+	a.first[0].num+= b.first[0].num;
+}
+
+bool SumAggrLitPrinter::analyze(const SetCondVec::value_type &a, int64_t &min, int64_t &max, int64_t &fix)
+{
+	int32_t w = a.first[0].num;
+	if(a.second->lits.empty())
+	{
+		fix+= w;
+		min+= w;
+		max+= w;
+		return true;
+	}
+	else
+	{
+		if(w < 0)  { min+= w; }
+		else       { max+= w; }
+		return false;
+	}
+}
+
+void SumAggrLitPrinter::printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec)
+{
+	std::sort(condVec.begin(), condVec.end(), CondLess());
+	condVec.erase(combine_adjacent(condVec.begin(), condVec.end(), CondEqual(), &SumAggrLitPrinter::combine), condVec.end());
+	int64_t min = 0, max = 0, fix = 0;
+	condVec.erase(std::remove_if(condVec.begin(), condVec.end(), boost::bind(&SumAggrLitPrinter::analyze, _1, boost::ref(min), boost::ref(max), boost::ref(fix))), condVec.end());
+
+	AggrBoundCheck b = checkBounds(key, min, max);
+	LitVec conds;
+
+	if(handleAggr(b, val, condVec, conds))
+	{
+		uint32_t l = 0, u = 0;
+		LitVec condSyms;
+		getCondSyms(conds, condVec, condSyms);
+		if(b.hasLower)
+		{
+			assert(key.lower.type == Val::NUM);
+			l = !b.hasUpper && !val.head ? val.symbol : output()->symbol();
+			int64_t lower = key.lower.num + !key.lleq - fix;
+			printSum(l, lower, condSyms, condVec);
+		}
+		if(b.hasUpper)
+		{
+			assert(key.upper.type == Val::NUM);
+			u = output()->symbol();
+			int64_t upper = key.upper.num - !key.uleq - fix + 1;
+			printSum(u, upper, condSyms, condVec);
+		}
+		if(val.head)
+		{
+			if(l != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, -l); }
+			if(u != 0) { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, u); }
+		}
+		else if(l != val.symbol) { output()->printBasicRule(val.symbol, 2, l, -u); }
+	}
+}
+
+void SumAggrLitPrinter::printSum(uint32_t sym, int64_t bound, LitVec &condSyms, SetCondVec &condVec)
+{
+	LitVec::iterator it = condSyms.begin();
+	AtomVec pos, neg;
+	LparseConverter::WeightVec wPos, wNeg;
+	int64_t max  = 0;
+	int32_t maxi = 0;
+	bool card    = true;
+	foreach(SetCondVec::value_type &cond, condVec)
+	{
+		int32_t condSym = *it++;
+		int32_t weight  = cond.first[0].num;
+		if(condSym == 0) { bound -= weight; }
+		else
+		{
+			if(weight < 0)
+			{
+				// TODO: issue a warning
+				condSym*= -1;
+				weight *= -1;
+				bound  += weight;
+			}
+			if(condSym > 0)
+			{
+				pos.push_back(condSym);
+				wPos.push_back(weight);
+			}
+			else if(condSym < 0)
+			{
+				neg.push_back(-condSym);
+				wNeg.push_back(weight);
+			}
+			if(weight != 1) { card = false; }
+			max += weight;
+			maxi = std::max(maxi, weight);
+		}
+	}
+	if(bound > max)             { }
+	else if(bound <= 0)         { output()->printBasicRule(sym, 0); }
+	else if(max - maxi < bound) { output()->printBasicRule(sym, pos, neg); }
+	else if(card)               { output()->printConstraintRule(sym, bound, pos, neg); }
+	else                        { output()->printWeightRule(sym, bound, pos, neg, wPos, wNeg); }
 }
 
 }

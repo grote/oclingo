@@ -40,7 +40,7 @@ struct Val
 	inline bool operator==(const Val &v) const;
 	bool operator!=(const Val &v) const { return !operator ==(v); }
 	int compare(const Val &v, Storage *s) const;
-	int compare(const int64_t &v) const;
+	int compare(const int64_t &v, Storage *s) const;
 	static int compare(Storage *s, ValVec const &a, ValVec const &b);
 	void print(Storage *sto, std::ostream &out) const;
 	int number() const;

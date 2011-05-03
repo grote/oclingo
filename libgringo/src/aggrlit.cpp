@@ -157,7 +157,7 @@ BoundAggrState::Val64::Val64(const Val &val)
 	, val_(val)
 { }
 
-BoundAggrState::Val64 BoundAggrState::Val64::create(const uint64_t &num)
+BoundAggrState::Val64 BoundAggrState::Val64::create(const int64_t &num)
 {
 	return Val64(num);
 }

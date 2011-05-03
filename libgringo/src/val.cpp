@@ -51,7 +51,7 @@ int Val::compare(const Val &v, Storage *s) const
 	return s->compare(type, index, v.index);
 }
 
-int Val::compare(const int64_t &v) const
+int Val::compare(const int64_t &v, Storage *) const
 {
 	if(type != NUM) return type < NUM ? -1 : 1;
 	if(num < v) { return -1; }

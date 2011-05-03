@@ -71,7 +71,7 @@ protected:
 
 	public:
 		int compare(const Val64 &v, Storage *s) const;
-		static Val64 create(const uint64_t &num);
+		static Val64 create(const int64_t &num);
 		static Val64 create(const Val &val);
 	private:
 		bool isNum_;
