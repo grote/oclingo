@@ -225,16 +225,19 @@ void AggrLitPrinter<T, Type>::handleCond(bool &single, int32_t &c, int32_t cond,
 }
 
 template <class T, uint32_t Type>
+int32_t AggrLitPrinter<T, Type>::getCondSym(const SetCond &cond, LitVec::iterator &lit)
+{
+	bool    single  = true;
+	int32_t c       = 0;
+	foreach(Cond::HeadLits &hl, cond.second->lits) { handleCond(single, c, *lit++, hl.first); }
+	return c;
+}
+
+template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms)
 {
 	LitVec::iterator it = conds.begin();
-	foreach(SetCondVec::value_type &cond, condVec)
-	{
-		bool    single  = true;
-		int32_t c       = 0;
-		foreach(Cond::HeadLits &hl, cond.second->lits) { handleCond(single, c, *it++, hl.first); }
-		condSyms.push_back(c);
-	}
+	foreach(SetCondVec::value_type &cond, condVec) { condSyms.push_back(getCondSym(cond, it)); }
 }
 
 template <class T, uint32_t Type>
@@ -349,7 +352,7 @@ bool AggrLitPrinter<T, Type>::handleAggr(const AggrBoundCheck &b, const AggrTodo
 				assert(trivChoice.size() == 1);
 				uint32_t head = trivChoice.back();
 				if(b.hasLower) { output()->printBasicRule(head, 1, val.symbol); }
-				else         { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, head); }
+				else           { output()->printBasicRule(output()->falseSymbol(), 2, val.symbol, head); }
 			}
 			else { output()->printChoiceRule(trivChoice, AtomVec(1, val.symbol), AtomVec()); }
 		}
@@ -511,7 +514,109 @@ void SumAggrLitPrinter::printSum(uint32_t sym, int64_t bound, LitVec &condSyms, 
 	else                        { output()->printWeightRule(sym, bound, pos, neg, wPos, wNeg); }
 }
 
+////////////////////////////////// MinMaxAggrLitPrinter //////////////////////////////////
+
+template <uint32_t T>
+MinMaxAggrLitPrinter<T>::MinMaxAggrLitPrinter(LparseConverter *output)
+	: AggrLitPrinter<MinMaxAggrLit, T>(output)
+{
+}
+
+template <uint32_t T>
+void MinMaxAggrLitPrinter<T>::combine(Storage *s, SetCond &a, const SetCond &b)
+{
+	int sign = (T == MinMaxAggrLit::MINIMUM ? 1 : -1);
+	int cmp  = a.first[0].compare(b.first[0].num, s);
+	if(sign * cmp > 0) { a.first[0] = b.first[0]; }
+}
+
+template <uint32_t T>
+bool MinMaxAggrLitPrinter<T>::analyze(Storage *s, const SetCond &a, Val &min, Val &max, Val &fix)
+{
+	int sign = (T == MinMaxAggrLit::MINIMUM ? 1 : -1);
+	const Val &w = a.first[0];
+	if(min.compare(w, s) > 0) { min = w; }
+	if(max.compare(w, s) < 0) { max = w; }
+	if(a.second->lits.empty())
+	{
+		if(sign * fix.compare(w, s) > 0) { fix = w; }
+		return true;
+	}
+	else { return false; }
+}
+
+template <uint32_t T>
+void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec)
+{
+	LparseConverter *o = this->template output();
+	Storage *s = o->storage();
+
+	std::sort(condVec.begin(), condVec.end(), CondLess());
+	condVec.erase(combine_adjacent(condVec.begin(), condVec.end(), CondEqual(), boost::bind(&MinMaxAggrLitPrinter::combine, s, _1, _2)), condVec.end());
+	Val min = Val::sup();
+	Val max = Val::inf();
+	Val fix = T == MinMaxAggrLit::MINIMUM ? Val::sup() : Val::inf();
+	condVec.erase(std::remove_if(condVec.begin(), condVec.end(), boost::bind(&MinMaxAggrLitPrinter::analyze, s, _1, boost::ref(min), boost::ref(max), boost::ref(fix))), condVec.end());
+
+	if(T == MinMaxAggrLit::MINIMUM && max.compare(fix, s) > 0) { max = fix; }
+	if(T == MinMaxAggrLit::MAXIMUM && min.compare(fix, s) < 0) { min = fix; }
+
+	AggrBoundCheck b = this->template checkBounds(key, min, max);
+	LitVec conds;
+
+	if(handleAggr(b, val, condVec, conds))
+	{
+		uint32_t mp = 0, ap = 0;
+		if(T == MinMaxAggrLit::MINIMUM ? b.hasLower : b.hasUpper) { ap = o->symbol(); }
+		if(T == MinMaxAggrLit::MINIMUM ? b.hasUpper : b.hasLower) { mp = ap == 0 && !val.head ? val.symbol : o->symbol(); }
+		/*
+		monotone:
+			Minimum || Maximum:
+				mp :- lit. if lit.weight >= lower and lit.weight <= upper
+				mp :- lit. if lit.weight >= lower and lit.weight <= upper
+		antimonotone:
+			Minimum:
+				ap :- lit. lit.weight < lower.
+			Maximum:
+				ap :- lit. lit.weight > upper.
+		*/
+
+		LitVec::iterator lit = conds.begin();
+		foreach(SetCond &cond, condVec)
+		{
+			const Val &w = cond.first[0];
+			bool needsM =
+				(mp != 0) && (
+					(!b.hasLower || w.compare(key.lower, s) > -key.lleq) &&
+					(!b.hasUpper || w.compare(key.upper, s) <  key.uleq) );
+
+			bool needsA =
+				(ap != 0) && (
+					(T == MinMaxAggrLit::MINIMUM && w.compare(key.lower, s) <  !key.lleq) ||
+					(T == MinMaxAggrLit::MAXIMUM && w.compare(key.upper, s) > -!key.uleq) );
+
+			if(needsA || needsM)
+			{
+				uint32_t sym = getCondSym(cond, lit);
+				if(needsM) { o->printBasicRule(mp, 1, sym); }
+				if(needsA) { o->printBasicRule(ap, 1, sym); }
+			}
+		}
+
+		if(val.head)
+		{
+			if(mp != 0) { o->printBasicRule(o->falseSymbol(), 2, val.symbol, -mp); }
+			if(ap != 0) { o->printBasicRule(o->falseSymbol(), 2, val.symbol, ap); }
+		}
+		else if(mp != val.symbol) { o->printBasicRule(val.symbol, 2, mp, -ap); }
+	}
+}
+
 }
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::AggrCondPrinter, AggrCond::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::SumAggrLitPrinter, AggrLit::Printer<SumAggrLit>, LparseConverter)
+typedef AggrLit::Printer<MinMaxAggrLit, MinMaxAggrLit::MINIMUM> MinPrinterBase;
+typedef AggrLit::Printer<MinMaxAggrLit, MinMaxAggrLit::MAXIMUM> MaxPrinterBase;
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::MinAggrLitPrinter, MinPrinterBase, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::MaxAggrLitPrinter, MaxPrinterBase, LparseConverter)

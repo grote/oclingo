@@ -19,6 +19,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/sumaggrlit.h>
+#include <gringo/minmaxaggrlit.h>
 #include <gringo/lparseconverter.h>
 
 namespace lparseconverter_impl
@@ -86,6 +87,8 @@ struct AggrTodoVal
 	bool     head;
 };
 
+size_t hash_value(const AggrTodoKey &v);
+
 struct AggrBoundCheck
 {
 	AggrBoundCheck(bool isFalse, bool hasLower, bool hasUpper);
@@ -103,7 +106,8 @@ public:
 	typedef LparseConverter::AtomVec AtomVec;
 	typedef std::vector<AggrCondPrinter::Cond*> CondVec;
 	typedef boost::unordered_map<AggrTodoKey, AggrTodoVal> TodoMap;
-	typedef std::vector<std::pair<ValVec, AggrCondPrinter::Cond*> > SetCondVec;
+	typedef std::pair<ValVec, AggrCondPrinter::Cond*> SetCond;
+	typedef std::vector<SetCond> SetCondVec;
 	typedef AggrCondPrinter::Cond Cond;
 
 public:
@@ -116,6 +120,7 @@ public:
 	AggrBoundCheck checkBounds(const AggrTodoKey &key, const W &min, const W &max);
 	bool handleAggr(const AggrBoundCheck &b, const AggrTodoVal &val, SetCondVec &condVec, LitVec &conds);
 	void handleCond(bool &single, int32_t &c, int32_t cond, uint32_t head);
+	int32_t getCondSym(const SetCond &cond, LitVec::iterator &lit);
 	void getCondSyms(LitVec &conds, SetCondVec &condVec, LitVec &condSyms);
 	virtual void printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec) = 0;
 	LparseConverter *output() const;
@@ -140,7 +145,29 @@ public:
 	void printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec);
 };
 
-size_t hash_value(const AggrTodoKey &v);
+template <uint32_t Type>
+class MinMaxAggrLitPrinter : public AggrLitPrinter<MinMaxAggrLit, Type>
+{
+	typedef typename AggrLitPrinter<MinMaxAggrLit, Type>::SetCond SetCond;
+	typedef typename AggrLitPrinter<MinMaxAggrLit, Type>::SetCondVec SetCondVec;
+public:
+	MinMaxAggrLitPrinter(LparseConverter *output);
+	static void combine(Storage *s, SetCond &a, const SetCond &b);
+	static bool analyze(Storage *s, const SetCond &a, Val &min, Val &max, Val &fix);
+	void printSum(uint32_t sym, int64_t bound, LitVec &conds, SetCondVec &condVec);
+	void printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec);
+};
+
+struct MinAggrLitPrinter : MinMaxAggrLitPrinter<MinMaxAggrLit::MINIMUM>
+{
+	MinAggrLitPrinter(LparseConverter *output) : MinMaxAggrLitPrinter<MinMaxAggrLit::MINIMUM>(output) { }
+};
+
+struct MaxAggrLitPrinter : MinMaxAggrLitPrinter<MinMaxAggrLit::MAXIMUM>
+{
+	MaxAggrLitPrinter(LparseConverter *output) : MinMaxAggrLitPrinter<MinMaxAggrLit::MAXIMUM>(output) { }
+};
+
 
 //////////////////////////////// AggrCondPrinter ////////////////////////////////
 
