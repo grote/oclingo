@@ -564,6 +564,10 @@ void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVa
 	AggrBoundCheck b = this->template checkBounds(key, min, max);
 	LitVec conds;
 
+	// NOTE: in theory some choices could be dropped, e.g., p(1) and p(2) in:
+	//       2 < #min { <X>:p(X) : X=1..5 } < 5.
+	//       this holds for aggregates in general if a literal would make the aggregate false
+	//       no choices has to be generated (but the literal is still important for the check)
 	if(handleAggr(b, val, condVec, conds))
 	{
 		uint32_t mp = 0, ap = 0;
