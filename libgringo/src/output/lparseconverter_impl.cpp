@@ -94,6 +94,17 @@ private:
 	bool                       head_;
 };
 
+class IncPrinter : public IncLit::Printer
+{
+public:
+	IncPrinter(LparseConverter *output) : output_(output) {  }
+	void print(PredLitRep *l);
+	void print();
+	Output *output() const { return output_; }
+private:
+	LparseConverter *output_;
+};
+
 ///////////////////////////////// DisplayPrinter /////////////////////////////////
 
 void DisplayPrinter::print(PredLitRep *l)
@@ -173,6 +184,17 @@ void JunctionPrinter::end()
 	}
 }
 
+///////////////////////////////// IncPrinter /////////////////////////////////
+
+void IncPrinter::print(PredLitRep *) { }
+
+void IncPrinter::print()
+{
+	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
+	int atom = output_->getIncAtom();
+	if(atom > 0) { printer->addBody(atom, false); }
+}
+
 }
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::DisplayPrinter, Display::Printer, LparseConverter)
@@ -180,3 +202,4 @@ GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::IncPrinter, IncLit::Printer, LparseConverter)

@@ -48,17 +48,4 @@ private:
 	bool                     headCond_;
 };
 
-class IncPrinter : public IncLit::Printer
-{
-public:
-	IncPrinter(LparseConverter *output) : output_(output) {  }
-	void print(PredLitRep *l);
-	void print();
-	Output *output() const { return output_; }
-private:
-	LparseConverter *output_;
-};
-
-inline void IncPrinter::print(PredLitRep *) { }
-
 }

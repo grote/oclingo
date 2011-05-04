@@ -80,14 +80,6 @@ void RulePrinter::addBody(uint32_t sym, bool sign)
 	else pos_.push_back(sym);
 }
 
-void IncPrinter::print()
-{
-	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = output_->getIncAtom();
-	if(atom > 0) { printer->addBody(atom, false); }
-}
-
 }
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::RulePrinter, Rule::Printer, LparseConverter)
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::IncPrinter, IncLit::Printer, LparseConverter)
