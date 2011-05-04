@@ -78,7 +78,7 @@ namespace
 	}
 }
 
-Index *RelLit::index(Grounder *g, Formula *gr, VarSet &bound)
+Index *RelLit::index(Grounder *g, Formula *, VarSet &bound)
 {
 	(void)g;
 	if(t_ == ASSIGN)

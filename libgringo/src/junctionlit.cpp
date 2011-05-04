@@ -473,12 +473,12 @@ JunctionIndex::JunctionIndex(JunctionLit &lit)
 {
 }
 
-Index::Match JunctionIndex::firstMatch(Grounder *grounder, int binder)
+Index::Match JunctionIndex::firstMatch(Grounder *grounder, int)
 {
 	return lit_.ground(grounder);
 }
 
-Index::Match JunctionIndex::nextMatch(Grounder *grounder, int binder)
+Index::Match JunctionIndex::nextMatch(Grounder *, int)
 {
 	return Match(false, false);
 }

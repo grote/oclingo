@@ -69,7 +69,7 @@ bool Compute::Head::match(Grounder *g)
 	return true;
 }
 
-Index *Compute::Head::index(Grounder *, Formula *gr, VarSet &)
+Index *Compute::Head::index(Grounder *, Formula *, VarSet &)
 {
 	return new MatchIndex(this);
 }

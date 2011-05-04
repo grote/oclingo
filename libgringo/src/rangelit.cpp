@@ -112,7 +112,7 @@ namespace
 	}
 }
 
-Index *RangeLit::index(Grounder *, Formula *gr, VarSet &bound)
+Index *RangeLit::index(Grounder *, Formula *, VarSet &bound)
 {
 	VarSet vars;
 	VarVec bind;

@@ -211,7 +211,7 @@ void AggrLitPrinter<T, Type>::handleCond(bool &single, int32_t &c, int32_t cond,
 		else if(cond != 0) { c = cond; }
 		else if(head != 0) { c = head; }
 	}
-	if(complex || (head != 0 && head != c) || (cond != 0 && cond != c))
+	if(complex || (head != 0 && int32_t(head) != c) || (cond != 0 && cond != c))
 	{
 		if(single)
 		{

@@ -93,7 +93,7 @@ namespace
 	}
 }
 
-Index *IncLit::index(Grounder *, Formula *gr, VarSet &bound)
+Index *IncLit::index(Grounder *, Formula *, VarSet &bound)
 {
 	VarSet vars;
 	VarVec bind;

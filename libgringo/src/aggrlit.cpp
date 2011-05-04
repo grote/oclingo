@@ -410,7 +410,7 @@ SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
 {
 }
 
-Index *SetLit::index(Grounder *g, Formula *gr, VarSet &)
+Index *SetLit::index(Grounder *, Formula *gr, VarSet &)
 {
 	AggrCond *cond = static_cast<AggrCond*>(gr);
 	return new StateDirtyIndex(*cond->aggr());
