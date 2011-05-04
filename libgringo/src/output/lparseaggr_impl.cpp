@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "output/lparsesum_impl.h"
+#include "output/lparseaggr_impl.h"
 #include "output/lparserule_impl.h"
 #include <gringo/predlitrep.h>
 #include <gringo/domain.h>
