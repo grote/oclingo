@@ -31,10 +31,10 @@
 
 namespace
 {
-	class CondHeadExpander : public Expander
+	class AggrCondHeadExpander : public Expander
 	{
 	public:
-		CondHeadExpander(AggrCond &cond);
+		AggrCondHeadExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
 		AggrCond &cond_;
@@ -49,10 +49,10 @@ namespace
 		AggrCond &cond_;
 	};
 
-	class CondBodyExpander : public Expander
+	class AggrCondBodyExpander : public Expander
 	{
 	public:
-		CondBodyExpander(AggrCond &cond);
+		AggrCondBodyExpander(AggrCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
 		AggrCond &cond_;
@@ -500,12 +500,12 @@ void AggrCond::normalize(Grounder *g, uint32_t number)
 	bool head = lits_[0].head() || style_ != STYLE_DLV;
 	if(head)
 	{
-		CondHeadExpander headExp(*this);
+		AggrCondHeadExpander headExp(*this);
 		lits_[0].normalize(g, &headExp);
 	}
 	CondSetExpander setExp(*this);
 	set_.normalize(g, &setExp);
-	CondBodyExpander bodyExp(*this);
+	AggrCondBodyExpander bodyExp(*this);
 	for(LitPtrVec::size_type i = head; i < lits_.size(); i++)
 	{
 		lits_[i].normalize(g, &bodyExp);
@@ -638,13 +638,13 @@ AggrCond* new_clone(const AggrCond& a)
 	return new AggrCond(a);
 }
 
-//////////////////////////////////////// CondHeadExpander ////////////////////////////////////////
+//////////////////////////////////////// AggrCondHeadExpander ////////////////////////////////////////
 
-CondHeadExpander::CondHeadExpander(AggrCond &cond)
+AggrCondHeadExpander::AggrCondHeadExpander(AggrCond &cond)
 	: cond_(cond)
 { }
 
-void CondHeadExpander::expand(Lit *lit, Expander::Type type)
+void AggrCondHeadExpander::expand(Lit *lit, Expander::Type type)
 {
 	switch(type)
 	{
@@ -684,13 +684,13 @@ void CondSetExpander::expand(Lit *lit, Expander::Type type)
 	}
 }
 
-//////////////////////////////////////// CondBodyExpander ////////////////////////////////////////
+//////////////////////////////////////// AggrCondBodyExpander ////////////////////////////////////////
 
-CondBodyExpander::CondBodyExpander(AggrCond &cond)
+AggrCondBodyExpander::AggrCondBodyExpander(AggrCond &cond)
 	: cond_(cond)
 { }
 
-void CondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
+void AggrCondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
 
 //////////////////////////////////////// LparseAggrCondConverter ////////////////////////////////////////
 

@@ -24,10 +24,10 @@
 
 namespace
 {
-	class CondHeadExpander : public Expander
+	class JunctionCondHeadExpander : public Expander
 	{
 	public:
-		CondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander);
+		JunctionCondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander);
 		void expand(Lit *lit, Type type);
 
 	private:
@@ -36,10 +36,10 @@ namespace
 		Expander     &ruleExp_;
 	};
 
-	class CondBodyExpander : public Expander
+	class JunctionCondBodyExpander : public Expander
 	{
 	public:
-		CondBodyExpander(JunctionCond &cond);
+		JunctionCondBodyExpander(JunctionCond &cond);
 		void expand(Lit *lit, Type type);
 	private:
 		JunctionCond &cond_;
@@ -338,8 +338,8 @@ void JunctionLit::normalize(Grounder *g, Expander *expander)
 {
 	for(JunctionCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
-		CondHeadExpander headExp(*this, &conds_[i], *expander);
-		CondBodyExpander bodyExp(conds_[i]);
+		JunctionCondHeadExpander headExp(*this, &conds_[i], *expander);
+		JunctionCondBodyExpander bodyExp(conds_[i]);
 		conds_[i].normalize(g, &headExp, &bodyExp, this, i);
 	}
 }
@@ -412,16 +412,16 @@ JunctionLit::~JunctionLit()
 {
 }
 
-///////////////////////////// CondHeadExpander /////////////////////////////
+///////////////////////////// JunctionCondHeadExpander /////////////////////////////
 
-CondHeadExpander::CondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander)
+JunctionCondHeadExpander::JunctionCondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander)
 	: aggr_(aggr)
 	, cond_(cond)
 	, ruleExp_(ruleExpander)
 {
 }
 
-void CondHeadExpander::expand(Lit *lit, Expander::Type type)
+void JunctionCondHeadExpander::expand(Lit *lit, Expander::Type type)
 {
 	switch(type)
 	{
@@ -453,19 +453,19 @@ void CondHeadExpander::expand(Lit *lit, Expander::Type type)
 	}
 }
 
-///////////////////////////// CondBodyExpander /////////////////////////////
+///////////////////////////// JunctionCondBodyExpander /////////////////////////////
 
-CondBodyExpander::CondBodyExpander(JunctionCond &cond)
+JunctionCondBodyExpander::JunctionCondBodyExpander(JunctionCond &cond)
 	: cond_(cond)
 {
 }
 
-void CondBodyExpander::expand(Lit *lit, Expander::Type)
+void JunctionCondBodyExpander::expand(Lit *lit, Expander::Type)
 {
 	cond_.body().push_back(lit);
 }
 
-///////////////////////////// CondBodyExpander /////////////////////////////
+///////////////////////////// JunctionCondBodyExpander /////////////////////////////
 
 JunctionIndex::JunctionIndex(JunctionLit &lit)
 	: lit_(lit)

@@ -45,10 +45,10 @@ bool Display::grounded(Grounder *g)
 
 namespace
 {
-	class HeadExpander : public Expander
+	class DisplayHeadExpander : public Expander
 	{
 	public:
-		HeadExpander(Grounder *g, Display &d) : g_(g), d_(d) { }
+		DisplayHeadExpander(Grounder *g, Display &d) : g_(g), d_(d) { }
 		void expand(Lit *lit, Type type);
 	private:
 		Grounder *g_;
@@ -64,7 +64,7 @@ namespace
 		Display &d_;
 	};
 
-	void HeadExpander::expand(Lit *lit, Expander::Type type)
+	void DisplayHeadExpander::expand(Lit *lit, Expander::Type type)
 	{
 		switch(type)
 		{
@@ -83,7 +83,7 @@ namespace
 
 void Display::normalize(Grounder *g)
 {
-	HeadExpander headExp(g, *this);
+	DisplayHeadExpander headExp(g, *this);
 	BodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)

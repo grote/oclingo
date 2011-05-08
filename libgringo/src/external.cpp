@@ -61,10 +61,10 @@ bool External::grounded(Grounder *g)
 
 namespace
 {
-	class HeadExpander : public Expander
+	class ExternalHeadExpander : public Expander
 	{
 	public:
-		HeadExpander(Grounder *g, External &d) : g_(g), d_(d) { }
+		ExternalHeadExpander(Grounder *g, External &d) : g_(g), d_(d) { }
 		void expand(Lit *lit, Type type);
 	private:
 		Grounder *g_;
@@ -80,7 +80,7 @@ namespace
 		External &d_;
 	};
 
-	void HeadExpander::expand(Lit *lit, Expander::Type type)
+	void ExternalHeadExpander::expand(Lit *lit, Expander::Type type)
 	{
 		switch(type)
 		{
@@ -99,7 +99,7 @@ namespace
 
 void External::normalize(Grounder *g)
 {
-	HeadExpander headExp(g, *this);
+	ExternalHeadExpander headExp(g, *this);
 	BodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
