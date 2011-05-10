@@ -35,6 +35,8 @@ BOOST_INCLUDEDIR - Similar to BOOST_ROOT but sets the path to the include
 BOOST_LIBRARYDIR - Similar to BOOST_ROOT but sets the path to the library
                    directory directly.
 
+GECODE_ROOT      - Installation prefix for searching for Gecode.
+
 To use a Boost installation in /usr/local, you should compile the project 
 using:
 	BOOST_ROOT=/usr/local make
@@ -43,6 +45,8 @@ using:
 -----------------
 Additional options might be specified. To get an overview, use for example
 cmake-gui or take a look at the main cmake file.
+
+To build clingcon, you have to set the variable WITH_CLINGCON.
 
 4 Installation
 --------------
