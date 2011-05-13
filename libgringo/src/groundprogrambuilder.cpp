@@ -122,6 +122,8 @@ void GroundProgramBuilder::add()
 			pop(1);
 			break;
 		}
+		#pragma message "reimplement this"
+		/*
 		case STM_MINIMIZE:
 		case STM_MAXIMIZE:
 		case STM_MINIMIZE_SET:
@@ -143,6 +145,7 @@ void GroundProgramBuilder::add()
 			pop(stack_->n);
 			break;
 		}
+		*/
 		case STM_COMPUTE:
 		{
 			Compute::Printer *printer = output_->printer<Compute::Printer>();

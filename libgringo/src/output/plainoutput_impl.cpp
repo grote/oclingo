@@ -339,26 +339,34 @@ namespace plainoutput_impl
 		output_->print(l, output_->out());
 	}
 	
-	void OptimizePrinter::begin(bool maximize, bool set)
+	void OptimizePrinter::begin(bool maximize)
 	{
-		set_   = set;
-		comma_ = false;
-		out() << (maximize ? "#maximize" : "#minimize");
-		out() << (set_ ? "{" : "[");
+		#pragma message "PlainOutput interface has to be refined to properly implement printing of optimize statements"
+		out() << (maximize ? "#maximize" : "#minimize") << "{";
 	}
 
-	void OptimizePrinter::print(PredLitRep *l, int32_t weight, int32_t prio)
+	void OptimizePrinter::print(const ValVec &set)
 	{
-		if(comma_) { out() << ","; }
-		else       { comma_ = true; }
-		output_->print(l, out());
-		if(!set_) { out() << "=" << weight; }
-		out() << "@" << prio;
+		bool comma = false;
+		out() << "<";
+		foreach(const Val &val, set)
+		{
+			if(comma) { out() << ","; }
+			else      { comma = true; }
+			val.print(output()->storage(), out());
+		}
+		out() << ">";
+	}
+
+	void OptimizePrinter::print(PredLitRep *l)
+	{
+		out() << ":";
+		output()->print(l, out());
 	}
 
 	void OptimizePrinter::end()
 	{
-		out() << (set_ ? "}.\n" : "].\n");
+		out() << "}.\n";
 		output_->endStatement();
 	}
 

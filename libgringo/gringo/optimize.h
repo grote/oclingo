@@ -31,6 +31,8 @@ public:
 
 	bool match(Grounder *g);
 	bool fact() const;
+	void grounded(Grounder *g);
+	const ValVec &vals() const;
 
 	void addDomain(Grounder *g, bool fact);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);
@@ -44,6 +46,7 @@ public:
 
 private:
 	TermPtrVec terms_;
+	ValVec     vals_;
 };
 
 class Optimize : public SimpleStatement
@@ -52,9 +55,8 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		void print(PredLitRep *l) { (void)l; assert(false); }
-		virtual void begin(bool maximize, bool set) = 0;
-		virtual void print(PredLitRep *l, int32_t weight, int32_t prio) = 0;
+		virtual void begin(bool maximize) = 0;
+		virtual void print(const ValVec &set) = 0;
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
@@ -77,55 +79,3 @@ private:
 	bool           set_;
 	bool           headLike_;
 };
-
-/*
-typedef boost::shared_ptr<PredLitSet> PredLitSetPtr;
-
-class Optimize : public SimpleStatement
-{
-private:
-	class PrioLit;
-	typedef std::vector<std::pair<int32_t, int32_t> > PrioVec;
-	friend PrioLit* new_clone(const PrioLit& a);
-public:
-	class Printer : public ::Printer
-	{
-	public:
-		void print(PredLitRep *l) { (void)l; assert(false); }
-		virtual void begin(bool maximize, bool set) = 0;
-		virtual void print(PredLitRep *l, int32_t weight, int32_t prio) = 0;
-		virtual void end() = 0;
-		virtual ~Printer() { }
-	};
-public:
-	Optimize(const Loc &loc, PredLit *head, Term *weight, Term *prio, LitPtrVec &body, bool maximize);
-	Term *weight();
-	Term *prio();
-	PredLit *head() const { return head_.get(); }
-	LitPtrVec &body() { return body_; }
-	void append(Lit *lit);
-	void ground(Grounder *g);
-	bool grounded(Grounder *g);
-	void normalize(Grounder *g);
-	void visit(PrgVisitor *visitor);
-	void print(Storage *sto, std::ostream &out) const;
-	bool maximize() { return maximize_; }
-	bool set() { return set_; }
-	void uniques(PredLitSetPtr uniques) { uniques_ = uniques; set_ = true; }
-	PredLitSetPtr uniques() { return uniques_; }
-	~Optimize();
-private:
-	clone_ptr<PredLit> head_;
-	clone_ptr<PrioLit> prio_;
-	LitPtrVec          body_;
-	PrioVec            prios_;
-	bool               maximize_;
-	//! whether the optimize occurs in a set (or else multiset)
-	bool               set_;
-	//! set for uniqueness check when set_ is true
-	PredLitSetPtr      uniques_;
-};
-
-Optimize::PrioLit* new_clone(const Optimize::PrioLit& a);
-
-*/
