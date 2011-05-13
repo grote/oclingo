@@ -178,10 +178,10 @@ private:
 
 class AggrLit;
 
-class SetLit : public Lit
+class AggrSetLit : public Lit
 {
 public:
-	SetLit(const Loc &loc, TermPtrVec &terms);
+	AggrSetLit(const Loc &loc, TermPtrVec &terms);
 
 	TermPtrVec *terms();
 
@@ -196,12 +196,12 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(Printer *v);
 	Lit *clone() const;
-	~SetLit();
+	~AggrSetLit();
 private:
 	TermPtrVec terms_; //! determines the uniqueness + holds the weight
 };
 
-SetLit* new_clone(const SetLit& a);
+AggrSetLit* new_clone(const AggrSetLit& a);
 
 class AggrCond : public Formula
 {
@@ -246,7 +246,7 @@ public:
 	~AggrCond();
 private:
 	Style                   style_;
-	SetLit                  set_;
+	AggrSetLit              set_;
 	LitPtrVec               lits_;
 	clone_ptr<Instantiator> inst_;
 	VarVec                  headVars_;
@@ -474,14 +474,14 @@ inline bool AggrLit::set() const { return set_; }
 
 /////////////////////////////// SetLit ///////////////////////////////
 
-inline TermPtrVec *SetLit::terms() { return &terms_; }
+inline TermPtrVec *AggrSetLit::terms() { return &terms_; }
 
-inline bool SetLit::match(Grounder *) { return true; }
-inline bool SetLit::fact() const { return true; }
+inline bool AggrSetLit::match(Grounder *) { return true; }
+inline bool AggrSetLit::fact() const { return true; }
 
-inline void SetLit::addDomain(Grounder *, bool) { assert(false); }
-inline bool SetLit::edbFact() const { return false; }
-inline void SetLit::accept(Printer *) { }
+inline void AggrSetLit::addDomain(Grounder *, bool) { assert(false); }
+inline bool AggrSetLit::edbFact() const { return false; }
+inline void AggrSetLit::accept(Printer *) { }
 
 /////////////////////////////// AggrCond::Printer ///////////////////////////////
 

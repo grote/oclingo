@@ -1,12 +1,14 @@
 = ToDo =
 	* Higher Priorit
 		* [x] Reimplement aggrgate printers
-		* [ ] PlainAggregatePrinter
-		* [ ] LparseAggregatePrinter
+		* [x] PlainAggregatePrinter
+		* [x] LparseAggregatePrinter
 		* [ ] Make hooks during grounding clearer
 			* begin ground
 			* end ground
+		* OptimizeStatements
 	* High Priority
+		* [ ] fix the semantics of incremental programs
 		* [ ] cleanup code/interfaces
 			* [ ] remove push/pop/testUnique/move/clear from literals
 			* [ ] rethink monotonicity function

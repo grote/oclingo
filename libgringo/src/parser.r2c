@@ -588,6 +588,29 @@ PredLit *Parser::predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool si
 	return new PredLit(loc, grounder()->domain(id, terms.size()), terms);
 }
 
+Optimize *Parser::optimize(bool set, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body, bool headLike)
+{
+	std::auto_ptr<LitPtrVec> pBody(body);
+	std::auto_ptr<TermPtrVec> pTerms(terms);
+	if(!pTerms.get())
+	{
+		pTerms.reset(new TermPtrVec());
+		if(!weight)
+		{
+			assert(!body->empty());
+			weight = new ConstTerm(loc, Val::create(Val::NUM, 1));
+		}
+		pTerms->push_back(weight);
+	}
+	else { assert(weight == 0); }
+	assert(!pTerms->empty());
+	if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
+	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
+	pTerms->insert(pTerms->begin() + 1, prio);
+	pTerms->insert(pTerms->begin() + 2, optnum);
+	return new Optimize(loc, *pTerms, *pBody, maximize_, set, headLike);
+}
+
 Parser::~Parser()
 {
 	parserFree(parser_, free);

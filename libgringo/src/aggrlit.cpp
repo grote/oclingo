@@ -404,19 +404,19 @@ AggrLit::~AggrLit()
 
 //////////////////////////////////////// SetLit ////////////////////////////////////////
 
-SetLit::SetLit(const Loc &loc, TermPtrVec &terms)
+AggrSetLit::AggrSetLit(const Loc &loc, TermPtrVec &terms)
 	: Lit(loc)
 	, terms_(terms.release())
 {
 }
 
-Index *SetLit::index(Grounder *, Formula *gr, VarSet &)
+Index *AggrSetLit::index(Grounder *, Formula *gr, VarSet &)
 {
 	AggrCond *cond = static_cast<AggrCond*>(gr);
 	return new StateDirtyIndex(*cond->aggr());
 }
 
-void SetLit::normalize(Grounder *g, Expander *e)
+void AggrSetLit::normalize(Grounder *g, Expander *e)
 {
 	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
 	{
@@ -424,12 +424,12 @@ void SetLit::normalize(Grounder *g, Expander *e)
 	}
 }
 
-void SetLit::visit(PrgVisitor *visitor)
+void AggrSetLit::visit(PrgVisitor *visitor)
 {
 	foreach(Term &term, terms_) { term.visit(visitor, false); }
 }
 
-void SetLit::print(Storage *sto, std::ostream &out) const
+void AggrSetLit::print(Storage *sto, std::ostream &out) const
 {
 	bool comma = false;
 	foreach(const Term &term, terms_)
@@ -440,12 +440,12 @@ void SetLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-Lit *SetLit::clone() const
+Lit *AggrSetLit::clone() const
 {
-	return new SetLit(*this);
+	return new AggrSetLit(*this);
 }
 
-SetLit::~SetLit()
+AggrSetLit::~AggrSetLit()
 {
 }
 
@@ -455,7 +455,7 @@ AggrCond::AggrCond(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style sty
 	: Formula(loc)
 	, style_(style)
 	, set_(loc, terms)
-	, lits_(lits)
+	, lits_(lits.release())
 	, aggr_(0)
 	, complete_(boost::logic::indeterminate)
 	, head_(false)
@@ -677,7 +677,7 @@ void CondSetExpander::expand(Lit *lit, Expander::Type type)
 			cond_.add(lit);
 			break;
 		case POOL:
-			std::auto_ptr<SetLit> set(static_cast<SetLit*>(lit));
+			std::auto_ptr<AggrSetLit> set(static_cast<AggrSetLit*>(lit));
 			LitPtrVec lits(*cond_.lits());
 			cond_.aggr()->add(new AggrCond(cond_.loc(), *set->terms(), lits, cond_.style()));
 			break;

@@ -22,6 +22,63 @@
 #include <gringo/formula.h>
 #include <gringo/predlit.h>
 
+class OptimizeSetLit : public Lit, public Matchable
+{
+public:
+	OptimizeSetLit(const Loc &loc, TermPtrVec &terms);
+
+	TermPtrVec *terms();
+
+	bool match(Grounder *g);
+	bool fact() const;
+
+	void addDomain(Grounder *g, bool fact);
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
+	bool edbFact() const;
+	void normalize(Grounder *g, Expander *e);
+	void visit(PrgVisitor *visitor);
+	void print(Storage *sto, std::ostream &out) const;
+	void accept(Printer *v);
+	Lit *clone() const;
+	~OptimizeSetLit();
+
+private:
+	TermPtrVec terms_;
+};
+
+class Optimize : public SimpleStatement
+{
+public:
+	class Printer : public ::Printer
+	{
+	public:
+		void print(PredLitRep *l) { (void)l; assert(false); }
+		virtual void begin(bool maximize, bool set) = 0;
+		virtual void print(PredLitRep *l, int32_t weight, int32_t prio) = 0;
+		virtual void end() = 0;
+		virtual ~Printer() { }
+	};
+
+public:
+	Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, bool set, bool headLike);
+	Optimize(const Optimize &opt, Lit *head);
+	Optimize(const Optimize &opt, const OptimizeSetLit &setLit);
+	void normalize(Grounder *g);
+	void append(Lit *lit);
+	bool grounded(Grounder *g);
+	void visit(PrgVisitor *visitor);
+	void print(Storage *sto, std::ostream &out) const;
+	~Optimize();
+
+private:
+	OptimizeSetLit setLit_;
+	LitPtrVec      body_;
+	bool           maximize_;
+	bool           set_;
+	bool           headLike_;
+};
+
+/*
 typedef boost::shared_ptr<PredLitSet> PredLitSetPtr;
 
 class Optimize : public SimpleStatement
@@ -71,3 +128,4 @@ private:
 
 Optimize::PrioLit* new_clone(const Optimize::PrioLit& a);
 
+*/

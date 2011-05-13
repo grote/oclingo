@@ -1,2 +1,6 @@
 = Bingo a bottom up grounder =
 	* ToDo
+	* IdeasIclingo
+	* RecursiveAggregates
+	* PlainAggregatePrinter
+	* OptimizeStatements

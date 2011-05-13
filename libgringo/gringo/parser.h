@@ -67,15 +67,11 @@ public:
 	void include(uint32_t filename);
 	void parseError();
 	void parse();
-	int  level() const { return level_; }
-	void nextLevel() { level_ ++; }
-	bool maximize() const { return maximize_; }
-	void maximize(bool maximize) { maximize_ = maximize; }
-	void optimizeSet(bool set) { optimizeSet_ = set; if(set) optimizeUniques_.reset(new PredLitSet()); }
-	void setUniques(Optimize *o) { if(optimizeSet_) o->uniques(optimizeUniques_); }
+	void maximize(bool maximize) { maximize_ = maximize; level_++; }
 	void incremental(iPart part, uint32_t index = 0);
 	void invPart();
 	void add(Statement *s);
+	Optimize *optimize(bool set, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body, bool headLike);
 	Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
 	PredLit *predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign);
@@ -106,8 +102,6 @@ private:
 	// parsing optimize statements
 	int             level_;
 	bool            maximize_;
-	bool            optimizeSet_;
-	PredLitSetPtr   optimizeUniques_;
 	// parsing the incremental part
 	bool            inc_;
 	Module         *invCurrent_;

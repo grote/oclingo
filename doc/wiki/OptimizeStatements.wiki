@@ -1,0 +1,18 @@
+= Optimize Statements =
+
+* remove domain requirement
+* cases:
+	* each optimize statement in the code gets number $optnum 
+	  to determine which conditionals belong together
+	* #optimize { <W,P,...> : C : ..., ... }.
+	* #optimize { p(X) @ Y : C }.
+		* equal to: #optimize { <1,Y,$optnum,#pred,p,X> : p(X) : C }.
+	* #optimize { X == Y @ P : C }.
+		* equal to: #optimize { <1,P,$optnum,#cond,1,vars(X == Y : C)> : p(X) : C }.
+	* #optimize [ p(X) = Z @ Y : C ].
+		* equal to: #optimize { <Z,Y,$optnum,#cond,1,vars(p(X) : C)> : p(X) : C }.
+	* :~ p(W), q(P), ... . <W:P>
+		* W,P are optional
+		* using [W:P] as in dlv would produce an ambiguous grammar
+		* equal to: #maximize [ <W,P,$optnum,vars( p(W) : q(P), ...)> : p(W) : q(P), ... ].
+

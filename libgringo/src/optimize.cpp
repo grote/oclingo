@@ -26,6 +26,242 @@
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
 
+namespace
+{
+	class OptimizeSetExpander : public Expander
+	{
+	public:
+		OptimizeSetExpander(Grounder *g, Optimize &opt);
+		void expand(Lit *lit, Type type);
+	private:
+		Grounder *g_;
+		Optimize &opt_;
+	};
+
+	class OptimizeHeadExpander : public Expander
+	{
+	public:
+		OptimizeHeadExpander(Grounder *g, Optimize &opt);
+		void expand(Lit *lit, Type type);
+	private:
+		Grounder *g_;
+		Optimize &opt_;
+	};
+
+	class OptimizeBodyExpander : public Expander
+	{
+	public:
+		OptimizeBodyExpander(Optimize &min);
+		void expand(Lit *lit, Type type);
+	private:
+		Optimize &opt_;
+	};
+
+}
+
+//////////////////////////////////////// OptimizeSetLit ////////////////////////////////////////
+
+OptimizeSetLit::OptimizeSetLit(const Loc &loc, TermPtrVec &terms)
+	: Lit(loc)
+	, terms_(terms.release())
+{
+}
+
+bool OptimizeSetLit::fact() const
+{
+	return true;
+}
+
+bool OptimizeSetLit::match(Grounder *g)
+{
+	return true;
+}
+
+bool OptimizeSetLit::edbFact() const
+{
+	return false;
+}
+
+void OptimizeSetLit::addDomain(Grounder *, bool)
+{
+	assert(false);
+}
+
+void OptimizeSetLit::accept(Printer *)
+{
+}
+
+Index *OptimizeSetLit::index(Grounder *, Formula *gr, VarSet &)
+{
+	return new MatchIndex(this);
+}
+
+void OptimizeSetLit::normalize(Grounder *g, Expander *e)
+{
+	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
+	{
+		i->normalize(this, Term::VecRef(terms_, i), g, e, false);
+	}
+}
+
+void OptimizeSetLit::visit(PrgVisitor *visitor)
+{
+	foreach(Term &term, terms_) { term.visit(visitor, false); }
+}
+
+void OptimizeSetLit::print(Storage *sto, std::ostream &out) const
+{
+	out << "<";
+	bool comma = false;
+	foreach(const Term &term, terms_)
+	{
+		if(comma) { out << ","; }
+		else      { comma = true; }
+		term.print(sto, out);
+	}
+	out << ">";
+}
+
+Lit *OptimizeSetLit::clone() const
+{
+	return new OptimizeSetLit(*this);
+}
+
+OptimizeSetLit::~OptimizeSetLit()
+{
+}
+
+//////////////////////////////////////// Optimize ////////////////////////////////////////
+
+Optimize::Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, bool set, bool headLike)
+	: SimpleStatement(loc)
+	, setLit_(loc, terms)
+	, body_(body.release())
+	, maximize_(maximize)
+	, set_(set)
+	, headLike_(headLike)
+{
+}
+
+Optimize::Optimize(const Optimize &opt, Lit *head)
+	: SimpleStatement(opt.loc())
+	, setLit_(opt.setLit_)
+	, maximize_(opt.maximize_)
+	, set_(opt.set_)
+	, headLike_(opt.headLike_)
+{
+	assert(!body_.empty());
+	body_.push_back(head);
+	for(LitPtrVec::const_iterator it = opt.body_.begin() + 1; it != opt.body_.end(); it++) { body_.push_back(it->clone()); }
+}
+
+Optimize::Optimize(const Optimize &opt, const OptimizeSetLit &setLit)
+	: SimpleStatement(opt.loc())
+	, setLit_(setLit)
+	, body_(opt.body_)
+	, maximize_(opt.maximize_)
+	, set_(opt.set_)
+	, headLike_(opt.headLike_)
+{
+}
+
+
+void Optimize::normalize(Grounder *g)
+{
+	if(headLike_ && !body_.empty())
+	{
+		OptimizeHeadExpander headExp(g, *this);
+		body_[0].normalize(g, &headExp);
+	}
+	// do set expansion here ...
+	OptimizeBodyExpander bodyExp(*this);
+	for(LitPtrVec::size_type i = headLike_; i < body_.size(); i++) { body_[i].normalize(g, &bodyExp); }
+}
+
+void Optimize::append(Lit *lit)
+{
+	body_.push_back(lit);
+}
+
+bool Optimize::grounded(Grounder *g)
+{
+#pragma message "implement me!!!"
+}
+
+void Optimize::visit(PrgVisitor *visitor)
+{
+#pragma message "implement me!!!"
+}
+
+void Optimize::print(Storage *sto, std::ostream &out) const
+{
+#pragma message "implement me!!!"
+}
+
+Optimize::~Optimize()
+{
+}
+
+//////////////////////////////////////// OptimizeSetExpander ////////////////////////////////////////
+
+OptimizeSetExpander::OptimizeSetExpander(Grounder *g, Optimize &opt)
+	: g_(g)
+	, opt_(opt)
+{ }
+
+void OptimizeSetExpander::expand(Lit *lit, Expander::Type type)
+{
+	switch(type)
+	{
+		case RANGE:
+		case RELATION:
+			opt_.append(lit);
+			break;
+		case POOL:
+			std::auto_ptr<OptimizeSetLit> setLit(static_cast<OptimizeSetLit*>(lit));
+			g_->addInternal(new Optimize(opt_, *setLit));
+			break;
+	}
+}
+
+
+//////////////////////////////////////// OptimizeHeadExpander ////////////////////////////////////////
+
+OptimizeHeadExpander::OptimizeHeadExpander(Grounder *g, Optimize &opt)
+	: g_(g)
+	, opt_(opt)
+{
+}
+
+void OptimizeHeadExpander::expand(Lit *lit, Expander::Type type)
+{
+	switch(type)
+	{
+		case RANGE:
+		case RELATION:
+			opt_.append(lit);
+			break;
+		case POOL:
+			g_->addInternal(new Optimize(opt_, lit));
+			break;
+	}
+}
+
+//////////////////////////////////////// OptimizeBodyExpander ////////////////////////////////////////
+
+OptimizeBodyExpander::OptimizeBodyExpander(Optimize &opt)
+	: opt_(opt)
+{
+}
+
+void OptimizeBodyExpander::expand(Lit *lit, Expander::Type type)
+{
+	(void)type;
+	opt_.append(lit);
+}
+
+/*
+
 #pragma message "implement this in the same manner as condlits"
 class Optimize::PrioLit : public Lit
 {
@@ -235,3 +471,4 @@ Optimize::~Optimize()
 {
 }
 
+*/

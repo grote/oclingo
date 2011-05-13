@@ -432,13 +432,11 @@ termlist(res) ::= term(term).                                { res = vec1(term);
 termlist(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
 termlist(res) ::= termlist(list) DSEM(dsem) termlist(terms). { res = list; list->push_back(new ArgTerm(dsem.loc(), res->pop_back().release(), *terms)); delete terms; }
 
-optimize ::= soptimize LSBRAC prio_list RSBRAC. { pParser->nextLevel(); }
-optimize ::= soptimize_set LCBRAC prio_set RCBRAC. { pParser->nextLevel(); }
+optimize ::= soptimize LSBRAC prio_list RSBRAC.
+optimize ::= soptimize LCBRAC prio_set RCBRAC.
 
-soptimize ::= MINIMIZE. { pParser->maximize(false); pParser->optimizeSet(false); }
-soptimize ::= MAXIMIZE. { pParser->maximize(true); pParser->optimizeSet(false); }
-soptimize_set ::= MINIMIZE. { pParser->maximize(false); pParser->optimizeSet(true); }
-soptimize_set ::= MAXIMIZE. { pParser->maximize(true); pParser->optimizeSet(true); }
+soptimize ::= MINIMIZE. { pParser->maximize(false); }
+soptimize ::= MAXIMIZE. { pParser->maximize(true); }
 
 prio_list ::= .
 prio_list ::= nprio_list.
@@ -452,15 +450,20 @@ prio_set ::= nprio_set.
 nprio_set ::= priolit(lit).                { pParser->add(lit); }
 nprio_set ::= priolit(lit) COMMA prio_set. { pParser->add(lit); }
 
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { res = new Optimize(head->loc(), head, weight, prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { res = new Optimize(head->loc(), head, weight, new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { res = new Optimize(head->loc(), head, weight, prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { res = new Optimize(head->loc(), head, weight, new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-weightedpriolit(res) ::= priolit(lit). { res = lit; }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, prio, body, true); }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, 0, body, true); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, prio, body, true); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, 0, body, true); }
+weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, prio, body, true); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, prio, body, true); }
+weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, 0, body, true); }
 
-priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).  { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio). { res = new Optimize(head->loc(), head, ONE(head->loc()), prio, *body, pParser->maximize()); pParser->setUniques(res); del(body); }
-priolit(res) ::= predlit(head) priolit_cond(body).                { res = new Optimize(head->loc(), head, ONE(head->loc()), new ConstTerm(head->loc(), Val::create(Val::NUM, pParser->level())), *body, pParser->maximize()); pParser->setUniques(res); del(body); }
+priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, prio, body, true); }
+priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, prio, body, true); }
+priolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, 0, body, true); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pParser->optimize(false, lt.loc(), terms, 0, prio, body, true); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pParser->optimize(false, lt.loc(), terms, 0, prio, body, true); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pParser->optimize(false, lt.loc(), terms, 0, 0, body, true); }
 
 npriolit_cond(res) ::= COLON literal(lit).                     { res = vec1(lit); }
 npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; list->push_back(lit); }
