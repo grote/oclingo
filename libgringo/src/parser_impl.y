@@ -450,20 +450,20 @@ prio_set ::= nprio_set.
 nprio_set ::= priolit(lit).                { pParser->add(lit); }
 nprio_set ::= priolit(lit) COMMA prio_set. { pParser->add(lit); }
 
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, prio, body, true); }
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, 0, body, true); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, prio, body, true); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, weight, 0, body, true); }
-weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, prio, body, true); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, prio, body, true); }
-weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(true, head->loc(), 0, 0, 0, body, true); }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
+weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
+weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, 0, body); }
 
-priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, prio, body, true); }
-priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, prio, body, true); }
-priolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(false, head->loc(), 0, 0, 0, body, true); }
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pParser->optimize(false, lt.loc(), terms, 0, prio, body, true); }
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pParser->optimize(false, lt.loc(), terms, 0, prio, body, true); }
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pParser->optimize(false, lt.loc(), terms, 0, 0, body, true); }
+priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, prio, body); }
+priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, prio, body); }
+priolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, 0, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, 0, body); }
 
 npriolit_cond(res) ::= COLON literal(lit).                     { res = vec1(lit); }
 npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; list->push_back(lit); }

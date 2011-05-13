@@ -71,7 +71,7 @@ public:
 	void incremental(iPart part, uint32_t index = 0);
 	void invPart();
 	void add(Statement *s);
-	Optimize *optimize(bool set, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body, bool headLike);
+	Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
 	Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
 	PredLit *predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign);
@@ -102,6 +102,7 @@ private:
 	// parsing optimize statements
 	int             level_;
 	bool            maximize_;
+	Optimize::SharedNumber number_;
 	// parsing the incremental part
 	bool            inc_;
 	Module         *invCurrent_;

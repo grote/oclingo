@@ -53,6 +53,8 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	, parser_(parserAlloc(malloc))
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
+	, level_(0)
+	, number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
 	, invCurrent_(base)
 	, iId_(0)
@@ -588,7 +590,7 @@ PredLit *Parser::predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool si
 	return new PredLit(loc, grounder()->domain(id, terms.size()), terms);
 }
 
-Optimize *Parser::optimize(bool set, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body, bool headLike)
+Optimize *Parser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body)
 {
 	std::auto_ptr<LitPtrVec> pBody(body);
 	std::auto_ptr<TermPtrVec> pTerms(terms);
@@ -608,7 +610,7 @@ Optimize *Parser::optimize(bool set, const Loc &loc, TermPtrVec *terms, Term *we
 	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
 	pTerms->insert(pTerms->begin() + 1, prio);
 	pTerms->insert(pTerms->begin() + 2, optnum);
-	return new Optimize(loc, *pTerms, *pBody, maximize_, set, headLike);
+	return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }
 
 Parser::~Parser()

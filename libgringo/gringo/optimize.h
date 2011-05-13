@@ -27,8 +27,7 @@ class OptimizeSetLit : public Lit, public Matchable
 public:
 	OptimizeSetLit(const Loc &loc, TermPtrVec &terms);
 
-	TermPtrVec *terms();
-
+	TermPtrVec &terms();
 	bool match(Grounder *g);
 	bool fact() const;
 	void grounded(Grounder *g);
@@ -60,9 +59,11 @@ public:
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
+	enum Type { MULTISET, SET, SYMSET, CONSTRAINT };
+	typedef boost::shared_ptr<uint32_t> SharedNumber;
 
 public:
-	Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, bool set, bool headLike);
+	Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, Type type, SharedNumber num);
 	Optimize(const Optimize &opt, Lit *head);
 	Optimize(const Optimize &opt, const OptimizeSetLit &setLit);
 	void normalize(Grounder *g);
@@ -73,9 +74,9 @@ public:
 	~Optimize();
 
 private:
+	SharedNumber   number_;
 	OptimizeSetLit setLit_;
 	LitPtrVec      body_;
 	bool           maximize_;
-	bool           set_;
-	bool           headLike_;
+	Type           type_;
 };

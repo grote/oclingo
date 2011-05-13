@@ -25,6 +25,9 @@
 #include <gringo/litdep.h>
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
+#include <gringo/varterm.h>
+#include <gringo/constterm.h>
+#include <gringo/domain.h>
 
 namespace
 {
@@ -57,6 +60,38 @@ namespace
 		Optimize &opt_;
 	};
 
+	class OptimizeAnonymousRemover : public PrgVisitor
+	{
+	public:
+		OptimizeAnonymousRemover(Grounder *g);
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(Lit *lit, bool domain);
+	public:
+		static void remove(Grounder *g, Optimize &opt);
+	private:
+		Grounder *grounder_;
+		uint32_t  vars_;
+	};
+
+
+	class OptimizeLparseConverter : public PrgVisitor
+	{
+	public:
+		OptimizeLparseConverter(Grounder *g, TermPtrVec &terms);
+		void visit(VarTerm *var, bool bind);
+		void visit(Term* term, bool bind);
+		void visit(PredLit *pred);
+		void visit(Lit *lit, bool domain);
+	public:
+		static void convert(const Loc &loc, Grounder *g, TermPtrVec &terms, LitPtrVec &body, bool setRewrite, Optimize::SharedNumber number);
+	private:
+		Grounder   *grounder_;
+		TermPtrVec &terms_;
+		VarSet      vars_;
+		bool        addVars_;
+		bool        setRewrite_;
+	};
 }
 
 //////////////////////////////////////// OptimizeSetLit ////////////////////////////////////////
@@ -65,6 +100,11 @@ OptimizeSetLit::OptimizeSetLit(const Loc &loc, TermPtrVec &terms)
 	: Lit(loc)
 	, terms_(terms.release())
 {
+}
+
+TermPtrVec &OptimizeSetLit::terms()
+{
+	return terms_;
 }
 
 bool OptimizeSetLit::fact() const
@@ -145,22 +185,22 @@ OptimizeSetLit::~OptimizeSetLit()
 
 //////////////////////////////////////// Optimize ////////////////////////////////////////
 
-Optimize::Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, bool set, bool headLike)
+Optimize::Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, Type type, SharedNumber num)
 	: SimpleStatement(loc)
+	, number_(num)
 	, setLit_(loc, terms)
 	, body_(body.release())
 	, maximize_(maximize)
-	, set_(set)
-	, headLike_(headLike)
+	, type_(type)
 {
 }
 
 Optimize::Optimize(const Optimize &opt, Lit *head)
 	: SimpleStatement(opt.loc())
+	, number_(opt.number_)
 	, setLit_(opt.setLit_)
 	, maximize_(opt.maximize_)
-	, set_(opt.set_)
-	, headLike_(opt.headLike_)
+	, type_(opt.type_)
 {
 	assert(!body_.empty());
 	body_.push_back(head);
@@ -169,18 +209,19 @@ Optimize::Optimize(const Optimize &opt, Lit *head)
 
 Optimize::Optimize(const Optimize &opt, const OptimizeSetLit &setLit)
 	: SimpleStatement(opt.loc())
+	, number_(opt.number_)
 	, setLit_(setLit)
 	, body_(opt.body_)
 	, maximize_(opt.maximize_)
-	, set_(opt.set_)
-	, headLike_(opt.headLike_)
+	, type_(opt.type_)
 {
 }
 
 
 void Optimize::normalize(Grounder *g)
 {
-	if(headLike_ && !body_.empty())
+	bool headLike = type_ != CONSTRAINT;
+	if(headLike && !body_.empty())
 	{
 		OptimizeHeadExpander headExp(g, *this);
 		body_[0].normalize(g, &headExp);
@@ -188,7 +229,13 @@ void Optimize::normalize(Grounder *g)
 	OptimizeSetExpander setExp(g, *this);
 	setLit_.normalize(g, &setExp);
 	OptimizeBodyExpander bodyExp(*this);
-	for(LitPtrVec::size_type i = headLike_; i < body_.size(); i++) { body_[i].normalize(g, &bodyExp); }
+	for(LitPtrVec::size_type i = headLike; i < body_.size(); i++) { body_[i].normalize(g, &bodyExp); }
+
+	if(type_ == SET || type_ ==  MULTISET)
+	{
+		OptimizeAnonymousRemover::remove(g, *this);
+		OptimizeLparseConverter::convert(loc(), g, setLit_.terms(), body_, type_ == SET, number_);
+	}
 }
 
 void Optimize::append(Lit *lit)
@@ -291,4 +338,105 @@ void OptimizeBodyExpander::expand(Lit *lit, Expander::Type type)
 {
 	(void)type;
 	opt_.append(lit);
+}
+
+//////////////////////////////////////// LparseOptimizeConverter ////////////////////////////////////////
+
+OptimizeAnonymousRemover::OptimizeAnonymousRemover(Grounder *g)
+	: grounder_(g)
+	, vars_(0)
+{
+}
+
+void OptimizeAnonymousRemover::visit(VarTerm *var, bool)
+{
+	if(var->anonymous())
+	{
+		std::ostringstream oss;
+		oss << "#opt_anonymous(" << vars_++ << ")";
+		var->nameId(grounder_->index(oss.str()));
+	}
+}
+
+void OptimizeAnonymousRemover::visit(Term* term, bool bind)
+{
+	term->visit(this, bind);
+}
+
+void OptimizeAnonymousRemover::visit(Lit *lit, bool)
+{
+	lit->visit(this);
+}
+
+void OptimizeAnonymousRemover::remove(Grounder *g, Optimize &opt)
+{
+	OptimizeAnonymousRemover ar(g);
+	opt.visit(&ar);
+}
+
+//////////////////////////////////////// OptimizeLparseConverter ////////////////////////////////////////
+
+OptimizeLparseConverter::OptimizeLparseConverter(Grounder *g, TermPtrVec &terms)
+	: grounder_(g)
+	, terms_(terms)
+	, addVars_(false)
+	, setRewrite_(false)
+{ }
+
+void OptimizeLparseConverter::visit(VarTerm *var, bool)
+{
+	vars_.insert(var->nameId());
+}
+
+void OptimizeLparseConverter::visit(Term* term, bool bind)
+{
+	if(addVars_) { term->visit(this, bind); }
+	else         { terms_.push_back(term->clone()); }
+}
+
+void OptimizeLparseConverter::visit(PredLit *pred)
+{
+	if(setRewrite_)
+	{
+		addVars_ = false;
+		std::stringstream ss;
+		ss << "#pred(" << grounder_->string(pred->dom()->nameId()) << "," << pred->dom()->arity() << ")";
+		uint32_t name  = grounder_->index(ss.str());
+		terms_.push_back(new ConstTerm(pred->loc(), Val::create(Val::ID, name)));
+	}
+}
+
+void OptimizeLparseConverter::visit(Lit *lit, bool)
+{
+	addVars_ = true;
+	lit->visit(this);
+}
+
+void OptimizeLparseConverter::convert(const Loc &loc, Grounder *g, TermPtrVec &terms, LitPtrVec &body, bool setRewrite, Optimize::SharedNumber number)
+{
+	OptimizeLparseConverter conv(g, terms);
+	if(setRewrite)
+	{
+		LitPtrVec::iterator it = body.begin();
+		conv.setRewrite_ = true;
+		conv.visit(&*it, false);
+		if(conv.addVars_)
+		{
+			conv.setRewrite_ = false;
+			for(it++; it != body.end(); it++) { conv.visit(&*it, false); }
+		}
+	}
+	else
+	{
+		conv.setRewrite_ = false;
+		foreach(Lit &lit, body) { conv.visit(&lit, false); }
+	}
+	if(conv.addVars_)
+	{
+		std::stringstream ss;
+		ss << "#set(" << (*number)++ << ")";
+		uint32_t name  = g->index(ss.str());
+		terms.push_back(new ConstTerm(loc, Val::create(Val::ID, name)));
+		foreach(uint32_t var, conv.vars_) { terms.push_back(new VarTerm(loc, var)); }
+	}
 }
