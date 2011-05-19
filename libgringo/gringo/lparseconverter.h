@@ -73,13 +73,13 @@ public:
 	void printExternalTable();
 	bool shiftDisjunctions() const { return shiftDisjunctions_; }
 	void addCompute(PredLitRep *l);\
-	void printBasicRule(int head, uint n, ...);
+	void printBasicRule(uint32_t head, uint32_t n, ...);
 	virtual ~LparseConverter();
 public:
-	virtual void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg) = 0;
-	virtual void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg) = 0;
+	virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) = 0;
+	virtual void printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg) = 0;
-	virtual void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg) = 0;
+	virtual void printWeightRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg) = 0;
 	virtual void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg) = 0;
 	virtual void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg) = 0;

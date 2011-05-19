@@ -26,7 +26,7 @@ LparseOutput::LparseOutput(std::ostream *out, bool shiftDisj)
 {
 }
 
-void LparseOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg)
+void LparseOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
 {
 	*out_ << "1 " << head << " " << pos.size() + neg.size() << " " << neg.size();
 	foreach(uint32_t lit, neg) *out_ << " " << lit;
@@ -34,7 +34,7 @@ void LparseOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &n
 	*out_ << "\n";
 }
 
-void LparseOutput::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg)
+void LparseOutput::printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg)
 {
 	*out_ << 2 << " " << head << " " << (pos.size() + neg.size()) << " " << neg.size() << " " << bound;
 	foreach(uint32_t lit, neg) *out_ << " " << lit;
@@ -52,7 +52,7 @@ void LparseOutput::printChoiceRule(const AtomVec &head, const AtomVec &pos, cons
 	*out_ << "\n";
 }
 
-void LparseOutput::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
+void LparseOutput::printWeightRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
 {
 	*out_ << 5 << " " << head << " " << bound << " " << (pos.size() + neg.size()) << " " << neg.size();
 	foreach(uint32_t lit, neg) *out_ << " " << lit;

@@ -229,7 +229,7 @@ void LparseConverter::finalize()
 	newSymbolsDone_.clear();
 }
 
-void LparseConverter::printBasicRule(int head, uint n, ...)
+void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)
 {
 	AtomVec pos, neg;
 	va_list vl;

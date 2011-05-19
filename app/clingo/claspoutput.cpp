@@ -35,7 +35,7 @@ void ClaspOutput::initialize()
 	atomUnnamed_.clear();
 }
 
-void ClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg)
+void ClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
 {
 	b_->startRule();
 	b_->addHead(head);
@@ -44,7 +44,7 @@ void ClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &ne
 	b_->endRule();
 }
 
-void ClaspOutput::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg)
+void ClaspOutput::printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg)
 {
 	b_->startRule(Clasp::CONSTRAINTRULE, bound);
 	b_->addHead(head);
@@ -62,7 +62,7 @@ void ClaspOutput::printChoiceRule(const AtomVec &head, const AtomVec &pos, const
 	b_->endRule();
 }
 
-void ClaspOutput::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
+void ClaspOutput::printWeightRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
 {
 	b_->startRule(Clasp::WEIGHTRULE, bound);
 	b_->addHead(head);

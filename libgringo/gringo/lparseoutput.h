@@ -26,10 +26,10 @@ public:
 	LparseOutput(std::ostream *out, bool shiftDisj);
 	void doFinalize();
 public:
-	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
-	void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
+	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+	void printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
-	void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
+	void printWeightRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 	void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 	void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
