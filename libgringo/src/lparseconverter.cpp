@@ -234,7 +234,7 @@ void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)
 	AtomVec pos, neg;
 	va_list vl;
 	va_start(vl, n);
-	for (uint i = 0; i < n; i++)
+	for (uint32_t i = 0; i < n; i++)
 	{
 		int32_t v = va_arg(vl, int32_t);
 		if(v > 0)      { pos.push_back(v); }
