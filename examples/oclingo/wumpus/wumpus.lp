@@ -93,10 +93,6 @@ carry(gold, t) :- carry(gold, t-1).
 
 won(t) :- carry(gold, t), at(X, Y, t), start(X, Y), not dead(t).
 
-% Actions
-% shoot
-% climb
-
 
 #volatile t.
 
