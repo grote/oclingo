@@ -30,7 +30,7 @@ public:
 	ExternalKnowledge& getExternalKnowledge();
 	void startExtInput();
 	void stopExtInput();
-	void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
+	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void unfreezeAtom(uint32_t symbol);
 	uint32_t getVolAtom();
 	uint32_t getVolAtomAss();

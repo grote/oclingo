@@ -48,7 +48,7 @@ void oClaspOutput::stopExtInput() {
 		ext_input_ = false;
 }
 
-void oClaspOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg) {
+void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
 		if(ext_->checkHead(head)) {
 			ext_->addHead(head);
