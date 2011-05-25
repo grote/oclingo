@@ -21,13 +21,13 @@
 
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
-oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj)
+oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port)
 	: iClaspOutput(shiftDisj)
 	, ext_input_(false)
 	, vol_atom_(0)
 	, vol_atom_frozen_(0)
 {
-	ext_ = new ExternalKnowledge(grounder, this, solver);
+	ext_ = new ExternalKnowledge(grounder, this, solver, port);
 }
 
 oClaspOutput::~oClaspOutput()

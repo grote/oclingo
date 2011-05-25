@@ -105,9 +105,9 @@ def main():
 
 def connectToSocket(s):
 	try:
-		s.connect((opt.host, opt.port))
+		s.connect((opt.host, int(opt.port)))
 	except socket.error:
-		raise EnvironmentError("Could not connect to %s:%d" % (opt.host, opt.port))
+		raise EnvironmentError("Could not connect to %s:%s" % (opt.host, opt.port))
 
 def prepareInput():
 	if len(args) == 1:

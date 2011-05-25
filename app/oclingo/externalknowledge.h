@@ -35,7 +35,7 @@ class oClaspOutput;
 class ExternalKnowledge
 {
 public:
-	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver);
+	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port);
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();

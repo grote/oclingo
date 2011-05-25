@@ -20,13 +20,13 @@
 #include "oclaspoutput.h"
 #include <gringo/grounder.h>
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver)
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port)
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
 	, forget_(0)
 	, socket_(NULL)
-	, port_(25277)
+	, port_(port)
 	, reading_(false)
 	, new_input_(false)
 	, my_post_(true)

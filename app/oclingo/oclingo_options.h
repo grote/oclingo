@@ -29,6 +29,7 @@ struct oClingoConfig : public Clasp::IncrementalControl
 	oClingoConfig()
 		: minSteps(1)
 		, maxSteps(~uint32(0))
+		, port(25277)
 		, iQuery(1)
 		, stopUnsat(false)
 		, keepLearnt(true)
