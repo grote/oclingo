@@ -20,6 +20,7 @@
 #include <gringo/storage.h>
 #include <gringo/func.h>
 #include <gringo/lit.h>
+#include <gringo/litdep.h>
 
 namespace Clingcon
 {
@@ -102,7 +103,7 @@ namespace Clingcon
 		out << ")";
 	}
 
-	ConstraintTerm *ConstraintFuncTerm::clone() const
+        ConstraintFuncTerm *ConstraintFuncTerm::clone() const
 	{
 		// explicit downcast
 		if(clone_.get()) return clone_.release();

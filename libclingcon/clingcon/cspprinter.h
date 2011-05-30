@@ -11,6 +11,7 @@
 #include <clingcon/cspconstraint.h>
 #include <clingcon/cspdomainliteral.h>
 #include <clingcon/cspdomain.h>
+#include <clingcon/constraintvarcond.h>
 
 #include <iostream>
 
@@ -78,10 +79,14 @@ namespace Clingcon
                     printGroundConstraint(a->a_.get());
                     switch (a->op_)
                     {
-                    case GroundConstraint::DIVIDE: output_->out() << "/"; break;
-                    case GroundConstraint::PLUS: output_->out() << "+"; break;
-                    case GroundConstraint::MINUS: output_->out() << "-"; break;
-                    case GroundConstraint::TIMES: output_->out() << "*"; break;
+                        case GroundConstraint::DIVIDE: output_->out() << "/"; break;
+                        case GroundConstraint::PLUS: output_->out() << "+"; break;
+                        case GroundConstraint::MINUS: output_->out() << "-"; break;
+                        case GroundConstraint::TIMES: output_->out() << "*"; break;
+                        case GroundConstraint::VARIABLE:
+                        case GroundConstraint::INTEGER:
+                        case GroundConstraint::ABS:
+                        default: assert(false);
                     }
                     printGroundConstraint(a->b_.get());
                     output_->out() << ")";
@@ -286,5 +291,8 @@ namespace Clingcon
             //ConstraintVec constraints_;
 
         };
+
+
+
 }
 

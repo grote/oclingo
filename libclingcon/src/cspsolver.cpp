@@ -19,25 +19,11 @@
 //
 
 #include <clingcon/cspsolver.h>
+#include <gringo/litdep.h>
 
 namespace Clingcon {
 
-class ASPmCSPException : public std::exception
-{
-public:
-        ASPmCSPException(const std::string &message) : message_(message)
-        {
-        }
-        const char* what() const throw()
-        {
-                return message_.c_str();
-        }
-        virtual ~ASPmCSPException() throw()
-        {
-        }
-private:
-        const std::string message_;
-};
+
 
 unsigned int CSPSolver::getVariable(const std::string& v)
 {
@@ -59,6 +45,11 @@ const std::vector<std::string>&  CSPSolver::getVariables()
 void CSPSolver::addConstraint(Constraint c, int uid)
 {
         constraints_[uid] = new Clingcon::Constraint(c);
+}
+
+void CSPSolver::addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec)
+{
+    globalConstraints_ = gcvec.release();
 }
 
 void CSPSolver::addDomain(const std::string& var, int lower, int upper)
@@ -128,6 +119,9 @@ void CSPSolver::setClingconPropagator(Clingcon::ClingconPropagator* cp)
 	assert(cp);
 	clingconPropagator_ = cp;
 }
+
+CSPSolver::~CSPSolver(){}
+
 
 
 }

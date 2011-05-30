@@ -37,14 +37,13 @@ namespace Clingcon
 	}
 
 	//
-	bool CSPLit::match(Grounder *g)
+        bool CSPLit::match(Grounder *)
 	{
 		return true;
 	}
 
-        Index* CSPLit::index(Grounder *g, Formula *gr, VarSet &bound)
+        Index* CSPLit::index(Grounder *, Formula *, VarSet &)
 	{
-		(void)g;
                 return new MatchIndex(this);
 	}
 
@@ -96,7 +95,7 @@ namespace Clingcon
 
 	void CSPLit::revert()
 	{
-            t_ = switchRel(t_);
+            t_ = revert(t_);
         }
 
 	CSPLit::~CSPLit()

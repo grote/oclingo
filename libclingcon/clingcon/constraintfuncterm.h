@@ -36,7 +36,7 @@ namespace Clingcon
 		void visit(PrgVisitor *visitor, bool bind);
 		bool constant() const;
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintTerm *clone() const;
+                ConstraintFuncTerm *clone() const;
 		FuncTerm* toTerm() const
 		{
 			TermPtrVec vec;
@@ -54,6 +54,11 @@ namespace Clingcon
 	private:
 		uint32_t                name_;
 		ConstraintTermPtrVec              args_;
-		mutable clone_ptr<ConstraintTerm> clone_;
+                mutable clone_ptr<ConstraintFuncTerm> clone_;
 	};
+
+        inline ConstraintFuncTerm* new_clone(const ConstraintFuncTerm& a)
+        {
+                return a.clone();
+        }
 }

@@ -17,12 +17,16 @@
 
 #include <clingcon/constraintconstterm.h>
 #include <gringo/grounder.h>
+#include <gringo/litdep.h>
+
 namespace Clingcon
 {
 	ConstraintConstTerm::ConstraintConstTerm(const Loc &loc, const Val &v) :
 		ConstraintTerm(loc), val_(v)
 	{
 	}
+
+        ConstraintConstTerm::~ConstraintConstTerm(){}
 
 	Val ConstraintConstTerm::val(Grounder *grounder) const
 	{

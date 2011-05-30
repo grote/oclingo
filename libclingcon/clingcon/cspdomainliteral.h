@@ -67,7 +67,7 @@ namespace Clingcon
             vupper_ = upper_->val(grounder);
         }
 
-        virtual Index *index(Grounder *g, Formula *gr, VarSet &bound)
+        virtual Index *index(Grounder *, Formula *, VarSet &)
         {
            return new MatchIndex(this);
         }
@@ -88,7 +88,7 @@ namespace Clingcon
                 printer->begin(vlower_, vupper_);
         }
 
-        virtual bool match(Grounder *grounder)
+        virtual bool match(Grounder *)
         {
             return true;
         }
@@ -98,9 +98,7 @@ namespace Clingcon
                 return new CSPDomainLiteral(*this);
         }
 
-        virtual ~CSPDomainLiteral()
-        {
-        }
+        virtual ~CSPDomainLiteral();
 
     private:
         clone_ptr<Term> t_;

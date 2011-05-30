@@ -1,6 +1,7 @@
 
 #include <clingcon/groundconstraint.h>
 #include <clingcon/cspsolver.h>
+#include <gringo/litdep.h>
 
 namespace Clingcon
 {

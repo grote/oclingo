@@ -18,6 +18,7 @@
 #include <clingcon/constraintpoolterm.h>
 #include <gringo/prgvisitor.h>
 #include <gringo/lit.h>
+#include <gringo/litdep.h>
 
 namespace Clingcon
 {
@@ -68,7 +69,7 @@ namespace Clingcon
 		}
 	}
 
-	ConstraintTerm *ConstraintPoolTerm::clone() const
+        ConstraintPoolTerm *ConstraintPoolTerm::clone() const
 	{
 		if(clone_) { return new ConstraintPoolTerm(*this); }
 		else       { return new ConstraintPoolTerm(loc(), a_.release()); }

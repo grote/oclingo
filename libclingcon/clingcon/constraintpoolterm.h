@@ -36,7 +36,7 @@ namespace Clingcon
 		void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution&) const { assert(false); return 0; }
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintTerm *clone() const;
+                ConstraintPoolTerm *clone() const;
 		PoolTerm* toTerm() const
 		{
 			return new PoolTerm(loc(), a_->toTerm(), b_->toTerm());
@@ -57,4 +57,9 @@ namespace Clingcon
 		clone_ptr<ConstraintTerm>         b_;
 		bool                    clone_;
 	};
+
+        inline ConstraintPoolTerm* new_clone(const ConstraintPoolTerm& a)
+        {
+                return a.clone();
+        }
 }

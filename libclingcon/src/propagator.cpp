@@ -2,6 +2,7 @@
 #include <clingcon/cspsolver.h>
 #include <clingcon/propagator.h>
 #include <clasp/constraint.h>
+#include <gringo/litdep.h>
 
 
 namespace Clingcon {
@@ -14,10 +15,10 @@ namespace Clingcon {
 		ClingconPropagator::~ClingconPropagator() {
                     delete cspSolver_;
 		}
-		bool ClingconPropagator::propagate(Clasp::Solver& s) {
+                bool ClingconPropagator::propagate(Clasp::Solver& ) {
 			return cspSolver_->propagate();
 		}
-		Clasp::Constraint::PropResult ClingconPropagator::propagate(const Clasp::Literal& l, uint32& date, Clasp::Solver& s)
+                Clasp::Constraint::PropResult ClingconPropagator::propagate(const Clasp::Literal& l, uint32& date, Clasp::Solver& )
 		{
 			assert(cspSolver_);
 			cspSolver_->propagateLiteral(l,date);

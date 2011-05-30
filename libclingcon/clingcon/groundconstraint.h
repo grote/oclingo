@@ -77,7 +77,7 @@ namespace Clingcon {
                         name_ = ss.str();
                     }
                 }
-                GroundConstraint(Storage* s, Operator op, GroundConstraint* a, GroundConstraint* b) : op_(op), a_(a), b_(b)
+                GroundConstraint(Storage* , Operator op, GroundConstraint* a, GroundConstraint* b) : op_(op), a_(a), b_(b)
 		{}
 
                 Operator getOperator() const
@@ -95,6 +95,9 @@ namespace Clingcon {
                     case TIMES:
                     case DIVIDE:
                         return true;
+                    case VARIABLE:
+                    case INTEGER:
+                        return false;
                     }
                     return false;
                 }
@@ -134,7 +137,10 @@ namespace Clingcon {
                             return 1;
 
                     }
+                    default: assert(false);
                     }
+                    assert(false);
+                    return 0;
                 }
 
                 void getAllVariables(std::vector<unsigned int>& vec, CSPSolver* csps) const;
@@ -176,6 +182,10 @@ namespace Clingcon {
                                 ret += "+"; break;
                             case DIVIDE:
                                 ret += "+"; break;
+                            case VARIABLE:
+                            case INTEGER:
+                            case ABS:
+                            default: assert(false);
                         }
                         ret += b_->getString()+")";
                         return ret;
@@ -194,6 +204,29 @@ namespace Clingcon {
         int value_;
         std::string name_;
 	};
+
+        class IndexedGroundConstraint : public GroundConstraint
+        {
+        public:
+            IndexedGroundConstraint(Storage* s, const Val& a, const Val& weight) : GroundConstraint(s,a)
+            {
+                std::stringstream ss;
+                weight.print(s,ss);
+                weightname_ = ss.str();
+            }
+
+           // IndexedGroundConstraint(Storage* s, Operator op, GroundConstraint* a, GroundConstraint* b, const) : GroundConstraint(s, op, a, b)
+
+            std::string getWeight(){return weightname_;}
+
+        private:
+
+            std::string weightname_;
+
+        };
+
+        typedef boost::ptr_vector<GroundConstraint> GroundConstraintVec;
+        typedef boost::ptr_vector<IndexedGroundConstraint> IndexedGroundConstraintVec;
 /*
 		public:
 			enum Type

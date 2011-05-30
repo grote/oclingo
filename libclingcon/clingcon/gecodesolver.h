@@ -44,7 +44,8 @@ namespace Clingcon {
                         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                                      std::string ICLString, std::string BranchVar, std::string BranchVal);
                         std::string num2name( unsigned int);
-			virtual ~GecodeSolver();
+
+                        virtual ~GecodeSolver();
 			/*
 			 * adds a constraint with the uid of the atom representing the constraint
 			 *
@@ -78,8 +79,8 @@ namespace Clingcon {
 
 		protected:
 
-			Clasp::LitVec generateReason(const Clasp::LitVec& lits, const std::vector<unsigned int>& variables, unsigned int upToAssPos);
-			Clasp::LitVec generateConflict(const Clasp::LitVec& lits, unsigned int upToAssPos);
+                        void generateReason(Clasp::LitVec& lits, const std::vector<unsigned int>& variables, unsigned int upToAssPos);
+                        void generateConflict(Clasp::LitVec& lits, unsigned int upToAssPos);
 			bool propagateNewLiteralsToClasp(const Clasp::LitVec& newLits);
 			/*
 			 * sets a conflict if no answer was found with this assignment
@@ -117,6 +118,7 @@ namespace Clingcon {
 			//everything for enumerating answers
 			Search::Options searchOptions_;
 			DFS<GecodeSolver::SearchSpace>* searchEngine_; // depth first search
+
 
 			bool lazyLearn_; // true for lazy(dummy) learning
 			bool useCDG_;    // true when using CDG for reason minimisation
@@ -164,6 +166,7 @@ namespace Clingcon {
 
 					//TODo, find a better way for litToVar, static, or smart
                                         SearchSpace(CSPSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
+                                                    LParseGlobalConstraintPrinter::GCvec& gcvec,
                                                 std::map<unsigned int, unsigned int>* litToVar);
                                         SearchSpace(bool share, SearchSpace& sp);
 					virtual SearchSpace* copy(bool share);
@@ -179,6 +182,7 @@ namespace Clingcon {
 				private:
                                         void generateConstraint(CSPSolver* csps, Constraint* c, unsigned int boolvar);
                                         void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);
+                                        void generateGlobalConstraint(CSPSolver* csps, LParseGlobalConstraintPrinter::GC& gc);
                                         //IntVar generateVariable(Constraint c);
 
 				IntVarArray x_;

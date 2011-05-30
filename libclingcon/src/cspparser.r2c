@@ -33,6 +33,7 @@
 #include <gringo/exceptions.h>
 #include <gringo/display.h>
 #include "cspparser_impl.h"
+#include <gringo/litdep.h>
 
 void *cspparserAlloc(void *(*mallocProc)(size_t));
 void cspparserFree(void *p, void (*freeProc)(void*));
@@ -58,6 +59,8 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
 	, cspparser_(cspparserAlloc(malloc))
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
+        , level_(0)
+        , number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
 	, invCurrent_(base)
 	, iId_(0)
@@ -75,7 +78,6 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
 	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
 	STRING     = "\"" ([^\\"\n]|"\\\""|"\\\\"|"\\n")* "\"";
-	CSPDOMAIN  = "$domain";
 */
 
 int CSPParser::lex()
@@ -162,10 +164,12 @@ start:
 		"$=="            { return CSPPARSER_CEQUAL; }                                                                     
 		"$!="            { return CSPPARSER_CINEQUAL; }                                                                     
 		"$>"             { return CSPPARSER_CGREATER; }                                                                     
-		"$<"             { return CSPPARSER_CLTHAN; }                                                                     
+                "$<"             { return CSPPARSER_CLOWER; }
 		"$>="            { return CSPPARSER_CGTHAN; }                                                                     
                 "$<="            { return CSPPARSER_CLTHAN; }
                 "$domain"        { return CSPPARSER_CSPDOMAIN; }
+                "$distinct"      { return CSPPARSER_CSPDISTINCT; }
+                "$binpack"       { return CSPPARSER_CSPBINPACK; }
 		ANY              { syntaxError(); goto start; }
 	*/
 lua:
@@ -594,6 +598,30 @@ void CSPParser::add()
 		}
 	}
 }
+
+Optimize *CSPParser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body)
+{
+       std::auto_ptr<LitPtrVec> pBody(body);
+       std::auto_ptr<TermPtrVec> pTerms(terms);
+       if(!pTerms.get())
+       {
+               pTerms.reset(new TermPtrVec());
+               if(!weight)
+               {
+                       assert(!body->empty());
+                       weight = new ConstTerm(loc, Val::create(Val::NUM, 1));
+               }
+               pTerms->push_back(weight);
+       }
+       else { assert(weight == 0); }
+       assert(!pTerms->empty());
+       if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
+       std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
+       pTerms->insert(pTerms->begin() + 1, prio);
+       pTerms->insert(pTerms->begin() + 2, optnum);
+       return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
+}
+
 
 PredLit *CSPParser::predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign)
 {

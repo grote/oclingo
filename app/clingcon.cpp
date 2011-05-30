@@ -17,6 +17,7 @@
 
 #include "clingcon/clingcon_app.h"
 #include <gringo/output.h>
+#include <gringo/litdep.h>
 
 int main(int argc, char **argv)
 {
@@ -31,4 +32,9 @@ namespace Clingcon
     GRINGO_EXPORT_PRINTER(LParseCSPDomainPrinter)
     GRINGO_EXPORT_PRINTER(PlainCSPDomainPrinter)
 
+    //GRINGO_EXPORT_PRINTER(PlainConstraintVarLitPrinter)
+    //GRINGO_EXPORT_PRINTER(PlainConstraintVarCondPrinter)
+    //GRINGO_EXPORT_PRINTER(PlainConstraintHeadLitPrinter)
+    GRINGO_EXPORT_PRINTER(PlainGlobalConstraintPrinter)
+    GRINGO_EXPORT_PRINTER(LParseGlobalConstraintPrinter)
 }

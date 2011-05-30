@@ -30,7 +30,7 @@ namespace Clingcon
 
 	ConstraintVarTerm::ConstraintVarTerm(const Loc &loc, uint32_t nameId)
 		: ConstraintTerm(loc)
-		, var_(loc)
+                , var_(loc,nameId)
 	{
 	}
 
@@ -49,7 +49,7 @@ namespace Clingcon
 		return var_.unify(grounder,v,binder);
 	}
 
-	ConstraintAbsTerm::Ref* ConstraintVarTerm::abstract(ConstraintSubstitution& subst) const
+        ConstraintAbsTerm::Ref* ConstraintVarTerm::abstract(ConstraintSubstitution& ) const
 	{
 		return 0;
 		//return var_.abstract(subst);

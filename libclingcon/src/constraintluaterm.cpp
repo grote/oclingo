@@ -21,6 +21,7 @@
 #include <gringo/lualit.h>
 #include <gringo/varterm.h>
 #include <clingcon/constraintvarterm.h>
+#include <gringo/litdep.h>
 
 namespace Clingcon
 {
@@ -47,7 +48,7 @@ namespace Clingcon
 		ref.reset(new ConstraintVarTerm(loc(), var));
 	}
 
-	ConstraintAbsTerm::Ref* ConstraintLuaTerm::abstract(ConstraintSubstitution& subst) const
+        ConstraintAbsTerm::Ref* ConstraintLuaTerm::abstract(ConstraintSubstitution&) const
 	{
 		return 0;
 		//return subst.anyVar();
@@ -67,7 +68,7 @@ namespace Clingcon
 		out << ")";
 	}
 
-	ConstraintTerm *ConstraintLuaTerm::clone() const
+        ConstraintLuaTerm *ConstraintLuaTerm::clone() const
 	{
 		return new ConstraintLuaTerm(*this);
 	}

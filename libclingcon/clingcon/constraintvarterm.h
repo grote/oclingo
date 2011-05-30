@@ -34,7 +34,7 @@ namespace Clingcon
 		uint32_t nameId() const { return var_.nameId(); }
 		uint32_t index() const { return var_.index(); }
 		uint32_t level() const { return var_.level(); }
-		void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { /*var_.normalize(parent,ref,grounder,expander);*/}
+                void normalize(Lit *, const Ref &, Grounder *, Expander *, bool ) { /*var_.normalize(parent,ref,grounder,expander);*/}
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
                 void index(uint32_t index, uint32_t level) { var_.index(index,level); }
 		Val val(Grounder *grounder) const;
@@ -49,7 +49,7 @@ namespace Clingcon
 		}
 		virtual void visitVarTerm(PrgVisitor* v)
 		{
-			v->visit(&var_, false);
+                        v->visit(&var_, false);
 		}
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
 		ConstraintTerm *clone() const;

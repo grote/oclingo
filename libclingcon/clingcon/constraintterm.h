@@ -191,7 +191,7 @@ namespace Clingcon
                 virtual GroundConstraint* toGroundConstraint(Grounder* ) = 0;
 		
 		virtual ConstraintTerm *clone() const = 0;
-		virtual ~ConstraintTerm() { }
+                virtual ~ConstraintTerm();
 	};
 
 	inline ConstraintTerm* new_clone(const ConstraintTerm& a)

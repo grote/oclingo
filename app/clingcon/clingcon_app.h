@@ -456,6 +456,17 @@ void ClingconApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	}
 	else if (e == ClaspFacade::event_state_exit)
 	{
+            if(f.state() == ClaspFacade::state_preprocess)
+            {
+                cspsolver_->setSolver(&solver_);
+                cp_ = new Clingcon::ClingconPropagator(cspsolver_);
+                solver_.addPost(cp_);
+                //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
+                //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
+                //initialize cspsolver
+                cspsolver_->initialize();
+            }
+
 		timer_[f.state()].stop();
 		if (generic.verbose > 1)
 		{
@@ -468,6 +479,9 @@ void ClingconApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 				STATUS(2, cout << "Preprocessing: " << fixed << setprecision(3) << timer_[f.state()].elapsed() << endl);
 			}
 		}
+
+
+
 		if (f.state() == ClaspFacade::state_solve)
 		{
 			stats_.accu(solver_.stats.solve);
@@ -525,13 +539,7 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 		}
                 else
                 {
-                    cspsolver_->setSolver(&solver_);
-                    cp_ = new Clingcon::ClingconPropagator(cspsolver_);
-                    solver_.addPost(cp_);
-                    //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
-                    //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
-                    //initialize cspsolver
-                    cspsolver_->initialize();
+
                     //in_.release();
                     out_->initSolve(solver_, f.api(), f.config()->solve.enumerator());
                 }

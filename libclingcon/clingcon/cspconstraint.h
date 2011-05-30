@@ -40,7 +40,7 @@ class GroundConstraint;
                         Constraint();
                         Constraint(CSPLit::Type type, const GroundConstraint* a, const GroundConstraint* b);
                         Constraint(Constraint& cc);
-                        Constraint operator=(Constraint& cc);
+                        //Constraint operator=(Constraint& cc);
                         ~Constraint();
 
                         unsigned int getLinearSize() const;
@@ -53,9 +53,10 @@ class GroundConstraint;
 
 		private:
 
+                        CSPLit::Type type_;
                         std::auto_ptr<const GroundConstraint> a_;
                         std::auto_ptr<const GroundConstraint> b_;
-                        CSPLit::Type type_;
+
 
 	};
     typedef std::vector<std::pair<unsigned int, Constraint*> > ConstraintVec;

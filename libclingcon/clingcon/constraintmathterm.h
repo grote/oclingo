@@ -37,7 +37,7 @@ namespace Clingcon
 		void visit(PrgVisitor *visitor, bool bind);
 		bool constant() const;
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintTerm *clone() const;
+                ConstraintMathTerm *clone() const;
 		MathTerm* toTerm() const
 		{
 			return new MathTerm(loc(), f_, a_->toTerm(), b_->toTerm());
@@ -54,4 +54,9 @@ namespace Clingcon
 		clone_ptr<ConstraintTerm> a_;
 		clone_ptr<ConstraintTerm> b_;
 	};
+
+        inline ConstraintMathTerm* new_clone(const ConstraintMathTerm& a)
+        {
+                return a.clone();
+        }
 }

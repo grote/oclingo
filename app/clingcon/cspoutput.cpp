@@ -19,10 +19,12 @@
 #include <clasp/program_builder.h>
 #include <gringo/storage.h>
 #include <gringo/domain.h>
+#include <gringo/lparseconverter.h>
 #include <clingcon/cspprinter.h>
 #include <clingcon/cspconstraint.h>
 #include <clingcon/cspprinter.h>
-#include <gringo/lparseconverter.h>
+#include <clingcon/cspglobalprinter.h>
+#include <gringo/litdep.h>
 
 CSPOutput::CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
         : Clingcon::CSPOutputInterface(0, shiftDisj)
@@ -40,7 +42,7 @@ void CSPOutput::initialize()
 	atomUnnamed_.clear();
 }
 
-void CSPOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg)
+void CSPOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
 {
 	b_->startRule();
 	b_->addHead(head);
@@ -49,7 +51,7 @@ void CSPOutput::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg)
 	b_->endRule();
 }
 
-void CSPOutput::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg)
+void CSPOutput::printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg)
 {
 	b_->startRule(Clasp::CONSTRAINTRULE, bound);
 	b_->addHead(head);
@@ -67,7 +69,7 @@ void CSPOutput::printChoiceRule(const AtomVec &head, const AtomVec &pos, const A
 	b_->endRule();
 }
 
-void CSPOutput::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
+void CSPOutput::printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg)
 {
 	b_->startRule(Clasp::WEIGHTRULE, bound);
 	b_->addHead(head);
@@ -142,7 +144,7 @@ uint32_t CSPOutput::symbol()
 	return atom;
 }
 
-uint32_t CSPOutput::symbol(const std::string& name, bool freeze)
+uint32_t CSPOutput::symbol(const std::string& name, bool)
 {
     uint32_t atom = b_->newAtom();
     b_->setAtomName(atom, name.c_str());
@@ -178,6 +180,12 @@ void CSPOutput::doFinalize()
         const Clingcon::LParseCSPDomainPrinter::Domain& r = static_cast<Clingcon::LParseCSPDomainPrinter*>(storage()->output()->printer<Clingcon::CSPDomainLiteral::Printer>())->getDefaultDomain();
         for (Clingcon::LParseCSPDomainPrinter::Domain::const_iterator i = r.begin(); i != r.end(); ++i)
             cspsolver_->addDomain(i->lower, i->upper);
+
+        Clingcon::LParseGlobalConstraintPrinter::GCvec& t = static_cast<Clingcon::LParseGlobalConstraintPrinter*>(storage()->output()->printer<Clingcon::GlobalConstraint::Printer>())->getGlobalConstraints();
+        cspsolver_->addGlobalConstraints(t);
+        //for (Clingcon::LParseGlobalConstraintPrinter::GCvec::const_iterator i = t.begin(); i != t.end(); ++i)
+        //    cspsolver_->addGlobalConstraint(i->release());
+
 }
 
 const LparseConverter::SymbolMap &CSPOutput::symbolMap(uint32_t domId) const
@@ -212,4 +220,9 @@ void iCSPOutput::initialize()
 int iCSPOutput::getIncAtom()
 {
 	return incUid_;
+}
+
+
+iCSPOutput::~iCSPOutput()
+{
 }

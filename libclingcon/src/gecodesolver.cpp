@@ -30,6 +30,7 @@
 #include <exception>
 #include <sstream>
 #include <clingcon/cspconstraint.h>
+#include <gringo/litdep.h>
 
 //#define DEBUGTEXT
 
@@ -124,13 +125,17 @@ GecodeSolver::~GecodeSolver()
 }
 
 
+
+
+
+
 const Clasp::LitVec& GecodeSolver::getAssignment() const
 {
 	return assignment_;
 }
 
 
-void GecodeSolver::propagateLiteral(const Clasp::Literal& l, int date)
+void GecodeSolver::propagateLiteral(const Clasp::Literal& l, int)
 {
 	propQueue_.push_back(l);
 }
@@ -164,6 +169,13 @@ bool GecodeSolver::initialize()
 	}
 	constraints_ = newConstraints;
 
+        std::vector<unsigned int> vars;
+        for (LParseGlobalConstraintPrinter::GCvec::iterator i = globalConstraints_.begin(); i != globalConstraints_.end(); ++i)
+            for (boost::ptr_vector<GroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
+                for (GroundConstraintVec::iterator k = j->begin(); k != j->end(); ++k)
+                    k->getAllVariables(vars,this);
+
+
         //adding the default domains to the specialized domains
         combineWithDefaultDomain();
         //setting a default domain for all variables without domain
@@ -189,8 +201,12 @@ bool GecodeSolver::initialize()
                 std::cout << "adding variable " << num2name(i->first) << std::endl;
 #endif
 		s_->addWatch(posLit(i->first), clingconPropagator_,0);	
-		s_->addWatch(negLit(i->first), clingconPropagator_,0);	
+                s_->addWatch(negLit(i->first), clingconPropagator_,0);
+
+
 	}
+
+
 
 	// mark used variables, to not enumerate unconstrained variables, this can be removed in the future if
 	// the gringo part is fixed
@@ -267,14 +283,29 @@ bool GecodeSolver::initialize()
         */
 #endif
 
+        std::map<unsigned int, unsigned int>* litToVar = new std::map<unsigned int, unsigned int>();
 	// propagate empty constraint set, maybe some trivial constraints can be fullfilled
-        currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, new std::map<unsigned int, unsigned int>());
+        currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_, litToVar);
+        for(std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+        {
+            if (s_->value(i->first) != value_free)
+            {
+                if (s_->value(i->first) == value_true)
+                {
+                    assignment_.push_back(posLit(i->first));
+                }
+                else
+                {
+                    assignment_.push_back(negLit(i->first));
+                }
+
+            }
+        }
         constraints_.clear();
         if(currentSpace_->status() != SS_FAILED)
 	{
                 Clasp::LitVec lv(currentSpace_->getAssignment(Clasp::LitVec()));
-		propagateNewLiteralsToClasp(lv);
-		return true;
+                return propagateNewLiteralsToClasp(lv);
 	}
 	else
 		return false;
@@ -371,6 +402,8 @@ void GecodeSolver::finalConflict()
 				maxDL = std::max(s_->level(j->var()), maxDL);
 			if (maxDL < s_->decisionLevel())
 				s_->undoUntil(maxDL);
+                        if (conflict.size()==0) // if root level conflict due to global constraints
+                            conflict.push_back(posLit(0));
 			s_->setConflict(conflict);
 			//TODO: resolveConflict ? never experienced that case, totally untested
 }
@@ -510,7 +543,8 @@ bool GecodeSolver::propagate()
 			std::cout << "conflict detected: " << std::endl;
 #endif
 			// generate conflict with all literals newly propagated from clasp
-                        Clasp::LitVec conflict(generateConflict(clits, assignment_.size()));
+                        generateConflict(clits, assignment_.size());
+                        Clasp::LitVec conflict(clits);
 #ifdef DEBUGTEXT
 			std::cout << "Conflict: " << std::endl;
                         for (Clasp::LitVec::const_iterator j = conflict.begin(); j != conflict.end(); ++j)
@@ -607,7 +641,7 @@ void GecodeSolver::undoUntil(unsigned int level)
 	return;
 }
 
-Clasp::LitVec GecodeSolver::generateReason(const Clasp::LitVec& lits, const std::vector<unsigned int>& variables, unsigned int upToAssPos)
+void GecodeSolver::generateReason(Clasp::LitVec& lits, const std::vector<unsigned int>& /*variables*/, unsigned int upToAssPos)
 {
 	// add only atoms from solver assignment
 	// go only over atoms that are assigned in the gecode assignment
@@ -708,16 +742,17 @@ Clasp::LitVec GecodeSolver::generateReason(const Clasp::LitVec& lits, const std:
         else*/
 	{
    // works faster
-        Clasp::LitVec temp(lits);
+        //Clasp::LitVec temp(lits);
 //	temp.push_back(i);
-	temp.insert(temp.end(), assignment_.begin(), assignment_.begin() + upToAssPos);
-	return temp;
+        //temp.insert(temp.end(), assignment_.begin(), assignment_.begin() + upToAssPos);
+        lits.insert(lits.end(), assignment_.begin(), assignment_.begin() + upToAssPos);
+        //return temp;
 
 	}
 
 }
 
-Clasp::LitVec GecodeSolver::generateConflict(const Clasp::LitVec& lits, unsigned int upToAssPos)
+void GecodeSolver::generateConflict(Clasp::LitVec& lits, unsigned int upToAssPos)
 {
 	// very naive appraoch, all assigned constraints so far
 	//return currentSpace_->getAssignment(assignment_);
@@ -728,7 +763,7 @@ Clasp::LitVec GecodeSolver::generateConflict(const Clasp::LitVec& lits, unsigned
 //	Clasp::LitVec ret(assignment_);
 //	ret.push_back(i);
 //	return ret;
-	return generateReason(lits, std::vector<unsigned int >(), upToAssPos);
+        generateReason(lits, std::vector<unsigned int >(), upToAssPos);
 }
 
 
@@ -830,12 +865,12 @@ bool GecodeSolver::propagateNewLiteralsToClasp(const Clasp::LitVec& newLits)
 			{
 				variables.push_back(u->var());
 			}
-                        Clasp::LitVec temp;
-			temp.push_back(*i);
+                        Clasp::LitVec reason;
+                        reason.push_back(*i);
 #ifdef DEBUGTEXT
                         std::cout << "GenerateReason for " << num2name(i->var()) << std::endl;
 #endif
-                        Clasp::LitVec reason = generateReason(temp, variables, size);
+                        generateReason(reason, variables, size);
 #ifdef DEBUGTEXT
                         for (Clasp::LitVec::const_iterator j = reason.begin(); j != reason.end(); ++j)
                                 std::cout << num2name(j->var()) << std::endl;
@@ -1004,12 +1039,12 @@ Clasp::ConstraintType GecodeSolver::CSPDummy::reason(const Literal& l, Clasp::Li
 	{
 		variables.push_back(i->var());
 	}
-        Clasp::LitVec temp;
-	temp.push_back(l);
-	reason = gecode_->generateReason(temp, variables, gecode_->litToAssPosition_[l.var()]);
+        //Clasp::LitVec temp;
+        //temp.push_back(l);
+        gecode_->generateReason(reason, variables, gecode_->litToAssPosition_[l.var()]);
 	//remove first literal from reason
-	reason[0] = reason.back();
-	reason.pop_back();
+        //reason[0] = reason.back();
+        //reason.pop_back();
 #ifdef DEBUGTEXT
         for (Clasp::LitVec::const_iterator j = reason.begin(); j != reason.end(); ++j)
 	{
@@ -1022,6 +1057,7 @@ Clasp::ConstraintType GecodeSolver::CSPDummy::reason(const Literal& l, Clasp::Li
 
 
 GecodeSolver::SearchSpace::SearchSpace(CSPSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
+                                        LParseGlobalConstraintPrinter::GCvec& gcvec,
                                         std::map<unsigned int, unsigned int>* litToVar) : Space(),
 					//x_(this, numVar, Gecode::Int::Limits::min,  Gecode::Int::Limits::max),
                                         //x_(*this, numVar, domMin,  domMax),
@@ -1039,12 +1075,12 @@ GecodeSolver::SearchSpace::SearchSpace(CSPSolver* csps, unsigned int numVar, std
         if (csps->hasDomain(*i))
         {
             IntSet is(reinterpret_cast<const int (*)[2]>(&csps->getDomain(*i)[0]), csps->getDomain(*i).size()/2);
-            x_[var].init(*this, is);
+            x_[var] = IntVar(*this, is);
         }
         else
         {
             IntSet is(reinterpret_cast<const int (*)[2]>(&csps->getDomain()[0]), csps->getDomain().size()/2);
-            x_[var].init(*this, is);
+            x_[var] = IntVar(*this, is);
         }
     }
 
@@ -1053,14 +1089,32 @@ GecodeSolver::SearchSpace::SearchSpace(CSPSolver* csps, unsigned int numVar, std
     {
         (*litToVar_)[i->first] = counter;
         generateConstraint(csps,i->second, counter++);
+
+        if (csps->getSolver()->value(i->first) != value_free)
+        {
+            Int::BoolView bv(b_[(*litToVar_)[i->first]]);
+            if (csps->getSolver()->value(i->first) == value_true)
+                //das geht net so ohne weiteres, kann fehlschlagen
+                bv.one(*this);
+            else
+                bv.zero(*this);
+        }
+
+
     }
     //        branch(this, x_, branchVar, branchVal);
+
+    for (LParseGlobalConstraintPrinter::GCvec::iterator i = gcvec.begin(); i != gcvec.end(); ++i)
+    {
+        generateGlobalConstraint(csps, *i);
+    }
+
 
     //	// set branching
     IntVarArgs iva(x_.size());
 
 
-    for (unsigned int i = 0; i < x_.size(); ++i)
+    for (int i = 0; i < x_.size(); ++i)
     {
         iva[i] = x_[i];
 
@@ -1082,7 +1136,7 @@ GecodeSolver::SearchSpace* GecodeSolver::SearchSpace::copy(bool share)
 }
 
 
-void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec& lv, Solver* s)
+void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec& lv, Solver* )
 {
         for (Clasp::LitVec::const_iterator i = lv.begin(); i != lv.end(); ++i)
 	{
@@ -1202,6 +1256,9 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
     case CSPLit::GREATER:
         ir = IRT_GR;
         break;
+    case CSPLit::ASSIGN:
+    default:
+        assert(false);
     }
 
     // transform into linear relation Y*3+Z*Y >= X+3  ==>> Y*3 + Z*Y - X -3 >= 0
@@ -1293,7 +1350,8 @@ void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const 
                 {
                     if (!b->isOperator())
                     {
-                        IntVar erg = mult(*this, x_[csps->getVariable(b->getString())],x_[csps->getVariable(a->getString())], ICL);
+                        IntVar erg(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+                        mult(*this, x_[csps->getVariable(b->getString())],x_[csps->getVariable(a->getString())], erg, ICL);
                         array[0] = erg;
                         args[0] = 1;
                         return;
@@ -1312,7 +1370,7 @@ void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const 
                         subArray[subArray.size() - 1] = z;
                         subArgs[subArgs.size() - 1] = -1;
                         Gecode::linear(*this, subArgs, subArray, IRT_EQ, 0, ICL);
-                        array[0] = mult(*this, z,x_[csps->getVariable(b->getString())]);
+                        mult(*this, z,x_[csps->getVariable(b->getString())],array[0], ICL);
                         args[0] = 1;
                         return;
                     }
@@ -1335,7 +1393,7 @@ void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const 
                         subArgs2[subArgs2.size() - 1] = -1;
                         Gecode::linear(*this, subArgs2, subArray2, IRT_EQ, 0, ICL);
 
-                        array[0] = mult(*this, z1,z2, ICL);
+                        mult(*this, z1,z2, array[0], ICL);
                         args[0] = 1;
                         return;
 
@@ -1455,7 +1513,7 @@ void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const 
                     {
                         z = x_[csps->getVariable(a->getString())];
                     }
-                array[0] = abs(*this,z, ICL);
+                Gecode::abs(*this, z,array[0],ICL);
                 args[0] = 1;
             }
             else
@@ -1513,6 +1571,74 @@ void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const 
                     return;
 		}
 }
+
+void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParseGlobalConstraintPrinter::GC& gc)
+{
+
+    if (gc.type_==DISTINCT)
+    {
+        IntVarArray z(*this, gc.heads_[0].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+            IntVarArgs array(gc.heads_[0][i].getLinearSize());
+            IntArgs args(gc.heads_[0][i].getLinearSize());
+            //TODO: special case for variables, do not need to create linear constraint
+            generateLinearConstraint(csps, &gc.heads_[0][i], args, array, 0);
+
+            Gecode::linear(*this, args, array, IRT_EQ, z[i], ICL);
+        }
+
+        Gecode::distinct(*this,z,ICL);
+        return;
+
+    }
+    if (gc.type_==BINPACK)
+    {
+        IntVarArray l(*this, gc.heads_[0].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+            IntVarArgs array(gc.heads_[0][i].getLinearSize());
+            IntArgs args(gc.heads_[0][i].getLinearSize());
+            //TODO: special case for variables, do not need to create linear constraint
+            generateLinearConstraint(csps, &gc.heads_[0][i], args, array, 0);
+
+            Gecode::linear(*this, args, array, IRT_EQ, l[i], ICL);
+        }
+
+        IntVarArray b(*this, gc.heads_[1].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        for (size_t i = 0; i < gc.heads_[1].size(); ++i)
+        {
+            IntVarArgs array(gc.heads_[1][i].getLinearSize());
+            IntArgs args(gc.heads_[1][i].getLinearSize());
+            //TODO: special case for variables, do not need to create linear constraint
+            generateLinearConstraint(csps, &gc.heads_[1][i], args, array, 0);
+
+            Gecode::linear(*this, args, array, IRT_EQ, b[i], ICL);
+        }
+
+        IntArgs  s(gc.heads_[2].size());
+        for (size_t i = 0; i < gc.heads_[2].size(); ++i)
+        {
+            //IntVarArgs array(gc.heads_[2][i].getLinearSize());
+           // IntArgs args(gc.heads_[2][i].getLinearSize());
+            //TODO: special case for variables, do not need to create linear constraint
+            //generateLinearConstraint(csps, &gc.heads_[2][i], args, array, 0);
+
+            if (!gc.heads_[2][i].isInteger())
+                throw ASPmCSPException("Third argument of binpacking constraint must be a list of integers.");
+            //Gecode::linear(*this, args, array, IRT_EQ, s[i], ICL);
+            s[i] = gc.heads_[2][i].getInteger();
+        }
+
+        Gecode::binpacking(*this,l,b,s,ICL);
+        return;
+
+    }
+    assert(false);
+
+}
+
 /*
 IntVar GecodeSolver::SearchSpace::generateVariable(Constraint c)
 {

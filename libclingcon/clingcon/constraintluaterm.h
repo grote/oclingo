@@ -30,7 +30,7 @@ namespace Clingcon
 		void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintTerm *clone() const;
+                ConstraintLuaTerm *clone() const;
 		uint32_t name() const;
 		Val val(Grounder *grounder) const;
 		bool constant() const;
@@ -63,4 +63,9 @@ namespace Clingcon
 	inline bool ConstraintLuaTerm::unify(Grounder *, const Val &, int) const { assert(false); return false; }
 	inline void ConstraintLuaTerm::vars(VarSet &) const                      { assert(false); }
 	inline void ConstraintLuaTerm::visit(PrgVisitor *, bool)                 { assert(false); }
+
+        inline ConstraintLuaTerm* new_clone(const ConstraintLuaTerm& a)
+        {
+                return a.clone();
+        }
 }

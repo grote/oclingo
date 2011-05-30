@@ -21,6 +21,7 @@
 #include <gringo/rangelit.h>
 #include <gringo/grounder.h>
 #include <clingcon/constraintvarterm.h>
+#include <gringo/litdep.h>
 namespace Clingcon
 {
 	ConstraintRangeTerm::ConstraintRangeTerm(const Loc &loc, ConstraintTerm *a, ConstraintTerm *b)
@@ -44,9 +45,9 @@ namespace Clingcon
 		b_->normalize(parent, PtrRef(b_), g, expander, false);
 		uint32_t var = g->createVar();
 		expander->expand(new RangeLit(loc(), new VarTerm(a_->loc(), var), a_.get()->toTerm(), b_.get()->toTerm()), Expander::RANGE);
-		#pragma message "Check with Roland"
-		a_.reset(0);
-		b_.reset(0);
+                //#pragma message "Check with Roland"
+                a_.reset(0);
+                b_.reset(0);
 		ref.reset(new ConstraintVarTerm(loc(), var));
 	}
 
@@ -55,7 +56,7 @@ namespace Clingcon
 		return subst.anyVar();
 	}
 
-	ConstraintTerm *ConstraintRangeTerm::clone() const
+        ConstraintRangeTerm *ConstraintRangeTerm::clone() const
 	{
 		return new ConstraintRangeTerm(*this);
 	}

@@ -22,7 +22,7 @@
 
 #include <clingcon/cspconstraint.h>
 #include <clasp/literal.h>
-
+#include <clingcon/cspglobalprinter.h>
 
 #include <vector>
 namespace Clasp {
@@ -31,6 +31,23 @@ namespace Clasp {
 }
 
 namespace Clingcon {
+
+class ASPmCSPException : public std::exception
+{
+public:
+        ASPmCSPException(const std::string &message) : message_(message)
+        {
+        }
+        const char* what() const throw()
+        {
+                return message_.c_str();
+        }
+        virtual ~ASPmCSPException() throw()
+        {
+        }
+private:
+        const std::string message_;
+};
 	class ClingconPropagator;
 
 	class CSPSolver
@@ -38,13 +55,14 @@ namespace Clingcon {
                 public:
                         typedef std::vector<int> RangeVec;
                         typedef std::map<std::string,  RangeVec> Domains;
-			virtual ~CSPSolver(){};
+                        virtual ~CSPSolver();
 			/*
 			 * adds a constraint with the uid of the atom representing the constraint
 			 *
 			 **/
                         virtual void addDomain(int lower, int upper);
                         virtual void addConstraint(Constraint c, int uid);
+                        virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
                         virtual void addDomain(const std::string& var, int lower, int upper);
                         virtual unsigned int getVariable(const std::string& s);
                         virtual void combineWithDefaultDomain();
@@ -83,6 +101,7 @@ namespace Clingcon {
 			ClingconPropagator* clingconPropagator_;
 
                         std::map<int, Constraint*> constraints_;
+                        LParseGlobalConstraintPrinter::GCvec globalConstraints_;
 
                         Domains domains_;
                         RangeVec domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)

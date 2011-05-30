@@ -41,13 +41,13 @@ namespace Clingcon {
 	}
 
 
-        Constraint Constraint::operator=(Constraint& cc)
+       /* Constraint Constraint::operator=(Constraint& cc)
 	{
             type_ = cc.type_;
             a_ = cc.a_;
             b_ = cc.b_;
 	}
-
+*/
 
  //       Constraint::Constraint(const Constraint& cc) :
  //                                                              a_(cc.a_ ? new GroundConstraint(*cc.a_) : 0),

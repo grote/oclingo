@@ -82,7 +82,19 @@ public:
 template<class T>
 inline T *Output::printer()
 {
-	assert(Printer::printer<T>() < printers_.size() && !printers_.is_null(Printer::printer<T>()) && "no printer registered!");
+        //std::cout << typeid(T).name() << std::endl;
+        //std::cout << "Printers size: " << printers_.size() << std::endl;
+        //std::cout << "Printer number: " << Printer::printer<T>() << std::endl;
+        //std::cout << "Printer number: " << Printer::printer<T>() << std::endl;
+        //for (size_t i = 0; i < printers_.size(); ++i)
+        //{
+         //   if (!printers_.is_null(i))
+         //       std::cout << &(printers_[i]) << " "<< typeid(printers_[i]).name() << " ";
+        //}
+        //std::cout << "fertsch" << std::endl;
+
+        assert(Printer::printer<T>() < printers_.size() && !printers_.is_null(Printer::printer<T>()) && "no printer registered!");
+
 	return static_cast<T *>(&printers_[Printer::printer<T>()]);
 }
 
@@ -114,12 +126,16 @@ inline void Output::initPrinters()
 template<class P, class B, class O>
 inline bool Output::regPrinter()
 {
-	Output::printerFactory<O>().init.push_back(std::make_pair(Printer::printer<B>(), &Printer::create<P, O>));
-	return true;
+    //std::cout << "Register Printer: " << typeid(P).name() << ", B: " << typeid(B).name() << ", O: " <<  typeid(O).name() << std::endl;
+    Output::printerFactory<O>().init.push_back(std::make_pair(Printer::printer<B>(), &Printer::create<P, O>));
+
+    return true;
 }
 
 #define GRINGO_REGISTER_PRINTER(P,B,O) \
-template<> bool Output::expPrinter<P>() { return Output::regPrinter<P, B, O>(); }
+template<> bool Output::expPrinter<P>() { \
+return Output::regPrinter<P, B, O>();\
+}
 
 #define GRINGO_EXPORT_PRINTER(P) \
 static bool gringo_exported_ ## P = Output::expPrinter<class P>();

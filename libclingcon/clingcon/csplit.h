@@ -54,6 +54,23 @@ namespace Clingcon
                 {
                     switch(t)
                     {
+                            case CSPLit::GREATER: return CSPLit::LOWER;
+                            case CSPLit::LOWER:   return CSPLit::GREATER;
+                            case CSPLit::EQUAL:   return CSPLit::INEQUAL;
+                            case CSPLit::GTHAN:   return CSPLit::LTHAN;
+                            case CSPLit::LTHAN:   return CSPLit::GTHAN;
+                            case CSPLit::INEQUAL: return CSPLit::EQUAL;
+                            default: assert("Illegal comparison operator in Constraint"!=0);
+                    }
+                    assert(false); // should never reach this
+                    return CSPLit::ASSIGN;
+
+                }
+
+                static Type revert(Type t)
+                {
+                    switch(t)
+                    {
                             case CSPLit::GREATER: return CSPLit::LTHAN;
                             case CSPLit::LOWER:   return CSPLit::GTHAN;
                             case CSPLit::EQUAL:   return CSPLit::INEQUAL;
@@ -62,6 +79,8 @@ namespace Clingcon
                             case CSPLit::INEQUAL: return CSPLit::EQUAL;
                             default: assert("Illegal comparison operator in Constraint"!=0);
                     }
+                    assert(false); // should never reach this
+                    return CSPLit::ASSIGN;
 
                 }
 

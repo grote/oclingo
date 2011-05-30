@@ -60,6 +60,10 @@
 #include "clingcon/wrapperargterm.h"
 #include "clingcon/csplit.h"
 #include "clingcon/cspdomain.h"
+#include "clingcon/constraintvarcond.h"
+#include "clingcon/globalconstraint.h"
+#include "clingcon/clingcon.h"
+#include <gringo/litdep.h>
 
 
 #define GRD pCSPParser->grounder()
@@ -214,10 +218,22 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor aggr_atom   { del($$); }
 
 
-%type cspalldomain           { Clingcon::CSPDomainLiteral* }
-%destructor cspalldomain    { del($$); }
-%type cspdomain           { Clingcon::CSPDomainLiteral* }
-%destructor cspdomain    { del($$); }
+%type cspdomain                { Clingcon::CSPDomainLiteral* }
+%destructor cspdomain          { del($$); }
+%type globalconstrainthead         { boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >* }
+%destructor globalconstrainthead   { del($$); }
+%type constraintvarcondlist        { Clingcon::ConstraintVarCondPtrVec* }
+%destructor constraintvarcondlist  { del($$); }
+%type nconstraintvarcondlist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor nconstraintvarcondlist { del($$); }
+%type constraintvarcond            { Clingcon::ConstraintVarCond* }
+%destructor constraintvarcond      { del($$); }
+%type sconstraintvarcondlist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor sconstraintvarcondlist { del($$); }
+%type nsconstraintvarcondlist      { Clingcon::ConstraintVarCondPtrVec* }
+%destructor nsconstraintvarcondlist{ del($$); }
+%type sconstraintvarcond           { Clingcon::ConstraintVarCond* }
+%destructor sconstraintvarcond     { del($$); }
 
 %left SEM.
 %left DOTS.
@@ -257,14 +273,35 @@ line ::= optimize.
 line ::= compute.
 line ::= meta inv_part.
 
-
-line ::= cspalldomain(dom) IF body(body).                                              {pCSPParser->add(new CSPDomain(dom->loc(),dom,*body)); delete body;}
-line ::= cspalldomain(dom).                                                            {pCSPParser->add(new CSPDomain(dom->loc(),dom));}
-cspalldomain(res) ::= CSPDOMAIN(tok) LBRAC term(a) DOTS term(b) RBRAC.                 {res= new CSPDomainLiteral(tok.loc(), 0, a->toTerm(), b->toTerm()); delete a; delete b;}
-
 line ::= cspdomain(dom) IF body(body).                                                 {pCSPParser->add(new CSPDomain(dom->loc(), dom, *body)); delete body;}
 line ::= cspdomain(dom).                                                               {pCSPParser->add(new CSPDomain(dom->loc(), dom)); }
+cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(a) DOTS term(b) RBRAC.                    {res= new CSPDomainLiteral(tok.loc(), 0, a->toTerm(), b->toTerm()); delete a; delete b;}
 cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(term) COMMA term(a) DOTS term(b) RBRAC.   {res= new CSPDomainLiteral(tok.loc(), term->toTerm(), a->toTerm(), b->toTerm()); delete term; delete a; delete b;}
+
+line ::= globalconstrainthead(gc) IF body(body). {pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstrainthead(gc).               {LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(),  boost::tuples::get<1>(*gc),  *boost::tuples::get<2>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
+globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC sconstraintvarcondlist(list) RCBRAC.      { res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::DISTINCT,vec1(list)); }
+globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC constraintvarcondlist(list1) RSBRAC LSBRAC constraintvarcondlist(list2) RSBRAC LSBRAC constraintvarcondlist(list3) RSBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);list->push_back(list2);
+                    list->push_back(list3);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::BINPACK,list);
+                    }
+
+nsconstraintvarcondlist(res) ::= sconstraintvarcond(var).                                     { res = vec1(var); }
+nsconstraintvarcondlist(res) ::= nsconstraintvarcondlist(list) COMMA sconstraintvarcond(var). { res = list; res->push_back(var); }
+sconstraintvarcondlist(res)  ::= .                                                            { res = new ConstraintVarCondPtrVec(); }
+sconstraintvarcondlist(res)  ::= nsconstraintvarcondlist(list).                               { res = list; }
+
+sconstraintvarcond(res) ::= term(t) weightcond(cond).   { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
+
+nconstraintvarcondlist(res) ::= constraintvarcond(var).                                    { res = vec1(var); }
+nconstraintvarcondlist(res) ::= nconstraintvarcondlist(list) COMMA constraintvarcond(var). { res = list; res->push_back(var); }
+constraintvarcondlist(res)  ::= .                                                          { res = new ConstraintVarCondPtrVec(); }
+constraintvarcondlist(res)  ::= nconstraintvarcondlist(list).                              { res = list; }
+
+constraintvarcond(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).   { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+
+
 
 meta ::= HIDE      inv_part.                                  { OTP->show(false); }
 meta ::= SHOW      inv_part.                                  { OTP->show(true); }
@@ -425,7 +462,7 @@ symweightlit(res) ::= lit(lit) weightcond(cond).                                
 
 setweightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_DLV); delete cond; delete terms; }
 
-symcondlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_LPARSE); delete cond; }
+symcondlit(res) ::= lit(lit) weightcond(cond).                                       { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_LPARSE); delete cond; }
 
 condlit(res) ::= symcondlit(lit). { res = lit; }
 condlit(res) ::= LOWER setterm(terms) GREATER COLON lit(lit) weightcond(cond). { terms->insert(terms->begin(), ONE(lit->loc())); cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_DLV); delete cond; delete terms; }
@@ -510,13 +547,11 @@ termlist(res) ::= term(term).                                { res = vec1(term);
 termlist(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
 termlist(res) ::= termlist(list) DSEM(dsem) termlist(terms). { res = list; list->push_back(new WrapperArgTerm(dsem.loc(), res->pop_back().release(), *terms)); delete terms; }
 
-optimize ::= soptimize LSBRAC prio_list RSBRAC. { pCSPParser->nextLevel(); }
-optimize ::= soptimize_set LCBRAC prio_set RCBRAC. { pCSPParser->nextLevel(); }
+optimize ::= soptimize LSBRAC prio_list RSBRAC.
+optimize ::= soptimize LCBRAC prio_set RCBRAC.
 
-soptimize ::= MINIMIZE. { pCSPParser->maximize(false); pCSPParser->optimizeSet(false); }
-soptimize ::= MAXIMIZE. { pCSPParser->maximize(true); pCSPParser->optimizeSet(false); }
-soptimize_set ::= MINIMIZE. { pCSPParser->maximize(false); pCSPParser->optimizeSet(true); }
-soptimize_set ::= MAXIMIZE. { pCSPParser->maximize(true); pCSPParser->optimizeSet(true); }
+soptimize ::= MINIMIZE. { pCSPParser->maximize(false); }
+soptimize ::= MAXIMIZE. { pCSPParser->maximize(true); }
 
 prio_list ::= .
 prio_list ::= nprio_list.
@@ -530,15 +565,22 @@ prio_set ::= nprio_set.
 nprio_set ::= priolit(lit).                { pCSPParser->add(lit); }
 nprio_set ::= priolit(lit) COMMA prio_set. { pCSPParser->add(lit); }
 
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { res = new Optimize(head->loc(), head, weight->toTerm(), prio->toTerm(), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); delete weight; delete prio;}
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { res = new Optimize(head->loc(), head, weight->toTerm(), new ConstTerm(head->loc(), Val::create(Val::NUM, pCSPParser->level())), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); delete weight;}
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { res = new Optimize(head->loc(), head, weight->toTerm(), prio->toTerm(), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); delete weight; delete prio;}
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { res = new Optimize(head->loc(), head, weight->toTerm(), new ConstTerm(head->loc(), Val::create(Val::NUM, pCSPParser->level())), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); }
-weightedpriolit(res) ::= priolit(lit). { res = lit; }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight->toTerm(), prio->toTerm(), body); delete weight; delete prio;}
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight->toTerm(), 0, body); delete weight;}
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight->toTerm(), prio->toTerm(), body); delete weight; delete prio;}
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight->toTerm(), 0, body); delete weight;}
+weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio->toTerm(), body); delete prio;}
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio->toTerm(), body); delete prio;}
+weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, 0, body); }
 
-priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).  { res = new Optimize(head->loc(), head, ONE(head->loc()), prio->toTerm(), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); delete prio;}
-priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio). { res = new Optimize(head->loc(), head, ONE(head->loc()), prio->toTerm(), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); delete prio;}
-priolit(res) ::= predlit(head) priolit_cond(body).                { res = new Optimize(head->loc(), head, ONE(head->loc()), new ConstTerm(head->loc(), Val::create(Val::NUM, pCSPParser->level())), *body, pCSPParser->maximize()); pCSPParser->setUniques(res); del(body); }
+
+priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET, head->loc(), 0, 0, prio->toTerm(), body); delete prio;}
+priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio). { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET, head->loc(), 0, 0, prio->toTerm(), body); delete prio;}
+priolit(res) ::= predlit(head) priolit_cond(body).                { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET, head->loc(), 0, 0, 0, body);}
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio->toTerm(), body); delete prio;}
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio->toTerm(), body); delete prio;}
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, 0, body); }
+
 
 npriolit_cond(res) ::= COLON literal(lit).                     { res = vec1(lit); }
 npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; list->push_back(lit); }

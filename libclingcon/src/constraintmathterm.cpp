@@ -25,6 +25,7 @@
 #include <gringo/rellit.h>
 #include <gringo/prgvisitor.h>
 #include <gringo/exceptions.h>
+#include <gringo/litdep.h>
 
 namespace
 {
@@ -101,7 +102,6 @@ namespace Clingcon
 
 	void ConstraintMathTerm::visit(PrgVisitor *visitor, bool bind)
 	{
-		#pragma message "Check with Roland"
 		a_->visit(visitor,bind);
 		b_->visit(visitor,bind);
 		//(void)bind;
@@ -139,7 +139,7 @@ namespace Clingcon
 		}
 	}
 
-	void ConstraintMathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+        void ConstraintMathTerm::normalize(Lit *, const Ref &, Grounder *, Expander *, bool )
 	{
 //		if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
 //		if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
@@ -160,7 +160,7 @@ namespace Clingcon
 		return subst.anyVar();
 	}
 
-	ConstraintTerm *ConstraintMathTerm::clone() const
+        ConstraintMathTerm *ConstraintMathTerm::clone() const
 	{
 		return new ConstraintMathTerm(*this);
 	}

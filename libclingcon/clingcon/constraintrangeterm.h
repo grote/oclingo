@@ -35,7 +35,7 @@ namespace Clingcon
 		void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintTerm *clone() const;
+                ConstraintRangeTerm *clone() const;
 		RangeTerm* toTerm() const
 		{
 			return new RangeTerm(loc(), a_->toTerm(), b_->toTerm());
@@ -53,5 +53,10 @@ namespace Clingcon
 		clone_ptr<ConstraintTerm> a_;
 		clone_ptr<ConstraintTerm> b_;
 	};
+
+        inline ConstraintRangeTerm* new_clone(const ConstraintRangeTerm& a)
+        {
+                return a.clone();
+        }
 }
 

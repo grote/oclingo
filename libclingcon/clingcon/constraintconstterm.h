@@ -27,6 +27,7 @@ namespace Clingcon
 	{
 	public:
 		ConstraintConstTerm(const Loc &loc, const Val &v);
+                ~ConstraintConstTerm();
 		Val val(Grounder *grounder) const;
 		void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
@@ -43,4 +44,6 @@ namespace Clingcon
 	private:
 		Val val_;
 	};
+
+        inline ConstraintConstTerm* new_clone(const ConstraintConstTerm& a);
 }
