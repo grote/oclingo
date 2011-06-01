@@ -287,7 +287,7 @@ void OptimizePrinter::print(const ValVec &set)
 			out() << ">";
 			first_ = false;
 		}
-		output()->setLineCallback(boost::bind(&PlainOutput::addOptimize, output(), set, maximize_, type_ == Optimize::MULTISET, _1));
+		output()->setLineCallback(boost::bind(&PlainOutput::addOptimize, output(), set[2], maximize_, type_ == Optimize::MULTISET, _1));
 	}
 }
 

@@ -61,6 +61,8 @@ private:
 
 class PlainOutput : public Output
 {
+	typedef boost::tuples::tuple<bool, bool, std::string> OptimizeStr;
+	typedef std::map<Val, OptimizeStr, boost::function2<bool, const Val &, const Val &> > OptimizeMap;
 public:
 	PlainOutput(std::ostream &out);
 
@@ -81,7 +83,7 @@ public:
 	void doShow(bool s);
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void addCompute(PredLitRep *l);
-	void addOptimize(const ValVec &set, bool maximize, bool multi, const std::string &s);
+	void addOptimize(const Val &optnum, bool maximize, bool multi, const std::string &s);
 	~PlainOutput();
 private:
 	bool              head_;
@@ -89,6 +91,7 @@ private:
 	bool              printedBody_;
 	DelayedOutput     out_;
 	std::stringstream compute_;
+	OptimizeMap       optimize_;
 
 };
 

@@ -140,6 +140,7 @@ std::ostream &DelayedOutput::output() { return out_; }
 
 PlainOutput::PlainOutput(std::ostream &out)
 	: out_(out)
+	, optimize_(boost::bind(static_cast<int (Val::*)(const Val&, Storage *) const>(&Val::compare), _1, _2, boost::ref(s_)) < 0)
 {
 	initPrinters<PlainOutput>();
 }
@@ -209,9 +210,11 @@ void PlainOutput::endStatement()
 	out_.endLine();
 }
 
-void PlainOutput::addOptimize(const ValVec &set, bool maximize, bool multi, const std::string &s)
+void PlainOutput::addOptimize(const Val &optnum, bool maximize, bool multi, const std::string &s)
 {
-	std::cerr << "do something with: " << s << std::endl;
+	std::string &str = optimize_.insert(OptimizeMap::value_type(optnum, OptimizeStr(maximize, multi, ""))).first->second.get<2>();
+	if(!str.empty()) { str+= ","; }
+	str+= s;
 }
 
 void PlainOutput::print(PredLitRep *l, std::ostream &out)
@@ -234,6 +237,15 @@ void PlainOutput::print(PredLitRep *l, std::ostream &out)
 void PlainOutput::finalize()
 {
 	Output::finalize();
+	foreach(OptimizeMap::value_type &ref, optimize_)
+	{
+		out_.output()
+			<< (ref.second.get<0>() ? "#maximize" : "#minimize")
+			<< (ref.second.get<1>() ? "[" : "{")
+			<< ref.second.get<2>()
+			<< (ref.second.get<1>() ? "]" : "}")
+			<< ".\n";
+	}
 	foreach(const Signature &sig, external_)
 	{
 		DomainMap::const_iterator i = s_->domains().find(sig);

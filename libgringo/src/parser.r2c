@@ -342,7 +342,7 @@ void Parser::parse(std::istream &in)
 
 void Parser::parse()
 {
-	level_ = 1;
+	level_ = 0;
 	do
 	{
 		parse(streams_.currentStream());

@@ -100,7 +100,7 @@ private:
 	ErrorVec        errors_;
 	StatementPtrVec last_;
 	// parsing optimize statements
-	int             level_;
+	int32_t         level_;
 	bool            maximize_;
 	Optimize::SharedNumber number_;
 	// parsing the incremental part
