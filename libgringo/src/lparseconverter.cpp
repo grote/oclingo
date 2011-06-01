@@ -61,9 +61,8 @@ bool LparseConverter::ValCmp::operator()(uint32_t a, uint32_t b) const
 	return std::equal(vals->begin() + a, vals->begin() + a + size, vals->begin() + b);
 }
 
-LparseConverter::LparseConverter(std::ostream *out, bool shiftDisj)
-	: Output(out)
-	, shiftDisjunctions_(shiftDisj)
+LparseConverter::LparseConverter(bool shiftDisj)
+	: shiftDisjunctions_(shiftDisj)
 {
 	initPrinters<LparseConverter>();
 }

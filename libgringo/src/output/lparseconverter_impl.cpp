@@ -37,7 +37,6 @@ public:
 	DisplayPrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
 	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter *output_;
 };
@@ -48,7 +47,6 @@ public:
 	ExternalPrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
 	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter *output_;
 };
@@ -61,7 +59,6 @@ public:
 	void print(PredLitRep *l, int32_t weight, int32_t prio);
 	void end() { }
 	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter *output_;
 	bool maximize_;
@@ -73,7 +70,6 @@ public:
 	ComputePrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
 	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter *output_;
 };

@@ -54,7 +54,7 @@ public:
 	void print(PredLitRep *l);
 	void end();
 	LparseConverter *output() const;
-	std::ostream &out() const;
+	//std::ostream &out() const;
 private:
 	LparseConverter *output_;
 	Cond            *current_;
@@ -174,7 +174,7 @@ struct MaxAggrLitPrinter : MinMaxAggrLitPrinter<MinMaxAggrLit::MAXIMUM>
 inline AggrCondPrinter::AggrCondPrinter(LparseConverter *output) : output_(output) { }
 inline void AggrCondPrinter::trueLit() { }
 inline LparseConverter *AggrCondPrinter::output() const { return output_; }
-inline std::ostream &AggrCondPrinter::out() const { return output_->out(); }
+//inline std::ostream &AggrCondPrinter::out() const { return output_->out(); }
 inline void AggrCondPrinter::end() { }
 
 //////////////////////////////// AggrBoundCheck ////////////////////////////////

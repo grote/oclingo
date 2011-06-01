@@ -20,34 +20,72 @@
 #include <gringo/gringo.h>
 #include <gringo/output.h>
 
+class DelayedOutput
+{
+public:
+	typedef boost::function2<void, std::ostream &, const std::string &> LineCallback;
+	typedef std::pair<uint32_t, uint32_t>                               Offset;
+
+private:
+	struct Line
+	{
+		Line();
+		void clear();
+
+		StringVec    slices;
+		LineCallback cb;
+		uint32_t     finished;
+	};
+
+	typedef std::vector<Offset>             OffsetVec;
+	typedef std::vector<Line>               LineVec;
+	typedef std::vector<Offset::first_type> FreeVec;
+
+public:
+	DelayedOutput(std::ostream &out);
+	Offset beginDelay();
+	void contDelay(const Offset &idx);
+	void endDelay(const Offset &idx);
+	void setLineCallback(const LineCallback &cb);
+	void endLine();
+	std::ostream &buffer();
+	std::ostream &output();
+
+private:
+	Offset::first_type curLine_;
+	std::ostream      &out_;
+	std::stringstream  buf_;
+	LineVec            lines_;
+	FreeVec            free_;
+};
+
 class PlainOutput : public Output
 {
 public:
-	PlainOutput(std::ostream *out);
+	PlainOutput(std::ostream &out);
+
 	std::ostream &out();
+	DelayedOutput::Offset beginDelay();
+	void contDelay(const DelayedOutput::Offset &idx);
+	void endDelay(const DelayedOutput::Offset &idx);
+
 	void beginRule();
 	void endHead();
 	void print();
 	void endRule();
 	void endStatement();
-	uint32_t delay();
-	void startDelayed(uint32_t offset);
-	void endDelayed(uint32_t offset);
-	void printDelayed(uint32_t offset);
+
 	void print(PredLitRep *l, std::ostream &out);
 	void finalize();
 	void doShow(bool s);
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void addCompute(PredLitRep *l);
-	void endComponent();
 	~PlainOutput();
 private:
 	bool              head_;
 	bool              printedHead_;
 	bool              printedBody_;
-	bool              delays_;
-	StringVec         delayed_;
-	std::stringstream buffer_;
+	DelayedOutput     out_;
 	std::stringstream compute_;
 
 };

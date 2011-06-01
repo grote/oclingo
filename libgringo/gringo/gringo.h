@@ -26,6 +26,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_unordered_map.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/ptr_container/ptr_list.hpp>
 #include <boost/unordered/unordered_set.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/functional/hash.hpp>

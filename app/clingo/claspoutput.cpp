@@ -21,7 +21,7 @@
 #include <gringo/domain.h>
 
 ClaspOutput::ClaspOutput(bool shiftDisj)
-	: LparseConverter(0, shiftDisj)
+	: LparseConverter(shiftDisj)
 	, b_(0)
 	, lastUnnamed_(0)
 {

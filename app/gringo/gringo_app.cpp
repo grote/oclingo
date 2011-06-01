@@ -37,11 +37,11 @@ namespace
 Output *GringoApp::output() const
 {
 	if (gringo.metaOut)
-		return new ReifiedOutput(&std::cout);
+		return new ReifiedOutput(std::cout);
 	else if (gringo.textOut)
-		return new PlainOutput(&std::cout);
+		return new PlainOutput(std::cout);
 	else
-		return new LparseOutput(&std::cout, gringo.disjShift);
+		return new LparseOutput(std::cout, gringo.disjShift);
 }
 
 GringoApp& GringoApp::instance()

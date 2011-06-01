@@ -36,13 +36,12 @@ private:
 	typedef std::set<Signature> ExternalSet;
 	typedef boost::ptr_vector<boost::nullable<Printer> > PrinterVec;
 public:
-	Output(std::ostream *out);
+	Output();
 	virtual void initialize() { }
 	virtual void endModule() { }
 	virtual void endComponent() { foreach(DelayedPrinter *printer, delayedPrinters_) { printer->finish(); } }
 	virtual void finalize() {  }
 	virtual void addDomain(Domain *d) { (void)d; }
-	virtual std::ostream &out() { return *out_; }
 	Storage *storage() const { return s_; }
 	void storage(Storage *s) { s_ = s; }
 	void show(bool s);
@@ -68,7 +67,6 @@ private:
 	template<class T>
 	static PrinterFactory<T> &printerFactory();
 protected:
-	std::ostream   *out_;
 	ShowMap         showMap_;
 	ExternalSet     external_;
 	Storage        *s_;

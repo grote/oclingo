@@ -58,7 +58,7 @@ protected:
 	typedef std::vector<const Domain*> DomainVec;
 	typedef std::vector<bool> BoolVec;
 public:
-	LparseConverter(std::ostream *out, bool shiftDisj);
+	LparseConverter(bool shiftDisj);
 	void addDomain(Domain *d);
 	void prioLit(PredLitRep *l, int32_t weight, int32_t prio, bool maximize);
 	void showAtom(PredLitRep *l);
@@ -74,6 +74,7 @@ public:
 	bool shiftDisjunctions() const { return shiftDisjunctions_; }
 	void addCompute(PredLitRep *l);\
 	void printBasicRule(uint32_t head, uint32_t n, ...);
+
 	virtual ~LparseConverter();
 public:
 	virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) = 0;
@@ -89,18 +90,18 @@ public:
 	virtual void doFinalize() = 0;
 	virtual int getIncAtom() { return -1; }
 protected:
-	DisplayMap   atomsHidden_;
-	DisplayMap   atomsShown_;
-	ExternalMap  atomsExternal_;
-	SymbolTable  symTab_;
-	PrioMap      prioMap_;
-	ValVec       vals_;
-	uint32_t     false_;
-	NewSymbols   newSymbols_;
-	DomainVec    domains_;
-	BoolVec      undefined_;
+	DisplayMap    atomsHidden_;
+	DisplayMap    atomsShown_;
+	ExternalMap   atomsExternal_;
+	SymbolTable   symTab_;
+	PrioMap       prioMap_;
+	ValVec        vals_;
+	uint32_t      false_;
+	NewSymbols    newSymbols_;
+	DomainVec     domains_;
+	BoolVec       undefined_;
 	std::vector<uint32_t> newSymbolsDone_;
-	bool         shiftDisjunctions_;
+	bool          shiftDisjunctions_;
 	std::vector<int32_t> computePos_;
 	std::vector<int32_t> computeNeg_;
 };

@@ -42,9 +42,104 @@ GRINGO_EXPORT_PRINTER(IncPrinter)
 
 }
 
-PlainOutput::PlainOutput(std::ostream *out)
-	: Output(out)
-	, delays_(0)
+////////////////////////////////// DelayedOutput::Line //////////////////////////////////
+
+DelayedOutput::Line::Line()
+	: finished(0)
+{ }
+
+void DelayedOutput::Line::clear()
+{
+	slices.clear();
+	cb       = 0;
+	finished = 0;
+}
+
+////////////////////////////////// DelayedOutput //////////////////////////////////
+
+DelayedOutput::DelayedOutput(std::ostream &out)
+	: curLine_(0)
+	, out_(out)
+	, lines_(1)
+{
+}
+
+DelayedOutput::Offset DelayedOutput::beginDelay()
+{
+	Line &line = lines_[curLine_];
+	uint32_t d = line.slices.size();
+	line.slices.push_back(buf_.str());
+	buf_.str("");
+	return Offset(curLine_, d);
+}
+
+void DelayedOutput::contDelay(const Offset &idx)
+{
+	Line &line = lines_[idx.first];
+	line.slices[idx.second] += buf_.str();
+	buf_.str("");
+}
+
+void DelayedOutput::endDelay(const Offset &idx)
+{
+	Line &line = lines_[idx.first];
+	line.finished++;
+	if(line.finished == line.slices.size())
+	{
+		if(line.cb.empty())
+		{
+			foreach(std::string &s, line.slices) { out_ << s; }
+		}
+		else
+		{
+			std::string str;
+			foreach(std::string &s, line.slices) { str+= s; }
+			line.cb(out_, str);
+		}
+		line.clear();
+		free_.push_back(idx.first);
+	}
+}
+
+void DelayedOutput::setLineCallback(const LineCallback &cb)
+{
+	lines_[curLine_].cb = cb;
+}
+
+void DelayedOutput::endLine()
+{
+	Line &line = lines_[curLine_];
+	if(line.slices.empty())
+	{
+		if(line.cb.empty()) { out_ << buf_.str(); }
+		else                { line.cb(out_, buf_.str()); }
+		line.clear();
+	}
+	else
+	{
+		line.finished++;
+		line.slices.push_back(buf_.str());
+		if(free_.empty())
+		{
+			curLine_ = lines_.size();
+			lines_.push_back(Line());
+		}
+		else
+		{
+			curLine_ = free_.back();
+			free_.pop_back();
+		}
+	}
+	buf_.str("");
+}
+
+std::ostream &DelayedOutput::buffer() { return buf_; }
+std::ostream &DelayedOutput::output() { return out_; }
+
+////////////////////////////////// PlainOutput //////////////////////////////////
+
+PlainOutput::PlainOutput(std::ostream &out)
+	: out_(out)
 {
 	initPrinters<PlainOutput>();
 }
@@ -66,57 +161,47 @@ void PlainOutput::print()
 {
 	if(head_)
 	{
-		if(printedHead_) { buffer_ << "|"; }
+		if(printedHead_) { out() << "|"; }
 		printedHead_ = true;
 	}
 	else
 	{
-		if(printedBody_) { buffer_ << ","; }
-		else             { buffer_ << ":-"; }
+		if(printedBody_) { out() << ","; }
+		else             { out() << ":-"; }
 		printedBody_ = true;
 	}
 }
 
 std::ostream &PlainOutput::out()
 {
-	return buffer_;
+	return out_.buffer();
+}
+
+DelayedOutput::Offset PlainOutput::beginDelay()
+{
+	return out_.beginDelay();
+}
+
+void PlainOutput::contDelay(const DelayedOutput::Offset &idx)
+{
+	out_.contDelay(idx);
+}
+
+void PlainOutput::endDelay(const DelayedOutput::Offset &idx)
+{
+	out_.endDelay(idx);
 }
 
 void PlainOutput::endRule()
 {
-	if(!printedHead_ && !printedBody_) { buffer_ << ":-"; }
-	buffer_ << ".\n";
+	if(!printedHead_ && !printedBody_) { out() << ":-"; }
+	out() << ".\n";
 	endStatement();
-}
-
-uint32_t PlainOutput::delay()
-{
-	delayed_.push_back(buffer_.str());
-	buffer_.str("");
-	delays_ = true;
-	return delayed_.size() - 1;
-}
-
-void PlainOutput::startDelayed(uint32_t offset)
-{
-	buffer_ << delayed_[offset];
-}
-
-void PlainOutput::endDelayed(uint32_t offset)
-{
-	delayed_[offset] = buffer_.str();
-	buffer_.str("");
 }
 
 void PlainOutput::endStatement()
 {
-	if(!delays_) { *out_ << buffer_.str(); }
-	else
-	{
-		delayed_.push_back(buffer_.str());
-		delays_ = false;
-	}
-	buffer_.str("");
+	out_.endLine();
 }
 
 void PlainOutput::print(PredLitRep *l, std::ostream &out)
@@ -136,13 +221,6 @@ void PlainOutput::print(PredLitRep *l, std::ostream &out)
 	}
 }
 
-void PlainOutput::endComponent()
-{
-	Output::endComponent();
-	foreach(std::string &s, delayed_) { *out_ << s; }
-	delayed_.clear();
-}
-
 void PlainOutput::finalize()
 {
 	Output::finalize();
@@ -153,26 +231,26 @@ void PlainOutput::finalize()
 		{
 			const std::string &name  = s_->string(i->second->nameId());
 			uint32_t           arity = i->second->arity();
-			*out_ << "#external " << name << "/" << arity << ".\n";
+			out_.output() << "#external " << name << "/" << arity << ".\n";
 		}
 	}
 	if(!compute_.str().empty())
 	{
-		*out_ << "#compute{";
-		*out_ << compute_.str();
-		*out_ << "}.\n";
+		out_.output() << "#compute{";
+		out_.output() << compute_.str();
+		out_.output() << "}.\n";
 		compute_.str("");
 	}
 }
 
 void PlainOutput::doShow(bool s)
 {
-	*out_ << (s ? "#show" : "#hide") << ".\n";
+	out_.output() << (s ? "#show" : "#hide") << ".\n";
 }
 
 void PlainOutput::doShow(uint32_t nameId, uint32_t arity, bool s)
 {
-	*out_ << (s ? "#show " : "#hide ") << storage()->string(nameId) << "/" << arity << ".\n";
+	out_.output() << (s ? "#show " : "#hide ") << storage()->string(nameId) << "/" << arity << ".\n";
 }
 
 void PlainOutput::addCompute(PredLitRep *l)

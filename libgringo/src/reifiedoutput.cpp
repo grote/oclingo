@@ -77,8 +77,8 @@ bool ReifiedOutput::Node::root()
 	return root;
 }
 
-ReifiedOutput::ReifiedOutput(std::ostream *out)
-	: Output(out)
+ReifiedOutput::ReifiedOutput(std::ostream &out)
+	: out_(out)
 {
 	initPrinters<ReifiedOutput>();
 	startSet(); // compute table
@@ -291,21 +291,21 @@ void ReifiedOutput::finalize()
 		{
 			const std::string &name  = s_->string(i->second->nameId());
 			uint32_t           arity = i->second->arity();
-			*out_ << "external(sig(" << name << "," << arity << ")).\n";
+			out_ << "external(sig(" << name << "," << arity << ")).\n";
 		}
 	}
-	if(!getSet().empty()) *out_ << "compute(" << addSet() << ").\n";
+	if(!getSet().empty()) out_ << "compute(" << addSet() << ").\n";
 	popSet();
 }
 
 void ReifiedOutput::doShow(bool s)
 {
-	*out_ << (s ? "show" : "hide") << ".\n";
+	out_ << (s ? "show" : "hide") << ".\n";
 }
 
 void ReifiedOutput::doShow(uint32_t nameId, uint32_t arity, bool s)
 {
-	*out_ << (s ? "show(" : "hide(") << "sig(" << storage()->string(nameId) << "," << arity << ")).\n";
+	out_ << (s ? "show(" : "hide(") << "sig(" << storage()->string(nameId) << "," << arity << ")).\n";
 }
 
 void ReifiedOutput::addCompute(PredLitRep *l)

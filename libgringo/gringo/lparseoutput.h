@@ -23,7 +23,7 @@
 class LparseOutput : public LparseConverter
 {
 public:
-	LparseOutput(std::ostream *out, bool shiftDisj);
+	LparseOutput(std::ostream &out, bool shiftDisj);
 	void doFinalize();
 public:
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
@@ -37,7 +37,8 @@ public:
 	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
 	uint32_t symbol();
 private:
-	uint32_t symbols_;
-	bool hasExternal_;
+	std::ostream &out_;
+	uint32_t      symbols_;
+	bool          hasExternal_;
 };
 

@@ -184,7 +184,7 @@ namespace plainoutput_impl
 		}
 		else
 		{
-			uint32_t todo = output_->delay();
+			DelayedOutput::Offset todo = output_->beginDelay();
 			todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lleq_, uleq_, lower_, upper_)));
 		}
 	}
@@ -194,12 +194,12 @@ namespace plainoutput_impl
 	{
 		foreach(TodoMap::value_type &val, todo_)
 		{
-			output_->startDelayed(val.first);
+			output_->contDelay(val.first);
 			_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true);
 			lower(val.second.get<5>(), val.second.get<3>());
 			upper(val.second.get<6>(), val.second.get<4>());
 			end();
-			output_->endDelayed(val.first);
+			output_->endDelay(val.first);
 		}
 		todo_.clear();
 	}

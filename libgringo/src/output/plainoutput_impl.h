@@ -97,7 +97,7 @@ namespace plainoutput_impl
 	{
 		typedef AggrCond::Printer::State State;
 		typedef boost::tuples::tuple<State, bool, bool, bool, bool, Val, Val> TodoVal;
-		typedef boost::unordered_map<uint32_t, TodoVal> TodoMap;
+		typedef boost::unordered_map<DelayedOutput::Offset, TodoVal> TodoMap;
 	public:
 		AggrLitPrinter(PlainOutput *output);
 		void begin(State state, bool head, bool sign, bool complete);

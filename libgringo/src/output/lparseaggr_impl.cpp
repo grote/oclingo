@@ -391,11 +391,13 @@ LparseConverter *AggrLitPrinter<T, Type>::output() const
 	return output_;
 }
 
+/*
 template <class T, uint32_t Type>
 std::ostream &AggrLitPrinter<T, Type>::out() const
 {
 	return output_->out();
 }
+*/
 
 template <class T, uint32_t Type>
 AggrLitPrinter<T, Type>::~AggrLitPrinter()

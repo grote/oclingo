@@ -66,7 +66,7 @@ private:
 	> SymbolMap;
 
 public:
-	ReifiedOutput(std::ostream *out);
+	ReifiedOutput(std::ostream &out);
 	void startSet();
 	void addToSet(size_t id);
 	uint32_t addSet();
@@ -88,6 +88,7 @@ public:
 	void addDep(size_t symbol, size_t n = 1);
 	void popDep(bool add, size_t n = 1);
 	void addCompute(PredLitRep *l);
+	std::ostream &out() { return out_; }
 	~ReifiedOutput();
 
 private:
@@ -95,14 +96,15 @@ private:
 	void tarjan();
 
 private:
-	SymbolMap symbols_;
-	ListMap   lists_;
-	SetMap    sets_;
-	Graph     graph_;
-	MiniMap   minimize_;
-	ListVec   listStack_;
-	SetVec    setStack_;
-	SetVec    dep_;
+	std::ostream &out_;
+	SymbolMap     symbols_;
+	ListMap       lists_;
+	SetMap        sets_;
+	Graph         graph_;
+	MiniMap       minimize_;
+	ListVec       listStack_;
+	SetVec        setStack_;
+	SetVec        dep_;
 };
 
 inline ReifiedOutput::Set &ReifiedOutput::getSet()    { return setStack_.back(); }

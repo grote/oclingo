@@ -17,10 +17,9 @@
 
 #include <gringo/output.h>
 
-Output::Output(std::ostream *out) :
-	out_(out),
-	s_(0),
-	show_(true)
+Output::Output()
+	: s_(0)
+	, show_(true)
 {
 }
 

@@ -36,8 +36,8 @@ public:
 	void setHead(uint32_t sym);
 	void addBody(uint32_t sym, bool sign);
 	void end();
-	Output *output() const { return output_; }
-	std::ostream &out() const { return output_->out(); }
+	LparseConverter *output() const { return output_; }
+	//std::ostream &out() const { return output_->out(); }
 private:
 	LparseConverter         *output_;
 	LparseConverter::AtomVec pos_;
