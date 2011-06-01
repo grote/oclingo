@@ -213,14 +213,19 @@ namespace plainoutput_impl
 	{
 	public:
 		OptimizePrinter(PlainOutput *output) : output_(output) { }
-		void begin(bool maximize);
+		void begin(Optimize::Type type, bool maximize);
 		void print(const ValVec &set);
 		void print(PredLitRep *l);
 		void end();
 		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
-		PlainOutput *output_;
+		PlainOutput   *output_;
+		Optimize::Type type_;
+		bool           maximize_;
+		bool           first_;
+		Val            weight_;
+		Val            prio_;
 	};
 
 	class ComputePrinter : public Compute::Printer

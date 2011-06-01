@@ -23,8 +23,8 @@
 class DelayedOutput
 {
 public:
-	typedef boost::function2<void, std::ostream &, const std::string &> LineCallback;
-	typedef std::pair<uint32_t, uint32_t>                               Offset;
+	typedef boost::function1<void, const std::string &> LineCallback;
+	typedef std::pair<uint32_t, uint32_t>               Offset;
 
 private:
 	struct Line
@@ -68,6 +68,7 @@ public:
 	DelayedOutput::Offset beginDelay();
 	void contDelay(const DelayedOutput::Offset &idx);
 	void endDelay(const DelayedOutput::Offset &idx);
+	void setLineCallback(const DelayedOutput::LineCallback &cb);
 
 	void beginRule();
 	void endHead();
@@ -80,6 +81,7 @@ public:
 	void doShow(bool s);
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void addCompute(PredLitRep *l);
+	void addOptimize(const ValVec &set, bool maximize, bool multi, const std::string &s);
 	~PlainOutput();
 private:
 	bool              head_;

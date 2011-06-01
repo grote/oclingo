@@ -94,7 +94,7 @@ void DelayedOutput::endDelay(const Offset &idx)
 		{
 			std::string str;
 			foreach(std::string &s, line.slices) { str+= s; }
-			line.cb(out_, str);
+			line.cb(str);
 		}
 		line.clear();
 		free_.push_back(idx.first);
@@ -112,7 +112,7 @@ void DelayedOutput::endLine()
 	if(line.slices.empty())
 	{
 		if(line.cb.empty()) { out_ << buf_.str(); }
-		else                { line.cb(out_, buf_.str()); }
+		else                { line.cb(buf_.str()); }
 		line.clear();
 	}
 	else
@@ -192,6 +192,11 @@ void PlainOutput::endDelay(const DelayedOutput::Offset &idx)
 	out_.endDelay(idx);
 }
 
+void PlainOutput::setLineCallback(const DelayedOutput::LineCallback &cb)
+{
+	out_.setLineCallback(cb);
+}
+
 void PlainOutput::endRule()
 {
 	if(!printedHead_ && !printedBody_) { out() << ":-"; }
@@ -202,6 +207,11 @@ void PlainOutput::endRule()
 void PlainOutput::endStatement()
 {
 	out_.endLine();
+}
+
+void PlainOutput::addOptimize(const ValVec &set, bool maximize, bool multi, const std::string &s)
+{
+	std::cerr << "do something with: " << s << std::endl;
 }
 
 void PlainOutput::print(PredLitRep *l, std::ostream &out)

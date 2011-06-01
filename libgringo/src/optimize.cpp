@@ -246,7 +246,7 @@ void Optimize::append(Lit *lit)
 bool Optimize::grounded(Grounder *g)
 {
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(maximize_);
+	printer->begin(type_, maximize_);
 
 	setLit_.grounded(g);
 	printer->print(setLit_.vals());
@@ -258,6 +258,7 @@ bool Optimize::grounded(Grounder *g)
 	}
 
 	printer->end();
+	return true;
 }
 
 void Optimize::visit(PrgVisitor *visitor)

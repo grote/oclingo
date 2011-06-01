@@ -51,16 +51,17 @@ private:
 class Optimize : public SimpleStatement
 {
 public:
+	enum Type { MULTISET, SET, SYMSET, CONSTRAINT };
+	typedef boost::shared_ptr<uint32_t> SharedNumber;
+
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(bool maximize) = 0;
+		virtual void begin(Optimize::Type type, bool maximize) = 0;
 		virtual void print(const ValVec &set) = 0;
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
-	enum Type { MULTISET, SET, SYMSET, CONSTRAINT };
-	typedef boost::shared_ptr<uint32_t> SharedNumber;
 
 public:
 	Optimize(const Loc &loc, TermPtrVec &terms, LitPtrVec &body, bool maximize, Type type, SharedNumber num);
