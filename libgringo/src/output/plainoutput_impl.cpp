@@ -302,11 +302,11 @@ void OptimizePrinter::end()
 {
 	if(type_ == Optimize::CONSTRAINT)
 	{
-		out() << "<";
+		out() << ".<";
 		weight_.print(output()->storage(), out());
 		out() << ",";
 		prio_.print(output()->storage(), out());
-		out() << ">.\n";
+		out() << ">\n";
 	}
 	else
 	{

@@ -126,6 +126,7 @@ start:
 		"."              { return PARSER_DOT; }
 		":"              { return PARSER_COLON; }
 		":-"             { return PARSER_IF; }
+		":~"             { return PARSER_WIF; }
 		","              { return PARSER_COMMA; }
 		"|"              { return PARSER_VBAR; }
 		"["              { return PARSER_LSBRAC; }
@@ -240,6 +241,7 @@ start:
 		"."              { return PARSER_DOT; }
 		":"              { return PARSER_COLON; }
 		":-"             { return PARSER_IF; }
+		":~"             { return PARSER_WIF; }
 		","              { return PARSER_COMMA; }
 		"|"              { return PARSER_VBAR; }
 		"["              { return PARSER_LSBRAC; }

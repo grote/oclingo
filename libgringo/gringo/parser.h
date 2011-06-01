@@ -67,7 +67,7 @@ public:
 	void include(uint32_t filename);
 	void parseError();
 	void parse();
-	void maximize(bool maximize) { maximize_ = maximize; level_++; }
+	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
 	void incremental(iPart part, uint32_t index = 0);
 	void invPart();
 	void add(Statement *s);

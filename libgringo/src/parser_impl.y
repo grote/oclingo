@@ -89,6 +89,9 @@ boost::ptr_vector<T> *vec1(T *x)
 %type rule { Rule* }
 %destructor Rule { del($$); }
 
+%type weak { Optimize* }
+%destructor weak { del($$); }
+
 %type var_list { VarSigVec* }
 %destructor var_list { del($$); }
 
@@ -193,6 +196,9 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor aggr_num    { del($$); }
 %destructor aggr_atom   { del($$); }
 
+%type weightprio { std::pair<Term*, Term*>* }
+%destructor weightprio { del($$->first); del($$->second); del($$); }
+
 %left SEM.
 %left DOTS.
 %left XOR.
@@ -218,6 +224,7 @@ start ::= program.
 
 program ::= .
 program ::= program line DOT.
+program ::= program weak(w).  { pParser->add(w); }
 
 line ::= INCLUDE STRING(file).                         { pParser->include(file.index); }
 line ::= rule(r).                                      { pParser->add(r); }
@@ -470,6 +477,15 @@ npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; lis
 
 priolit_cond(res) ::= .                    { res = new LitPtrVec(); }
 priolit_cond(res) ::= npriolit_cond(list). { res = list; }
+
+constraint(res) ::= WIF(tok). { pParser->maximize(false, false); res = tok; }
+
+weightprio(res) ::= DOT(tok).                                { res = new std::pair<Term*, Term*>(ONE(tok.loc()), ONE(tok.loc())); }
+weightprio(res) ::= DOT(tok) LOWER term(w) GREATER.          { res = new std::pair<Term*, Term*>(w,              ONE(tok.loc())); }
+weightprio(res) ::= DOT(tok) LOWER COLON term(p) GREATER.    { res = new std::pair<Term*, Term*>(ONE(tok.loc()), p             ); }
+weightprio(res) ::= DOT LOWER term(w) COLON term(p) GREATER. { res = new std::pair<Term*, Term*>(w,              p             ); }
+
+weak(res) ::= constraint(tok) body(body) weightprio(wp). { res = pParser->optimize(Optimize::CONSTRAINT, tok.loc(), 0, wp->first, wp->second, body); delete wp; }
 
 compute ::= COMPUTE LCBRAC compute_list RCBRAC.
 compute ::= COMPUTE NUMBER LCBRAC compute_list RCBRAC.
