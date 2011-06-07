@@ -104,35 +104,29 @@ template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool complete, bool set)
 {
 	output_->print();
-	_begin(state, head, sign, complete, set);
-}
-
-template <class T, uint32_t Type>
-void AggrLitPrinter<T, Type>::_begin(State state, bool head, bool sign, bool complete, bool set)
-{
-	lower_    = Val::inf();
-	upper_    = Val::sup();
-	lleq_     = true;
-	uleq_     = true;
-	sign_     = sign;
-	complete_ = complete;
-	state_    = state;
-	head_     = head;
-	set_      = set;
+	current_.get<0>() = state;
+	current_.get<1>() = head;
+	current_.get<2>() = sign;
+	current_.get<3>() = true;
+	current_.get<4>() = true;
+	current_.get<5>() = Val::inf();
+	current_.get<6>() = Val::sup();
+	current_.get<7>() = set;
+	complete_         = complete;
 }
 
 template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::lower(const Val &l, bool leq)
 {
-	lower_ = l;
-	lleq_  = leq;
+	current_.get<3>() = leq;
+	current_.get<5>() = l;
 }
 
 template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::upper(const Val &u, bool leq)
 {
-	upper_ = u;
-	uleq_  = leq;
+	current_.get<4>() = leq;
+	current_.get<6>() = u;
 }
 
 template <class T, uint32_t Type>
@@ -141,7 +135,7 @@ void AggrLitPrinter<T, Type>::end()
 	if(complete_)
 	{
 		// simplification
-		AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()-> template printer<AggrCond::Printer>())->state(state_);
+		AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()-> template printer<AggrCond::Printer>())->state(current_.get<0>());
 		typedef boost::unordered_map<ValVec, uint32_t> SetMap;
 		enum { SINGLE=0, MULTI=1, REMOVED=2 };
 		SetMap map;
@@ -152,14 +146,14 @@ void AggrLitPrinter<T, Type>::end()
 			else if((cond.get<2>().empty() || cond.get<2>() == "#true") && simplify(cond.get<0>().front())) { res.first->second = REMOVED; }
 		}
 		// printing
-		if(sign_) { out() << "not "; }
-		if(lower_.type != Val::INF)
+		if(current_.get<2>()) { out() << "not "; }
+		if(current_.get<5>().type != Val::INF)
 		{
-			lower_.print(output_->storage(), out());
-			if(!lleq_) { out() << "<"; }
+			current_.get<5>().print(output_->storage(), out());
+			if(!current_.get<3>()) { out() << "<"; }
 		}
 		func();
-		out() << (set_ ? "{" : "[");
+		out() << (current_.get<7>() ? "{" : "[");
 		bool printed = false;
 		foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 		{
@@ -185,7 +179,7 @@ void AggrLitPrinter<T, Type>::end()
 				{
 					out() << cond.get<2>();
 					if(cond.get<2>().empty()) { out() << "#true"; }
-					if(!set_)
+					if(!current_.get<7>())
 					{
 						const Val &weight = cond.get<0>().front();
 						out() << "=";
@@ -194,17 +188,17 @@ void AggrLitPrinter<T, Type>::end()
 				}
 			}
 		}
-		out() << (set_ ? "}" : "]");
-		if(upper_.type != Val::SUP)
+		out() << (current_.get<7>() ? "}" : "]");
+		if(current_.get<6>().type != Val::SUP)
 		{
-			if(!uleq_) { out() << "<"; }
-			upper_.print(output_->storage(), out());
+			if(!current_.get<4>()) { out() << "<"; }
+			current_.get<6>().print(output_->storage(), out());
 		}
 	}
 	else
 	{
 		DelayedOutput::Offset todo = output_->beginDelay();
-		todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lleq_, uleq_, lower_, upper_, set_)));
+		todo_.insert(TodoMap::value_type(todo, current_));
 	}
 }
 
@@ -214,9 +208,8 @@ void AggrLitPrinter<T, Type>::finish()
 	foreach(TodoMap::value_type &val, todo_)
 	{
 		output_->contDelay(val.first);
-		_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true, val.second.get<7>());
-		lower(val.second.get<5>(), val.second.get<3>());
-		upper(val.second.get<6>(), val.second.get<4>());
+		current_  = val.second;
+		complete_ = true;
 		end();
 		output_->endDelay(val.first);
 	}
@@ -238,8 +231,8 @@ SumAggrLitPrinter::SumAggrLitPrinter(PlainOutput *output)
 bool SumAggrLitPrinter::simplify(const Val &weight)
 {
 	assert(weight.type == Val::NUM);
-	if(lower_.type == Val::NUM) { lower_.num -= weight.num; }
-	if(upper_.type == Val::NUM) { upper_.num -= weight.num; }
+	if(current_.get<5>().type == Val::NUM) { current_.get<5>().num -= weight.num; }
+	if(current_.get<6>().type == Val::NUM) { current_.get<6>().num -= weight.num; }
 	return true;
 }
 

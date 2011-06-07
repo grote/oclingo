@@ -101,7 +101,6 @@ namespace plainoutput_impl
 	public:
 		AggrLitPrinter(PlainOutput *output);
 		void begin(State state, bool head, bool sign, bool complete, bool set);
-		void _begin(State state, bool head, bool sign, bool complete, bool set);
 		void lower(const Val &l, bool leq);
 		void upper(const Val &u, bool leq);
 		void end();
@@ -114,15 +113,8 @@ namespace plainoutput_impl
 	protected:
 		TodoMap            todo_;
 		PlainOutput       *output_;
-		State              state_;
-		Val                lower_;
-		Val                upper_;
-		bool               lleq_;
-		bool               uleq_;
-		bool               head_;
-		bool               sign_;
+		TodoVal            current_;
 		bool               complete_;
-		bool               set_;
 	};
 
 	class SumAggrLitPrinter : public AggrLitPrinter<SumAggrLit>
