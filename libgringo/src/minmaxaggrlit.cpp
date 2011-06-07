@@ -96,7 +96,7 @@ template<uint32_t T>
 void MinMaxAggrLit::_accept(::Printer *v)
 {
 	Printer<MinMaxAggrLit, T> *printer = v->output()->printer<Printer<MinMaxAggrLit, T> >();
-	printer->begin(AggrCond::Printer::State(aggrUid(), domain_.lastId()), head(), sign_, complete());
+	printer->begin(AggrCond::Printer::State(aggrUid(), domain_.lastId()), head(), sign_, complete(), set_);
 	if(lower()) { printer->lower(valLower_, lowerEq_); }
 	if(upper()) { printer->upper(valUpper_, upperEq_); }
 	printer->end();

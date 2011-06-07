@@ -207,19 +207,19 @@ class AggrCond : public Formula
 {
 	friend class AggrLit;
 public:
+	enum Style { STYLE_DLV, STYLE_LPARSE };
 	class Printer : public ::Printer
 	{
 	public:
 		typedef std::pair<uint32_t, uint32_t> State;
 	public:
-		virtual void begin(State state, const ValVec &set) = 0;
+		virtual void begin(Style style, State state, const ValVec &set) = 0;
 		virtual void endHead() = 0;
 		virtual void trueLit() = 0;
 		virtual void print(PredLitRep *l) = 0;
 		virtual void end() = 0;
 		virtual ~Printer();
 	};
-	enum Style { STYLE_DLV, STYLE_LPARSE };
 public:
 	AggrCond(const Loc &loc, TermPtrVec &terms, LitPtrVec &lits, Style style);
 	AggrLit *aggr();
@@ -264,7 +264,7 @@ public:
 	public:
 		typedef AggrCond::Printer::State State;
 	public:
-		virtual void begin(State state, bool head, bool sign, bool complete) = 0;
+		virtual void begin(State state, bool head, bool sign, bool complete, bool set) = 0;
 		virtual void lower(const Val &l, bool leq) = 0;
 		virtual void upper(const Val &u, bool leq) = 0;
 		virtual void end() = 0;
@@ -331,8 +331,8 @@ protected:
 	mutable tribool complete_;
 	clone_ptr<Term> lower_;
 	clone_ptr<Term> upper_;
-	Formula     *parent_;
-	AggrCondVec      conds_;
+	Formula        *parent_;
+	AggrCondVec     conds_;
 	AggrDomain      domain_;
 	Val             valLower_;
 	Val             valUpper_;

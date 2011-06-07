@@ -73,12 +73,12 @@ namespace plainoutput_impl
 	class AggrCondPrinter : public AggrCond::Printer
 	{
 	public:
-		typedef std::vector<std::pair<ValVec, std::string> > CondVec;
+		typedef std::vector<boost::tuples::tuple<ValVec, AggrCond::Style, std::string> > CondVec;
 	private:
 		typedef boost::unordered_map<State, CondVec> StateMap;
 	public:
 		AggrCondPrinter(PlainOutput *output) : output_(output) { }
-		void begin(State state, const ValVec &set);
+		void begin(AggrCond::Style style, State state, const ValVec &set);
 		CondVec &state(State state);
 		void endHead();
 		void trueLit();
@@ -96,12 +96,12 @@ namespace plainoutput_impl
 	class AggrLitPrinter : public AggrLit::Printer<T>, public DelayedPrinter
 	{
 		typedef AggrCond::Printer::State State;
-		typedef boost::tuples::tuple<State, bool, bool, bool, bool, Val, Val> TodoVal;
+		typedef boost::tuples::tuple<State, bool, bool, bool, bool, Val, Val, bool> TodoVal;
 		typedef boost::unordered_map<DelayedOutput::Offset, TodoVal> TodoMap;
 	public:
 		AggrLitPrinter(PlainOutput *output);
-		void begin(State state, bool head, bool sign, bool complete);
-		void _begin(State state, bool head, bool sign, bool complete);
+		void begin(State state, bool head, bool sign, bool complete, bool set);
+		void _begin(State state, bool head, bool sign, bool complete, bool set);
 		void lower(const Val &l, bool leq);
 		void upper(const Val &u, bool leq);
 		void end();
@@ -122,6 +122,7 @@ namespace plainoutput_impl
 		bool               head_;
 		bool               sign_;
 		bool               complete_;
+		bool               set_;
 	};
 
 	class SumAggrLitPrinter : public AggrLitPrinter<SumAggrLit>

@@ -604,7 +604,7 @@ bool AggrCond::grounded(Grounder *g)
 		throw TypeException(str, StrLoc(g, loc()), oss.str());
 	}
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(Printer::State(aggr_->aggrUid(), aggr_->domain().lastId()), set);
+	printer->begin(style_, Printer::State(aggr_->aggrUid(), aggr_->domain().lastId()), set);
 	bool head = head_;
 	foreach(Lit &lit, lits_)
 	{

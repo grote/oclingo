@@ -47,7 +47,7 @@ private:
 	typedef boost::unordered_map<State, CondMap> StateMap;
 public:
 	AggrCondPrinter(LparseConverter *output);
-	void begin(State state, const ValVec &set);
+	void begin(AggrCond::Style style, State state, const ValVec &set);
 	CondMap *state(State state);
 	void endHead();
 	void trueLit();
@@ -112,7 +112,7 @@ public:
 
 public:
 	AggrLitPrinter(LparseConverter *output);
-	void begin(State state, bool head, bool sign, bool complete);
+	void begin(State state, bool head, bool sign, bool complete, bool set);
 	void lower(const Val &l, bool leq);
 	void upper(const Val &u, bool leq);
 	void end();

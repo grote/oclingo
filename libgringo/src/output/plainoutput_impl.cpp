@@ -58,10 +58,10 @@ void RulePrinter::end()
 	output_->endRule();
 }
 
-void AggrCondPrinter::begin(State state, const ValVec &set)
+void AggrCondPrinter::begin(AggrCond::Style style, State state, const ValVec &set)
 {
 	currentState_ = &stateMap_[state];
-	currentState_->push_back(CondVec::value_type(set, ""));
+	currentState_->push_back(CondVec::value_type(set, style, ""));
 }
 
 AggrCondPrinter::CondVec &AggrCondPrinter::state(State state)
@@ -75,16 +75,16 @@ void AggrCondPrinter::endHead()
 
 void AggrCondPrinter::trueLit()
 {
-	if(!currentState_->back().second.empty()) { currentState_->back().second += ":"; }
-	currentState_->back().second += "#true";
+	if(!currentState_->back().get<2>().empty()) { currentState_->back().get<2>() += ":"; }
+	currentState_->back().get<2>() += "#true";
 }
 
 void AggrCondPrinter::print(PredLitRep *l)
 {
 	std::ostringstream os;
 	output_->print(l, os);
-	if(!currentState_->back().second.empty()) { currentState_->back().second += ":"; }
-	currentState_->back().second += os.str();
+	if(!currentState_->back().get<2>().empty()) { currentState_->back().get<2>() += ":"; }
+	currentState_->back().get<2>() += os.str();
 }
 
 void AggrCondPrinter::end()
@@ -101,14 +101,14 @@ AggrLitPrinter<T, Type>::AggrLitPrinter(PlainOutput *output)
 }
 
 template <class T, uint32_t Type>
-void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool complete)
+void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool complete, bool set)
 {
 	output_->print();
-	_begin(state, head, sign, complete);
+	_begin(state, head, sign, complete, set);
 }
 
 template <class T, uint32_t Type>
-void AggrLitPrinter<T, Type>::_begin(State state, bool head, bool sign, bool complete)
+void AggrLitPrinter<T, Type>::_begin(State state, bool head, bool sign, bool complete, bool set)
 {
 	lower_    = Val::inf();
 	upper_    = Val::sup();
@@ -118,6 +118,7 @@ void AggrLitPrinter<T, Type>::_begin(State state, bool head, bool sign, bool com
 	complete_ = complete;
 	state_    = state;
 	head_     = head;
+	set_      = set;
 }
 
 template <class T, uint32_t Type>
@@ -146,9 +147,9 @@ void AggrLitPrinter<T, Type>::end()
 		SetMap map;
 		foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 		{
-			std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.first, SINGLE));
-			if(!res.second)                                                                          { res.first->second = MULTI; }
-			else if((cond.second.empty() || cond.second == "#true") && simplify(cond.first.front())) { res.first->second = REMOVED; }
+			std::pair<SetMap::iterator, bool> res = map.insert(SetMap::value_type(cond.get<0>(), SINGLE));
+			if(!res.second)                                                                                 { res.first->second = MULTI; }
+			else if((cond.get<2>().empty() || cond.get<2>() == "#true") && simplify(cond.get<0>().front())) { res.first->second = REMOVED; }
 		}
 		// printing
 		if(sign_) { out() << "not "; }
@@ -158,25 +159,42 @@ void AggrLitPrinter<T, Type>::end()
 			if(!lleq_) { out() << "<"; }
 		}
 		func();
-		out() << "{";
-		uint32_t uid = REMOVED + 1;
+		out() << (set_ ? "{" : "[");
 		bool printed = false;
 		foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
 		{
-			SetMap::iterator it = map.find(cond.first);
+			SetMap::iterator it = map.find(cond.get<0>());
 			if(it->second != REMOVED)
 			{
-				const Val &weight = cond.first.front();
-				if(it->second <= REMOVED) { it->second = uid++; }
 				if(printed) { out() << ","; }
 				else        { printed = true; }
-				out() << "<";
-				weight.print(output()->storage(), out());
-				out() << "," << (it->second - REMOVED) << ">:" << cond.second;
-				if(cond.second.empty()) { out() << "#true"; }
+				if(cond.get<1>() == AggrCond::STYLE_DLV)
+				{
+					out() << "<";
+					bool comma = false;
+					foreach(const Val &val, cond.get<0>())
+					{
+						if(comma) { out() << ","; }
+						else      { comma = true; }
+						val.print(output()->storage(), out());
+					}
+					out() << ">:" << cond.get<2>();
+					if(cond.get<2>().empty()) { out() << "#true"; }
+				}
+				else
+				{
+					out() << cond.get<2>();
+					if(cond.get<2>().empty()) { out() << "#true"; }
+					if(!set_)
+					{
+						const Val &weight = cond.get<0>().front();
+						out() << "=";
+						weight.print(output()->storage(), out());
+					}
+				}
 			}
 		}
-		out() << "}";
+		out() << (set_ ? "}" : "]");
 		if(upper_.type != Val::SUP)
 		{
 			if(!uleq_) { out() << "<"; }
@@ -186,7 +204,7 @@ void AggrLitPrinter<T, Type>::end()
 	else
 	{
 		DelayedOutput::Offset todo = output_->beginDelay();
-		todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lleq_, uleq_, lower_, upper_)));
+		todo_.insert(TodoMap::value_type(todo, TodoVal(state_, head_, sign_, lleq_, uleq_, lower_, upper_, set_)));
 	}
 }
 
@@ -196,7 +214,7 @@ void AggrLitPrinter<T, Type>::finish()
 	foreach(TodoMap::value_type &val, todo_)
 	{
 		output_->contDelay(val.first);
-		_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true);
+		_begin(val.second.get<0>(), val.second.get<1>(), val.second.get<2>(), true, val.second.get<7>());
 		lower(val.second.get<5>(), val.second.get<3>());
 		upper(val.second.get<6>(), val.second.get<4>());
 		end();

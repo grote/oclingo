@@ -74,7 +74,7 @@ void AggrCondPrinter::Cond::simplify()
 
 ////////////////////////////////// AggrCondPrinter //////////////////////////////////
 
-void AggrCondPrinter::begin(State state, const ValVec &set)
+void AggrCondPrinter::begin(AggrCond::Style, State state, const ValVec &set)
 {
 	CondMap &conds = stateMap_.insert(StateMap::value_type(state, CondMap(boost::bind(Val::compare, output()->storage(), _1, _2) < 0))).first->second;
 	current_ = &conds[set];
@@ -164,7 +164,7 @@ AggrLitPrinter<T, Type>::AggrLitPrinter(LparseConverter *output)
 }
 
 template <class T, uint32_t Type>
-void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool)
+void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool, bool)
 {
 	key_ = AggrTodoKey(state);
 	val_ = AggrTodoVal(output_->symbol(), head);
