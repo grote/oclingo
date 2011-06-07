@@ -238,7 +238,17 @@ bool SumAggrLitPrinter::simplify(const Val &weight)
 
 void SumAggrLitPrinter::func()
 {
-	out() << "#sum";
+	AggrCond::Style           style = AggrCond::STYLE_LPARSE;
+	AggrCondPrinter::CondVec &conds = static_cast<AggrCondPrinter*>(output()->printer<AggrCond::Printer>())->state(current_.get<0>());
+	foreach(AggrCondPrinter::CondVec::value_type &cond, conds)
+	{
+		if(cond.get<1>() == AggrCond::STYLE_DLV)
+		{
+			style = AggrCond::STYLE_DLV;
+			break;
+		}
+	}
+	if(style == AggrCond::STYLE_DLV) { out() << "#sum"; }
 }
 
 //////////////////////////////////////// MinMaxAggrLitPrinter ////////////////////////////////////////
