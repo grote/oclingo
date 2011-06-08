@@ -25,6 +25,7 @@ class LparseConverter : public Output
 public:
 	typedef std::vector<uint32_t> AtomVec;
 	typedef std::vector<int32_t>  WeightVec;
+	typedef std::vector<int32_t>  LitVec;
 	struct ValCmp
 	{
 		ValCmp(const ValVec *v, uint32_t s);
@@ -51,16 +52,18 @@ protected:
 		uint32_t symbol;
 		uint32_t offset;
 	};
-	typedef std::map<int32_t, Minimize> PrioMap;
+
+	typedef std::vector<std::vector<AtomRef> >   NewSymbols;
+	typedef std::vector<const Domain*>           DomainVec;
+	typedef std::vector<bool>                    BoolVec;
+	typedef boost::unordered_map<ValVec, LitVec> MiniMap;
+	typedef std::map<Val, MiniMap, boost::function2<bool, const Val&, const Val &> >            PrioMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > DisplayMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > ExternalMap;
-	typedef std::vector<std::vector<AtomRef> > NewSymbols;
-	typedef std::vector<const Domain*> DomainVec;
-	typedef std::vector<bool> BoolVec;
 public:
 	LparseConverter(bool shiftDisj);
 	void addDomain(Domain *d);
-	void prioLit(PredLitRep *l, int32_t weight, int32_t prio, bool maximize);
+	void prioLit(int32_t lit, const ValVec &set, bool maximize);
 	void showAtom(PredLitRep *l);
 	void hideAtom(PredLitRep *l);
 	uint32_t symbol(PredLitRep *l);
@@ -74,6 +77,7 @@ public:
 	bool shiftDisjunctions() const { return shiftDisjunctions_; }
 	void addCompute(PredLitRep *l);\
 	void printBasicRule(uint32_t head, uint32_t n, ...);
+	void printBasicRule(uint32_t head, const LitVec &lits);
 
 	virtual ~LparseConverter();
 public:

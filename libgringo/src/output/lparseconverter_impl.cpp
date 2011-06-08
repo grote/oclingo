@@ -36,7 +36,7 @@ class DisplayPrinter : public Display::Printer
 public:
 	DisplayPrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
 };
@@ -46,22 +46,26 @@ class ExternalPrinter : public External::Printer
 public:
 	ExternalPrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
 };
 
 class OptimizePrinter : public Optimize::Printer
 {
+	typedef LparseConverter::LitVec LitVec;
 public:
 	OptimizePrinter(LparseConverter *output) : output_(output) { }
-	void begin(bool maximize, bool set) { maximize_ = maximize; (void)set; }
-	void print(PredLitRep *l, int32_t weight, int32_t prio);
-	void end() { }
-	Output *output() const { return output_; }
+	void begin(Optimize::Type type, bool maximize);
+	void print(const ValVec &set);
+	void print(PredLitRep *l);
+	void end();
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
-	bool maximize_;
+	bool             maximize_;
+	LitVec           lits_;
+	ValVec           set_;
 };
 
 class ComputePrinter : public Compute::Printer
@@ -69,7 +73,7 @@ class ComputePrinter : public Compute::Printer
 public:
 	ComputePrinter(LparseConverter *output) : output_(output) { }
 	void print(PredLitRep *l);
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
 };
@@ -82,7 +86,7 @@ public:
 	void print(PredLitRep *l);
 	void weight(const Val &v) { (void)v; }
 	void end();
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter           *output_;
 	LparseConverter::AtomVec   pos_;
@@ -96,7 +100,7 @@ public:
 	IncPrinter(LparseConverter *output) : output_(output) {  }
 	void print(PredLitRep *l);
 	void print();
-	Output *output() const { return output_; }
+	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
 };
@@ -118,9 +122,34 @@ void ExternalPrinter::print(PredLitRep *l)
 
 ///////////////////////////////// OptimizePrinter /////////////////////////////////
 
-void OptimizePrinter::print(PredLitRep *l, int32_t weight, int32_t prio)
+void OptimizePrinter::begin(Optimize::Type type, bool maximize)
 {
-	output_->prioLit(l, weight, prio, maximize_);
+	lits_.clear();
+	maximize_ = maximize;
+}
+
+void OptimizePrinter::print(const ValVec &set)
+{
+	set_ = set;
+}
+
+void OptimizePrinter::print(PredLitRep *l)
+{
+	if(l->sign()) { lits_.push_back(-output()->symbol(l)); }
+	else          { lits_.push_back( output()->symbol(l)); }
+}
+
+void OptimizePrinter::end()
+{
+	int32_t lit;
+	if(lits_.empty())          { lit = -output()->falseSymbol(); }
+	else if(lits_.size() == 1) { lit = lits_.back(); }
+	else
+	{
+		lit = output()->symbol();
+		output_->printBasicRule(lit, lits_);
+	}
+	output_->prioLit(lit, set_, maximize_);
 }
 
 ///////////////////////////////// ComputePrinter /////////////////////////////////
@@ -194,7 +223,7 @@ void IncPrinter::print()
 }
 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::DisplayPrinter, Display::Printer, LparseConverter)
-//GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionLit::Printer, LparseConverter)

@@ -54,6 +54,7 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
 	, level_(0)
+	, weak_(0)
 	, number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
 	, invCurrent_(base)
@@ -609,8 +610,8 @@ Optimize *Parser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *term
 	else { assert(weight == 0); }
 	assert(!pTerms->empty());
 	if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
-	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
 	pTerms->insert(pTerms->begin() + 1, prio);
+	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
 	pTerms->insert(pTerms->begin() + 2, optnum);
 	return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }

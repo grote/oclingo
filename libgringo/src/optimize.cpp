@@ -231,7 +231,7 @@ void Optimize::normalize(Grounder *g)
 	OptimizeBodyExpander bodyExp(*this);
 	for(LitPtrVec::size_type i = headLike; i < body_.size(); i++) { body_[i].normalize(g, &bodyExp); }
 
-	if(type_ == SET || type_ ==  MULTISET)
+	if(type_ == SET || type_ ==  MULTISET || type_ == CONSTRAINT)
 	{
 		OptimizeAnonymousRemover::remove(g, *this);
 		OptimizeLparseConverter::convert(loc(), g, setLit_.terms(), body_, type_ == SET, number_);
@@ -435,7 +435,7 @@ void OptimizeLparseConverter::convert(const Loc &loc, Grounder *g, TermPtrVec &t
 	if(conv.addVars_)
 	{
 		std::stringstream ss;
-		ss << "#set(" << (*number)++ << ")";
+		ss << "#multiset(" << (*number)++ << ")";
 		uint32_t name  = g->index(ss.str());
 		terms.push_back(new ConstTerm(loc, Val::create(Val::ID, name)));
 		foreach(uint32_t var, conv.vars_) { terms.push_back(new VarTerm(loc, var)); }

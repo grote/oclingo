@@ -28,7 +28,7 @@ namespace lparseconverter_impl
 {
 
 GRINGO_EXPORT_PRINTER(RulePrinter)
-//GRINGO_EXPORT_PRINTER(OptimizePrinter)
+GRINGO_EXPORT_PRINTER(OptimizePrinter)
 GRINGO_EXPORT_PRINTER(ComputePrinter)
 GRINGO_EXPORT_PRINTER(AggrCondPrinter)
 GRINGO_EXPORT_PRINTER(SumAggrLitPrinter)
@@ -62,7 +62,9 @@ bool LparseConverter::ValCmp::operator()(uint32_t a, uint32_t b) const
 }
 
 LparseConverter::LparseConverter(bool shiftDisj)
-	: shiftDisjunctions_(shiftDisj)
+	: prioMap_(boost::bind(static_cast<int (Val::*)(const Val&, Storage *) const>(&Val::compare), _1, _2, boost::ref(s_)) < 0)
+	, shiftDisjunctions_(shiftDisj)
+
 {
 	initPrinters<LparseConverter>();
 }
@@ -118,22 +120,9 @@ void LparseConverter::hideAtom(PredLitRep *l)
 	atomsHidden_[DisplayMap::key_type(l->dom()->nameId(), l->dom()->arity())].insert(symbol(l));
 }
 
-void LparseConverter::prioLit(PredLitRep *l, int32_t weight, int32_t prio, bool maximize)
+void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
 {
-	Minimize &m = prioMap_[prio];
-	if(weight != 0)
-	{
-		if((l->sign() != maximize) == (weight > 0))
-		{
-			m.neg.push_back(symbol(l));
-			m.wNeg.push_back(std::abs(weight));
-		}
-		else
-		{
-			m.pos.push_back(symbol(l));
-			m.wPos.push_back(std::abs(weight));
-		}
-	}
+	prioMap_[set[1]][set].push_back(maximize ? -lit : lit);
 }
 
 void LparseConverter::printSymbolTable()
@@ -221,7 +210,37 @@ void LparseConverter::finalize()
 	Output::finalize();
 	foreach(PrioMap::value_type &min, prioMap_)
 	{
-		printMinimizeRule(min.second.pos, min.second.neg, min.second.wPos, min.second.wNeg);
+		AtomVec   pos,  neg;
+		WeightVec wPos, wNeg;
+		foreach(MiniMap::value_type &lits, min.second)
+		{
+			assert(!lits.second.empty());
+			assert(lits.first[0].type == Val::NUM);
+			int32_t sym;
+			if(lits.second.size() == 1) { sym = lits.second.back(); }
+			else
+			{
+				sym = symbol();
+				printBasicRule(sym, lits.second);
+			}
+			int32_t weight = lits.first[0].num;
+			if(weight < 0)
+			{
+				weight *= -1;
+				sym    *= -1;
+			}
+			if(sym < 0)
+			{
+				neg.push_back(-sym);
+				wNeg.push_back(weight);
+			}
+			else
+			{
+				pos.push_back(sym);
+				wPos.push_back(weight);
+			}
+		}
+		printMinimizeRule(pos, neg, wPos, wNeg);
 	}
 	doFinalize();
 	newSymbols_.clear();
@@ -240,6 +259,17 @@ void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)
 		else if(v < 0) { neg.push_back(-v); }
 	}
 	va_end(vl);
+	printBasicRule(head, pos, neg);
+}
+
+void LparseConverter::printBasicRule(uint32_t head, const LitVec &lits)
+{
+	AtomVec pos, neg;
+	foreach(int32_t lit, lits)
+	{
+		if(lit > 0) { pos.push_back(lit); }
+		else        { neg.push_back(-lit); }
+	}
 	printBasicRule(head, pos, neg);
 }
 

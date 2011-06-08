@@ -101,6 +101,7 @@ private:
 	StatementPtrVec last_;
 	// parsing optimize statements
 	int32_t         level_;
+	int32_t         weak_;
 	bool            maximize_;
 	Optimize::SharedNumber number_;
 	// parsing the incremental part
