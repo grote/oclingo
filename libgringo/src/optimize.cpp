@@ -249,6 +249,14 @@ bool Optimize::grounded(Grounder *g)
 	printer->begin(type_, maximize_);
 
 	setLit_.grounded(g);
+
+	if(setLit_.vals()[0].type != Val::NUM)
+	{
+		std::stringstream os;
+		print(g, os);
+		throw TypeException("only integers weights permitted", StrLoc(g, setLit_.loc()), os.str());
+	}
+
 	printer->print(setLit_.vals());
 
 	foreach(Lit &lit, body_)
