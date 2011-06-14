@@ -60,6 +60,7 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
         , level_(0)
+        , weak_(0)
         , number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
 	, invCurrent_(base)
@@ -132,6 +133,7 @@ start:
 		"."              { return CSPPARSER_DOT; }
 		":"              { return CSPPARSER_COLON; }
 		":-"             { return CSPPARSER_IF; }
+                ":~"             { return CSPPARSER_WIF; }
 		","              { return CSPPARSER_COMMA; }
 		"|"              { return CSPPARSER_VBAR; }
 		"["              { return CSPPARSER_LSBRAC; }
@@ -170,6 +172,8 @@ start:
                 "$domain"        { return CSPPARSER_CSPDOMAIN; }
                 "$distinct"      { return CSPPARSER_CSPDISTINCT; }
                 "$binpack"       { return CSPPARSER_CSPBINPACK; }
+                "$count"         { return CSPPARSER_CSPCOUNT; }
+                "$sum"           { return CSPPARSER_CSPSUM; }
 		ANY              { syntaxError(); goto start; }
 	*/
 lua:
@@ -255,6 +259,7 @@ start:
 		"."              { return CSPPARSER_DOT; }
 		":"              { return CSPPARSER_COLON; }
 		":-"             { return CSPPARSER_IF; }
+                ":~"             { return CSPPARSER_WIF; }
 		","              { return CSPPARSER_COMMA; }
 		"|"              { return CSPPARSER_VBAR; }
 		"["              { return CSPPARSER_LSBRAC; }
@@ -357,7 +362,7 @@ void CSPParser::parse(std::istream &in)
 
 void CSPParser::parse()
 {
-	level_ = 1;
+        level_ = 0;
 	do
 	{
 		parse(streams_.currentStream());
@@ -616,8 +621,8 @@ Optimize *CSPParser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *t
        else { assert(weight == 0); }
        assert(!pTerms->empty());
        if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
-       std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
        pTerms->insert(pTerms->begin() + 1, prio);
+       std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
        pTerms->insert(pTerms->begin() + 2, optnum);
        return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }

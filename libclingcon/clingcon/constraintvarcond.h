@@ -29,7 +29,11 @@ namespace Clingcon
                 virtual ~Printer(){}
         };*/
 
-        ConstraintVarLit(const Loc& loc, ConstraintTerm* t, Term* weight) : Lit(loc), t_(t), weight_(weight)
+        ConstraintVarLit(const Loc& loc, ConstraintTerm* t, Term* weight) : Lit(loc), t_(t), weight_(weight), equal_(0)
+        {
+
+        }
+        ConstraintVarLit(const Loc& loc, ConstraintTerm* t, ConstraintTerm* equal) : Lit(loc), t_(t), weight_(0), equal_(equal)
         {
 
         }
@@ -37,6 +41,11 @@ namespace Clingcon
         clone_ptr<Term>* weight()
         {
             return &weight_;
+        }
+
+        clone_ptr<ConstraintTerm>* equal()
+        {
+            return &equal_;
         }
 
         clone_ptr<ConstraintTerm>* head()
@@ -74,6 +83,7 @@ namespace Clingcon
     private:
         clone_ptr<ConstraintTerm> t_;
         clone_ptr<Term>           weight_;
+        clone_ptr<ConstraintTerm> equal_;
 
     };
 
@@ -103,6 +113,7 @@ namespace Clingcon
 
     public:
             ConstraintVarCond(const Loc &loc, Term* weight,ConstraintTerm* first, LitPtrVec &lits);
+            ConstraintVarCond(const Loc &loc, ConstraintTerm* equal,ConstraintTerm* first, LitPtrVec &lits);
             //AggrLit *aggr();
             //TermPtrVec *terms();
             GlobalConstraintHeadLit* lit()
@@ -113,6 +124,11 @@ namespace Clingcon
             clone_ptr<Term>* weight()
             {
                 return head_.weight();
+            }
+
+            clone_ptr<ConstraintTerm>* equal()
+            {
+                return head_.equal();
             }
 
             clone_ptr<ConstraintTerm>* head()

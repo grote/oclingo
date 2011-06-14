@@ -74,8 +74,8 @@ namespace Clingcon
 			case CSPLit::GREATER: out << "$>"; break;
 			case CSPLit::LOWER:   out << "$<"; break;
 			case CSPLit::EQUAL:   out << "$=="; break;
-			case CSPLit::GTHAN:   out << "$>="; break;
-			case CSPLit::LTHAN:   out << "$=<"; break;
+                        case CSPLit::GEQUAL:   out << "$>="; break;
+                        case CSPLit::LEQUAL:   out << "$=<"; break;
 			case CSPLit::INEQUAL: out << "$!="; break;
 			case CSPLit::ASSIGN:  out << "$:="; break;
 		}

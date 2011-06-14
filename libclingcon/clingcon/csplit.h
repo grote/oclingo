@@ -29,7 +29,7 @@ namespace Clingcon
         class CSPLit : public Lit, public Matchable
 	{
 	public:
-		enum Type { ASSIGN, GREATER, LOWER, EQUAL, GTHAN, LTHAN, INEQUAL };
+                enum Type { ASSIGN, GREATER, LOWER, EQUAL, GEQUAL, LEQUAL, INEQUAL };
 	public:
 	        class Printer : public ::Printer
 	        {
@@ -57,8 +57,8 @@ namespace Clingcon
                             case CSPLit::GREATER: return CSPLit::LOWER;
                             case CSPLit::LOWER:   return CSPLit::GREATER;
                             case CSPLit::EQUAL:   return CSPLit::INEQUAL;
-                            case CSPLit::GTHAN:   return CSPLit::LTHAN;
-                            case CSPLit::LTHAN:   return CSPLit::GTHAN;
+                            case CSPLit::GEQUAL:   return CSPLit::LEQUAL;
+                            case CSPLit::LEQUAL:   return CSPLit::GEQUAL;
                             case CSPLit::INEQUAL: return CSPLit::EQUAL;
                             default: assert("Illegal comparison operator in Constraint"!=0);
                     }
@@ -71,11 +71,11 @@ namespace Clingcon
                 {
                     switch(t)
                     {
-                            case CSPLit::GREATER: return CSPLit::LTHAN;
-                            case CSPLit::LOWER:   return CSPLit::GTHAN;
+                            case CSPLit::GREATER: return CSPLit::LEQUAL;
+                            case CSPLit::LOWER:   return CSPLit::GEQUAL;
                             case CSPLit::EQUAL:   return CSPLit::INEQUAL;
-                            case CSPLit::GTHAN:   return CSPLit::LOWER;
-                            case CSPLit::LTHAN:   return CSPLit::GREATER;
+                            case CSPLit::GEQUAL:   return CSPLit::LOWER;
+                            case CSPLit::LEQUAL:   return CSPLit::GREATER;
                             case CSPLit::INEQUAL: return CSPLit::EQUAL;
                             default: assert("Illegal comparison operator in Constraint"!=0);
                     }

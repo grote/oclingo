@@ -9,7 +9,7 @@ class CSPOutputInterface : public LparseConverter
 {
 
 public:
-    CSPOutputInterface(std::ostream *out, bool b) : LparseConverter(out,b)
+    CSPOutputInterface(bool b) : LparseConverter(b)
     {}
 
     virtual uint32_t symbol(const std::string& name, bool freeze) = 0;

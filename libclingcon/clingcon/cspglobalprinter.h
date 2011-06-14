@@ -72,16 +72,21 @@
     class PlainGlobalConstraintPrinter : public GlobalConstraint::Printer
     {
     public:
-            PlainGlobalConstraintPrinter(PlainOutput *output) : output_(output) { }
+        PlainGlobalConstraintPrinter(PlainOutput *output) : output_(output), numHead_(0) { }
 
             void type(GCType type)
             {
+                type_=type;
                 output_->beginRule();
                 switch(type)
                 {
                 case DISTINCT: output_->out() << "$distinct";
                 break;
                 case BINPACK: output_->out() << "$binpack";
+                break;
+                case COUNT_GLOBAL:
+                case COUNT_UNIQUE:
+                case COUNT: output_->out() << "$count";
                 break;
                 default: assert(false);
                 }
@@ -90,7 +95,31 @@
 
             void beginHead()
             {
-                output_->out() << "[";
+                if ((type_==COUNT || type_==COUNT_UNIQUE) && numHead_==1)
+                    assert(false);
+                else
+                    if (type_==COUNT_GLOBAL && numHead_==0)
+                    {
+                        output_->out() << "{";
+                    }
+                    else
+                        output_->out() << "[";
+            }
+
+            void beginHead(CSPLit::Type cmp)
+            {
+                std::ostream& out(output_->out());
+                switch(cmp)
+                {
+                case CSPLit::ASSIGN:  assert(false); break;
+                case CSPLit::GREATER: out << "$>"; break;
+                case CSPLit::LOWER: out << "$<"; break;
+                case CSPLit::EQUAL: out << "$=="; break;
+                case CSPLit::GEQUAL: out << "$>="; break;
+                case CSPLit::LEQUAL: out << "$<=";break;
+                case CSPLit::INEQUAL: out << "$!="; break;
+                default: assert(false);
+                }
             }
 
             void addHead(GroundedConstraintVarLitVec &vec)
@@ -99,23 +128,62 @@
                 {
 
                     vec[i].vt_.print(output_->storage(), output_->out());
-                    output_->out() << "[";
-                    vec[i].vweight_.print(output_->storage(), output_->out());
-                    output_->out() << "]";
+                    if (type_==COUNT && numHead_==0)
+                    {
+                            output_->out() << "==";
+                            vec[i].vweight_.print(output_->storage(), output_->out());
+
+                    }else
+                    if (type_==COUNT && numHead_==1)
+                    {
+                        continue;
+                    }else
+                    if (type_==COUNT_UNIQUE && numHead_==0)
+                    {
+                        output_->out() << "$==";
+                        vec[i].vweight_.print(output_->storage(), output_->out());
+
+                    }else
+                    if (type_==COUNT_GLOBAL && numHead_==0)
+                    {
+
+                    }else
+                    if (type_==COUNT_GLOBAL && numHead_==1)
+                    {
+                        output_->out() << "[";
+                        vec[i].vweight_.print(output_->storage(), output_->out());
+                        output_->out() << "]";
+
+                    }
+                    else
+                    {
+                        //default
+                        output_->out() << "[";
+                        vec[i].vweight_.print(output_->storage(), output_->out());
+                        output_->out() << "]";
+                    }
+
                     if (i+1<vec.size())
                         output_->out() << ",";
+
                 }
 
             }
 
             void endHead()
             {
-                output_->out() << "]";
+                if ((type_==COUNT || type_==COUNT_UNIQUE)&& numHead_==1)
+                    ;
+                else
+                    output_->out() << "]";
+
+                numHead_++;
             }
 
             void end()
             {
                 output_->endRule();
+                numHead_=0;
             }
 
             ~PlainGlobalConstraintPrinter(){}
@@ -126,6 +194,8 @@
             std::ostream &out() const { return output_->out(); }
     private:
             PlainOutput *output_;
+            GCType type_;
+            size_t numHead_;
     };
     /*
 
@@ -233,6 +303,7 @@
             {
                 GCType type_;
                 boost::ptr_vector<IndexedGroundConstraintVec> heads_;
+                CSPLit::Type cmp_;
             };
 
             typedef boost::ptr_vector<GC> GCvec;
@@ -248,6 +319,11 @@
             void beginHead()
             {
 
+            }
+
+            void beginHead(CSPLit::Type cmp)
+            {
+                tempGC_->cmp_ = cmp;
             }
 
             void addHead(GroundedConstraintVarLitVec &vec)
@@ -274,17 +350,15 @@
                         throw CSPException("In the binpack constraint, the number of items and sizes must be equal.");
                     for (size_t i = 0; i < tempGC_->heads_[0].size(); ++i)
                     {
-                        std::stringstream ss(tempGC_->heads_[0][i].getWeight());
-                        unsigned int w1;
-                        if( (ss >> w1).fail() || w1 != i)
-                          {
-                              throw CSPException("In the binpack constraint, the indices of the bins must be consecutive integers, starting with 0.");
-                          }
+                        if (!tempGC_->heads_[0][i].b_.isInteger() || tempGC_->heads_[0][i].b_.getInteger()!=i)
+                        {
+                            throw CSPException("In the binpack constraint, the indices of the bins must be consecutive integers, starting with 0.");
+                        }
                     }
 
                     for (size_t i = 0; i < tempGC_->heads_[1].size(); ++i)
                     {
-                        if (tempGC_->heads_[1][i].getWeight() != tempGC_->heads_[2][i].getWeight())
+                        if ((tempGC_->heads_[1][i].b_) != (tempGC_->heads_[2][i].b_))
                         {
                             throw CSPException("Index Mismatch in the Binpacking constraints. Items and sizes must have the same indices.");
                         }
@@ -310,12 +384,10 @@
 
 
             LparseConverter *output() const { return output_; }
-            std::ostream &out() const { return output_->out(); }
     private:
             LparseConverter *output_;
             GC* tempGC_;
             GCvec constraints_;
-
     };
 
 

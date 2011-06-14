@@ -21,14 +21,14 @@ namespace Clingcon
 
     void GlobalConstraintHeadLit::print(Storage *sto, std::ostream &out) const
     {
-        out << "[";
+
         for(size_t i = 0; i < vec_.size(); ++i)
         {
             vec_[i].print(sto,out);
             if (i+1<vec_.size())
                 out << ",";
         }
-        out << "]";
+
     }
 
 
@@ -71,8 +71,75 @@ namespace Clingcon
         {
             out << "$distinct";
         }
-        //only print the first one
-        heads_.begin()->print(sto,out);
+        else
+        if (type_==BINPACK)
+        {
+            out << "$binpack";
+        }
+        else
+        if (type_==COUNT || type_ == COUNT_UNIQUE || type_ == COUNT_GLOBAL)
+        {
+            out << "$count";
+        }
+        else
+        {
+            assert(false && "need to implement debug printing");
+        }
+
+        //for (boost::ptr_vector<GlobalConstraintHeadLit>::const_iterator i = heads_.begin(); i != heads_.end(); ++i)
+        for (size_t i = 0; i < heads_.size(); ++i)
+        {
+            if (type_==DISTINCT || type_==BINPACK)
+            {
+                out << "[";
+                heads_[i].print(sto,out);
+                out << "]";
+            }
+            else
+            if (type_==COUNT || type_==COUNT_UNIQUE)
+            {
+                if (i==1)
+                {
+                    switch(cmp_)
+                    {
+                    case CSPLit::ASSIGN:  assert(false); break;
+                    case CSPLit::GREATER: out << "$>"; break;
+                    case CSPLit::LOWER: out << "$<"; break;
+                    case CSPLit::EQUAL: out << "$=="; break;
+                    case CSPLit::GEQUAL: out << "$>="; break;
+                    case CSPLit::LEQUAL: out << "$<=";break;
+                    case CSPLit::INEQUAL: out << "$!="; break;
+                    default: assert(false);
+
+                    }
+                    heads_[i].print(sto,out);
+                }
+                else
+                {
+                    out << "[";
+                    heads_[i].print(sto,out);
+                    out << "]";
+                }
+            }
+            else
+            if (type_==COUNT_GLOBAL)
+            {
+                if (i==0)
+                {
+                    out << "{";
+                    heads_[i].print(sto,out);
+                    out << "}";
+                }
+                else
+                if (i==1)
+                {
+                    out << "[";
+                    heads_[i].print(sto,out);
+                    out << "]";
+                }
+            }
+
+        }
         if (body_.size()>0)
         {
             out << ":-";
@@ -83,6 +150,7 @@ namespace Clingcon
                     out << ",";
             }
         }
+        out << ".\n";
 
     }
 
@@ -132,7 +200,10 @@ namespace Clingcon
         printer->type(type_);
         for (size_t i = 0; i < heads_.size(); ++i)
         {
-            printer->beginHead();
+            if ((type_==COUNT || type_==COUNT_UNIQUE)&& i==1)
+                printer->beginHead(cmp_);
+            else
+                printer->beginHead();
             GlobalConstraintHeadLit& h = heads_[i];
             GroundedConstraintVarLitVec vec;
             h.getVariables(vec, v->output()->storage());

@@ -181,8 +181,9 @@ namespace Clingcon {
 					void cleanAll();
 				private:
                                         void generateConstraint(CSPSolver* csps, Constraint* c, unsigned int boolvar);
-                                        void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);
+                                        //void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);
                                         void generateGlobalConstraint(CSPSolver* csps, LParseGlobalConstraintPrinter::GC& gc);
+                                        Gecode::LinExpr generateLinearExpr(CSPSolver* csps, const GroundConstraint* c);
                                         //IntVar generateVariable(Constraint c);
 
 				IntVarArray x_;

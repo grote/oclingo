@@ -110,6 +110,9 @@ boost::ptr_vector<T> *vec1(T *x)
 %type rule { Rule* }
 %destructor Rule { del($$); }
 
+%type weak { Optimize* }
+%destructor weak { del($$); }
+
 %type var_list { VarSigVec* }
 %destructor var_list { del($$); }
 
@@ -217,23 +220,41 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor aggr_num    { del($$); }
 %destructor aggr_atom   { del($$); }
 
+%type weightprio { std::pair<Term*, Term*>* }
+%destructor weightprio { del($$->first); del($$->second); del($$); }
 
-%type cspdomain                { Clingcon::CSPDomainLiteral* }
-%destructor cspdomain          { del($$); }
-%type globalconstrainthead         { boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >* }
-%destructor globalconstrainthead   { del($$); }
-%type constraintvarcondlist        { Clingcon::ConstraintVarCondPtrVec* }
-%destructor constraintvarcondlist  { del($$); }
-%type nconstraintvarcondlist       { Clingcon::ConstraintVarCondPtrVec* }
-%destructor nconstraintvarcondlist { del($$); }
-%type constraintvarcond            { Clingcon::ConstraintVarCond* }
-%destructor constraintvarcond      { del($$); }
-%type sconstraintvarcondlist       { Clingcon::ConstraintVarCondPtrVec* }
-%destructor sconstraintvarcondlist { del($$); }
-%type nsconstraintvarcondlist      { Clingcon::ConstraintVarCondPtrVec* }
-%destructor nsconstraintvarcondlist{ del($$); }
-%type sconstraintvarcond           { Clingcon::ConstraintVarCond* }
-%destructor sconstraintvarcond     { del($$); }
+
+
+%type cspdomain                         { Clingcon::CSPDomainLiteral* }
+%destructor cspdomain                   { del($$); }
+%type globalconstrainthead              { boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >* }
+%destructor globalconstrainthead        { del($$); }
+%type globalconstraintcounthead         { boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>*, Clingcon::CSPLit::Type >* }
+%destructor globalconstraintcounthead   { del($$); }
+%type condindexlist        { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condindexlist  { del($$); }
+%type ncondindexlist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondindexlist { del($$); }
+%type condindex            { Clingcon::ConstraintVarCond* }
+%destructor condindex      { del($$); }
+%type condequallist        { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condequallist  { del($$); }
+%type ncondequallist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondequallist { del($$); }
+%type condequal            { Clingcon::ConstraintVarCond* }
+%destructor condequal      { del($$); }
+%type condcspequallist        { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condcspequallist  { del($$); }
+%type ncondcspequallist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondcspequallist { del($$); }
+%type condcspequal            { Clingcon::ConstraintVarCond* }
+%destructor condcspequal      { del($$); }
+%type condsetlist       { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condsetlist { del($$); }
+%type ncondsetlist      { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondsetlist{ del($$); }
+%type condset           { Clingcon::ConstraintVarCond* }
+%destructor condset     { del($$); }
 
 %left SEM.
 %left DOTS.
@@ -260,6 +281,7 @@ start ::= program.
 
 program ::= .
 program ::= program line DOT.
+program ::= program weak(w).  { pCSPParser->add(w); }
 
 line ::= INCLUDE STRING(file).                         { pCSPParser->include(file.index); }
 line ::= rule(r).                                      { pCSPParser->add(r); }
@@ -280,26 +302,58 @@ cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(term) COMMA term(a) DOTS term(b) RB
 
 line ::= globalconstrainthead(gc) IF body(body). {pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
 line ::= globalconstrainthead(gc).               {LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(),  boost::tuples::get<1>(*gc),  *boost::tuples::get<2>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
-globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC sconstraintvarcondlist(list) RCBRAC.      { res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::DISTINCT,vec1(list)); }
-globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC constraintvarcondlist(list1) RSBRAC LSBRAC constraintvarcondlist(list2) RSBRAC LSBRAC constraintvarcondlist(list3) RSBRAC.  {
+line ::= globalconstraintcounthead(gc) IF body(body). {pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstraintcounthead(gc).               {LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(),  boost::tuples::get<1>(*gc),  *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
+globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC condsetlist(list) RCBRAC.      { res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::DISTINCT,vec1(list)); }
+globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC LSBRAC condindexlist(list2) RSBRAC LSBRAC condindexlist(list3) RSBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);list->push_back(list2);
                     list->push_back(list3);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::BINPACK,list);
                     }
+ globalconstraintcounthead(res) ::= CSPCOUNT(tok) LSBRAC condequallist(list1) RSBRAC cspcmp(cmp) term(t).  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; ConstraintVarCond* temp = new ConstraintVarCond(tok.loc(), ONE(tok.loc()),t->toConstraintTerm(), empty); list->push_back(vec1(temp));
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* , Clingcon::CSPLit::Type>(tok, Clingcon::COUNT,list, cmp); delete t;
+                    }
 
-nsconstraintvarcondlist(res) ::= sconstraintvarcond(var).                                     { res = vec1(var); }
-nsconstraintvarcondlist(res) ::= nsconstraintvarcondlist(list) COMMA sconstraintvarcond(var). { res = list; res->push_back(var); }
-sconstraintvarcondlist(res)  ::= .                                                            { res = new ConstraintVarCondPtrVec(); }
-sconstraintvarcondlist(res)  ::= nsconstraintvarcondlist(list).                               { res = list; }
+ globalconstraintcounthead(res) ::= CSPCOUNT(tok) LSBRAC condcspequallist(list1) RSBRAC cspcmp(cmp) term(t).  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; ConstraintVarCond* temp = new ConstraintVarCond(tok.loc(), ONE(tok.loc()),t->toConstraintTerm(), empty); list->push_back(vec1(temp));
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* , Clingcon::CSPLit::Type>(tok, Clingcon::COUNT_UNIQUE,list, cmp); delete t;
+                    }
+globalconstrainthead(res) ::= CSPCOUNT(tok) LCBRAC condsetlist(list1) RCBRAC LSBRAC condindexlist(list2) RSBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; list->push_back(list2);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::COUNT_GLOBAL,list);
+                    }
 
-sconstraintvarcond(res) ::= term(t) weightcond(cond).   { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
 
-nconstraintvarcondlist(res) ::= constraintvarcond(var).                                    { res = vec1(var); }
-nconstraintvarcondlist(res) ::= nconstraintvarcondlist(list) COMMA constraintvarcond(var). { res = list; res->push_back(var); }
-constraintvarcondlist(res)  ::= .                                                          { res = new ConstraintVarCondPtrVec(); }
-constraintvarcondlist(res)  ::= nconstraintvarcondlist(list).                              { res = list; }
+ncondsetlist(res) ::= condset(var).                                   { res = vec1(var); }
+ncondsetlist(res) ::= ncondsetlist(list) COMMA condset(var).          { res = list; res->push_back(var); }
+condsetlist(res)  ::= .                                               { res = new ConstraintVarCondPtrVec(); }
+condsetlist(res)  ::= ncondsetlist(list).                             { res = list; }
 
-constraintvarcond(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).   { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+condset(res) ::= term(t) weightcond(cond).                            { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
+
+ncondindexlist(res) ::= condindex(var).                               { res = vec1(var); }
+ncondindexlist(res) ::= ncondindexlist(list) COMMA condindex(var).    { res = list; res->push_back(var); }
+condindexlist(res)  ::= .                                             { res = new ConstraintVarCondPtrVec(); }
+condindexlist(res)  ::= ncondindexlist(list).                              { res = list; }
+
+condindex(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).{ res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+
+
+ncondequallist(res) ::= condequal(var).                                         { res = vec1(var); }
+ncondequallist(res) ::= ncondequallist(list) COMMA condequal(var).              { res = list; res->push_back(var); }
+condequallist(res)  ::= .                                                       { res = new ConstraintVarCondPtrVec(); }
+condequallist(res)  ::= ncondequallist(list).                                   { res = list; }
+
+condequal(res) ::= term(t) EQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+
+
+ncondcspequallist(res) ::= condcspequal(var).                                         { res = vec1(var); }
+ncondcspequallist(res) ::= ncondcspequallist(list) COMMA condcspequal(var).              { res = list; res->push_back(var); }
+condcspequallist(res)  ::= .                                                       { res = new ConstraintVarCondPtrVec(); }
+condcspequallist(res)  ::= ncondcspequallist(list).                                   { res = list; }
+
+condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
 
 
 
@@ -367,8 +421,8 @@ body_literal(res) ::= conjunction(lit).                   { res = lit; }
 
 cspcmp(res) ::= CGREATER. { res = CSPLit::GREATER; }
 cspcmp(res) ::= CLOWER.   { res = CSPLit::LOWER; }
-cspcmp(res) ::= CGTHAN.   { res = CSPLit::GTHAN; }
-cspcmp(res) ::= CLTHAN.   { res = CSPLit::LTHAN; }
+cspcmp(res) ::= CGTHAN.   { res = CSPLit::GEQUAL; }
+cspcmp(res) ::= CLTHAN.   { res = CSPLit::LEQUAL; }
 cspcmp(res) ::= CEQUAL.   { res = CSPLit::EQUAL; }
 cspcmp(res) ::= CINEQUAL. { res = CSPLit::INEQUAL; }
 
@@ -414,6 +468,7 @@ term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. {  res = new Wrapper
 term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { WrapperTermPtrVec args; res = new WrapperLuaTerm(id.loc(), id.index, args); }
 term(res) ::= MINUS(m) term(a). [UMINUS]                    {  res = new WrapperMathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
 term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new WrapperMathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
+term(res) ::= CSPSUM(tok) LCBRAC condsetlist(list1) RCBRAC. {tok=tok; list1=list1; res=res;}
 
 
 
@@ -587,6 +642,15 @@ npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; lis
 
 priolit_cond(res) ::= .                    { res = new LitPtrVec(); }
 priolit_cond(res) ::= npriolit_cond(list). { res = list; }
+
+constraint(res) ::= WIF(tok). { pCSPParser->maximize(false, false); res = tok; }
+
+weightprio(res) ::= DOT(tok).                                { res = new std::pair<Term*, Term*>(ONE(tok.loc()), ONE(tok.loc())); }
+weightprio(res) ::= DOT(tok) LOWER term(w) GREATER.          { res = new std::pair<Term*, Term*>(w->toTerm(),              ONE(tok.loc())); delete w;}
+weightprio(res) ::= DOT(tok) LOWER COLON term(p) GREATER.    { res = new std::pair<Term*, Term*>(ONE(tok.loc()), p->toTerm()            ); delete p; }
+weightprio(res) ::= DOT LOWER term(w) COLON term(p) GREATER. { res = new std::pair<Term*, Term*>(w->toTerm(),              p->toTerm()             ); delete w; delete p;}
+
+weak(res) ::= constraint(tok) body(body) weightprio(wp). { res = pCSPParser->optimize(Optimize::CONSTRAINT, tok.loc(), 0, wp->first, wp->second, body); delete wp; }
 
 compute ::= COMPUTE LCBRAC compute_list RCBRAC.
 compute ::= COMPUTE NUMBER LCBRAC compute_list RCBRAC.

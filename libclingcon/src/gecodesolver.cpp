@@ -171,9 +171,12 @@ bool GecodeSolver::initialize()
 
         std::vector<unsigned int> vars;
         for (LParseGlobalConstraintPrinter::GCvec::iterator i = globalConstraints_.begin(); i != globalConstraints_.end(); ++i)
-            for (boost::ptr_vector<GroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
-                for (GroundConstraintVec::iterator k = j->begin(); k != j->end(); ++k)
-                    k->getAllVariables(vars,this);
+            for (boost::ptr_vector<IndexedGroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
+                for (IndexedGroundConstraintVec::iterator k = j->begin(); k != j->end(); ++k)
+                {
+                    k->a_.getAllVariables(vars,this);
+                    k->b_.getAllVariables(vars,this);
+                }
 
 
         //adding the default domains to the specialized domains
@@ -1231,11 +1234,11 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
     const GroundConstraint* y;
     CSPLit::Type r = c->getRelation(x,y);
     Gecode::IntRelType ir;
-    if (!x->isOperator())
-    {
-        std::swap(x,y);
-        r = CSPLit::switchRel(r);
-    }
+    //if (!x->isOperator())
+    //{
+    //   std::swap(x,y);
+    //    r = CSPLit::switchRel(r);
+    //}
     switch(r)
     {
     case CSPLit::EQUAL:
@@ -1247,10 +1250,10 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
     case CSPLit::LOWER:
         ir = IRT_LE;
         break;
-    case CSPLit::LTHAN:
+    case CSPLit::LEQUAL:
         ir = IRT_LQ;
         break;
-    case CSPLit::GTHAN:
+    case CSPLit::GEQUAL:
         ir = IRT_GQ;
         break;
     case CSPLit::GREATER:
@@ -1261,332 +1264,88 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
         assert(false);
     }
 
-    // transform into linear relation Y*3+Z*Y >= X+3  ==>> Y*3 + Z*Y - X -3 >= 0
-    if (!y->isOperator())
+    LinRel rel(generateLinearExpr(csps,x), ir, generateLinearExpr(csps,y));
+
+    rel.post(*this, b_[boolvar], true,ICL);
+
+
+//    // transform into linear relation Y*3+Z*Y >= X+3  ==>> Y*3 + Z*Y - X -3 >= 0
+//    if (!y->isOperator())
+//    {
+//        IntVarArgs array(x->getLinearSize() + 1);
+//        IntArgs args(x->getLinearSize() + 1);
+//        generateLinearConstraint(csps, x, args, array, 1);
+//        if (y->isInteger())
+//            array[array.size()-1] = IntVar(*this, y->getInteger(), y->getInteger());
+//        else
+//            array[array.size()-1] = x_[csps->getVariable(y->getString())];
+//        args[args.size()-1] = -1;
+//        Gecode::linear(*this, args, array, ir, 0, b_[boolvar], ICL);
+//        return;
+//    }
+//    else
+//    {
+//        IntVarArgs array(y->getLinearSize());
+//        IntArgs args(y->getLinearSize());
+//        IntVarArgs array2(x->getLinearSize() + array.size());
+//        IntArgs args2(x->getLinearSize() + args.size());
+//        generateLinearConstraint(csps, y, args, array, 0);
+//        generateLinearConstraint(csps, x, args2, array2, array.size());
+//        for (int i = 0; i < array.size(); ++i)
+//        {
+//            array2[i+x->getLinearSize()] = array[i];
+//            args2[i+x->getLinearSize()] = args[i]*-1;
+//        }
+//        Gecode::linear(*this, args2, array2, ir, 0, b_[boolvar], ICL);
+//        return;
+//    }
+
+}
+
+
+Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(CSPSolver* csps, const GroundConstraint* c)
+{
+    if (c->isInteger())
     {
-        IntVarArgs array(x->getLinearSize() + 1);
-        IntArgs args(x->getLinearSize() + 1);
-        generateLinearConstraint(csps, x, args, array, 1);
-        if (y->isInteger())
-            array[array.size()-1] = IntVar(*this, y->getInteger(), y->getInteger());
-        else
-            array[array.size()-1] = x_[csps->getVariable(y->getString())];
-        args[args.size()-1] = -1;
-        Gecode::linear(*this, args, array, ir, 0, b_[boolvar], ICL);
-        return;
+       return LinExpr(c->getInteger());
     }
     else
+    if (c->isVariable())
     {
-        IntVarArgs array(y->getLinearSize());
-        IntArgs args(y->getLinearSize());
-        IntVarArgs array2(x->getLinearSize() + array.size());
-        IntArgs args2(x->getLinearSize() + args.size());
-        generateLinearConstraint(csps, y, args, array, 0);
-        generateLinearConstraint(csps, x, args2, array2, array.size());
-        for (int i = 0; i < array.size(); ++i)
-        {
-            array2[i+x->getLinearSize()] = array[i];
-            args2[i+x->getLinearSize()] = args[i]*-1;
-        }
-        Gecode::linear(*this, args2, array2, ir, 0, b_[boolvar], ICL);
-        return;
+        return LinExpr(x_[csps->getVariable(c->getString())]);
+    }
+
+    const GroundConstraint* a = c->a_.get();
+    const GroundConstraint* b = c->b_.get();
+    GroundConstraint::Operator op = c->getOperator();
+
+    switch(op)
+    {
+        case GroundConstraint::TIMES:
+            return generateLinearExpr(csps,a)*generateLinearExpr(csps,b);
+        case GroundConstraint::MINUS:
+            return generateLinearExpr(csps,a)-generateLinearExpr(csps,b);
+        case GroundConstraint::PLUS:
+            return generateLinearExpr(csps,a)+generateLinearExpr(csps,b);
+        case GroundConstraint::DIVIDE:
+             return generateLinearExpr(csps,a)/generateLinearExpr(csps,b);
+        case GroundConstraint::ABS:
+            return Gecode::abs(generateLinearExpr(csps,a));
     }
 
 }
 
-void GecodeSolver::SearchSpace::generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num)
-{
-
-        if (c->isInteger())
-        {
-           array[0] = IntVar(*this, c->getInteger(), c->getInteger());
-           args[0] = 1;
-           return;
-        }
-        else
-        if (c->isVariable())
-        {
-            array[0] = x_[csps->getVariable(c->getString())];
-            args[0] = 1;
-            return;
-        }
-
-        const GroundConstraint* a = c->a_.get();
-        const GroundConstraint* b = c->b_.get();
-        GroundConstraint::Operator op = c->getOperator();
-
-        if(op == GroundConstraint::TIMES)
-        {
-            if (b->isInteger())
-                std::swap(a,b);
-            if (a->isInteger())
-            {
-                if (b->isVariable())
-                {
-                    array[0] = x_[csps->getVariable(b->getString())];
-                    args[0]  = a->getInteger();
-                    return;
-                }
-                else // INTEGER should not be allowed and already optimized away
-                    //if (b->getOperator() == GroundConstraint::OPERATOR)
-                {
-                    generateLinearConstraint(csps, b, args, array, num);
-                    // multiply everything in brackets by integer
-                    // 3 * (x+3*Y+Z) becomes 3*X + 9*Y + 3*Z
-                    for (unsigned int i = 0; i < args.size() - num; ++i)
-                    {
-                        args[i] = args[i] * a->getInteger();
-                    }
-                    return;
-                }
-                // INTEGER should not be allowed and already optimized away
-                assert(false);
-            }
-            else
-            {
-                if (b->isOperator())
-                    std::swap(a,b);
-                if (!a->isOperator())
-                {
-                    if (!b->isOperator())
-                    {
-                        IntVar erg(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                        mult(*this, x_[csps->getVariable(b->getString())],x_[csps->getVariable(a->getString())], erg, ICL);
-                        array[0] = erg;
-                        args[0] = 1;
-                        return;
-                    }
-                }
-                else
-                    //if (a->getType() == GroundConstraint::OPERATOR)
-                {
-                    if (!b->isOperator())
-                    {
-                        // X * (A+B*4+Y) ==> A+B*4+Y - Z == 0, Erg =  X*Z
-                        IntArgs subArgs(a->getLinearSize() + 1);
-                        IntVarArgs subArray(a->getLinearSize() + 1);
-                        generateLinearConstraint(csps, a, subArgs, subArray, 1);
-                        IntVar z(*this,  Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                        subArray[subArray.size() - 1] = z;
-                        subArgs[subArgs.size() - 1] = -1;
-                        Gecode::linear(*this, subArgs, subArray, IRT_EQ, 0, ICL);
-                        mult(*this, z,x_[csps->getVariable(b->getString())],array[0], ICL);
-                        args[0] = 1;
-                        return;
-                    }
-                    else
-                        //if (b->getOperator() == GroundConstraint::OPERATOR)
-                    {
-                        IntArgs subArgs1(a->getLinearSize() + 1);
-                        IntVarArgs subArray1(a->getLinearSize() + 1);
-                        generateLinearConstraint(csps, a, subArgs1, subArray1, 1);
-                        IntVar z1(*this,  Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                        subArray1[subArray1.size() - 1] = z1;
-                        subArgs1[subArgs1.size() - 1] = -1;
-                        Gecode::linear(*this, subArgs1, subArray1, IRT_EQ, 0, ICL);
-
-                        IntArgs subArgs2(b->getLinearSize() + 1);
-                        IntVarArgs subArray2(b->getLinearSize() + 1);
-                        generateLinearConstraint(csps, b, subArgs2, subArray2, 1);
-                        IntVar z2(*this,  Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                        subArray2[subArray2.size() - 1] = z2;
-                        subArgs2[subArgs2.size() - 1] = -1;
-                        Gecode::linear(*this, subArgs2, subArray2, IRT_EQ, 0, ICL);
-
-                        mult(*this, z1,z2, array[0], ICL);
-                        args[0] = 1;
-                        return;
-
-                    }
-                }
-            }
-        }
-
-
-        int minus = 1;
-        if (op == GroundConstraint::MINUS)
-            minus = -1;
-        if (op == GroundConstraint::PLUS || op == GroundConstraint::MINUS)
-        {
-            if ((!a->isOperator()) && (!b->isOperator()))
-            {
-                if (a->isVariable())
-                {
-                    array[0] = x_[csps->getVariable(a->getString())];
-                    args[0] = 1;
-                }
-                else
-                    //if (a->getType() == GroundConstraint::INTEGER)
-                {
-                    array[0] = IntVar(*this, a->getInteger(), a->getInteger());
-                    args[0] = 1;
-                }
-
-                if (b->isVariable())
-                {
-                    array[1] = x_[csps->getVariable(b->getString())];
-                    args[1] = 1 * minus;
-                }
-                else
-                    //if (b->getType() == GroundConstraint::INTEGER)
-                {
-                    array[1] = IntVar(*this, b->getInteger(), b->getInteger());
-                    args[1] = 1 * minus;
-                }
-                return;
-            }
-            else
-                if (!b->isOperator())
-                {
-                    // a is operator
-                    generateLinearConstraint(csps, a, args, array, num+1);
-
-                    if (b->isVariable())
-                    {
-                        array[array.size() - num - 1] = x_[csps->getVariable(b->getString())];
-                        args[args.size() - num - 1] = 1 * minus;
-                    }
-                    else
-                        //if (b->getOperator() == GroundConstraint::INTEGER)
-                    {
-                        array[array.size() - num - 1] = IntVar(*this, b->getInteger(), b->getInteger());
-                        args[args.size() - num - 1] = 1 * minus;
-                    }
-                    return;
-                }
-                else
-                    if (!a->isOperator())
-                    {
-                        //b is operator
-                        IntArgs subArgs(b->getLinearSize());
-                        IntVarArgs subArray(b->getLinearSize());
-                        generateLinearConstraint(csps, b,subArgs, subArray, 0);
-                        if (a->isVariable())
-                        {
-                            array[0] = x_[csps->getVariable(a->getString())];
-                            args[0] = 1;
-                        }
-                        else
-                            //if (a->getOperator() == GroundConstraint::INTEGER)
-                        {
-                            array[0] = IntVar(*this, a->getInteger(), a->getInteger());
-                            args[0] = 1;
-                        }
-                        for (int i = 0; i < subArgs.size(); ++i)
-                        {
-                            array[i+1] = subArray[i];
-                            args[i+1] = subArgs[i]*minus;
-                        }
-
-                    }
-                    else
-                        //both are operators
-                    {
-                        IntArgs subArgs(a->getLinearSize());
-                        IntVarArgs subArray(a->getLinearSize());
-                        generateLinearConstraint(csps, a, subArgs, subArray, 0);
-                        generateLinearConstraint(csps, b, args, array, num+subArray.size());
-                        for (int i = 0; i < subArray.size(); ++i)
-                        {
-                            array[array.size()- subArray.size() - num + i] = subArray[i];
-                            args[args.size()- subArgs.size() - num + i] = subArgs[i] * minus;
-                        }
-                        return;
-                    }
-
-        }
-        else
-            if (op == GroundConstraint::ABS)
-            {
-                IntVar z(*this, 0, Gecode::Int::Limits::max);
-                if (a->isOperator())
-                {
-                    IntArgs subArgs(a->getLinearSize() + 1);
-                    IntVarArgs subArray(a->getLinearSize() + 1);
-                    generateLinearConstraint(csps, a, subArgs, subArray, 1);
-                    subArray[subArray.size() -1] = z;
-                    subArgs[subArgs.size() -1] = -1;
-                    Gecode::linear(*this, subArgs, subArray, IRT_EQ, 0, ICL);
-                }
-                else
-                    if (a->isVariable())
-                    {
-                        z = x_[csps->getVariable(a->getString())];
-                    }
-                Gecode::abs(*this, z,array[0],ICL);
-                args[0] = 1;
-            }
-            else
-                if (op == GroundConstraint::DIVIDE)
-		{
-                    //Z / W
-                    IntVar z(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                    IntVar w(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                    if (a->isOperator())
-                    {
-                        IntArgs subArgs(a->getLinearSize() + 1);
-                        IntVarArgs subArray(a->getLinearSize() + 1);
-                        generateLinearConstraint(csps, a, subArgs, subArray, 1);
-                        subArray[subArray.size() -1] = z;
-                        subArgs[subArgs.size() -1] = -1;
-                        Gecode::linear(*this, subArgs, subArray, IRT_EQ, 0, ICL);
-                    }
-                    else
-                        //if (a->getOperator() == GroundConstraint::VARIABLE)
-                        if (a->isVariable())
-			{
-                            z = x_[csps->getVariable(a->getString())];
-			}
-			else
-                            //if (a->getOperator() == GroundConstraint::INTEGER)
-			{
-                            z = IntVar(*this, a->getInteger(), a->getInteger());
-			}
-
-                    if (b->isOperator())
-                    {
-                        IntArgs subArgs(b->getLinearSize() + 1);
-                        IntVarArgs subArray(b->getLinearSize() + 1);
-                        generateLinearConstraint(csps, b, subArgs, subArray, 1);
-                        subArray[subArray.size() -1] = w;
-                        subArgs[subArgs.size() -1] = -1;
-                        Gecode::linear(*this, subArgs, subArray, IRT_EQ, 0, ICL);
-                    }
-                    else
-                        //if (b->getOperator() == GroundConstraint::VARIABLE)
-                        if (b->isVariable())
-			{
-                            w = x_[csps->getVariable(b->getString())];
-			}
-			else
-                            //if (b->getOperator() == GroundConstraint::INTEGER)
-			{
-                            w = IntVar(*this, b->getInteger(), b->getInteger());
-			}
-
-                    IntVar erg(*this,  Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                    div(*this, z,w,erg, ICL);
-                    array[0] = erg;
-                    args[0] = 1;
-                    return;
-		}
-}
 
 void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParseGlobalConstraintPrinter::GC& gc)
 {
 
     if (gc.type_==DISTINCT)
     {
-        IntVarArray z(*this, gc.heads_[0].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArray z(*this, gc.heads_[0].size());
 
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-            IntVarArgs array(gc.heads_[0][i].getLinearSize());
-            IntArgs args(gc.heads_[0][i].getLinearSize());
-            //TODO: special case for variables, do not need to create linear constraint
-            generateLinearConstraint(csps, &gc.heads_[0][i], args, array, 0);
-
-            Gecode::linear(*this, args, array, IRT_EQ, z[i], ICL);
+            z[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
         }
 
         Gecode::distinct(*this,z,ICL);
@@ -1595,115 +1354,119 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
     }
     if (gc.type_==BINPACK)
     {
-        IntVarArray l(*this, gc.heads_[0].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArray l(*this, gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-            IntVarArgs array(gc.heads_[0][i].getLinearSize());
-            IntArgs args(gc.heads_[0][i].getLinearSize());
-            //TODO: special case for variables, do not need to create linear constraint
-            generateLinearConstraint(csps, &gc.heads_[0][i], args, array, 0);
-
-            Gecode::linear(*this, args, array, IRT_EQ, l[i], ICL);
+            l[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
         }
 
-        IntVarArray b(*this, gc.heads_[1].size(), Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArray b(*this, gc.heads_[1].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
         for (size_t i = 0; i < gc.heads_[1].size(); ++i)
         {
-            IntVarArgs array(gc.heads_[1][i].getLinearSize());
-            IntArgs args(gc.heads_[1][i].getLinearSize());
-            //TODO: special case for variables, do not need to create linear constraint
-            generateLinearConstraint(csps, &gc.heads_[1][i], args, array, 0);
-
-            Gecode::linear(*this, args, array, IRT_EQ, b[i], ICL);
+            b[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[1][i].a_),ICL);
         }
 
         IntArgs  s(gc.heads_[2].size());
         for (size_t i = 0; i < gc.heads_[2].size(); ++i)
         {
-            //IntVarArgs array(gc.heads_[2][i].getLinearSize());
-           // IntArgs args(gc.heads_[2][i].getLinearSize());
-            //TODO: special case for variables, do not need to create linear constraint
-            //generateLinearConstraint(csps, &gc.heads_[2][i], args, array, 0);
 
-            if (!gc.heads_[2][i].isInteger())
+
+            if (!gc.heads_[2][i].a_.isInteger())
                 throw ASPmCSPException("Third argument of binpacking constraint must be a list of integers.");
-            //Gecode::linear(*this, args, array, IRT_EQ, s[i], ICL);
-            s[i] = gc.heads_[2][i].getInteger();
+
+            s[i] = gc.heads_[2][i].a_.getInteger();
         }
 
         Gecode::binpacking(*this,l,b,s,ICL);
         return;
 
     }
+    if (gc.type_==COUNT)
+    {
+        IntVarArray a(*this, gc.heads_[0].size());
+        IntArgs c(gc.heads_[0].size());
+
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+            a[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+
+            assert(gc.heads_[0][i].b_.isInteger());
+            c[i] = gc.heads_[0][i].b_.getInteger();
+
+        }
+
+        IntRelType cmp;
+        switch(gc.cmp_)
+        {
+        case CSPLit::ASSIGN:assert(false);
+        case CSPLit::GREATER:cmp=IRT_GR; break;
+        case CSPLit::LOWER:cmp=IRT_LE; break;
+        case CSPLit::EQUAL:cmp=IRT_EQ; break;
+        case CSPLit::GEQUAL:cmp=IRT_GQ; break;
+        case CSPLit::LEQUAL:cmp=IRT_LQ; break;
+        case CSPLit::INEQUAL:cmp=IRT_NQ; break;
+        default: assert(false);
+        }
+
+        IntVar z(expr(*this,generateLinearExpr(csps,&gc.heads_[1][0].a_),ICL));
+
+        Gecode::count(*this,a,c,cmp,z,ICL);
+        return;
+
+    }
+    if (gc.type_==COUNT_UNIQUE)
+    {
+        IntVarArray a(*this, gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+              a[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+        }
+
+        IntRelType cmp;
+        switch(gc.cmp_)
+        {
+        case CSPLit::ASSIGN:assert(false);
+        case CSPLit::GREATER:cmp=IRT_GR; break;
+        case CSPLit::LOWER:cmp=IRT_LE; break;
+        case CSPLit::EQUAL:cmp=IRT_EQ; break;
+        case CSPLit::GEQUAL:cmp=IRT_GQ; break;
+        case CSPLit::LEQUAL:cmp=IRT_LQ; break;
+        case CSPLit::INEQUAL:cmp=IRT_NQ; break;
+        default: assert(false);
+        }
+
+        IntVar c = expr(*this, generateLinearExpr(csps,&gc.heads_[0][0].b_),ICL);
+        IntVar z = expr(*this, generateLinearExpr(csps,&gc.heads_[1][0].a_),ICL);
+        Gecode::count(*this,a,c,cmp,z,ICL);
+        return;
+    }
+    if (gc.type_==COUNT_GLOBAL)
+    {
+        IntVarArray a(*this, gc.heads_[0].size());
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+              a[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+        }
+
+        IntVarArray b(*this, gc.heads_[1].size());
+        IntArgs c(gc.heads_[0].size());
+        for (size_t i = 0; i < gc.heads_[1].size(); ++i)
+        {
+              b[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[1][i].a_),ICL);
+
+              assert(gc.heads_[1][i].b_.isInteger());
+              c[i] = gc.heads_[1][i].b_.getInteger();
+        }
+        Gecode::count(*this,a,b,c,ICL);
+
+        return;
+    }
     assert(false);
 
 }
 
-/*
-IntVar GecodeSolver::SearchSpace::generateVariable(Constraint c)
-{
-        if (c.getType() == Constraint::VARIABLE)
-	{
-		return x_[c.getVar()];
-	}
-	else
-        if (c.getType() == Constraint::OPERATOR)
-	{
-                Constraint* a,*b;
-		IntVar v1,v2;
-                Constraint::Operator op = c.getOperator(a,b);
 
-                if (a->getType() == Constraint::VARIABLE || a->getType() == Constraint::OPERATOR)
-		{
-			v1 = generateVariable(*a);
-		}
-		else
-                if (a->getType() == Constraint::INTEGER)
-		{
-                        v1 = IntVar(*this, a->getInteger(), a->getInteger());
-		}
-                if (op != Constraint::ABS)
-		{
-                if (b->getType() == Constraint::VARIABLE || b->getType() == Constraint::OPERATOR)
-		{
-			v2 = generateVariable(*b);
-		}
-		else
-                if (b->getType() == Constraint::INTEGER)
-		{
-                        v2 = IntVar(*this, b->getInteger(), b->getInteger());
-		}
-		}
-
-
-		switch(op)
-		{
-			// this is linear for plus/minus, but not for times, as gecode can not see if v2 is a constant or not.
-                        case Constraint::PLUS:
-				// does  linear(home, xy, IRT_EQ, z, icl, pk);
-                                return plus(*this, v1,v2);
-                        case Constraint::MINUS:
-				// does  IntVarArgs xy(2); IntArgs a(2, 1,-1);
-				//      xy[0]=x; xy[1]=y;
-				//      linear(home, a, xy, IRT_EQ, z, icl, pk);
-                                return minus(*this, v1,v2, ICL);
-                        case Constraint::TIMES:
-                                return mult(*this, v1,v2, ICL);
-                        case Constraint::DIVIDE:
-				{
-                                        IntVar ret(*this, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
-                                        div(*this, v1,v2, ret, ICL);
-					return ret;
-				}
-                        case Constraint::ABS:
-                                return abs(*this, v1, ICL);
-
-
-		}
-	}
-	assert(false);
-}
-*/
 
 }//namespace
 

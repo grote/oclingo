@@ -27,7 +27,7 @@
 #include <gringo/litdep.h>
 
 CSPOutput::CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
-        : Clingcon::CSPOutputInterface(0, shiftDisj)
+        : Clingcon::CSPOutputInterface(shiftDisj)
 	, b_(0)
 	, lastUnnamed_(0)
         , cspsolver_(cspsolver)

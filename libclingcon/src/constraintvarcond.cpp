@@ -11,9 +11,18 @@ namespace Clingcon
     void ConstraintVarLit::print(Storage *sto, std::ostream &out) const
     {
         t_->print(sto,out);
-        out << "[";
-        weight_->print(sto,out);
-        out << "]";
+        if (weight_)
+        {
+            out << "[";
+            weight_->print(sto,out);
+            out << "]";
+        }
+        else
+        {
+            out << "$==";
+            equal_->print(sto,out);
+        }
+
     }
 
     void ConstraintVarLit::accept(::Printer *)
@@ -26,7 +35,10 @@ namespace Clingcon
     {
         GroundedConstraintVarLit v;
         v.vt_ = t_->val(grounder);
-        v.vweight_ = weight_->val(grounder);
+        if (weight_)
+            v.vweight_ = weight_->val(grounder);
+        else
+            v.vweight_ = equal_->val(grounder);
         parent->addGround(v);
     }
 
@@ -34,7 +46,12 @@ namespace Clingcon
     {
         t_->visitVarTerm(visitor);
         //visitor->visit(t_.get(),false);
-        visitor->visit(weight_.get(),false);
+        if (weight_)
+            visitor->visit(weight_.get(),false);
+        else
+            equal_->visit(visitor,false);
+            //visitor->visit(equal_.get(),false);
+
     }
 
 
@@ -75,9 +92,18 @@ namespace Clingcon
                             LitPtrVec lits;
                             //lits.push_back(lit);
                             lits.insert(lits.end(), cond_.lits()->begin() + 1, cond_.lits()->end());
-                            clone_ptr<Term> weight(*cond_.weight());
-                            clone_ptr<ConstraintTerm> head(*cond_.head());
-                            cond_.lit()->add(new ConstraintVarCond(cond_.loc(), weight.release(), head.release(), lits));
+                            if (*cond_.weight())
+                            {
+                                clone_ptr<Term> weight(*cond_.weight());
+                                clone_ptr<ConstraintTerm> head(*cond_.head());
+                                cond_.lit()->add(new ConstraintVarCond(cond_.loc(), weight.release(), head.release(), lits));
+                            }
+                            else
+                            {
+                                clone_ptr<ConstraintTerm> equal(*cond_.equal());
+                                clone_ptr<ConstraintTerm> head(*cond_.head());
+                                cond_.lit()->add(new ConstraintVarCond(cond_.loc(), equal.release(), head.release(), lits));
+                            }
                             break;
             }
     }
@@ -93,6 +119,10 @@ namespace Clingcon
 
 
     ConstraintVarCond::ConstraintVarCond(const Loc &loc, Term* weight, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(loc, first, weight), lits_(lits.release())
+    {
+    }
+
+    ConstraintVarCond::ConstraintVarCond(const Loc &loc, ConstraintTerm* equal, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(loc, first, equal), lits_(lits.release())
     {
     }
 

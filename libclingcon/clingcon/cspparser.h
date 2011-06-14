@@ -68,10 +68,10 @@ public:
 	void include(uint32_t filename);
 	void parseError();
 	void parse();
+	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
         void incremental(iPart part, uint32_t index = 0);
 	void invPart();
 	void add(Statement *s);
-        void maximize(bool maximize) { maximize_ = maximize; level_++; }
         Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
 	Clingcon::WrapperTerm *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
@@ -101,7 +101,8 @@ private:
 	ErrorVec        errors_;
 	StatementPtrVec last_;
 	// parsing optimize statements
-	int             level_;
+        int32_t         level_;
+	int32_t         weak_;
 	bool            maximize_;
         Optimize::SharedNumber number_;
 	// parsing the incremental part

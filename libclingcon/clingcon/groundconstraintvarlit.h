@@ -8,7 +8,10 @@ namespace Clingcon
     enum GCType
     {
         DISTINCT,
-        BINPACK
+        BINPACK,
+        COUNT,
+        COUNT_UNIQUE,
+        COUNT_GLOBAL
     };
 
     struct GroundedConstraintVarLit

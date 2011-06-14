@@ -39,10 +39,10 @@ namespace Clingcon
                     case CSPLit::LOWER:
                         output_->out() << "$<";
                         break;
-                    case CSPLit::GTHAN:
+                    case CSPLit::GEQUAL:
                         output_->out() << "$>=";
                         break;
-                    case CSPLit::LTHAN:
+                    case CSPLit::LEQUAL:
                         output_->out() << "$<=";
                         break;
                     case CSPLit::INEQUAL:
@@ -131,10 +131,10 @@ namespace Clingcon
                     case CSPLit::LOWER:
                         name += "$<";
                         break;
-                    case CSPLit::GTHAN:
+                    case CSPLit::GEQUAL:
                         name += "$>=";
                         break;
-                    case CSPLit::LTHAN:
+                    case CSPLit::LEQUAL:
                         name += "$<=";
                         break;
                     case CSPLit::INEQUAL:
