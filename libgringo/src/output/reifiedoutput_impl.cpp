@@ -24,11 +24,23 @@
 
 namespace reifiedoutput_impl
 {
-	void DisplayPrinter::print(PredLitRep *l)
+
+	void ShowPrinter::begin(const Val &head)
 	{
-		out() << (show() ? "show" : "hide") << "(";
-		output_->val(output_->symbol(l)).print(output_->storage(), out());
-		out() << ").\n";
+		#pragma message "reimplement me"
+	}
+
+	void ShowPrinter::print(PredLitRep *l)
+	{
+		#pragma message "reimplement me"
+		//out() << (show() ? "show" : "hide") << "(";
+		//output_->val(output_->symbol(l)).print(output_->storage(), out());
+		//out() << ").\n";
+	}
+
+	void ShowPrinter::end()
+	{
+		#pragma message "reimplement me"
 	}
 
 	void ExternalPrinter::print(PredLitRep *l)
@@ -367,7 +379,7 @@ namespace reifiedoutput_impl
 
 }
 
-GRINGO_REGISTER_PRINTER(reifiedoutput_impl::DisplayPrinter, Display::Printer, ReifiedOutput)
+GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ShowPrinter, Show::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ExternalPrinter, External::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::RulePrinter, Rule::Printer, ReifiedOutput)
 /*

@@ -82,7 +82,7 @@ public:
 	size_t symbol(PredLitRep *pred);
 	void minimize(size_t sym, int weight, int prio);
 	void finalize();
-	void doShow(bool s);
+	void doHideAll();
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void pushDep(size_t n = 1);
 	void addDep(size_t symbol, size_t n = 1);

@@ -80,7 +80,7 @@ public:
 
 	void print(PredLitRep *l, std::ostream &out);
 	void finalize();
-	void doShow(bool s);
+	void doHideAll();
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
 	void addCompute(PredLitRep *l);
 	void addOptimize(const Val &optnum, bool maximize, bool multi, const std::string &s);

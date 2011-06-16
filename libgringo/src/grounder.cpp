@@ -208,7 +208,7 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 		foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
 		{
 			paramCount += dom.second->arity();
-			stats_.numPredVisible += output()->show(dom.second->nameId(),dom.second->arity());
+			stats_.numPredVisible += output()->shown(dom.second->nameId(),dom.second->arity());
 		}
 		stats_.avgPredParams = (stats_.numPred == 0) ? 0 : paramCount*1.0 / stats_.numPred;
 		stats_.print(std::cerr);

@@ -32,15 +32,19 @@
 
 namespace plainoutput_impl
 {
-	class DisplayPrinter : public Display::Printer
+	class ShowPrinter : public Show::Printer
 	{
 	public:
-		DisplayPrinter(PlainOutput *output) : output_(output) { }
+		ShowPrinter(PlainOutput *output) : output_(output) { }
+		void begin(const Val &head);
 		void print(PredLitRep *l);
-		Output *output() const { return output_; }
+		void end();
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
+
 	private:
 		PlainOutput *output_;
+		bool         fact_;
 	};
 
 	class ExternalPrinter : public External::Printer
@@ -48,7 +52,7 @@ namespace plainoutput_impl
 	public:
 		ExternalPrinter(PlainOutput *output) : output_(output) { }
 		void print(PredLitRep *l);
-		Output *output() const { return output_; }
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;
@@ -62,7 +66,7 @@ namespace plainoutput_impl
 		void endHead();
 		void print(PredLitRep *l);
 		void end();
-		Output *output() const { return output_; }
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;
@@ -84,7 +88,7 @@ namespace plainoutput_impl
 		void trueLit();
 		void print(PredLitRep *l);
 		void end();
-		Output *output() const { return output_; }
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput       *output_;
@@ -104,7 +108,7 @@ namespace plainoutput_impl
 		void lower(const Val &l, bool leq);
 		void upper(const Val &u, bool leq);
 		void end();
-		Output *output() const { return output_; }
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 		void finish();
 		virtual bool simplify(const Val &weight) = 0;
@@ -226,7 +230,7 @@ namespace plainoutput_impl
 	public:
 		ComputePrinter(PlainOutput *output) : output_(output) { }
 		void print(PredLitRep *l);
-		Output *output() const { return output_; }
+		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;

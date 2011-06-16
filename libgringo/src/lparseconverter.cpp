@@ -39,7 +39,7 @@ GRINGO_EXPORT_PRINTER(AvgPrinter)
 GRINGO_EXPORT_PRINTER(ParityPrinter)
 */
 GRINGO_EXPORT_PRINTER(JunctionPrinter)
-GRINGO_EXPORT_PRINTER(DisplayPrinter)
+GRINGO_EXPORT_PRINTER(ShowPrinter)
 GRINGO_EXPORT_PRINTER(ExternalPrinter)
 GRINGO_EXPORT_PRINTER(IncPrinter)
 
@@ -132,9 +132,9 @@ void LparseConverter::printSymbolTable()
 		uint32_t nameId = i->second->nameId();
 		uint32_t arity  = i->second->arity();
 		uint32_t domId  = i->second->domId();
-		DisplayMap::iterator shown = atomsShown_.find(DisplayMap::key_type(nameId, arity));
-		bool globShow = show(nameId, arity);
-		if(globShow || shown != atomsShown_.end())
+		DisplayMap::iterator itShown = atomsShown_.find(DisplayMap::key_type(nameId, arity));
+		bool globShow = shown(nameId, arity);
+		if(globShow || itShown != atomsShown_.end())
 		{
 			DisplayMap::iterator hidden = atomsHidden_.find(DisplayMap::key_type(nameId, arity));
 			const std::string &name = s_->string(nameId);
@@ -142,7 +142,7 @@ void LparseConverter::printSymbolTable()
 			foreach(AtomRef &j, newSymbols_[domId])
 			{
 				if((globShow && (hidden == atomsHidden_.end() || hidden->second.find(j.symbol) == hidden->second.end())) ||
-				   (!globShow && shown != atomsShown_.end() && shown->second.find(j.symbol) != shown->second.end()))
+				   (!globShow && itShown != atomsShown_.end() && itShown->second.find(j.symbol) != itShown->second.end()))
 				{
 					printSymbolTableEntry(j, arity, name);
 				}

@@ -26,65 +26,65 @@
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
 
-Display::Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body)
+namespace
+{
+	class ShowHeadExpander : public Expander
+	{
+	public:
+		ShowHeadExpander(Grounder *g, LitPtrVec &body);
+		void expand(Lit *lit, Type type);
+	private:
+		Grounder  *g_;
+		LitPtrVec &body_;
+	};
+
+	class ShowBodyExpander : public Expander
+	{
+	public:
+		ShowBodyExpander(Show &d);
+		void expand(Lit *lit, Type);
+	private:
+		Show &d_;
+	};
+
+}
+
+
+//////////////////////////////// Show ////////////////////////////////
+
+Show::Show(const Loc &loc, Term *term, LitPtrVec &body)
 	: SimpleStatement(loc)
-	, head_(head)
+	, head_(new ShowHeadLit(loc, term))
 	, body_(body.release())
-	, show_(show)
 {
 }
 
-bool Display::grounded(Grounder *g)
+Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body)
+	: SimpleStatement(loc)
+	, head_(lit)
+	, body_(body.release())
 {
-	head_->grounded(g);
+}
+
+
+bool Show::grounded(Grounder *g)
+{
 	Printer *printer = g->output()->printer<Printer>();
-	printer->show(show_);
-	printer->print(head_.get());
+	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g));
+	foreach(Lit &lit, body_)
+	{
+		lit.grounded(g);
+		lit.accept(printer);
+	}
+	printer->end();
 	return true;
 }
 
-namespace
+
+void Show::normalize(Grounder *g)
 {
-	class DisplayHeadExpander : public Expander
-	{
-	public:
-		DisplayHeadExpander(Grounder *g, Display &d) : g_(g), d_(d) { }
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder *g_;
-		Display  &d_;
-	};
-
-	class BodyExpander : public Expander
-	{
-	public:
-		BodyExpander(Display &d) : d_(d) { }
-		void expand(Lit *lit, Type type) { (void)type; d_.body().push_back(lit); }
-	private:
-		Display &d_;
-	};
-
-	void DisplayHeadExpander::expand(Lit *lit, Expander::Type type)
-	{
-		switch(type)
-		{
-			case RANGE:
-			case RELATION:
-				d_.body().push_back(lit);
-				break;
-			case POOL:
-				LitPtrVec body;
-				foreach(Lit &l, d_.body()) body.push_back(l.clone());
-				g_->addInternal(new Display(d_.loc(), d_.show(), static_cast<PredLit*>(lit), body));
-				break;
-		}
-	}
-}
-
-void Display::normalize(Grounder *g)
-{
-	DisplayHeadExpander headExp(g, *this);
-	BodyExpander bodyExp(*this);
+	ShowHeadExpander headExp(g, body_);
+	ShowBodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
@@ -92,15 +92,15 @@ void Display::normalize(Grounder *g)
 	}
 }
 
-void Display::visit(PrgVisitor *visitor)
+void Show::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
 	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
 }
 
-void Display::print(Storage *sto, std::ostream &out) const
+void Show::print(Storage *sto, std::ostream &out) const
 {
-	out << (show_ ? "#show " : "#hide ");
+	out << "#show ";
 	head_->print(sto, out);
 	std::vector<const Lit*> body;
 	foreach(const Lit &lit, body_) { body.push_back(&lit); }
@@ -113,11 +113,104 @@ void Display::print(Storage *sto, std::ostream &out) const
 	out << ".";
 }
 
-void Display::append(Lit *lit)
+void Show::append(Lit *lit)
 {
 	body_.push_back(lit);
 }
 
-Display::~Display()
+Show::~Show()
 {
+}
+
+//////////////////////////////// ShowHeadLit ////////////////////////////////
+
+ShowHeadLit::ShowHeadLit(const Loc &loc, Term *term)
+	: Lit(loc)
+	, term_(term)
+{
+}
+
+ShowHeadLit *ShowHeadLit::clone() const
+{
+	return new ShowHeadLit(*this);
+}
+
+void ShowHeadLit::normalize(Grounder *g, Expander *expander)
+{
+	term_->normalize(this, Term::PtrRef(term_), g, expander, false);
+}
+
+bool ShowHeadLit::fact() const
+{
+	return false;
+}
+
+void ShowHeadLit::print(Storage *sto, std::ostream &out) const
+{
+	term_->print(sto, out);
+}
+
+Index *ShowHeadLit::index(Grounder *g, Formula *gr, VarSet &bound)
+{
+	return new MatchIndex(this);
+}
+
+void ShowHeadLit::visit(PrgVisitor *visitor)
+{
+	term_->visit(visitor, false);
+}
+
+void ShowHeadLit::accept(Printer *)
+{
+	assert(false);
+}
+
+bool ShowHeadLit::match(Grounder *)
+{
+	return true;
+}
+
+Val ShowHeadLit::val(Grounder *g)
+{
+	return term_->val(g);
+}
+
+//////////////////////////////// ShowHeadExpander ////////////////////////////////
+
+ShowHeadExpander::ShowHeadExpander(Grounder *g, LitPtrVec &body)
+	: g_(g)
+	, body_(body)
+{
+}
+
+void ShowHeadExpander::expand(Lit *lit, Expander::Type type)
+{
+	switch(type)
+	{
+		case RANGE:
+		case RELATION:
+		{
+			body_.push_back(lit);
+			break;
+		}
+		case POOL:
+		{
+			LitPtrVec body;
+			foreach(Lit &l, body_) { body.push_back(l.clone()); }
+			g_->addInternal(new Show(lit->loc(), static_cast<ShowHeadLit*>(lit), body));
+			break;
+		}
+	}
+}
+
+//////////////////////////////// ShowBodyExpander ////////////////////////////////
+
+ShowBodyExpander::ShowBodyExpander(Show &d)
+	: d_(d)
+{
+}
+
+void ShowBodyExpander::expand(Lit *lit, Type)
+{
+	d_.append(lit);
 }

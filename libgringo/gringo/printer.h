@@ -21,8 +21,6 @@
 
 class Printer
 {
-private:
-	typedef std::map<Signature, bool> ShowMap;
 public:
 	Printer() { }
 	virtual void print(PredLitRep *l) { (void)l; }

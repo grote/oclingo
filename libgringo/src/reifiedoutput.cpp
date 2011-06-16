@@ -24,7 +24,7 @@
 namespace reifiedoutput_impl
 {
 
-GRINGO_EXPORT_PRINTER(DisplayPrinter)
+GRINGO_EXPORT_PRINTER(ShowPrinter)
 GRINGO_EXPORT_PRINTER(ExternalPrinter)
 GRINGO_EXPORT_PRINTER(RulePrinter)
 /*
@@ -298,9 +298,9 @@ void ReifiedOutput::finalize()
 	popSet();
 }
 
-void ReifiedOutput::doShow(bool s)
+void ReifiedOutput::doHideAll()
 {
-	out_ << (s ? "show" : "hide") << ".\n";
+	out_ << "hide.\n";
 }
 
 void ReifiedOutput::doShow(uint32_t nameId, uint32_t arity, bool s)

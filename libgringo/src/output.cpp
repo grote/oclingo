@@ -19,27 +19,28 @@
 
 Output::Output()
 	: s_(0)
-	, show_(true)
+	, hideAll_(false)
 {
 }
 
-void Output::show(bool s)
+void Output::hideAll()
 {
-	show_ = s;
-	doShow(s);
+	if(!hideAll_) { doHideAll(); }
+	hideAll_ = true;
 }
 
-void Output::show(uint32_t nameId, uint32_t arity, bool s)
+void Output::show(uint32_t nameId, uint32_t arity, bool show)
 {
-	showMap_[std::make_pair(nameId, arity)] = s;
-	doShow(nameId, arity, s);
+	if(
+		(show && showSet_.insert(Signature(nameId, arity)).second) ||
+		(!show && hideSet_.insert(Signature(nameId, arity)).second) )
+	{ doShow(nameId, arity, show); }
 }
 
-bool Output::show(uint32_t nameId, uint32_t arity)
+bool Output::shown(uint32_t nameId, uint32_t arity)
 {
-	ShowMap::iterator i = showMap_.find(Signature(nameId, arity));
-	if(i != showMap_.end()) return i->second;
-	else return show_;
+	if(hideAll_) { return showSet_.find(Signature(nameId, arity)) != showSet_.end(); }
+	else         { return hideSet_.find(Signature(nameId, arity)) != hideSet_.end(); }
 }
 
 void Output::external(uint32_t nameId, uint32_t arity)

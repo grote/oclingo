@@ -224,4 +224,3 @@ Term *MathTerm::clone() const
 MathTerm::~MathTerm()
 {
 }
-

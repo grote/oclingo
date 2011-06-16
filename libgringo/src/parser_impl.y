@@ -216,15 +216,14 @@ boost::ptr_vector<T> *vec1(T *x)
 // TODO: remove me!!!
 %left EVEN.
 %left ODD.
-%left MAX.
-%left MIN.
 %left AVG.
 
 start ::= program.
 
 program ::= .
 program ::= program line DOT.
-program ::= program weak(w).  { pParser->add(w); }
+program ::= program weak(w).      { pParser->add(w); }
+program ::= program SHOWDOT(tok). { pParser->show(tok.index); }
 
 line ::= INCLUDE STRING(file).                         { pParser->include(file.index); }
 line ::= rule(r).                                      { pParser->add(r); }
@@ -238,12 +237,12 @@ line ::= optimize.
 line ::= compute.
 line ::= meta inv_part.
 
-meta ::= HIDE      inv_part.                                  { OTP->show(false); }
-meta ::= SHOW      inv_part.                                  { OTP->show(true); }
+meta ::= HIDE      inv_part.                                  { OTP->hideAll(); }
+meta ::= SHOW(tok) inv_part term(term) COLON.                 { tok.loc(); delete term; std::cerr << "Show Term!" << std::endl; }
+meta ::= SHOW(tok) inv_part term(term) ncond(list).           { tok.loc(); delete term; delete list; std::cerr << "Show Term if Cond!" << std::endl; }
+meta ::= SHOW      inv_part term(term).                       { pParser->show(term); }
+meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->hide(tok.loc(), pred, list); }
 meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
-meta ::= SHOW      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, true); }
-meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), false, pred, *list)); delete list; }
-meta ::= SHOW(tok) inv_part predicate(pred) cond(list).       { pParser->add(new Display(tok.loc(), true, pred, *list)); delete list; }
 meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
 
 inv_part ::= . { pParser->invPart(); }
@@ -281,10 +280,10 @@ lit(res) ::= predlit(pred).            { res = pred; }
 lit(res) ::= term(a) cmp(cmp) term(b). { res = new RelLit(a->loc(), cmp, a, b); }
 lit(res) ::= TRUE(tok).                { res = new BooleanLit(tok.loc(), true); }
 lit(res) ::= FALSE(tok).               { res = new BooleanLit(tok.loc(), false); }
+lit(res) ::= term(a) CASSIGN term(b).  { res = new RelLit(a->loc(), RelLit::ASSIGN, a, b); }
 
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b); }
-literal(res) ::= term(a) CASSIGN term(b).      { res = new RelLit(a->loc(), RelLit::ASSIGN, a, b); }
 
 body_literal(res) ::= literal(lit).                       { res = lit; }
 body_literal(res) ::= aggr_atom(lit).                     { res = lit; }

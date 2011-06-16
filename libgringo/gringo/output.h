@@ -32,7 +32,7 @@ class Output
 {
 private:
 	typedef std::vector<DelayedPrinter*> DelayedPrinters;
-	typedef std::map<Signature, bool> ShowMap;
+	typedef std::set<Signature> DisplaySet;
 	typedef std::set<Signature> ExternalSet;
 	typedef boost::ptr_vector<boost::nullable<Printer> > PrinterVec;
 public:
@@ -44,11 +44,11 @@ public:
 	virtual void addDomain(Domain *d) { (void)d; }
 	Storage *storage() const { return s_; }
 	void storage(Storage *s) { s_ = s; }
-	void show(bool s);
-	void show(uint32_t nameId, uint32_t arity, bool s);
-	virtual void doShow(bool s) { (void) s; }
-	virtual void doShow(uint32_t nameId, uint32_t arity, bool s) { (void)nameId; (void)arity; (void) s; }
-	bool show(uint32_t nameId, uint32_t arity);
+	void hideAll();
+	void show(uint32_t nameId, uint32_t arity, bool show);
+	bool shown(uint32_t nameId, uint32_t arity);
+	virtual void doHideAll() { }
+	virtual void doShow(uint32_t, uint32_t, bool) { }
 	void external(uint32_t nameId, uint32_t arity);
 	void regDelayedPrinter(DelayedPrinter *printer) { delayedPrinters_.push_back(printer); }
 	template<class P>
@@ -67,10 +67,11 @@ private:
 	template<class T>
 	static PrinterFactory<T> &printerFactory();
 protected:
-	ShowMap         showMap_;
+	DisplaySet      showSet_;
+	DisplaySet      hideSet_;
 	ExternalSet     external_;
 	Storage        *s_;
-	bool            show_;
+	bool            hideAll_;
 private:
 	DelayedPrinters delayedPrinters_;
 public:

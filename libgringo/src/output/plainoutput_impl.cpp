@@ -23,11 +23,24 @@
 namespace plainoutput_impl
 {
 
-void DisplayPrinter::print(PredLitRep *l)
+void ShowPrinter::begin(const Val &head)
 {
-	out() << (show() ? "#show " : "#hide ");
+	head.print(output()->storage(), out());
+	out() << ":";
+	fact_ = true;
+}
+
+void ShowPrinter::print(PredLitRep *l)
+{
+	out() << ":";
 	output_->print(l, out());
-	out() << ".\n";
+	fact_ = false;
+}
+
+void ShowPrinter::end()
+{
+	out() << (fact_ ? ":" : "") << ".\n";
+	output()->endStatement();
 }
 
 void ExternalPrinter::print(PredLitRep *l)
@@ -35,6 +48,7 @@ void ExternalPrinter::print(PredLitRep *l)
 	out() << "#external ";
 	output_->print(l, out());
 	out() << ".\n";
+	output()->endStatement();
 }
 
 void RulePrinter::begin()
@@ -302,7 +316,7 @@ void OptimizePrinter::print(const ValVec &set)
 			set.front().print(output()->storage(), out());
 			for(ValVec::const_iterator it = set.begin() + 3; it != set.end(); it++)
 			{
-				out() << ",";
+				out() << ":";
 				it->print(output()->storage(), out());
 			}
 			out() << ">";
@@ -351,7 +365,7 @@ void ComputePrinter::print(PredLitRep *l)
 
 }
 
-GRINGO_REGISTER_PRINTER(plainoutput_impl::DisplayPrinter, Display::Printer, PlainOutput)
+GRINGO_REGISTER_PRINTER(plainoutput_impl::ShowPrinter, Show::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AggrCondPrinter, AggrCond::Printer, PlainOutput)

@@ -110,7 +110,7 @@ void GroundProgramBuilder::add()
 		case STM_SHOW:
 		case STM_HIDE:
 		{
-			Display::Printer *printer = output_->printer<Display::Printer>();
+			Show::Printer *printer = output_->printer<Show::Printer>();
 			printLit(printer, stack_->lits.size() - 1, stack_->type == STM_SHOW);
 			pop(1);
 			break;
@@ -157,8 +157,9 @@ void GroundProgramBuilder::add()
 			pop(stack_->n);
 			break;
 		}
-		case META_SHOW:
-		case META_HIDE:
+#pragma message "reimplement me!"
+		//case META_SHOW:
+		//case META_HIDE:
 		case META_EXTERNAL:
 		{
 			Val num = stack_->vals.back();
@@ -169,13 +170,14 @@ void GroundProgramBuilder::add()
 			assert(num.type == Val::NUM);
 			storage()->domain(id.index, num.num);
 			if(stack_->type == META_EXTERNAL) { output_->external(id.index, num.num); }
-			else { output_->show(id.index, num.num, stack_->type == META_SHOW); }
+			//else { output_->show(id.index, num.num, stack_->type == META_SHOW); }
 			break;
 		}
-		case META_GLOBALSHOW:
+#pragma message "reimplement me!"
+		//case META_GLOBALSHOW:
 		case META_GLOBALHIDE:
 		{
-			output_->show(stack_->type == META_GLOBALSHOW);
+			output_->hideAll();
 			break;
 		}
 		default: {

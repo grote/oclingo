@@ -31,11 +31,13 @@
 namespace lparseconverter_impl
 {
 
-class DisplayPrinter : public Display::Printer
+class ShowPrinter : public Show::Printer
 {
 public:
-	DisplayPrinter(LparseConverter *output) : output_(output) { }
+	ShowPrinter(LparseConverter *output) : output_(output) { }
+	void begin(const Val &head);
 	void print(PredLitRep *l);
+	void end();
 	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
@@ -105,12 +107,23 @@ private:
 	LparseConverter *output_;
 };
 
-///////////////////////////////// DisplayPrinter /////////////////////////////////
+///////////////////////////////// ShowPrinter /////////////////////////////////
 
-void DisplayPrinter::print(PredLitRep *l)
+void ShowPrinter::begin(const Val &head)
 {
-	if(show()) output_->showAtom(l);
-	else output_->hideAtom(l);
+	#pragma message "reimplement me!"
+}
+
+void ShowPrinter::print(PredLitRep *l)
+{
+	#pragma message "reimplement me!"
+	//if(show()) output_->showAtom(l);
+	//else output_->hideAtom(l);
+}
+
+void ShowPrinter::end()
+{
+	#pragma message "reimplement me!"
 }
 
 ///////////////////////////////// ExternalPrinter /////////////////////////////////
@@ -222,7 +235,7 @@ void IncPrinter::print()
 
 }
 
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::DisplayPrinter, Display::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::ShowPrinter, Show::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)

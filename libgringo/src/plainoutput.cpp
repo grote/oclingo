@@ -23,7 +23,7 @@
 namespace plainoutput_impl
 {
 
-GRINGO_EXPORT_PRINTER(DisplayPrinter)
+GRINGO_EXPORT_PRINTER(ShowPrinter)
 GRINGO_EXPORT_PRINTER(ExternalPrinter)
 GRINGO_EXPORT_PRINTER(RulePrinter)
 GRINGO_EXPORT_PRINTER(SumAggrLitPrinter)
@@ -265,9 +265,9 @@ void PlainOutput::finalize()
 	}
 }
 
-void PlainOutput::doShow(bool s)
+void PlainOutput::doHideAll()
 {
-	out_.output() << (s ? "#show" : "#hide") << ".\n";
+	out_.output() << "#hide.\n";
 }
 
 void PlainOutput::doShow(uint32_t nameId, uint32_t arity, bool s)

@@ -20,32 +20,50 @@
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
 #include <gringo/formula.h>
+#include <gringo/index.h>
+#include <gringo/lit.h>
 
-class Display : public SimpleStatement
+class ShowHeadLit : public Lit, public Matchable
+{
+public:
+	ShowHeadLit(const Loc &loc, Term *term);
+
+	ShowHeadLit *clone() const;
+	void normalize(Grounder *g, Expander *expander);
+	bool fact() const;
+	void print(Storage *sto, std::ostream &out) const;
+	Index *index(Grounder *g, Formula *gr, VarSet &bound);
+	void visit(PrgVisitor *visitor);
+	void accept(Printer *v);
+
+	bool match(Grounder *grounder);
+
+	Val val(Grounder *g);
+
+private:
+	clone_ptr<Term> term_;
+};
+
+class Show : public SimpleStatement
 {
 public:
 	class Printer : public ::Printer
 	{
 	public:
-		void show(bool show) { show_ = show; }
-		bool show() const { return show_; }
+		virtual void begin(const Val &head) = 0;
+		virtual void end() = 0;
 		virtual ~Printer() { }
-	private:
-		bool show_;
 	};
 public:
-	Display(const Loc &loc, bool show, PredLit *head, LitPtrVec &body);
-	PredLit *head() const { return head_.get(); }
-	LitPtrVec &body() { return body_; }
+	Show(const Loc &loc, Term *term, LitPtrVec &body);
+	Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body);
 	void append(Lit *lit);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
-	bool show() const { return show_; }
-	~Display();
+	~Show();
 private:
-	clone_ptr<PredLit> head_;
-	LitPtrVec          body_;
-	bool               show_;
+	clone_ptr<Lit> head_;
+	LitPtrVec      body_;
 };
