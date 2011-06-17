@@ -23,7 +23,7 @@
 class MathTerm : public Term
 {
 public:
-  enum Func { PLUS, MINUS, MULT, DIV, MOD, POW, AND, XOR, OR, ABS };
+  enum Func { PLUS, MINUS, MULT, DIV, MOD, POW, AND, XOR, OR, ABS, UMINUS };
 public:
 	MathTerm(const Loc &loc, const Func &f, Term *a, Term *b = 0);
 	Val val(Grounder *grounder) const;
@@ -37,9 +37,18 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	Term *clone() const;
 	~MathTerm();
+
+	Term *a() const;
+	Term *b() const;
+	Func f() const;
 private:
 	Func            f_;
 	clone_ptr<Term> a_;
 	clone_ptr<Term> b_;
 };
 
+/////////////////////////////////// MathTerm ///////////////////////////////////
+
+inline Term *MathTerm::a() const { return a_.get(); }
+inline Term *MathTerm::b() const { return b_.get(); }
+inline MathTerm::Func MathTerm::f() const { return f_; }

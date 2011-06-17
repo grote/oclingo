@@ -20,6 +20,15 @@
 #include <gringo/func.h>
 #include <gringo/exceptions.h>
 
+namespace
+{
+
+uint32_t invertId(const Val *v, uint32_t id, Storage *s);
+
+}
+
+///////////////////////////// Val /////////////////////////////
+
 void Val::print(Storage *sto, std::ostream &out) const
 {
 	switch(type)
@@ -72,4 +81,39 @@ int Val::compare(Storage *s, const ValVec &a, const ValVec &b)
 		}
 		return 0;
 	}
+}
+
+Val Val::invert(Storage *s) const
+{
+	switch(type)
+	{
+		case ID:     { return Val::create(Val::ID, invertId(this, index, s)); }
+		case STRING: { throw this; }
+		case NUM:    { return Val::create(Val::NUM, -num); }
+		case FUNC:
+		{
+			const Func &f = s->func(index);
+			return Val::create(Val::FUNC, s->index(Func(s, invertId(this, f.name(), s), f.args())));
+		}
+		case INF:    { return Val::sup(); }
+		case SUP:    { return Val::inf(); }
+		case UNDEF:  { assert(false); break; }
+	}
+	assert(false);
+	return *this;
+}
+
+///////////////////////////// anonymous /////////////////////////////
+
+namespace
+{
+
+uint32_t invertId(const Val *v, uint32_t id, Storage *s)
+{
+	const std::string &str = s->string(id);
+	if(str.empty())        { throw v; }
+	else if(str[0] == '-') { return s->index(str.substr(1)); }
+	else                   { return s->index(std::string("-") + str); }
+}
+
 }

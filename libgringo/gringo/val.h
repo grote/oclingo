@@ -45,6 +45,7 @@ struct Val
 	void print(Storage *sto, std::ostream &out) const;
 	int number() const;
 	uint32_t type;
+	Val invert(Storage *s) const;
 	union
 	{
 		int num;

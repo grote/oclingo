@@ -238,9 +238,10 @@ line ::= compute.
 line ::= meta inv_part.
 
 meta ::= HIDE      inv_part.                                  { OTP->hideAll(); }
-meta ::= SHOW(tok) inv_part term(term) COLON.                 { tok.loc(); delete term; std::cerr << "Show Term!" << std::endl; }
-meta ::= SHOW(tok) inv_part term(term) ncond(list).           { tok.loc(); delete term; delete list; std::cerr << "Show Term if Cond!" << std::endl; }
-meta ::= SHOW      inv_part term(term).                       { pParser->show(term); }
+meta ::= SHOW(tok) inv_part term(term) COLON.                 { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list)); }
+meta ::= SHOW(tok) inv_part term(term).                       { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, true)); }
+meta ::= SHOW(tok) inv_part term(term) ncond(list) COLON.     { pParser->add(new Show(tok.loc(), term, *list));       delete list; }
+meta ::= SHOW(tok) inv_part term(term) ncond(list).           { pParser->add(new Show(tok.loc(), term, *list, true)); delete list; }
 meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->hide(tok.loc(), pred, list); }
 meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
 meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
@@ -332,7 +333,7 @@ term(res) ::= LBRAC(l) termlist(args) RBRAC.                { res = args->size()
 term(res) ::= LBRAC(l) termlist(args) COMMA RBRAC.          { res = new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
-term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
+term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::UMINUS, a); }
 term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
 
 nsetterm(res) ::= term(term).                      { res = vec1(term); }

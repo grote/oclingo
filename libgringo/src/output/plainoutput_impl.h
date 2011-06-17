@@ -36,7 +36,7 @@ namespace plainoutput_impl
 	{
 	public:
 		ShowPrinter(PlainOutput *output) : output_(output) { }
-		void begin(const Val &head);
+		void begin(const Val &head, bool ignore);
 		void print(PredLitRep *l);
 		void end();
 		PlainOutput *output() const { return output_; }
@@ -44,7 +44,8 @@ namespace plainoutput_impl
 
 	private:
 		PlainOutput *output_;
-		bool         fact_;
+		bool         ignore_;
+		bool         ignored_;
 	};
 
 	class ExternalPrinter : public External::Printer

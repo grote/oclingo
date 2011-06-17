@@ -39,6 +39,7 @@ public:
 	bool match(Grounder *grounder);
 
 	Val val(Grounder *g);
+	std::auto_ptr<PredLit> toPred(Grounder *g);
 
 private:
 	clone_ptr<Term> term_;
@@ -50,12 +51,12 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(const Val &head) = 0;
+		virtual void begin(const Val &head, bool ignore) = 0;
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
 public:
-	Show(const Loc &loc, Term *term, LitPtrVec &body);
+	Show(const Loc &loc, Term *term, LitPtrVec &body, bool funcToPred = false);
 	Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body);
 	void append(Lit *lit);
 	bool grounded(Grounder *g);
@@ -66,4 +67,5 @@ public:
 private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;
+	bool           funcToPred_;
 };

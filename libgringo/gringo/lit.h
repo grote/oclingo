@@ -155,6 +155,7 @@ inline Lit::Monotonicity Lit::monotonicity() const { return sign() ? ANTIMONOTON
 
 inline void Lit::grounded(Grounder *) { }
 inline void Lit::addDomain(Grounder *, bool) { }
+#pragma message "change and use isFact here?"
 inline bool Lit::forcePrint() { return false; }
 inline void Lit::endGround(Grounder *) { }
 inline bool Lit::sign() const { return false; }

@@ -23,23 +23,27 @@
 namespace plainoutput_impl
 {
 
-void ShowPrinter::begin(const Val &head)
+void ShowPrinter::begin(const Val &head, bool ignore)
 {
+	out() << "#show ";
 	head.print(output()->storage(), out());
-	out() << ":";
-	fact_ = true;
+	ignore_  = ignore;
+	ignored_ = false;
 }
 
 void ShowPrinter::print(PredLitRep *l)
 {
-	out() << ":";
-	output_->print(l, out());
-	fact_ = false;
+	if(!ignore_ || ignored_)
+	{
+		out() << ":";
+		output_->print(l, out());
+	}
+	else { ignored_ = true; }
 }
 
 void ShowPrinter::end()
 {
-	out() << (fact_ ? ":" : "") << ".\n";
+	out() << (!ignore_ ? ":" : "") << ".\n";
 	output()->endStatement();
 }
 

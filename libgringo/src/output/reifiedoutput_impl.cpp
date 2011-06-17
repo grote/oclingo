@@ -25,7 +25,7 @@
 namespace reifiedoutput_impl
 {
 
-	void ShowPrinter::begin(const Val &head)
+	void ShowPrinter::begin(const Val &head, bool)
 	{
 		#pragma message "reimplement me"
 	}

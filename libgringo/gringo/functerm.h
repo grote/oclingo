@@ -34,9 +34,23 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 	Term *clone() const;
 	~FuncTerm();
+
+	TermPtrVec &args();
+	uint32_t name() const;
 private:
 	uint32_t                name_;
 	TermPtrVec              args_;
 	mutable clone_ptr<Term> clone_;
 };
 
+////////////////////////////////// FuncTerm //////////////////////////////////
+
+inline TermPtrVec &FuncTerm::args()
+{
+	return args_;
+}
+
+inline uint32_t FuncTerm::name() const
+{
+	return name_;
+}

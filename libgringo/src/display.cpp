@@ -25,6 +25,9 @@
 #include <gringo/litdep.h>
 #include <gringo/exceptions.h>
 #include <gringo/instantiator.h>
+#include <gringo/functerm.h>
+#include <gringo/mathterm.h>
+#include <gringo/constterm.h>
 
 namespace
 {
@@ -52,10 +55,11 @@ namespace
 
 //////////////////////////////// Show ////////////////////////////////
 
-Show::Show(const Loc &loc, Term *term, LitPtrVec &body)
+Show::Show(const Loc &loc, Term *term, LitPtrVec &body, bool funcToPred)
 	: SimpleStatement(loc)
 	, head_(new ShowHeadLit(loc, term))
 	, body_(body.release())
+	, funcToPred_(funcToPred)
 {
 }
 
@@ -70,11 +74,11 @@ Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body)
 bool Show::grounded(Grounder *g)
 {
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g));
+	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g), funcToPred_);
 	foreach(Lit &lit, body_)
 	{
 		lit.grounded(g);
-		lit.accept(printer);
+		if(!lit.fact() || lit.forcePrint()) { lit.accept(printer); }
 	}
 	printer->end();
 	return true;
@@ -86,6 +90,17 @@ void Show::normalize(Grounder *g)
 	ShowHeadExpander headExp(g, body_);
 	ShowBodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
+	if(funcToPred_)
+	{
+		std::auto_ptr<PredLit> pred = static_cast<ShowHeadLit&>(*head_).toPred(g);
+		if(pred.get()) { body_.insert(body_.begin(), pred); }
+		else
+		{
+			std::ostringstream oss;
+			head_->print(g, oss);
+			throw TypeException("cannot convert term to predicate", StrLoc(g, head_->loc()), oss.str());
+		}
+	}
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
 		body_[i].normalize(g, &bodyExp);
@@ -95,7 +110,7 @@ void Show::normalize(Grounder *g)
 void Show::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
-	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
+	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
 
 void Show::print(Storage *sto, std::ostream &out) const
@@ -173,6 +188,29 @@ bool ShowHeadLit::match(Grounder *)
 Val ShowHeadLit::val(Grounder *g)
 {
 	return term_->val(g);
+}
+
+std::auto_ptr<PredLit> ShowHeadLit::toPred(Grounder *g)
+{
+	std::auto_ptr<PredLit> pred;
+	FuncTerm *func = dynamic_cast<FuncTerm*>(term_.get());
+	if(func)
+	{
+		TermPtrVec args = func->args();
+		Domain    *dom  = g->domain(func->name(), args.size());
+		pred.reset(new PredLit(term_->loc(), dom, args));
+	}
+	else
+	{
+		ConstTerm *id = dynamic_cast<ConstTerm*>(term_.get());
+		if(id && id->val(g).type == Val::ID)
+		{
+			TermPtrVec args;
+			Domain    *dom  = g->domain(id->val(g).index, args.size());
+			pred.reset(new PredLit(term_->loc(), dom, args));
+		}
+	}
+	return pred;
 }
 
 //////////////////////////////// ShowHeadExpander ////////////////////////////////

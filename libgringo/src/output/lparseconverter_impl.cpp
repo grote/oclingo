@@ -35,7 +35,7 @@ class ShowPrinter : public Show::Printer
 {
 public:
 	ShowPrinter(LparseConverter *output) : output_(output) { }
-	void begin(const Val &head);
+	void begin(const Val &head, bool ignore);
 	void print(PredLitRep *l);
 	void end();
 	LparseConverter *output() const { return output_; }
@@ -109,7 +109,7 @@ private:
 
 ///////////////////////////////// ShowPrinter /////////////////////////////////
 
-void ShowPrinter::begin(const Val &head)
+void ShowPrinter::begin(const Val &head, bool)
 {
 	#pragma message "reimplement me!"
 }
