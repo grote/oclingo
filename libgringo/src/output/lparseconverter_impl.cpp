@@ -17,7 +17,7 @@
 
 
 #include <gringo/gringo.h>
-#include <gringo/display.h>
+#include <gringo/show.h>
 #include <gringo/optimize.h>
 #include <gringo/compute.h>
 #include <gringo/external.h>

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <gringo/display.h>
+#include <gringo/show.h>
 #include <gringo/lit.h>
 #include <gringo/term.h>
 #include <gringo/output.h>

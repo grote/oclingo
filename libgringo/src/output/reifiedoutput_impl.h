@@ -23,7 +23,7 @@
 #include <gringo/parityaggrlit.h>
 #include <gringo/optimize.h>
 #include <gringo/compute.h>
-#include <gringo/display.h>
+#include <gringo/show.h>
 #include <gringo/external.h>
 #include <gringo/inclit.h>
 

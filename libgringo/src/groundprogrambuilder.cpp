@@ -27,7 +27,7 @@
 #include <gringo/minmaxaggrlit.h>
 #include <gringo/parityaggrlit.h>
 #include <gringo/external.h>
-#include <gringo/display.h>
+#include <gringo/show.h>
 
 GroundProgramBuilder::GroundProgramBuilder(Output *output)
 	: output_(output)

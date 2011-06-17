@@ -27,7 +27,7 @@
 #include <gringo/grounder.h>
 #include <gringo/formula.h>
 #include <gringo/exceptions.h>
-#include <gringo/display.h>
+#include <gringo/show.h>
 #include <gringo/output.h>
 #include <gringo/functerm.h>
 #include <gringo/domain.h>

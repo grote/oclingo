@@ -25,7 +25,7 @@
 
 #include "gringo/rule.h"
 #include "gringo/optimize.h"
-#include "gringo/display.h"
+#include "gringo/show.h"
 #include "gringo/external.h"
 #include "gringo/compute.h"
 
