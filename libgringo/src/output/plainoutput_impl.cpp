@@ -225,10 +225,10 @@ void AggrLitPrinter<T, Type>::finish()
 {
 	foreach(TodoMap::value_type &val, todo_)
 	{
-		output_->contDelay(val.first);
 		current_  = val.second;
 		complete_ = true;
 		end();
+		output_->contDelay(val.first);
 		output_->endDelay(val.first);
 	}
 	todo_.clear();
