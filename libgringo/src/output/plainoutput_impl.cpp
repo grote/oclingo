@@ -23,15 +23,15 @@
 namespace plainoutput_impl
 {
 
-void ShowPrinter::begin(const Val &head, Type type)
+void DisplayPrinter::begin(const Val &head, Type type)
 {
-	out() << (type == Show::HIDEPRED ? "#hide " : "#show ");
+	out() << (type == Display::HIDEPRED ? "#hide " : "#show ");
 	head.print(output()->storage(), out());
-	ignore_  = type != Show::SHOWTERM;
+	ignore_  = type != Display::SHOWTERM;
 	ignored_ = false;
 }
 
-void ShowPrinter::print(PredLitRep *l)
+void DisplayPrinter::print(PredLitRep *l)
 {
 	if(!ignore_ || ignored_)
 	{
@@ -41,7 +41,7 @@ void ShowPrinter::print(PredLitRep *l)
 	else { ignored_ = true; }
 }
 
-void ShowPrinter::end()
+void DisplayPrinter::end()
 {
 	out() << (!ignore_ ? ":" : "") << ".\n";
 	output()->endStatement();
@@ -369,7 +369,7 @@ void ComputePrinter::print(PredLitRep *l)
 
 }
 
-GRINGO_REGISTER_PRINTER(plainoutput_impl::ShowPrinter, Show::Printer, PlainOutput)
+GRINGO_REGISTER_PRINTER(plainoutput_impl::DisplayPrinter, Display::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::ExternalPrinter, External::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::RulePrinter, Rule::Printer, PlainOutput)
 GRINGO_REGISTER_PRINTER(plainoutput_impl::AggrCondPrinter, AggrCond::Printer, PlainOutput)

@@ -31,10 +31,10 @@
 namespace lparseconverter_impl
 {
 
-class ShowPrinter : public Show::Printer
+class DisplayPrinter : public Display::Printer
 {
 public:
-	ShowPrinter(LparseConverter *output) : output_(output) { }
+	DisplayPrinter(LparseConverter *output) : output_(output) { }
 	void begin(const Val &head, Type type);
 	void print(PredLitRep *l);
 	void end();
@@ -107,9 +107,9 @@ private:
 	LparseConverter *output_;
 };
 
-///////////////////////////////// ShowPrinter /////////////////////////////////
+///////////////////////////////// DisplayPrinter /////////////////////////////////
 
-void ShowPrinter::begin(const Val &head, Type type)
+void DisplayPrinter::begin(const Val &head, Type type)
 {
 	#pragma message "reimplement me!"
 	// create symbol headSym for functionsymbol head
@@ -117,13 +117,13 @@ void ShowPrinter::begin(const Val &head, Type type)
 	// initialize an empty rule body
 }
 
-void ShowPrinter::print(PredLitRep *l)
+void DisplayPrinter::print(PredLitRep *l)
 {
 	#pragma message "reimplement me!"
 	// add symbol l to rule body
 }
 
-void ShowPrinter::end()
+void DisplayPrinter::end()
 {
 	#pragma message "reimplement me!"
 	// create a rule
@@ -246,7 +246,7 @@ void IncPrinter::print()
 
 }
 
-GRINGO_REGISTER_PRINTER(lparseconverter_impl::ShowPrinter, Show::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::DisplayPrinter, Display::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)

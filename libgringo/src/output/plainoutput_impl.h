@@ -32,10 +32,10 @@
 
 namespace plainoutput_impl
 {
-	class ShowPrinter : public Show::Printer
+	class DisplayPrinter : public Display::Printer
 	{
 	public:
-		ShowPrinter(PlainOutput *output) : output_(output) { }
+		DisplayPrinter(PlainOutput *output) : output_(output) { }
 		void begin(const Val &head, Type type);
 		void print(PredLitRep *l);
 		void end();

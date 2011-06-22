@@ -644,18 +644,6 @@ void Parser::show(Term *term)
 	}
 }
 
-void Parser::hide(const Loc &loc, PredLit *pred, LitPtrVec *conds)
-{
-	std::cerr
-		<< "TODO: changed my mind will be supported..." << std::endl;
-	std::cerr
-		<< "WARNING: hide statements are no longer supported:\n"
-		<< "\t" << StrLoc(g_, loc) << ": try to use: #hide " << g_->string(pred->dom()->nameId())<< "/" << pred->dom()->arity() <<  "."
-		<< std::endl;
-	delete pred;
-	delete conds;
-}
-
 Parser::~Parser()
 {
 	parserFree(parser_, free);

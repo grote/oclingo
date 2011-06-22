@@ -31,39 +31,39 @@
 
 namespace
 {
-	class ShowHeadExpander : public Expander
+	class DisplayHeadExpander : public Expander
 	{
 	public:
-		ShowHeadExpander(Grounder *g, LitPtrVec &body, Show::Type type);
+		DisplayHeadExpander(Grounder *g, LitPtrVec &body, Display::Type type);
 		void expand(Lit *lit, Type type);
 	private:
 		Grounder  *g_;
 		LitPtrVec &body_;
-		Show::Type type_;
+		Display::Type type_;
 	};
 
-	class ShowBodyExpander : public Expander
+	class DisplayBodyExpander : public Expander
 	{
 	public:
-		ShowBodyExpander(Show &d);
+		DisplayBodyExpander(Display &d);
 		void expand(Lit *lit, Type);
 	private:
-		Show &d_;
+		Display &d_;
 	};
 
 }
 
-//////////////////////////////// Show ////////////////////////////////
+//////////////////////////////// Display ////////////////////////////////
 
-Show::Show(const Loc &loc, Term *term, LitPtrVec &body, Type type)
+Display::Display(const Loc &loc, Term *term, LitPtrVec &body, Type type)
 	: SimpleStatement(loc)
-	, head_(new ShowHeadLit(loc, term))
+	, head_(new DisplayHeadLit(loc, term))
 	, body_(body.release())
 	, type_(type)
 {
 }
 
-Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body, Type type)
+Display::Display(const Loc &loc, DisplayHeadLit *lit, LitPtrVec &body, Type type)
 	: SimpleStatement(loc)
 	, head_(lit)
 	, body_(body.release())
@@ -72,10 +72,10 @@ Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body, Type type)
 }
 
 
-bool Show::grounded(Grounder *g)
+bool Display::grounded(Grounder *g)
 {
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g), type_);
+	printer->begin(static_cast<DisplayHeadLit&>(*head_).val(g), type_);
 	foreach(Lit &lit, body_)
 	{
 		lit.grounded(g);
@@ -86,14 +86,14 @@ bool Show::grounded(Grounder *g)
 }
 
 
-void Show::normalize(Grounder *g)
+void Display::normalize(Grounder *g)
 {
-	ShowHeadExpander headExp(g, body_, type_);
-	ShowBodyExpander bodyExp(*this);
+	DisplayHeadExpander headExp(g, body_, type_);
+	DisplayBodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
 	if(type_ != SHOWTERM)
 	{
-		std::auto_ptr<PredLit> pred = static_cast<ShowHeadLit&>(*head_).toPred(g);
+		std::auto_ptr<PredLit> pred = static_cast<DisplayHeadLit&>(*head_).toPred(g);
 		if(pred.get()) { body_.insert(body_.begin(), pred); }
 		else
 		{
@@ -109,13 +109,13 @@ void Show::normalize(Grounder *g)
 	}
 }
 
-void Show::visit(PrgVisitor *visitor)
+void Display::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
 	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
 
-void Show::print(Storage *sto, std::ostream &out) const
+void Display::print(Storage *sto, std::ostream &out) const
 {
 	out << (type_ == HIDEPRED ? "#hide " : "#show ");
 	if(type_ == SHOWTERM)
@@ -136,69 +136,69 @@ void Show::print(Storage *sto, std::ostream &out) const
 	out << (type_ == SHOWTERM ? ":" : "") << ".";
 }
 
-void Show::append(Lit *lit)
+void Display::append(Lit *lit)
 {
 	body_.push_back(lit);
 }
 
-Show::~Show()
+Display::~Display()
 {
 }
 
-//////////////////////////////// ShowHeadLit ////////////////////////////////
+//////////////////////////////// DisplayHeadLit ////////////////////////////////
 
-ShowHeadLit::ShowHeadLit(const Loc &loc, Term *term)
+DisplayHeadLit::DisplayHeadLit(const Loc &loc, Term *term)
 	: Lit(loc)
 	, term_(term)
 {
 }
 
-ShowHeadLit *ShowHeadLit::clone() const
+DisplayHeadLit *DisplayHeadLit::clone() const
 {
-	return new ShowHeadLit(*this);
+	return new DisplayHeadLit(*this);
 }
 
-void ShowHeadLit::normalize(Grounder *g, Expander *expander)
+void DisplayHeadLit::normalize(Grounder *g, Expander *expander)
 {
 	term_->normalize(this, Term::PtrRef(term_), g, expander, false);
 }
 
-bool ShowHeadLit::fact() const
+bool DisplayHeadLit::fact() const
 {
 	return false;
 }
 
-void ShowHeadLit::print(Storage *sto, std::ostream &out) const
+void DisplayHeadLit::print(Storage *sto, std::ostream &out) const
 {
 	term_->print(sto, out);
 }
 
-Index *ShowHeadLit::index(Grounder *g, Formula *gr, VarSet &bound)
+Index *DisplayHeadLit::index(Grounder *g, Formula *gr, VarSet &bound)
 {
 	return new MatchIndex(this);
 }
 
-void ShowHeadLit::visit(PrgVisitor *visitor)
+void DisplayHeadLit::visit(PrgVisitor *visitor)
 {
 	term_->visit(visitor, false);
 }
 
-void ShowHeadLit::accept(Printer *)
+void DisplayHeadLit::accept(Printer *)
 {
 	assert(false);
 }
 
-bool ShowHeadLit::match(Grounder *)
+bool DisplayHeadLit::match(Grounder *)
 {
 	return true;
 }
 
-Val ShowHeadLit::val(Grounder *g)
+Val DisplayHeadLit::val(Grounder *g)
 {
 	return term_->val(g);
 }
 
-std::auto_ptr<PredLit> ShowHeadLit::toPred(Grounder *g)
+std::auto_ptr<PredLit> DisplayHeadLit::toPred(Grounder *g)
 {
 	std::auto_ptr<PredLit> pred;
 	FuncTerm *func = dynamic_cast<FuncTerm*>(term_.get());
@@ -221,16 +221,16 @@ std::auto_ptr<PredLit> ShowHeadLit::toPred(Grounder *g)
 	return pred;
 }
 
-//////////////////////////////// ShowHeadExpander ////////////////////////////////
+//////////////////////////////// DisplayHeadExpander ////////////////////////////////
 
-ShowHeadExpander::ShowHeadExpander(Grounder *g, LitPtrVec &body, Show::Type type)
+DisplayHeadExpander::DisplayHeadExpander(Grounder *g, LitPtrVec &body, Display::Type type)
 	: g_(g)
 	, body_(body)
 	, type_(type)
 {
 }
 
-void ShowHeadExpander::expand(Lit *lit, Expander::Type type)
+void DisplayHeadExpander::expand(Lit *lit, Expander::Type type)
 {
 	switch(type)
 	{
@@ -244,20 +244,20 @@ void ShowHeadExpander::expand(Lit *lit, Expander::Type type)
 		{
 			LitPtrVec body;
 			foreach(Lit &l, body_) { body.push_back(l.clone()); }
-			g_->addInternal(new Show(lit->loc(), static_cast<ShowHeadLit*>(lit), body, type_));
+			g_->addInternal(new Display(lit->loc(), static_cast<DisplayHeadLit*>(lit), body, type_));
 			break;
 		}
 	}
 }
 
-//////////////////////////////// ShowBodyExpander ////////////////////////////////
+//////////////////////////////// DisplayBodyExpander ////////////////////////////////
 
-ShowBodyExpander::ShowBodyExpander(Show &d)
+DisplayBodyExpander::DisplayBodyExpander(Display &d)
 	: d_(d)
 {
 }
 
-void ShowBodyExpander::expand(Lit *lit, Type)
+void DisplayBodyExpander::expand(Lit *lit, Type)
 {
 	d_.append(lit);
 }

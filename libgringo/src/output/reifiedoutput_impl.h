@@ -29,10 +29,10 @@
 
 namespace reifiedoutput_impl
 {
-	class ShowPrinter : public Show::Printer
+	class DisplayPrinter : public Display::Printer
 	{
 	public:
-		ShowPrinter(ReifiedOutput *output) : output_(output) { }
+		DisplayPrinter(ReifiedOutput *output) : output_(output) { }
 		void begin(const Val &head, Type type);
 		void print(PredLitRep *l);
 		void end();

@@ -241,12 +241,12 @@ line ::= compute.
 line ::= meta.
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
-meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, Show::SHOWTERM)); }
-meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, Show::SHOWPRED)); }
-meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pParser->add(new Show(tok.loc(), term, *list, Show::SHOWTERM));       delete list; }
-meta ::= SHOW(tok) term(term) ncond(list).           { pParser->add(new Show(tok.loc(), term, *list, Show::SHOWPRED)); delete list; }
-meta ::= HIDE(tok) func(f) cond(list).               { pParser->add(new Show(tok.loc(), f, *list, Show::HIDEPRED)); delete list; }
-meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pParser->add(new Show(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f), *list, Show::HIDEPRED)); delete list;  }
+meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Display(tok.loc(), term, list, Display::SHOWTERM)); }
+meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pParser->add(new Display(tok.loc(), term, list, Display::SHOWPRED)); }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pParser->add(new Display(tok.loc(), term, *list, Display::SHOWTERM));       delete list; }
+meta ::= SHOW(tok) term(term) ncond(list).           { pParser->add(new Display(tok.loc(), term, *list, Display::SHOWPRED)); delete list; }
+meta ::= HIDE(tok) func(f) cond(list).               { pParser->add(new Display(tok.loc(), f, *list, Display::HIDEPRED)); delete list; }
+meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pParser->add(new Display(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f), *list, Display::HIDEPRED)); delete list;  }
 meta ::= HIDE      signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
 meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
 

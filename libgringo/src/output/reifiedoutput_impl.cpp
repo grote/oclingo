@@ -25,12 +25,12 @@
 namespace reifiedoutput_impl
 {
 
-	void ShowPrinter::begin(const Val &head, Type type)
+	void DisplayPrinter::begin(const Val &head, Type type)
 	{
 		#pragma message "reimplement me"
 	}
 
-	void ShowPrinter::print(PredLitRep *l)
+	void DisplayPrinter::print(PredLitRep *l)
 	{
 		#pragma message "reimplement me"
 		//out() << (show() ? "show" : "hide") << "(";
@@ -38,7 +38,7 @@ namespace reifiedoutput_impl
 		//out() << ").\n";
 	}
 
-	void ShowPrinter::end()
+	void DisplayPrinter::end()
 	{
 		#pragma message "reimplement me"
 	}
@@ -379,7 +379,7 @@ namespace reifiedoutput_impl
 
 }
 
-GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ShowPrinter, Show::Printer, ReifiedOutput)
+GRINGO_REGISTER_PRINTER(reifiedoutput_impl::DisplayPrinter, Display::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ExternalPrinter, External::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::RulePrinter, Rule::Printer, ReifiedOutput)
 /*

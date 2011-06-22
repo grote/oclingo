@@ -23,12 +23,12 @@
 #include <gringo/index.h>
 #include <gringo/lit.h>
 
-class ShowHeadLit : public Lit, public Matchable
+class DisplayHeadLit : public Lit, public Matchable
 {
 public:
-	ShowHeadLit(const Loc &loc, Term *term);
+	DisplayHeadLit(const Loc &loc, Term *term);
 
-	ShowHeadLit *clone() const;
+	DisplayHeadLit *clone() const;
 	void normalize(Grounder *g, Expander *expander);
 	bool fact() const;
 	void print(Storage *sto, std::ostream &out) const;
@@ -45,28 +45,28 @@ private:
 	clone_ptr<Term> term_;
 };
 
-class Show : public SimpleStatement
+class Display : public SimpleStatement
 {
 public:
 	enum Type { SHOWPRED, HIDEPRED, SHOWTERM };
 	class Printer : public ::Printer
 	{
 	public:
-		typedef Show::Type Type;
+		typedef Display::Type Type;
 	public:
 		virtual void begin(const Val &head, Type type) = 0;
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
 public:
-	Show(const Loc &loc, Term *term, LitPtrVec &body, Type type);
-	Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body, Type type);
+	Display(const Loc &loc, Term *term, LitPtrVec &body, Type type);
+	Display(const Loc &loc, DisplayHeadLit *lit, LitPtrVec &body, Type type);
 	void append(Lit *lit);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
-	~Show();
+	~Display();
 private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;

@@ -79,7 +79,6 @@ public:
 	DomStmRng domainStm(uint32_t var);
 	void show(uint32_t idx);
 	void show(Term *term);
-	void hide(const Loc &loc, PredLit *pred, LitPtrVec *conds);
 	~Parser();
 
 private:

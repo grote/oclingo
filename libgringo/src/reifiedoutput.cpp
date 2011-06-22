@@ -24,7 +24,7 @@
 namespace reifiedoutput_impl
 {
 
-GRINGO_EXPORT_PRINTER(ShowPrinter)
+GRINGO_EXPORT_PRINTER(DisplayPrinter)
 GRINGO_EXPORT_PRINTER(ExternalPrinter)
 GRINGO_EXPORT_PRINTER(RulePrinter)
 /*

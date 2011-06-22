@@ -110,7 +110,7 @@ void GroundProgramBuilder::add()
 		case STM_SHOW:
 		case STM_HIDE:
 		{
-			Show::Printer *printer = output_->printer<Show::Printer>();
+			Display::Printer *printer = output_->printer<Display::Printer>();
 			printLit(printer, stack_->lits.size() - 1, stack_->type == STM_SHOW);
 			pop(1);
 			break;
