@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/locateable.h>
 
+#pragma message "use boost::bind instead"
 class Expander
 {
 public:

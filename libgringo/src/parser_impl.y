@@ -139,6 +139,9 @@ boost::ptr_vector<T> *vec1(T *x)
 %type term { Term* }
 %destructor term { del($$); }
 
+%type func { FuncTerm* }
+%destructor func { del($$); }
+
 %type termlist  { TermPtrVec* }
 %type nsetterm  { TermPtrVec* }
 %type setterm   { TermPtrVec* }
@@ -235,18 +238,17 @@ line ::= VOLATILE IDENTIFIER(id).                      { pParser->incremental(Pa
 line ::= BASE.                                         { pParser->incremental(Parser::IPART_BASE); }
 line ::= optimize.
 line ::= compute.
-line ::= meta inv_part.
+line ::= meta.
 
-meta ::= HIDE      inv_part.                                  { OTP->hideAll(); }
-meta ::= SHOW(tok) inv_part term(term) COLON.                 { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list)); }
-meta ::= SHOW(tok) inv_part term(term).                       { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, true)); }
-meta ::= SHOW(tok) inv_part term(term) ncond(list) COLON.     { pParser->add(new Show(tok.loc(), term, *list));       delete list; }
-meta ::= SHOW(tok) inv_part term(term) ncond(list).           { pParser->add(new Show(tok.loc(), term, *list, true)); delete list; }
-meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pParser->hide(tok.loc(), pred, list); }
-meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
-meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
-
-inv_part ::= . { pParser->invPart(); }
+meta ::= HIDE.                                       { OTP->hideAll(); }
+meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, Show::SHOWTERM)); }
+meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pParser->add(new Show(tok.loc(), term, list, Show::SHOWPRED)); }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pParser->add(new Show(tok.loc(), term, *list, Show::SHOWTERM));       delete list; }
+meta ::= SHOW(tok) term(term) ncond(list).           { pParser->add(new Show(tok.loc(), term, *list, Show::SHOWPRED)); delete list; }
+meta ::= HIDE(tok) func(f) cond(list).               { pParser->add(new Show(tok.loc(), f, *list, Show::HIDEPRED)); delete list; }
+meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pParser->add(new Show(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f), *list, Show::HIDEPRED)); delete list;  }
+meta ::= HIDE      signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
+meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
 
 signed(res) ::= IDENTIFIER(id).              { res = id; }
 signed(res) ::= MINUS(minus) IDENTIFIER(id). { res = minus; res.index = GRD->index(std::string("-") + GRD->string(id.index)); }
@@ -328,13 +330,15 @@ term(res) ::= VBAR term(a) VBAR.                            { res = new MathTerm
 term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
 term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
 term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
+term(res) ::= func(f).                                      { res = f; }
 term(res) ::= LBRAC(l) termlist(args) RBRAC.                { res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= LBRAC(l) termlist(args) COMMA RBRAC.          { res = new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
 term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::UMINUS, a); }
 term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
+
+func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
 
 nsetterm(res) ::= term(term).                      { res = vec1(term); }
 nsetterm(res) ::= termlist(list) COMMA term(term). { res = list; list->push_back(term); }

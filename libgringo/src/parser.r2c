@@ -60,7 +60,6 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	, weak_(0)
 	, number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
-	, invCurrent_(base)
 	, iId_(0)
 	, iVar_(0)
 	, compat_(compat)
@@ -414,12 +413,6 @@ void Parser::incremental(iPart part, uint32_t index)
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
-void Parser::invPart()
-{
-	assert(current_ == base_ || invCurrent_ == base_);
-	std::swap(current_, invCurrent_);
-}
-
 Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
 	if(t == Val::ID)
@@ -571,19 +564,17 @@ void Parser::add()
 {
 	while(!last_.empty())
 	{
-		bool display = dynamic_cast<Show*>(&last_.back());
-		if(!display && current_ == volatile_)
-		{
-			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); 
-		}
 		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
 			domAdder.add(&statement);
 		}
-		// bind the incremetal literal if the incremental constant occurs in the statement
-		if(!display && current_ == cumulative_)
+		if(current_ == volatile_)
+		{
+			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
+		}
+		else if(current_ == cumulative_)
 		{
 			foreach(Statement &statement, rng)
 			{
@@ -655,6 +646,8 @@ void Parser::show(Term *term)
 
 void Parser::hide(const Loc &loc, PredLit *pred, LitPtrVec *conds)
 {
+	std::cerr
+		<< "TODO: changed my mind will be supported..." << std::endl;
 	std::cerr
 		<< "WARNING: hide statements are no longer supported:\n"
 		<< "\t" << StrLoc(g_, loc) << ": try to use: #hide " << g_->string(pred->dom()->nameId())<< "/" << pred->dom()->arity() <<  "."

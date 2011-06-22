@@ -35,7 +35,7 @@ class ShowPrinter : public Show::Printer
 {
 public:
 	ShowPrinter(LparseConverter *output) : output_(output) { }
-	void begin(const Val &head, bool ignore);
+	void begin(const Val &head, Type type);
 	void print(PredLitRep *l);
 	void end();
 	LparseConverter *output() const { return output_; }
@@ -109,21 +109,32 @@ private:
 
 ///////////////////////////////// ShowPrinter /////////////////////////////////
 
-void ShowPrinter::begin(const Val &head, bool)
+void ShowPrinter::begin(const Val &head, Type type)
 {
 	#pragma message "reimplement me!"
+	// create symbol headSym for functionsymbol head
+	// (maybe pass Func in the first place here)
+	// initialize an empty rule body
 }
 
 void ShowPrinter::print(PredLitRep *l)
 {
 	#pragma message "reimplement me!"
-	//if(show()) output_->showAtom(l);
-	//else output_->hideAtom(l);
+	// add symbol l to rule body
 }
 
 void ShowPrinter::end()
 {
 	#pragma message "reimplement me!"
+	// create a rule
+	// headSym :- body.
+	// show(headSym, string(head))
+
+	// Remarks:
+	//  incremenatal programs problematic
+	//  put show statements in volatile module importing from all previous modules
+	//  reground show statements in every step
+	//  optimization: at least in the basic case no additional overhead
 }
 
 ///////////////////////////////// ExternalPrinter /////////////////////////////////

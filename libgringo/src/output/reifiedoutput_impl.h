@@ -33,7 +33,7 @@ namespace reifiedoutput_impl
 	{
 	public:
 		ShowPrinter(ReifiedOutput *output) : output_(output) { }
-		void begin(const Val &head, bool ignore);
+		void begin(const Val &head, Type type);
 		void print(PredLitRep *l);
 		void end();
 		Output *output() const { return output_; }

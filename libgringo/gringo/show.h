@@ -48,16 +48,19 @@ private:
 class Show : public SimpleStatement
 {
 public:
+	enum Type { SHOWPRED, HIDEPRED, SHOWTERM };
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(const Val &head, bool ignore) = 0;
+		typedef Show::Type Type;
+	public:
+		virtual void begin(const Val &head, Type type) = 0;
 		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
 public:
-	Show(const Loc &loc, Term *term, LitPtrVec &body, bool funcToPred = false);
-	Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body);
+	Show(const Loc &loc, Term *term, LitPtrVec &body, Type type);
+	Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body, Type type);
 	void append(Lit *lit);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
@@ -67,5 +70,5 @@ public:
 private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;
-	bool           funcToPred_;
+	Type           type_;
 };

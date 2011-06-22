@@ -34,11 +34,12 @@ namespace
 	class ShowHeadExpander : public Expander
 	{
 	public:
-		ShowHeadExpander(Grounder *g, LitPtrVec &body);
+		ShowHeadExpander(Grounder *g, LitPtrVec &body, Show::Type type);
 		void expand(Lit *lit, Type type);
 	private:
 		Grounder  *g_;
 		LitPtrVec &body_;
+		Show::Type type_;
 	};
 
 	class ShowBodyExpander : public Expander
@@ -52,21 +53,21 @@ namespace
 
 }
 
-
 //////////////////////////////// Show ////////////////////////////////
 
-Show::Show(const Loc &loc, Term *term, LitPtrVec &body, bool funcToPred)
+Show::Show(const Loc &loc, Term *term, LitPtrVec &body, Type type)
 	: SimpleStatement(loc)
 	, head_(new ShowHeadLit(loc, term))
 	, body_(body.release())
-	, funcToPred_(funcToPred)
+	, type_(type)
 {
 }
 
-Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body)
+Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body, Type type)
 	: SimpleStatement(loc)
 	, head_(lit)
 	, body_(body.release())
+	, type_(type)
 {
 }
 
@@ -74,7 +75,7 @@ Show::Show(const Loc &loc, ShowHeadLit *lit, LitPtrVec &body)
 bool Show::grounded(Grounder *g)
 {
 	Printer *printer = g->output()->printer<Printer>();
-	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g), funcToPred_);
+	printer->begin(static_cast<ShowHeadLit&>(*head_).val(g), type_);
 	foreach(Lit &lit, body_)
 	{
 		lit.grounded(g);
@@ -87,10 +88,10 @@ bool Show::grounded(Grounder *g)
 
 void Show::normalize(Grounder *g)
 {
-	ShowHeadExpander headExp(g, body_);
+	ShowHeadExpander headExp(g, body_, type_);
 	ShowBodyExpander bodyExp(*this);
 	head_->normalize(g, &headExp);
-	if(funcToPred_)
+	if(type_ != SHOWTERM)
 	{
 		std::auto_ptr<PredLit> pred = static_cast<ShowHeadLit&>(*head_).toPred(g);
 		if(pred.get()) { body_.insert(body_.begin(), pred); }
@@ -101,6 +102,7 @@ void Show::normalize(Grounder *g)
 			throw TypeException("cannot convert term to predicate", StrLoc(g, head_->loc()), oss.str());
 		}
 	}
+
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
 		body_[i].normalize(g, &bodyExp);
@@ -115,17 +117,23 @@ void Show::visit(PrgVisitor *visitor)
 
 void Show::print(Storage *sto, std::ostream &out) const
 {
-	out << "#show ";
-	head_->print(sto, out);
+	out << (type_ == HIDEPRED ? "#hide " : "#show ");
+	if(type_ == SHOWTERM)
+	{
+		head_->print(sto, out);
+		out << ":";
+	}
 	std::vector<const Lit*> body;
 	foreach(const Lit &lit, body_) { body.push_back(&lit); }
 	std::sort(body.begin(), body.end(), Lit::cmpPos);
+	bool comma = false;
 	foreach(const Lit *lit, body)
 	{
-		out << ":";
+		if(comma) { out << ":"; }
+		else      { comma = true; }
 		lit->print(sto, out);
 	}
-	out << ".";
+	out << (type_ == SHOWTERM ? ":" : "") << ".";
 }
 
 void Show::append(Lit *lit)
@@ -215,9 +223,10 @@ std::auto_ptr<PredLit> ShowHeadLit::toPred(Grounder *g)
 
 //////////////////////////////// ShowHeadExpander ////////////////////////////////
 
-ShowHeadExpander::ShowHeadExpander(Grounder *g, LitPtrVec &body)
+ShowHeadExpander::ShowHeadExpander(Grounder *g, LitPtrVec &body, Show::Type type)
 	: g_(g)
 	, body_(body)
+	, type_(type)
 {
 }
 
@@ -235,7 +244,7 @@ void ShowHeadExpander::expand(Lit *lit, Expander::Type type)
 		{
 			LitPtrVec body;
 			foreach(Lit &l, body_) { body.push_back(l.clone()); }
-			g_->addInternal(new Show(lit->loc(), static_cast<ShowHeadLit*>(lit), body));
+			g_->addInternal(new Show(lit->loc(), static_cast<ShowHeadLit*>(lit), body, type_));
 			break;
 		}
 	}

@@ -23,11 +23,11 @@
 namespace plainoutput_impl
 {
 
-void ShowPrinter::begin(const Val &head, bool ignore)
+void ShowPrinter::begin(const Val &head, Type type)
 {
-	out() << "#show ";
+	out() << (type == Show::HIDEPRED ? "#hide " : "#show ");
 	head.print(output()->storage(), out());
-	ignore_  = ignore;
+	ignore_  = type != Show::SHOWTERM;
 	ignored_ = false;
 }
 

@@ -69,7 +69,6 @@ public:
 	void parse();
 	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
 	void incremental(iPart part, uint32_t index = 0);
-	void invPart();
 	void add(Statement *s);
 	Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
 	Term *term(Val::Type t, const Loc &loc, uint32_t index);
@@ -109,7 +108,6 @@ private:
 	Optimize::SharedNumber number_;
 	// parsing the incremental part
 	bool            inc_;
-	Module         *invCurrent_;
 	uint32_t        iId_;
 	uint32_t        iVar_;
 	// parsing const directives
