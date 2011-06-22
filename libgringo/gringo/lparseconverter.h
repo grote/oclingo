@@ -94,18 +94,18 @@ public:
 	virtual void doFinalize() = 0;
 	virtual int getIncAtom() { return -1; }
 protected:
-	DisplayMap    atomsHidden_;
-	DisplayMap    atomsShown_;
-	ExternalMap   atomsExternal_;
-	SymbolTable   symTab_;
-	PrioMap       prioMap_;
-	ValVec        vals_;
-	uint32_t      false_;
-	NewSymbols    newSymbols_;
-	DomainVec     domains_;
-	BoolVec       undefined_;
+	DisplayMap            atomsHidden_;
+	DisplayMap            atomsShown_;
+	ExternalMap           atomsExternal_;
+	SymbolTable           symTab_;
+	PrioMap               prioMap_;
+	ValVec                vals_;
+	uint32_t              false_;
+	NewSymbols            newSymbols_;
+	DomainVec             domains_;
+	BoolVec               undefined_;
 	std::vector<uint32_t> newSymbolsDone_;
-	bool          shiftDisjunctions_;
-	std::vector<int32_t> computePos_;
-	std::vector<int32_t> computeNeg_;
+	bool                  shiftDisjunctions_;
+	std::vector<int32_t>  computePos_;
+	std::vector<int32_t>  computeNeg_;
 };
