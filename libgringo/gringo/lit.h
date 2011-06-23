@@ -59,7 +59,6 @@ public:
 	bool head() const;
 	void head(bool head);
 	virtual bool sign() const;
-	virtual void doHead(bool head);
 	virtual bool complete() const;
 	virtual bool edbFact() const;
 	virtual Monotonicity monotonicity() const;
@@ -104,7 +103,6 @@ public:
 	virtual bool fact() const;
 
 	virtual bool complete() const;
-	virtual void doHead(bool head);
 	virtual bool edbFact() const;
 	virtual Monotonicity monotonicity() const;
 
@@ -145,11 +143,7 @@ inline bool Lit::LitCmp::operator()(Lit *a, Lit *b)
 inline Lit::Lit(const Loc &loc) : Locateable(loc), head_(false), position(0) { }
 
 inline bool Lit::head() const { return head_; }
-inline void Lit::head(bool head)
-{
-	if(head != head_) { doHead(head); head_ = head; }
-}
-inline void Lit::doHead(bool) { }
+inline void Lit::head(bool head) { head_ = head; }
 inline bool Lit::complete() const { return true; }
 inline bool Lit::edbFact() const { return false; }
 inline Lit::Monotonicity Lit::monotonicity() const { return sign() ? ANTIMONOTONE : MONOTONE; }
@@ -178,7 +172,6 @@ inline void Lit::Decorator::normalize(Grounder *g, Expander *expander) { decorat
 inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
 
 inline bool Lit::Decorator::complete() const { return decorated()->complete(); }
-inline void Lit::Decorator::doHead(bool head) { decorated()->head(head); }
 inline bool Lit::Decorator::edbFact() const { return decorated()->edbFact(); }
 inline Lit::Monotonicity Lit::Decorator::monotonicity() const { return decorated()->monotonicity(); }
 

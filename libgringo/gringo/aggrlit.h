@@ -302,8 +302,6 @@ public:
 	// Lit interface
 	virtual void normalize(Grounder *g, Expander *expander);
 
-	void doHead(bool head);
-
 	bool match(Grounder *grounder);
 
 	bool complete() const;

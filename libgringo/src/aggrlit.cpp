@@ -273,11 +273,6 @@ AggrLit::AggrLit(const Loc &loc, AggrCondVec &conds, bool set)
 	foreach(AggrCond &lit, conds_) { lit.aggr_ = this; }
 }
 
-void AggrLit::doHead(bool head)
-{
-	foreach(AggrCond &lit, conds_) { lit.head(head); }
-}
-
 void AggrLit::lower(Term *l, bool eq)
 { 
 	lower_.reset(l); 
@@ -376,6 +371,7 @@ void AggrLit::normalize(Grounder *g, Expander *expander)
 	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, expander, false); }
 	for(AggrCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
+		conds_[i].head(head());
 		conds_[i].aggr_ = this;
 		conds_[i].normalize(g, i);
 	}
