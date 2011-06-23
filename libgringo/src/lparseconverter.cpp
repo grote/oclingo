@@ -110,14 +110,12 @@ uint32_t LparseConverter::symbol(PredLitRep *l)
 	return res.first->second;
 }
 
-void LparseConverter::showAtom(PredLitRep *l)
+void LparseConverter::display(const Val &head, LitVec body, bool show)
 {
-	atomsShown_[DisplayMap::key_type(l->dom()->nameId(), l->dom()->arity())].insert(symbol(l));
-}
-
-void LparseConverter::hideAtom(PredLitRep *l)
-{
-	atomsHidden_[DisplayMap::key_type(l->dom()->nameId(), l->dom()->arity())].insert(symbol(l));
+	std::stringstream ss;
+	head.print(storage(), ss);
+	if(show) { atomsShown_[ss.str()].push_back(body); }
+	else     { atomsHidden_[ss.str()].push_back(body); }
 }
 
 void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
@@ -125,30 +123,109 @@ void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
 	prioMap_[set[1]][set].push_back(maximize ? -lit : lit);
 }
 
-void LparseConverter::printSymbolTable()
+void LparseConverter::prepareSymbolTable()
 {
+	if(!hideAll_) { atomsShown_.clear(); }
 	for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
 	{
 		uint32_t nameId = i->second->nameId();
 		uint32_t arity  = i->second->arity();
 		uint32_t domId  = i->second->domId();
-		DisplayMap::iterator itShown = atomsShown_.find(DisplayMap::key_type(nameId, arity));
-		bool globShow = shown(nameId, arity);
-		if(globShow || itShown != atomsShown_.end())
+		if(shown(nameId, arity))
 		{
-			DisplayMap::iterator hidden = atomsHidden_.find(DisplayMap::key_type(nameId, arity));
 			const std::string &name = s_->string(nameId);
-			if(newSymbols_.size() <= domId) newSymbols_.resize(domId + 1);
+			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
 			foreach(AtomRef &j, newSymbols_[domId])
 			{
-				if((globShow && (hidden == atomsHidden_.end() || hidden->second.find(j.symbol) == hidden->second.end())) ||
-				   (!globShow && itShown != atomsShown_.end() && itShown->second.find(j.symbol) != itShown->second.end()))
+				std::stringstream ss;
+				ss << name;
+				if(arity > 0)
 				{
-					printSymbolTableEntry(j, arity, name);
+					ValVec::const_iterator k = vals_.begin() + j.offset;
+					ValVec::const_iterator end = k + arity;
+					ss << "(";
+					k->print(s_, ss);
+					for(++k; k != end; ++k)
+					{
+						ss << ",";
+						k->print(s_, ss);
+					}
+					ss << ")";
+				}
+				std::string atom = ss.str();
+				if(hideAll_)
+				{
+					DisplayMap::iterator l = atomsShown_.find(atom);
+					if(l != atomsShown_.end())
+					{
+						LitVec lits;
+						lits.push_back(j.symbol);
+						l->second.push_back(lits);
+					}
+					else { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
+				}
+				else
+				{
+					DisplayMap::iterator l = atomsHidden_.find(atom);
+					if(l != atomsHidden_.end())
+					{
+						LitVec show;
+						show.push_back(j.symbol);
+						foreach(LitVec &lits, l->second)
+						{
+							lits.erase(std::remove(lits.begin(), lits.end(), j.symbol), lits.end());
+							if(lits.empty())
+							{
+								show.clear();
+								break;
+							}
+							else if(lits.size() == 1) { show.push_back(-lits.back()); }
+							else
+							{
+								uint32_t newSymbol = symbol();
+								printBasicRule(newSymbol, lits);
+								show.push_back(-newSymbol);
+							}
+						}
+						if(show.size() == 1) { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
+						else if(show.size() > 1)
+						{
+							uint32_t newSymbol = symbol();
+							printBasicRule(newSymbol, show);
+							symMap_.push_back(TempSymbolTable::value_type(atom, newSymbol));
+						}
+					}
+					else { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
 				}
 			}
 		}
 	}
+
+	atomsHidden_.clear();
+
+	foreach(DisplayMap::value_type &item, atomsShown_)
+	{
+		std::sort(item.second.begin(), item.second.end());
+		item.second.erase(std::unique(item.second.begin(), item.second.end()), item.second.end());
+		if(item.second.size() == 1 && item.second.back().size() == 1 && item.second.back().back() > 0)
+		{
+			symMap_.push_back(TempSymbolTable::value_type(item.first, item.second.back().back()));
+		}
+		else
+		{
+			uint32_t newSymbol = symbol();
+			foreach(LitVec &lits, item.second) { printBasicRule(newSymbol, lits); }
+			symMap_.push_back(TempSymbolTable::value_type(item.first, newSymbol));
+		}
+	}
+
+	atomsShown_.clear();
+
+}
+
+void LparseConverter::printSymbolTable()
+{
+	foreach(TempSymbolTable::value_type &item, symMap_) { printSymbolTableEntry(item.second, item.first); }
 }
 
 void LparseConverter::printExternalTable()
@@ -242,6 +319,7 @@ void LparseConverter::finalize()
 		}
 		printMinimizeRule(pos, neg, wPos, wNeg);
 	}
+	prepareSymbolTable();
 	doFinalize();
 	newSymbols_.clear();
 	newSymbolsDone_.clear();
@@ -276,4 +354,3 @@ void LparseConverter::printBasicRule(uint32_t head, const LitVec &lits)
 LparseConverter::~LparseConverter()
 {
 }
-

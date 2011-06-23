@@ -40,7 +40,7 @@ void Output::show(uint32_t nameId, uint32_t arity, bool show)
 bool Output::shown(uint32_t nameId, uint32_t arity)
 {
 	if(hideAll_) { return showSet_.find(Signature(nameId, arity)) != showSet_.end(); }
-	else         { return hideSet_.find(Signature(nameId, arity)) != hideSet_.end(); }
+	else         { return hideSet_.find(Signature(nameId, arity)) == hideSet_.end(); }
 }
 
 void Output::external(uint32_t nameId, uint32_t arity)

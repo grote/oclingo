@@ -37,6 +37,8 @@ public:
 	typedef boost::unordered_map<uint32_t, uint32_t, ValCmp, ValCmp> SymbolMap;
 protected:
 	typedef std::vector<SymbolMap> SymbolTable;
+	typedef std::vector<std::pair<std::string, uint32_t> > TempSymbolTable;
+
 	struct Minimize
 	{
 		AtomVec pos;
@@ -58,14 +60,12 @@ protected:
 	typedef std::vector<bool>                    BoolVec;
 	typedef boost::unordered_map<ValVec, LitVec> MiniMap;
 	typedef std::map<Val, MiniMap, boost::function2<bool, const Val&, const Val &> >            PrioMap;
-	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > DisplayMap;
+	typedef boost::unordered_map<std::string, std::vector<LitVec> >                             DisplayMap;
 	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > ExternalMap;
 public:
 	LparseConverter(bool shiftDisj);
 	void addDomain(Domain *d);
 	void prioLit(int32_t lit, const ValVec &set, bool maximize);
-	void showAtom(PredLitRep *l);
-	void hideAtom(PredLitRep *l);
 	uint32_t symbol(PredLitRep *l);
 	uint32_t falseSymbol() const { return false_; }
 	virtual void initialize();
@@ -78,7 +78,8 @@ public:
 	void addCompute(PredLitRep *l);\
 	void printBasicRule(uint32_t head, uint32_t n, ...);
 	void printBasicRule(uint32_t head, const LitVec &lits);
-
+	void display(const Val &head, LitVec body, bool show);
+	void prepareSymbolTable();
 	virtual ~LparseConverter();
 public:
 	virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) = 0;
@@ -88,7 +89,7 @@ public:
 	virtual void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg) = 0;
 	virtual void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg) = 0;
-	virtual void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name) = 0;
+	virtual void printSymbolTableEntry(uint32_t symbol, const std::string &name) = 0;
 	virtual void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name) = 0;
 	virtual uint32_t symbol() = 0;
 	virtual void doFinalize() = 0;
@@ -98,6 +99,7 @@ protected:
 	DisplayMap            atomsShown_;
 	ExternalMap           atomsExternal_;
 	SymbolTable           symTab_;
+	TempSymbolTable       symMap_;
 	PrioMap               prioMap_;
 	ValVec                vals_;
 	uint32_t              false_;

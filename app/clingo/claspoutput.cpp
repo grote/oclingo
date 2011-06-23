@@ -102,25 +102,10 @@ void ClaspOutput::printComputeRule(int models, const AtomVec &pos, const AtomVec
 	foreach(AtomVec::value_type atom, pos) { b_->setCompute(atom, true); }
 }
 
-void ClaspOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name)
 {
-	std::stringstream ss;
-	ss << name;
-	if(arity > 0)
-	{
-		ValVec::const_iterator k = vals_.begin() + atom.offset;
-		ValVec::const_iterator end = k + arity;
-		ss << "(";
-		k->print(s_, ss);
-		for(++k; k != end; ++k)
-		{
-			ss << ",";
-			k->print(s_, ss);
-		}
-		ss << ")";
-	}
-	b_->setAtomName(atom.symbol, ss.str().c_str());
-	atomUnnamed_[atom.symbol - lastUnnamed_] = false;
+	b_->setAtomName(symbol, name.c_str());
+	atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
 void ClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
