@@ -166,16 +166,16 @@ void PredLit::print(Storage *sto, std::ostream &out) const
 	if(complete()) out << "*";
 }
 
-void PredLit::normalize(Grounder *g, Expander *expander)
+void PredLit::normalize(Grounder *g, const Expander &e)
 {
 	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
 	{
 		for(Term::Split s = i->split(); s.first; s = i->split())
 		{
-			expander->expand(new PredLit(loc(), g->domain(dom_->nameId(), s.second->size()), *s.second), Expander::POOL);
+			e(new PredLit(loc(), g->domain(dom_->nameId(), s.second->size()), *s.second), POOL);
 			terms_.replace(i, s.first);
 		}
-		i->normalize(this, Term::VecRef(terms_, i), g, expander, !head() && !sign());
+		i->normalize(this, Term::VecRef(terms_, i), g, e, !head() && !sign());
 	}
 }
 

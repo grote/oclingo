@@ -29,30 +29,6 @@
 #include <gringo/mathterm.h>
 #include <gringo/constterm.h>
 
-namespace
-{
-	class DisplayHeadExpander : public Expander
-	{
-	public:
-		DisplayHeadExpander(Grounder *g, LitPtrVec &body, Display::Type type);
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder  *g_;
-		LitPtrVec &body_;
-		Display::Type type_;
-	};
-
-	class DisplayBodyExpander : public Expander
-	{
-	public:
-		DisplayBodyExpander(Display &d);
-		void expand(Lit *lit, Type);
-	private:
-		Display &d_;
-	};
-
-}
-
 //////////////////////////////// Display ////////////////////////////////
 
 Display::Display(const Loc &loc, Term *term, LitPtrVec &body, Type type)
@@ -85,12 +61,29 @@ bool Display::grounded(Grounder *g)
 	return true;
 }
 
+void Display::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case Lit::RANGE:
+		case Lit::RELATION:
+		{
+			body_.push_back(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			LitPtrVec body;
+			foreach(Lit &l, body_) { body.push_back(l.clone()); }
+			g->addInternal(new Display(loc(), static_cast<DisplayHeadLit*>(lit), body, type_));
+			break;
+		}
+	}
+}
 
 void Display::normalize(Grounder *g)
 {
-	DisplayHeadExpander headExp(g, body_, type_);
-	DisplayBodyExpander bodyExp(*this);
-	head_->normalize(g, &headExp);
+	head_->normalize(g, boost::bind(&Display::expandHead, this, g, _1, _2));
 	if(type_ != SHOWTERM)
 	{
 		std::auto_ptr<PredLit> pred = static_cast<DisplayHeadLit&>(*head_).toPred(g);
@@ -103,9 +96,10 @@ void Display::normalize(Grounder *g)
 		}
 	}
 
+	Lit::Expander bodyExp = boost::bind(&Display::append, this, _1);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
-		body_[i].normalize(g, &bodyExp);
+		body_[i].normalize(g, bodyExp);
 	}
 }
 
@@ -158,9 +152,9 @@ DisplayHeadLit *DisplayHeadLit::clone() const
 	return new DisplayHeadLit(*this);
 }
 
-void DisplayHeadLit::normalize(Grounder *g, Expander *expander)
+void DisplayHeadLit::normalize(Grounder *g, const Expander &e)
 {
-	term_->normalize(this, Term::PtrRef(term_), g, expander, false);
+	term_->normalize(this, Term::PtrRef(term_), g, e, false);
 }
 
 bool DisplayHeadLit::fact() const
@@ -219,45 +213,4 @@ std::auto_ptr<PredLit> DisplayHeadLit::toPred(Grounder *g)
 		}
 	}
 	return pred;
-}
-
-//////////////////////////////// DisplayHeadExpander ////////////////////////////////
-
-DisplayHeadExpander::DisplayHeadExpander(Grounder *g, LitPtrVec &body, Display::Type type)
-	: g_(g)
-	, body_(body)
-	, type_(type)
-{
-}
-
-void DisplayHeadExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-		case RELATION:
-		{
-			body_.push_back(lit);
-			break;
-		}
-		case POOL:
-		{
-			LitPtrVec body;
-			foreach(Lit &l, body_) { body.push_back(l.clone()); }
-			g_->addInternal(new Display(lit->loc(), static_cast<DisplayHeadLit*>(lit), body, type_));
-			break;
-		}
-	}
-}
-
-//////////////////////////////// DisplayBodyExpander ////////////////////////////////
-
-DisplayBodyExpander::DisplayBodyExpander(Display &d)
-	: d_(d)
-{
-}
-
-void DisplayBodyExpander::expand(Lit *lit, Type)
-{
-	d_.append(lit);
 }

@@ -46,22 +46,22 @@ void PoolTerm::print(Storage *sto, std::ostream &out) const
 	else a_->print(sto, out);
 }
 
-void PoolTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+void PoolTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
 {
 	if(b_.get())
 	{
 		clone_ = false;
-		expander->expand(parent->clone(), Expander::POOL);
+		e(parent->clone(), Lit::POOL);
 		clone_ = true;
 		Term *b = b_.get();
 		ref.reset(b_.release());
-		b->normalize(parent, ref, g, expander, unify);
+		b->normalize(parent, ref, g, e, unify);
 	}
 	else
 	{
 		Term *a = a_.get();
 		ref.reset(a_.release());
-		a->normalize(parent, ref, g, expander, unify);
+		a->normalize(parent, ref, g, e, unify);
 	}
 }
 

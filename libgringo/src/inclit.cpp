@@ -138,7 +138,7 @@ void IncLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
-void IncLit::normalize(Grounder *, Expander *)
+void IncLit::normalize(Grounder *, const Expander &)
 {
 }
 

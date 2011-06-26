@@ -27,7 +27,7 @@ public:
 public:
 	MathTerm(const Loc &loc, const Func &f, Term *a, Term *b = 0);
 	Val val(Grounder *grounder) const;
-	void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
+	void normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify);
 	AbsTerm::Ref* abstract(Substitution& subst) const;
 	bool unifiable() const;
 	bool unify(Grounder *grounder, const Val &v, int binder) const;

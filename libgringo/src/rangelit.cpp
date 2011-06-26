@@ -150,10 +150,10 @@ void RangeLit::print(Storage *sto, std::ostream &out) const
 	out << ")";
 }
 
-void RangeLit::normalize(Grounder *g, Expander *expander)
+void RangeLit::normalize(Grounder *g, const Expander &e)
 {
-	a_->normalize(this, Term::PtrRef(a_), g, expander, false);
-	b_->normalize(this, Term::PtrRef(b_), g, expander, false);
+	a_->normalize(this, Term::PtrRef(a_), g, e, false);
+	b_->normalize(this, Term::PtrRef(b_), g, e, false);
 }
 
 Lit::Score RangeLit::score(Grounder *g, VarSet &bound)

@@ -64,7 +64,7 @@ private:
 	typedef std::vector<PredLit*> PredLitVec;
 public:
 	PredLit(const Loc &loc, Domain *dom, TermPtrVec &terms);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const;
 	Monotonicity monotonicity() const;
 	void addDomain(Grounder *g, bool fact);

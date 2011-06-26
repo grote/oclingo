@@ -24,7 +24,7 @@ class LuaTerm : public Term
 {
 public:
 	LuaTerm(const Loc &loc, uint32_t name, TermPtrVec &args);
-	void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
+	void normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify);
 	AbsTerm::Ref* abstract(Substitution& subst) const;
 	void print(Storage *sto, std::ostream &out) const;
 	Term *clone() const;

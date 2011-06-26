@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
 #include <gringo/formula.h>
+#include <gringo/lit.h>
 
 class Compute : public SimpleStatement
 {
@@ -35,13 +36,14 @@ public:
 	};
 public:
 	Compute(const Loc &loc, PredLit *head, LitPtrVec &body);
-	LitPtrVec &body() { return body_; }
 	void append(Lit *lit);
 	bool grounded(Grounder *g);
 	void normalize(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	~Compute();
+private:
+	void expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
 private:
 	clone_ptr<Head> head_;
 	LitPtrVec       body_;

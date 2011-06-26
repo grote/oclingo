@@ -31,6 +31,7 @@
 
 namespace
 {
+/*
 	class OptimizeSetExpander : public Expander
 	{
 	public:
@@ -59,6 +60,7 @@ namespace
 	private:
 		Optimize &opt_;
 	};
+*/
 
 	class OptimizeAnonymousRemover : public PrgVisitor
 	{
@@ -148,7 +150,7 @@ Index *OptimizeSetLit::index(Grounder *, Formula *gr, VarSet &)
 	return new MatchIndex(this);
 }
 
-void OptimizeSetLit::normalize(Grounder *g, Expander *e)
+void OptimizeSetLit::normalize(Grounder *g, const Expander &e)
 {
 	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
 	{
@@ -217,20 +219,50 @@ Optimize::Optimize(const Optimize &opt, const OptimizeSetLit &setLit)
 {
 }
 
+void Optimize::expandSet(Grounder *g, Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case Lit::RANGE:
+		case Lit::RELATION:
+		{
+			append(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			std::auto_ptr<OptimizeSetLit> setLit(static_cast<OptimizeSetLit*>(lit));
+			g->addInternal(new Optimize(*this, *setLit));
+			break;
+		}
+	}
+}
+
+void Optimize::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case Lit::RANGE:
+		case Lit::RELATION:
+		{
+			append(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			g->addInternal(new Optimize(*this, lit));
+			break;
+		}
+	}
+}
 
 void Optimize::normalize(Grounder *g)
 {
 	bool headLike = type_ != CONSTRAINT;
-	if(headLike && !body_.empty())
-	{
-		OptimizeHeadExpander headExp(g, *this);
-		body_[0].normalize(g, &headExp);
-	}
-	OptimizeSetExpander setExp(g, *this);
-	setLit_.normalize(g, &setExp);
-	OptimizeBodyExpander bodyExp(*this);
-	for(LitPtrVec::size_type i = headLike; i < body_.size(); i++) { body_[i].normalize(g, &bodyExp); }
-
+	if(headLike && !body_.empty()) { body_[0].normalize(g, boost::bind(&Optimize::expandHead, this, g, _1, _2)); }
+	setLit_.normalize(g, boost::bind(&Optimize::expandSet, this, g, _1, _2));
+	Lit::Expander bodyExp = boost::bind(&Optimize::append, this, _1);
+	for(LitPtrVec::size_type i = headLike; i < body_.size(); i++) { body_[i].normalize(g, bodyExp); }
 	if(type_ == SET || type_ ==  MULTISET || type_ == CONSTRAINT)
 	{
 		OptimizeAnonymousRemover::remove(g, *this);
@@ -289,64 +321,6 @@ void Optimize::print(Storage *sto, std::ostream &out) const
 
 Optimize::~Optimize()
 {
-}
-
-//////////////////////////////////////// OptimizeSetExpander ////////////////////////////////////////
-
-OptimizeSetExpander::OptimizeSetExpander(Grounder *g, Optimize &opt)
-	: g_(g)
-	, opt_(opt)
-{ }
-
-void OptimizeSetExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-		case RELATION:
-			opt_.append(lit);
-			break;
-		case POOL:
-			std::auto_ptr<OptimizeSetLit> setLit(static_cast<OptimizeSetLit*>(lit));
-			g_->addInternal(new Optimize(opt_, *setLit));
-			break;
-	}
-}
-
-
-//////////////////////////////////////// OptimizeHeadExpander ////////////////////////////////////////
-
-OptimizeHeadExpander::OptimizeHeadExpander(Grounder *g, Optimize &opt)
-	: g_(g)
-	, opt_(opt)
-{
-}
-
-void OptimizeHeadExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-		case RELATION:
-			opt_.append(lit);
-			break;
-		case POOL:
-			g_->addInternal(new Optimize(opt_, lit));
-			break;
-	}
-}
-
-//////////////////////////////////////// OptimizeBodyExpander ////////////////////////////////////////
-
-OptimizeBodyExpander::OptimizeBodyExpander(Optimize &opt)
-	: opt_(opt)
-{
-}
-
-void OptimizeBodyExpander::expand(Lit *lit, Expander::Type type)
-{
-	(void)type;
-	opt_.append(lit);
 }
 
 //////////////////////////////////////// LparseOptimizeConverter ////////////////////////////////////////

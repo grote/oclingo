@@ -126,11 +126,11 @@ void LuaLit::print(Storage *sto, std::ostream &out) const
 	out << "))";
 }
 
-void LuaLit::normalize(Grounder *g, Expander *expander)
+void LuaLit::normalize(Grounder *g, const Expander &e)
 {
 	for(TermPtrVec::iterator it = args_.begin(); it != args_.end(); it++)
 	{
-		it->normalize(this, Term::VecRef(args_, it), g, expander, false);
+		it->normalize(this, Term::VecRef(args_, it), g, e, false);
 	}
 }
 

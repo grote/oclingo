@@ -31,37 +31,10 @@
 
 namespace
 {
-	class AggrCondHeadExpander : public Expander
+	class AggrCondAnonymousRemover : public PrgVisitor
 	{
 	public:
-		AggrCondHeadExpander(AggrCond &cond);
-		void expand(Lit *lit, Type type);
-	private:
-		AggrCond &cond_;
-	};
-
-	class CondSetExpander : public Expander
-	{
-	public:
-		CondSetExpander(AggrCond &cond);
-		void expand(Lit *lit, Type type);
-	private:
-		AggrCond &cond_;
-	};
-
-	class AggrCondBodyExpander : public Expander
-	{
-	public:
-		AggrCondBodyExpander(AggrCond &cond);
-		void expand(Lit *lit, Type type);
-	private:
-		AggrCond &cond_;
-	};
-
-	class AnonymousRemover : public PrgVisitor
-	{
-	public:
-		AnonymousRemover(Grounder *g, AggrCond &cond);
+		AggrCondAnonymousRemover(Grounder *g, AggrCond &cond);
 		void visit(VarTerm *var, bool bind);
 		void visit(Term* term, bool bind);
 		void visit(Lit *lit, bool domain);
@@ -72,7 +45,6 @@ namespace
 		AggrCond  &cond_;
 		uint32_t  vars_;
 	};
-
 
 	class LparseAggrCondConverter : public PrgVisitor
 	{
@@ -363,12 +335,12 @@ void AggrLit::visit(PrgVisitor *visitor)
 	if(upper_.get()) { visitor->visit(upper_.get(), false); }
 }
 
-void AggrLit::normalize(Grounder *g, Expander *expander) 
+void AggrLit::normalize(Grounder *g, const Expander &e)
 {
 	assert(!(assign_ && sign_));
 	assert(!(assign_ && head()));
-	if(lower_.get()) { lower_->normalize(this, Term::PtrRef(lower_), g, expander, assign_); }
-	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, expander, false); }
+	if(lower_.get()) { lower_->normalize(this, Term::PtrRef(lower_), g, e, assign_); }
+	if(upper_.get()) { upper_->normalize(this, Term::PtrRef(upper_), g, e, false); }
 	for(AggrCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
 		conds_[i].head(head());
@@ -412,7 +384,7 @@ Index *AggrSetLit::index(Grounder *, Formula *gr, VarSet &)
 	return new StateDirtyIndex(*cond->aggr());
 }
 
-void AggrSetLit::normalize(Grounder *g, Expander *e)
+void AggrSetLit::normalize(Grounder *g, const Expander &e)
 {
 	for(TermPtrVec::iterator i = terms_.begin(); i != terms_.end(); i++)
 	{
@@ -490,25 +462,62 @@ bool AggrCond::complete() const
 	return complete_;
 }
 
+void AggrCond::expandHead(Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case Lit::RANGE:
+		case Lit::RELATION:
+		{
+			lits_.push_back(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			LitPtrVec lits;
+			lits.push_back(lit);
+			lits.insert(lits.end(), lits_.begin() + 1, lits_.end());
+			TermPtrVec terms(*set_.terms());
+			aggr()->add(new AggrCond(loc(), terms, lits, style_));
+			break;
+		}
+	}
+}
+
+void AggrCond::expandSet(Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case Lit::RANGE:
+		case Lit::RELATION:
+		{
+			lits_.push_back(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			std::auto_ptr<AggrSetLit> set(static_cast<AggrSetLit*>(lit));
+			LitPtrVec lits(lits_);
+			aggr()->add(new AggrCond(loc(), *set->terms(), lits, style_));
+			break;
+		}
+	}
+}
+
 void AggrCond::normalize(Grounder *g, uint32_t number)
 {
 	assert(!lits_.empty());
 	bool head = lits_[0].head() || style_ != STYLE_DLV;
-	if(head)
-	{
-		AggrCondHeadExpander headExp(*this);
-		lits_[0].normalize(g, &headExp);
-	}
-	CondSetExpander setExp(*this);
-	set_.normalize(g, &setExp);
-	AggrCondBodyExpander bodyExp(*this);
+	if(head) { lits_[0].normalize(g, boost::bind(&AggrCond::expandHead, this, _1, _2)); }
+	set_.normalize(g, boost::bind(&AggrCond::expandSet, this, _1, _2));
+	Lit::Expander bodyExp = boost::bind(static_cast<void (LitPtrVec::*)(Lit *)>(&LitPtrVec::push_back), &lits_, _1);
 	for(LitPtrVec::size_type i = head; i < lits_.size(); i++)
 	{
-		lits_[i].normalize(g, &bodyExp);
+		lits_[i].normalize(g, bodyExp);
 	}
 	if(style_ != STYLE_DLV)
 	{
-		AnonymousRemover::remove(g, *this);
+		AggrCondAnonymousRemover::remove(g, *this);
 		LparseAggrCondConverter::convert(g, *this, number);
 	}
 }
@@ -634,70 +643,16 @@ AggrCond* new_clone(const AggrCond& a)
 	return new AggrCond(a);
 }
 
-//////////////////////////////////////// AggrCondHeadExpander ////////////////////////////////////////
-
-AggrCondHeadExpander::AggrCondHeadExpander(AggrCond &cond)
-	: cond_(cond)
-{ }
-
-void AggrCondHeadExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-		case RELATION:
-			cond_.add(lit);
-			break;
-		case POOL:
-			LitPtrVec lits;
-			lits.push_back(lit);
-			lits.insert(lits.end(), cond_.lits()->begin() + 1, cond_.lits()->end());
-			TermPtrVec terms(*cond_.terms());
-			cond_.aggr()->add(new AggrCond(cond_.loc(), terms, lits, cond_.style()));
-			break;
-	}
-}
-
-//////////////////////////////////////// CondSetExpander ////////////////////////////////////////
-
-CondSetExpander::CondSetExpander(AggrCond &cond)
-	: cond_(cond)
-{ }
-
-void CondSetExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-		case RELATION:
-			cond_.add(lit);
-			break;
-		case POOL:
-			std::auto_ptr<AggrSetLit> set(static_cast<AggrSetLit*>(lit));
-			LitPtrVec lits(*cond_.lits());
-			cond_.aggr()->add(new AggrCond(cond_.loc(), *set->terms(), lits, cond_.style()));
-			break;
-	}
-}
-
-//////////////////////////////////////// AggrCondBodyExpander ////////////////////////////////////////
-
-AggrCondBodyExpander::AggrCondBodyExpander(AggrCond &cond)
-	: cond_(cond)
-{ }
-
-void AggrCondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
-
 //////////////////////////////////////// LparseAggrCondConverter ////////////////////////////////////////
 
-AnonymousRemover::AnonymousRemover(Grounder *g, AggrCond &cond)
+AggrCondAnonymousRemover::AggrCondAnonymousRemover(Grounder *g, AggrCond &cond)
 	: grounder_(g)
 	, cond_(cond)
 	, vars_(0)
 {
 }
 
-void AnonymousRemover::visit(VarTerm *var, bool)
+void AggrCondAnonymousRemover::visit(VarTerm *var, bool)
 {
 	if(var->anonymous())
 	{
@@ -707,19 +662,19 @@ void AnonymousRemover::visit(VarTerm *var, bool)
 	}
 }
 
-void AnonymousRemover::visit(Term* term, bool bind)
+void AggrCondAnonymousRemover::visit(Term* term, bool bind)
 {
 	term->visit(this, bind);
 }
 
-void AnonymousRemover::visit(Lit *lit, bool)
+void AggrCondAnonymousRemover::visit(Lit *lit, bool)
 {
 	lit->visit(this);
 }
 
-void AnonymousRemover::remove(Grounder *g, AggrCond &cond)
+void AggrCondAnonymousRemover::remove(Grounder *g, AggrCond &cond)
 {
-	AnonymousRemover ar(g, cond);
+	AggrCondAnonymousRemover ar(g, cond);
 	cond.visit(&ar);
 }
 

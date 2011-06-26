@@ -110,70 +110,33 @@ bool Compute::grounded(Grounder *g)
 	return true;
 }
 
-namespace
+void Compute::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
 {
-	class ComputeHeadExpander : public Expander
+	switch(type)
 	{
-	public:
-		ComputeHeadExpander(Grounder *g, Compute &min);
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder *g_;
-		Compute &com_;
-	};
-
-	class ComputeBodyExpander : public Expander
-	{
-	public:
-		ComputeBodyExpander(Compute &min);
-		void expand(Lit *lit, Type type);
-	private:
-		Compute &com_;
-	};
-
-	ComputeHeadExpander::ComputeHeadExpander(Grounder *g, Compute &com)
-		: g_(g)
-		, com_(com)
-	{
-	}
-
-	void ComputeHeadExpander::expand(Lit *lit, Expander::Type type)
-	{
-		switch(type)
+		case Lit::RANGE:
+		case Lit::RELATION:
 		{
-			case RANGE:
-			case RELATION:
-				com_.body().push_back(lit);
-				break;
-			case POOL:
-				LitPtrVec body;
-				foreach(Lit &l, com_.body()) body.push_back(l.clone());
-				Compute *o = new Compute(com_.loc(), static_cast<PredLit*>(lit), body);
-				g_->addInternal(o);
-				break;
+			append(lit);
+			break;
 		}
-	}
-
-	ComputeBodyExpander::ComputeBodyExpander(Compute &min)
-		: com_(min)
-	{
-	}
-
-	void ComputeBodyExpander::expand(Lit *lit, Expander::Type type)
-	{
-		(void)type;
-		com_.body().push_back(lit);
+		case Lit::POOL:
+		{
+			LitPtrVec body;
+			foreach(Lit &l, body_) { body.push_back(l.clone()); }
+			Compute *o = new Compute(loc(), static_cast<PredLit*>(lit), body);
+			g->addInternal(o);
+			break;
+		}
 	}
 }
 
 void Compute::normalize(Grounder *g)
 {
-	ComputeHeadExpander headExp(g, *this);
-	ComputeBodyExpander bodyExp(*this);
-	head_->normalize(g, &headExp);
+	head_->normalize(g, boost::bind(&Compute::expandHead, this, g, _1, _2));
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
-		body_[i].normalize(g, &bodyExp);
+		body_[i].normalize(g, boost::bind(&Compute::append, this, _1));
 	}
 }
 

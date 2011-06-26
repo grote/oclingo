@@ -25,7 +25,7 @@ class BooleanLit : public Lit, public Matchable
 {
 public:
 	BooleanLit(const Loc &loc, bool truth);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const;
 	void accept(Printer *v);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);
@@ -41,7 +41,7 @@ private:
 ///////////////////////////// BooleanLit /////////////////////////////
 
 inline BooleanLit::BooleanLit(const Loc &loc, bool truth) : Lit(loc), truth_(truth) { }
-inline void BooleanLit::normalize(Grounder *, Expander *) { }
+inline void BooleanLit::normalize(Grounder *, const Expander &) { }
 inline bool BooleanLit::fact() const { return truth_; }
 inline void BooleanLit::accept(Printer *) { }
 inline Index *BooleanLit::index(Grounder *, Formula *, VarSet &) { return new MatchIndex(this); }

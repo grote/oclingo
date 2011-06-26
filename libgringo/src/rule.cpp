@@ -33,77 +33,33 @@ Rule::Rule(const Loc &loc, Lit *head, LitPtrVec &body)
 	if(head) { head->head(true); }
 }
 
-namespace
+void Rule::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
 {
-	class RuleHeadExpander : public Expander
+	switch(type)
 	{
-	public:
-		RuleHeadExpander(const Loc &loc, LitPtrVec &body, Grounder *g);
-		void expand(Lit *lit, Type type);
-	private:
-		const Loc &loc_;
-		LitPtrVec &body_;
-		Grounder  *g_;
-	};
-
-	class RuleBodyExpander : public Expander
-	{
-	public:
-		RuleBodyExpander(LitPtrVec &body);
-		void expand(Lit *lit, Type type);
-	private:
-		LitPtrVec &body_;
-	};
-
-	RuleHeadExpander::RuleHeadExpander(const Loc &loc, LitPtrVec &body, Grounder *g)
-		: loc_(loc)
-		, body_(body)
-		, g_(g)
-	{
-	}
-
-	void RuleHeadExpander::expand(Lit *lit, Expander::Type type)
-	{
-		switch(type)
+		case Lit::RANGE:
+		case Lit::RELATION:
 		{
-			case RANGE:
-			case RELATION:
-				body_.push_back(lit);
-				break;
-			case POOL:
-				LitPtrVec body;
-				foreach(Lit &l, body_) body.push_back(l.clone());
-				g_->addInternal(new Rule(loc_, lit, body));
-				break;
+			body_.push_back(lit);
+			break;
+
 		}
-	}
-
-	RuleBodyExpander::RuleBodyExpander(LitPtrVec &body)
-		: body_(body)
-	{
-	}
-
-	void RuleBodyExpander::expand(Lit *lit, Expander::Type type)
-	{
-		(void)type;
-		body_.push_back(lit);
+		case Lit::POOL:
+		{
+			LitPtrVec body(body_);
+			g->addInternal(new Rule(loc(), lit, body));
+			break;
+		}
 	}
 }
 
 void Rule::normalize(Grounder *g)
 {
-	if(head_.get())
-	{
-		RuleHeadExpander exp(loc(), body_, g);
-		head_->normalize(g, &exp);
-	}
+	if(head_.get()) { head_->normalize(g, boost::bind(&Rule::expandHead, this, g, _1, _2)); }
 	if(body_.size() > 0)
 	{
-		RuleBodyExpander exp(body_);
-		for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
-		{
-			body_[i].normalize(g, &exp);
-		}
+		Lit::Expander exp = boost::bind(&Rule::append, this, _1);
+		for(LitPtrVec::size_type i = 0; i < body_.size(); i++) { body_[i].normalize(g, exp); }
 	}
 }
 

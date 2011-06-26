@@ -36,13 +36,12 @@ public:
 	void addDomain(Grounder *g, bool fact);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	bool edbFact() const;
-	void normalize(Grounder *g, Expander *e);
+	void normalize(Grounder *g, const Expander &e);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(Printer *v);
 	Lit *clone() const;
 	~OptimizeSetLit();
-
 private:
 	TermPtrVec terms_;
 	ValVec     vals_;
@@ -73,6 +72,9 @@ public:
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	~Optimize();
+private:
+	void expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
+	void expandSet(Grounder *g, Lit *lit, Lit::ExpansionType type);
 
 private:
 	SharedNumber   number_;

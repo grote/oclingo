@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/printer.h>
 #include <gringo/formula.h>
+#include <gringo/lit.h>
 
 class External : public SimpleStatement
 {
@@ -43,6 +44,7 @@ public:
 	~External();
 private:
 	void addDomain(Grounder *g);
+	void expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
 private:
 	clone_ptr<PredLit> head_;
 	LitPtrVec          body_;

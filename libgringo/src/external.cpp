@@ -59,52 +59,32 @@ bool External::grounded(Grounder *g)
 	return true;
 }
 
-namespace
+void External::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
 {
-	class ExternalHeadExpander : public Expander
+	switch(type)
 	{
-	public:
-		ExternalHeadExpander(Grounder *g, External &d) : g_(g), d_(d) { }
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder *g_;
-		External  &d_;
-	};
-
-	class BodyExpander : public Expander
-	{
-	public:
-		BodyExpander(External &d) : d_(d) { }
-		void expand(Lit *lit, Type type) { (void)type; d_.body().push_back(lit); }
-	private:
-		External &d_;
-	};
-
-	void ExternalHeadExpander::expand(Lit *lit, Expander::Type type)
-	{
-		switch(type)
+		case Lit::RANGE:
+		case Lit::RELATION:
 		{
-			case RANGE:
-			case RELATION:
-				d_.body().push_back(lit);
-				break;
-			case POOL:
-				LitPtrVec body;
-				foreach(Lit &l, d_.body()) body.push_back(l.clone());
-				g_->addInternal(new External(d_.loc(), static_cast<PredLit*>(lit), body));
-				break;
+			body_.push_back(lit);
+			break;
+		}
+		case Lit::POOL:
+		{
+			LitPtrVec body;
+			foreach(Lit &l, body_) { body.push_back(l.clone()); }
+			g->addInternal(new External(loc(), static_cast<PredLit*>(lit), body));
+			break;
 		}
 	}
 }
 
 void External::normalize(Grounder *g)
 {
-	ExternalHeadExpander headExp(g, *this);
-	BodyExpander bodyExp(*this);
-	head_->normalize(g, &headExp);
+	head_->normalize(g, boost::bind(&External::expandHead, this, g, _1, _2));
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
-		body_[i].normalize(g, &bodyExp);
+		body_[i].normalize(g, boost::bind(&External::append, this, _1));
 	}
 }
 

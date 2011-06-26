@@ -191,7 +191,7 @@ public:
 	void addDomain(Grounder *g, bool fact);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);
 	bool edbFact() const;
-	void normalize(Grounder *g, Expander *e);
+	void normalize(Grounder *g, const Expander &e);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	void accept(Printer *v);
@@ -227,7 +227,6 @@ public:
 	LitPtrVec *lits();
 	Style style();
 	bool complete() const;
-	void add(Lit *lit);
 	void head(bool head);
 	void initHead();
 
@@ -244,6 +243,11 @@ public:
 	void addDomain(Grounder *g, bool fact);
 
 	~AggrCond();
+
+private:
+	void expandSet(Lit *lit, Lit::ExpansionType type);
+	void expandHead(Lit *lit, Lit::ExpansionType type);
+
 private:
 	Style                   style_;
 	AggrSetLit              set_;
@@ -300,7 +304,7 @@ public:
 	~AggrLit();
 
 	// Lit interface
-	virtual void normalize(Grounder *g, Expander *expander);
+	virtual void normalize(Grounder *g, const Expander &e);
 
 	bool match(Grounder *grounder);
 
@@ -486,8 +490,6 @@ inline void AggrSetLit::accept(Printer *) { }
 inline AggrCond::Printer::~Printer() { }
 
 /////////////////////////////// AggrCond ///////////////////////////////
-
-inline void AggrCond::add(Lit *lit) { lits_.push_back(lit); }
 
 inline AggrLit *AggrCond::aggr() { return aggr_; }
 

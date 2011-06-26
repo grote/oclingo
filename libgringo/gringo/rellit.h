@@ -27,7 +27,7 @@ public:
 	enum Type { ASSIGN, GREATER, LOWER, EQUAL, GTHAN, LTHAN, INEQUAL };
 public:
 	RelLit(const Loc &loc, Type t, Term *a, Term *b);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const { return true; }
 	void accept(Printer *v);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);

@@ -25,7 +25,7 @@ class LuaLit : public Lit, public Matchable
 {
 public:
 	LuaLit(const Loc &loc, VarTerm *var, TermPtrVec &args, uint32_t name, int luaIndex);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const;
 	void accept(Printer *v);
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);

@@ -20,16 +20,6 @@
 #include <gringo/gringo.h>
 #include <gringo/locateable.h>
 
-#pragma message "use boost::bind instead"
-class Expander
-{
-public:
-	enum Type { POOL, RANGE, RELATION };
-public:
-	virtual void expand(Lit *lit, Type type) = 0;
-	virtual ~Expander();
-};
-
 class Lit : public Locateable
 {
 public:
@@ -40,18 +30,18 @@ public:
 		Grounder &grounder;
 		VarSet   &bound;
 	};
-public:
 	class Decorator;
-public:
+	enum ExpansionType { POOL, RANGE, RELATION };
 	enum Monotonicity { MONOTONE, ANTIMONOTONE, NONMONOTONE };
 	enum Priority { HIGHEST=0, CHECK_ONLY=8, RECURSIVE=32, NON_RECURSIVE=64, LOWEST=255};
 	typedef std::pair<Priority,double> Score;
-	
+	typedef boost::function2<void, Lit*, Lit::ExpansionType> Expander;
+
 public:
 	Lit(const Loc &loc);
 	virtual Lit *clone() const = 0;
 
-	virtual void normalize(Grounder *g, Expander *expander) = 0;
+	virtual void normalize(Grounder *g, const Expander &e) = 0;
 
 	// TODO: replace by state function with will tell whether we had a fact
 	virtual bool fact() const = 0;
@@ -98,7 +88,7 @@ public:
 	virtual Lit *decorated() const = 0;
 
 	// Note: careful when forwarding this function
-	virtual void normalize(Grounder *g, Expander *expander);
+	virtual void normalize(Grounder *g, const Expander &e);
 
 	virtual bool fact() const;
 
@@ -125,10 +115,6 @@ public:
 };
 
 Lit* new_clone(const Lit& a);
-
-//////////////////////////// Expander ////////////////////////////
-
-inline Expander::~Expander() { }
 
 //////////////////////////// Lit::LitCmp ////////////////////////////
 
@@ -167,7 +153,7 @@ inline bool Lit::cmpPos(const Lit *a, const Lit *b) { return a->position < b->po
 
 inline Lit::Decorator::Decorator(const Loc &loc) : Lit(loc) { }
 
-inline void Lit::Decorator::normalize(Grounder *g, Expander *expander) { decorated()->normalize(g, expander); }
+inline void Lit::Decorator::normalize(Grounder *g, const Expander &e) { decorated()->normalize(g, e); }
 
 inline bool Lit::Decorator::fact() const { return decorated()->fact(); }
 

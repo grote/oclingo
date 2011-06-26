@@ -43,7 +43,7 @@ public:
 
 public:
 	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const { return true; }
 	bool forcePrint() { return type_ == VOLATILE; }
 	void accept(::Printer *v);

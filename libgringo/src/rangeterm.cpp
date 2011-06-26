@@ -35,13 +35,13 @@ void RangeTerm::print(Storage *sto, std::ostream &out) const
 	b_->print(sto, out);
 }
 
-void RangeTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+void RangeTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
 {
 	(void)unify;
-	a_->normalize(parent, PtrRef(a_), g, expander, false);
-	b_->normalize(parent, PtrRef(b_), g, expander, false);
+	a_->normalize(parent, PtrRef(a_), g, e, false);
+	b_->normalize(parent, PtrRef(b_), g, e, false);
 	uint32_t var = g->createVar();
-	expander->expand(new RangeLit(loc(), new VarTerm(a_->loc(), var), a_.release(), b_.release()), Expander::RANGE);
+	e(new RangeLit(loc(), new VarTerm(a_->loc(), var), a_.release(), b_.release()), Lit::RANGE);
 	ref.reset(new VarTerm(loc(), var));
 }
 

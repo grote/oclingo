@@ -212,10 +212,10 @@ bool MathTerm::unifiable() const
 	}
 }
 
-void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
 {
-	if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
-	if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
+	if(a_.get()) a_->normalize(parent, PtrRef(a_), g, e, false);
+	if(b_.get()) b_->normalize(parent, PtrRef(b_), g, e, false);
 	if((!a_.get() || a_->constant()) && (!b_.get() || b_->constant()))
 	{
 		ref.reset(new ConstTerm(loc(), val(g)));
@@ -223,7 +223,7 @@ void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 	else if(unify && !unifiable())
 	{
 		uint32_t var = g->createVar();
-		expander->expand(new RelLit(a_->loc(), RelLit::ASSIGN, new VarTerm(a_->loc(), var), this), Expander::RELATION);
+		e(new RelLit(a_->loc(), RelLit::ASSIGN, new VarTerm(a_->loc(), var), this), Lit::RELATION);
 		ref.replace(new VarTerm(a_->loc(), var));
 	}
 }

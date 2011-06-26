@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/formula.h>
 #include <gringo/printer.h>
+#include <gringo/lit.h>
 
 class Rule : public SimpleStatement
 {
@@ -44,6 +45,7 @@ public:
 	~Rule();
 private:
 	void addDomain(Grounder *g, bool fact);
+	void expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
 private:
 	std::auto_ptr<Lit> head_;
 	LitPtrVec          body_;

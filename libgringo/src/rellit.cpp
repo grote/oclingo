@@ -124,10 +124,10 @@ void RelLit::print(Storage *sto, std::ostream &out) const
 	b_->print(sto, out);
 }
 
-void RelLit::normalize(Grounder *g, Expander *expander)
+void RelLit::normalize(Grounder *g, const Expander &e)
 {
-	if(a_.get()) a_->normalize(this, Term::PtrRef(a_), g, expander, t_ == ASSIGN);
-	if(b_.get()) b_->normalize(this, Term::PtrRef(b_), g, expander, false);
+	if(a_.get()) { a_->normalize(this, Term::PtrRef(a_), g, e, t_ == ASSIGN); }
+	if(b_.get()) { b_->normalize(this, Term::PtrRef(b_), g, e, false); }
 }
 
 Lit *RelLit::clone() const

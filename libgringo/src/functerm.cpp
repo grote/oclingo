@@ -35,7 +35,7 @@ Val FuncTerm::val(Grounder *grounder) const
 	return Val::create(Val::FUNC, grounder->index(Func(grounder, name_, vals)));
 }
 
-void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
 {
 	(void)ref;
 	for(TermPtrVec::iterator i = args_.begin(); i != args_.end(); i++)
@@ -43,10 +43,10 @@ void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *exp
 		for(Term::Split s = i->split(); s.first; s = i->split())
 		{
 			clone_.reset(new FuncTerm(loc(), name_, *s.second));
-			expander->expand(parent->clone(), Expander::POOL);
+			e(parent->clone(), Lit::POOL);
 			args_.replace(i, s.first);
 		}
-		i->normalize(parent, Term::VecRef(args_, i), g, expander, unify);
+		i->normalize(parent, Term::VecRef(args_, i), g, e, unify);
 	}
 }
 

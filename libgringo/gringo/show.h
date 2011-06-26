@@ -29,7 +29,7 @@ public:
 	DisplayHeadLit(const Loc &loc, Term *term);
 
 	DisplayHeadLit *clone() const;
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool fact() const;
 	void print(Storage *sto, std::ostream &out) const;
 	Index *index(Grounder *g, Formula *gr, VarSet &bound);
@@ -67,6 +67,9 @@ public:
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 	~Display();
+private:
+	void expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
+
 private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;

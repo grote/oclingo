@@ -24,6 +24,7 @@
 
 namespace
 {
+/*
 	class JunctionCondHeadExpander : public Expander
 	{
 	public:
@@ -44,7 +45,7 @@ namespace
 	private:
 		JunctionCond &cond_;
 	};
-
+*/
 	class JunctionIndex : public Index
 	{
 	public:
@@ -253,7 +254,7 @@ void JunctionCond::init(Grounder *g, JunctionLitDomain &dom)
 	dom.initLocal(g, this, index_, *head_);
 }
 
-void JunctionCond::normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index)
+void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
 {
 	parent_ = parent;
 	index_  = index;
@@ -334,13 +335,45 @@ BoolPair JunctionLit::ground(Grounder *g)
 	return dom_.match(g);
 }
 
-void JunctionLit::normalize(Grounder *g, Expander *expander)
+void JunctionLit::expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, Lit *lit, Lit::ExpansionType type)
+{
+	switch(type)
+	{
+		case RANGE:
+			ruleExp(lit, type);
+			break;
+		case POOL:
+		{
+			LitPtrVec body;
+			foreach(const Lit &l, cond.body_) { body.push_back(l.clone()); }
+			std::auto_ptr<JunctionCond> newCond(new JunctionCond(cond.loc(), lit, body));
+			if(head())
+			{
+				JunctionCondVec lits;
+				foreach(const JunctionCond &l, conds_)
+				{
+					if(&l == &cond) { lits.push_back(newCond); }
+					else            { lits.push_back(new JunctionCond(l)); }
+				}
+				JunctionLit *lit(new JunctionLit(loc(), lits));
+				ruleExp(lit, type);
+			}
+			else { conds_.push_back(newCond); }
+			break;
+		}
+		case RELATION:
+			cond.body_.push_back(lit);
+			break;
+	}
+}
+
+void JunctionLit::normalize(Grounder *g, const Expander &e)
 {
 	for(JunctionCondVec::size_type i = 0; i < conds_.size(); i++)
 	{
-		JunctionCondHeadExpander headExp(*this, &conds_[i], *expander);
-		JunctionCondBodyExpander bodyExp(conds_[i]);
-		conds_[i].normalize(g, &headExp, &bodyExp, this, i);
+		Expander headExp = boost::bind(&JunctionLit::expandHead, this, boost::ref(e), boost::ref(conds_[i]), _1, _2);
+		Expander bodyExp = boost::bind(static_cast<void (LitPtrVec::*)(Lit *)>(&LitPtrVec::push_back), &conds_[i].body_, _1);
+		conds_[i].normalize(g, headExp, bodyExp, this, i);
 	}
 }
 
@@ -412,60 +445,7 @@ JunctionLit::~JunctionLit()
 {
 }
 
-///////////////////////////// JunctionCondHeadExpander /////////////////////////////
-
-JunctionCondHeadExpander::JunctionCondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander)
-	: aggr_(aggr)
-	, cond_(cond)
-	, ruleExp_(ruleExpander)
-{
-}
-
-void JunctionCondHeadExpander::expand(Lit *lit, Expander::Type type)
-{
-	switch(type)
-	{
-		case RANGE:
-			ruleExp_.expand(lit, type);
-			break;
-		case POOL:
-		{
-			LitPtrVec body;
-			foreach(const Lit &l, cond_->body()) { body.push_back(l.clone()); }
-			std::auto_ptr<JunctionCond> cond(new JunctionCond(cond_->loc(), lit, body));
-			if(aggr_.head())
-			{
-				JunctionCondVec lits;
-				foreach(const JunctionCond &l, aggr_.conds())
-				{
-					if(&l == cond_) lits.push_back(cond);
-					else lits.push_back(new JunctionCond(l));
-				}
-				JunctionLit *lit(new JunctionLit(aggr_.loc(), lits));
-				ruleExp_.expand(lit, type);
-			}
-			else { aggr_.conds().push_back(cond.release()); }
-			break;
-		}
-		case RELATION:
-			cond_->body().push_back(lit);
-			break;
-	}
-}
-
-///////////////////////////// JunctionCondBodyExpander /////////////////////////////
-
-JunctionCondBodyExpander::JunctionCondBodyExpander(JunctionCond &cond)
-	: cond_(cond)
-{
-}
-
-void JunctionCondBodyExpander::expand(Lit *lit, Expander::Type)
-{
-	cond_.body().push_back(lit);
-}
-
-///////////////////////////// JunctionCondBodyExpander /////////////////////////////
+///////////////////////////// JunctionIndex /////////////////////////////
 
 JunctionIndex::JunctionIndex(JunctionLit &lit)
 	: lit_(lit)

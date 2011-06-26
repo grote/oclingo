@@ -25,7 +25,7 @@ class RangeLit : public Lit, public Matchable
 {
 public:
 	RangeLit(const Loc &loc, VarTerm *var, Term *a, Term *b);
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 	bool match(Grounder *grounder);
 	bool fact() const { return true; }
 	void accept(Printer *v);

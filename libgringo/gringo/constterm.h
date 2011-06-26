@@ -25,7 +25,7 @@ class ConstTerm : public Term
 public:
 	ConstTerm(const Loc &loc, const Val &v);
 	Val val(Grounder *grounder) const;
-	void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
+	void normalize(Lit *parent, const Ref &ref, Grounder *grounder, const Expander &e, bool unify) { (void)parent; (void)ref; (void)grounder; (void)e; (void)unify; }
 	bool unifiable() const;
 	bool unify(Grounder *grounder, const Val &v, int binder) const;
 	void vars(VarSet &vars) const;

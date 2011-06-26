@@ -72,11 +72,11 @@ private:
 
 class JunctionCond : public Formula
 {
+	friend class JunctionLit;
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
-	LitPtrVec &body();
 	void init(Grounder *g, JunctionLitDomain &dom);
-	void normalize(Grounder *g, Expander *headExp, Expander *bodyExp, JunctionLit *parent, uint32_t index);
+	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
 	void finish();
 	void ground(Grounder *g);
@@ -86,6 +86,7 @@ public:
 	void print(Storage *sto, std::ostream &out) const;
 
 	~JunctionCond();
+
 private:
 	clone_ptr<Lit>          head_;
 	LitPtrVec               body_;
@@ -114,7 +115,7 @@ public:
 	JunctionLitDomain &domain();
 	JunctionCondVec &conds();
 
-	void normalize(Grounder *g, Expander *expander);
+	void normalize(Grounder *g, const Expander &e);
 
 	bool fact() const;
 
@@ -129,6 +130,8 @@ public:
 	Lit *clone() const;
 
 	~JunctionLit();
+private:
+	void expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, Lit *lit, Lit::ExpansionType type);
 
 private:
 	bool              match_;
@@ -140,10 +143,6 @@ private:
 /////////////////////////// JunctionLitDomain ///////////////////////////
 inline bool JunctionLitDomain::hasNew() const { return new_; }
 inline bool JunctionLitDomain::newState() const { return newState_; }
-
-/////////////////////////// JunctionCond ///////////////////////////
-
-inline LitPtrVec &JunctionCond::body() { return body_; }
 
 /////////////////////////// JunctionLit ///////////////////////////
 
