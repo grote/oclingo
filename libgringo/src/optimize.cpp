@@ -31,37 +31,6 @@
 
 namespace
 {
-/*
-	class OptimizeSetExpander : public Expander
-	{
-	public:
-		OptimizeSetExpander(Grounder *g, Optimize &opt);
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder *g_;
-		Optimize &opt_;
-	};
-
-	class OptimizeHeadExpander : public Expander
-	{
-	public:
-		OptimizeHeadExpander(Grounder *g, Optimize &opt);
-		void expand(Lit *lit, Type type);
-	private:
-		Grounder *g_;
-		Optimize &opt_;
-	};
-
-	class OptimizeBodyExpander : public Expander
-	{
-	public:
-		OptimizeBodyExpander(Optimize &min);
-		void expand(Lit *lit, Type type);
-	private:
-		Optimize &opt_;
-	};
-*/
-
 	class OptimizeAnonymousRemover : public PrgVisitor
 	{
 	public:
@@ -75,7 +44,6 @@ namespace
 		Grounder *grounder_;
 		uint32_t  vars_;
 	};
-
 
 	class OptimizeLparseConverter : public PrgVisitor
 	{
@@ -323,7 +291,7 @@ Optimize::~Optimize()
 {
 }
 
-//////////////////////////////////////// LparseOptimizeConverter ////////////////////////////////////////
+//////////////////////////////////////// OptimizeAnonymousRemover ////////////////////////////////////////
 
 OptimizeAnonymousRemover::OptimizeAnonymousRemover(Grounder *g)
 	: grounder_(g)
