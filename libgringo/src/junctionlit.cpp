@@ -24,28 +24,7 @@
 
 namespace
 {
-/*
-	class JunctionCondHeadExpander : public Expander
-	{
-	public:
-		JunctionCondHeadExpander(JunctionLit &aggr, JunctionCond *cond, Expander &ruleExpander);
-		void expand(Lit *lit, Type type);
 
-	private:
-		JunctionLit  &aggr_;
-		JunctionCond *cond_;
-		Expander     &ruleExp_;
-	};
-
-	class JunctionCondBodyExpander : public Expander
-	{
-	public:
-		JunctionCondBodyExpander(JunctionCond &cond);
-		void expand(Lit *lit, Type type);
-	private:
-		JunctionCond &cond_;
-	};
-*/
 	class JunctionIndex : public Index
 	{
 	public:
@@ -78,6 +57,7 @@ namespace
 }
 
 ///////////////////////////// JunctionState /////////////////////////////
+
 JunctionState::JunctionState()
 	: match(false)
 	, fact(false)
@@ -340,8 +320,10 @@ void JunctionLit::expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, L
 	switch(type)
 	{
 		case RANGE:
+		{
 			ruleExp(lit, type);
 			break;
+		}
 		case POOL:
 		{
 			LitPtrVec body;
@@ -362,8 +344,10 @@ void JunctionLit::expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, L
 			break;
 		}
 		case RELATION:
+		{
 			cond.body_.push_back(lit);
 			break;
+		}
 	}
 }
 
@@ -415,10 +399,7 @@ void JunctionLit::enqueue(Grounder *g)
 
 void JunctionLit::visit(PrgVisitor *visitor)
 {
-	foreach(JunctionCond &cond, conds_)
-	{
-		visitor->visit(&cond, head());
-	}
+	foreach(JunctionCond &cond, conds_) { visitor->visit(&cond, head()); }
 }
 
 void JunctionLit::accept(::Printer *v)
