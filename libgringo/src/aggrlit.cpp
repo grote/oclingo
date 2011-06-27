@@ -81,10 +81,10 @@ namespace
 		bool       finished_;
 	};
 
-	class StateDirtyIndex : public NewOnceIndex
+	class AggrStateDirtyIndex : public NewOnceIndex
 	{
 	public:
-		StateDirtyIndex(AggrLit &lit);
+		AggrStateDirtyIndex(AggrLit &lit);
 		Match firstMatch(Grounder *grounder, int binder);
 		bool hasNew() const;
 	private:
@@ -381,7 +381,7 @@ AggrSetLit::AggrSetLit(const Loc &loc, TermPtrVec &terms)
 Index *AggrSetLit::index(Grounder *, Formula *gr, VarSet &)
 {
 	AggrCond *cond = static_cast<AggrCond*>(gr);
-	return new StateDirtyIndex(*cond->aggr());
+	return new AggrStateDirtyIndex(*cond->aggr());
 }
 
 void AggrSetLit::normalize(Grounder *g, const Expander &e)
@@ -818,14 +818,14 @@ AggrIndex::~AggrIndex()
 
 //////////////////////////////////////// StateDirtyIndex ////////////////////////////////////////
 
-StateDirtyIndex::StateDirtyIndex(AggrLit &lit) : lit_(lit) { }
+AggrStateDirtyIndex::AggrStateDirtyIndex(AggrLit &lit) : lit_(lit) { }
 
-Index::Match StateDirtyIndex::firstMatch(Grounder *, int)
+Index::Match AggrStateDirtyIndex::firstMatch(Grounder *, int)
 {
 	return Match(true, lit_.isNewAggrState());
 }
 
-bool StateDirtyIndex::hasNew() const
+bool AggrStateDirtyIndex::hasNew() const
 {
 	return NewOnceIndex::hasNew() || lit_.isNewAggrState();
 }
