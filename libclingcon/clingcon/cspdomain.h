@@ -15,6 +15,7 @@ namespace Clingcon
         CSPDomain(const Loc &loc, CSPDomainLiteral* lit);
 
         virtual void visit(PrgVisitor *visitor);
+        virtual void expandHead(Grounder* g, Lit *lit, Lit::ExpansionType type);
 
         virtual void normalize(Grounder *g);
         virtual void print(Storage *sto, std::ostream &out) const;

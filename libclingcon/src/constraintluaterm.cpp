@@ -32,9 +32,8 @@ namespace Clingcon
 	{
 	}
 
-	void ConstraintLuaTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+        void ConstraintLuaTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool)
 	{
-		(void)unify;
 		for(ConstraintTermPtrVec::iterator it = args_.begin(); it != args_.end(); it++)
 		{
 			it->normalize(parent, ConstraintTerm::VecRef(args_, it), g, expander, false);
@@ -44,7 +43,7 @@ namespace Clingcon
 		for(ConstraintTermPtrVec::iterator i = args_.begin(); i != args_.end(); ++i)
 			vec.push_back(i->toTerm());
 
-		expander->expand(new LuaLit(loc(), new VarTerm(loc(), var), vec, name_, g->luaIndex(loc(), name_)), Expander::RANGE);
+                expander(new LuaLit(loc(), new VarTerm(loc(), var), vec, name_, g->luaIndex(loc(), name_)), Lit::RANGE);
 		ref.reset(new ConstraintVarTerm(loc(), var));
 	}
 
@@ -76,7 +75,7 @@ namespace Clingcon
         GroundConstraint* ConstraintLuaTerm::toGroundConstraint(Grounder* )
 	{
 		assert(false);
-                return new GroundConstraint();
+                return 0;
 	}
 
 	ConstraintLuaTerm::~ConstraintLuaTerm()

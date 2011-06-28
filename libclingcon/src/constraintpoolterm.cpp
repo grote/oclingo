@@ -50,12 +50,12 @@ namespace Clingcon
 		else a_->print(sto, out);
 	}
 
-	void ConstraintPoolTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+        void ConstraintPoolTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify)
 	{
 		if(b_.get())
 		{
 			clone_ = false;
-			expander->expand(parent->clone(), Expander::POOL);
+                        expander(parent->clone(), Lit::POOL);
 			clone_ = true;
 			ConstraintTerm *b = b_.get();
 			ref.reset(b_.release());
@@ -78,7 +78,7 @@ namespace Clingcon
         GroundConstraint* ConstraintPoolTerm::toGroundConstraint(Grounder* )
 	{
 		assert(false);
-                return new GroundConstraint();
+                return 0;
 	}
 
 	ConstraintPoolTerm::~ConstraintPoolTerm()

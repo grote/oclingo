@@ -10,20 +10,22 @@ namespace Clingcon
 {
     class GlobalConstraint;
 
-    class GlobalConstraintHeadLit : public Lit, public Matchable
+    class GlobalConstraintHeadLit : public Lit, public Matchable, public Container
     {
     public:
         enum Type{
             Set,
             Index,
             Weight,
-            UniqueEqual
+            UniqueEqual,
+            At,
+            AtSet
         };
 
         GlobalConstraintHeadLit(const Loc& loc, GlobalConstraint* gc, ConstraintVarCondPtrVec& vec, Type type) : Lit(loc), vec_(vec.release()), gc_(gc), type_(type)
         {
             for(ConstraintVarCondPtrVec::iterator i = vec_.begin(); i != vec_.end(); ++i)
-                i->lit_ = this;
+                i->parent_ = this;
         }
 
 
@@ -39,7 +41,8 @@ namespace Clingcon
             return new GlobalConstraintHeadLit(loc(), gc_, vec,type_);
         }
 
-        virtual void normalize(Grounder *g, Expander *expander);
+        virtual void normalize(Grounder *g, const Lit::Expander& expander);
+
 
         virtual bool fact() const
         {
@@ -78,26 +81,47 @@ namespace Clingcon
 
         void getVariables(GroundedConstraintVarLitVec& vec, Storage* s)
         {
+            //GroundedConstraintVarLitVec vec2;
+            //vec2.unique(boost::bind(&GroundedConstraintVarLit::equalTerm,_1,_2));
+            //boost::ptr_vector<int> vec2;
+            //vec2.unique();
+            //#pragma message("Warning, i do sort the whole vector, not only my part !")
+            size_t start = vec.size();
             for(ConstraintVarCondPtrVec::iterator i = vec_.begin(); i != vec_.end(); ++i)
                 i->getVariables(vec);
             if (type_==Set)
             {
-
-                //sort(vec.begin(), vec.end(),  (boost::bind(&GroundedConstraintVarLit::compare, _1, _2) <0));
-                sort(vec.begin(), vec.end(),  (boost::bind(&GroundedConstraintVarLit::compareset, _1, _2, s) <0));
-                GroundedConstraintVarLitVec::iterator it = unique(vec.begin(), vec.end(), boost::bind(&GroundedConstraintVarLit::equalTerm,_1,_2));
-                vec.resize(it-vec.begin());
+                if(vec.size()) // avoid boost bug
+                {
+                    vec.sort(vec.begin()+start, vec.end(), boost::bind(&GroundedConstraintVarLit::compareset, _1, _2, s) <0);
+                    vec.unique(vec.begin()+start, vec.end(), boost::bind(&GroundedConstraintVarLit::equalTerm,_1,_2));
+                }
+            }
+            else
+            if (type_==AtSet)
+            {
+                vec.sort(vec.begin()+start, vec.end(),(boost::bind(&GroundedConstraintVarLit::compare, _1, _2, s) <0));
+                vec.unique(vec.begin()+start, vec.end(),boost::bind(&GroundedConstraintVarLit::equal,_1,_2));
+                for (size_t i = 0; i < vec.size(); ++i)
+                {
+                    if (vec[i].vweight_.type!=Val::NUM)
+                        throw CSPException("Only Integer levels allowed in optimize statement.");
+                }
             }
             else if (type_==Index)
             {
-                sort(vec.begin(), vec.end(),  (boost::bind(&GroundedConstraintVarLit::compare, _1, _2, s) <0));
-                GroundedConstraintVarLitVec::iterator it = unique(vec.begin(), vec.end(), boost::bind(&GroundedConstraintVarLit::equal,_1,_2));
-                vec.resize(it-vec.begin());
+                vec.sort(vec.begin()+start, vec.end(), (boost::bind(&GroundedConstraintVarLit::compareweight, _1, _2, s) <0));
                 for (size_t i = 0; i < vec.size(); ++i)
                 {
                     if (i+1<vec.size() && vec[i].vweight_ == vec[i+1].vweight_)
-                        throw CSPException("Two different elements with same index in GlobalConstraint.");
+                        if (vec[i].vt_ != vec[i+1].vt_)
+                            throw CSPException("Two different elements with same index in GlobalConstraint.");
                 }
+                //sort(vec.begin(), vec.end(),  (boost::bind(&GroundedConstraintVarLit::compare, _1, _2, s) <0));
+                //GroundedConstraintVarLitVec::iterator it = unique(vec.begin(), vec.end(), boost::bind(&GroundedConstraintVarLit::equal,_1,_2));
+                vec.unique(vec.begin()+start, vec.end(),boost::bind(&GroundedConstraintVarLit::equal,_1,_2));
+                //vec.erase(it,vec.end());
+
             }
             else if (type_==Weight)
             {
@@ -106,7 +130,14 @@ namespace Clingcon
                     if (vec[i].vweight_.type!=Val::NUM)
                         throw CSPException("Only Integer weight allowed.");
                 }
-
+            }
+            else if (type_==At)
+            {
+                for (size_t i = 0; i < vec.size(); ++i)
+                {
+                    if (vec[i].vweight_.type!=Val::NUM)
+                        throw CSPException("Only Integer levels allowed in optimize statement.");
+                }
             }
             else if (type_==UniqueEqual)
             {
@@ -183,6 +214,18 @@ namespace Clingcon
                         t=GlobalConstraintHeadLit::Index;
                     break;
                 }
+                case MAXIMIZE_SET:
+                case MINIMIZE_SET:
+                {
+                    t=GlobalConstraintHeadLit::AtSet;
+                    break;
+                }
+                case MAXIMIZE:
+                case MINIMIZE:
+                {
+                    t=GlobalConstraintHeadLit::At;
+                    break;
+                }
                 default: assert(false);
 
                 }
@@ -227,9 +270,21 @@ namespace Clingcon
                         t=GlobalConstraintHeadLit::Set;
                     if (i==1)
                         t=GlobalConstraintHeadLit::Index;
+                    #pragma message("I think this switch has to be fixed, test it")
                     break;
                 }
-#pragma message("I think this switch has to be fixed, test it")
+                case MAXIMIZE_SET:
+                case MINIMIZE_SET:
+                {
+                    t=GlobalConstraintHeadLit::AtSet;
+                    break;
+                }
+                case MAXIMIZE:
+                case MINIMIZE:
+                {
+                    t=GlobalConstraintHeadLit::At;
+                    break;
+                }
                 default: assert(false);
 
                 }
@@ -244,7 +299,8 @@ namespace Clingcon
 
         virtual void print(Storage *sto, std::ostream &out) const;
         virtual void normalize(Grounder *g);
-        virtual void append(Lit *lit);
+        void         expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type);
+                void append(Lit *lit);
         virtual bool grounded(Grounder *g);
         virtual void accept(::Printer *v, Grounder* g);
 

@@ -40,6 +40,7 @@ namespace Clingcon {
 		private:
 			class SearchSpace;
 		public:
+                        static std::vector<int> optValues;
 
                         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                                      std::string ICLString, std::string BranchVar, std::string BranchVal);
@@ -117,7 +118,7 @@ namespace Clingcon {
 
 			//everything for enumerating answers
 			Search::Options searchOptions_;
-			DFS<GecodeSolver::SearchSpace>* searchEngine_; // depth first search
+                        BAB<GecodeSolver::SearchSpace>* searchEngine_; // depth first search
 
 
 			bool lazyLearn_; // true for lazy(dummy) learning
@@ -125,6 +126,7 @@ namespace Clingcon {
 			bool weakAS_;    // true if only weak Answer sets shall be calculated
 			int  numAS_;     // number of answer sets of weakAS_ is false
                         int  asCounter_; // current number of answer sets calculated of the same propositional answer set
+                        bool foundModel_; // found model since last backtracking?
 
 			class CSPDummy : public Clasp::Constraint
 			{
@@ -170,12 +172,14 @@ namespace Clingcon {
                                                 std::map<unsigned int, unsigned int>* litToVar);
                                         SearchSpace(bool share, SearchSpace& sp);
 					virtual SearchSpace* copy(bool share);
+                                        virtual void constrain(const Space& b);
 					void propagate(const Clasp::LitVec& lv, Clasp::Solver* s);
 					//void propagate(const Clasp::LitVec& lv, Clasp::Solver* s);
 				//	bool propagate(const Clasp::Literal lv, Clasp::Solver* s);
                                         void print(std::vector<std::string>& variables) const;
 					Clasp::LitVec getAssignment(const Clasp::LitVec& as);
 					Value getValueOfConstraint(const Clasp::Literal& i);
+                                        void updateOptValues(); // update opt values with static data from GecodeSolver
 
 				// delete litToVar and all shared memory between the spaces
 					void cleanAll();
@@ -184,11 +188,16 @@ namespace Clingcon {
                                         //void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);
                                         void generateGlobalConstraint(CSPSolver* csps, LParseGlobalConstraintPrinter::GC& gc);
                                         Gecode::LinExpr generateLinearExpr(CSPSolver* csps, const GroundConstraint* c);
+                                        Gecode::LinExpr generateSum(CSPSolver* csps, std::vector<std::pair<GroundConstraint*,bool> >& vec);
+                                        Gecode::LinExpr generateSum(CSPSolver* csps, std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i);
                                         //IntVar generateVariable(Constraint c);
 
 				IntVarArray x_;
 				BoolVarArray b_;
 				std::map<unsigned int, unsigned int>* litToVar_; // translates from clasp Clasp::Literal to boolean csp variable for reified constraints
+                                IntVarArgs iva_; // for collecting temporary variables
+                                IntVarArray opts_; // optimization variables
+                                //std::vector<IntVar> tempVars_;
 			};
 	};
 }

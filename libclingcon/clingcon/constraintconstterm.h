@@ -29,10 +29,11 @@ namespace Clingcon
 		ConstraintConstTerm(const Loc &loc, const Val &v);
                 ~ConstraintConstTerm();
 		Val val(Grounder *grounder) const;
-		void normalize(Lit *parent, const Ref &ref, Grounder *grounder, Expander *expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
+                void normalize(Lit *parent, const Ref &ref, Grounder *grounder, const Lit::Expander& expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
 		void vars(VarSet &vars) const;
 		void visit(PrgVisitor *visitor, bool bind);
+                virtual bool match(Grounder* ){ return true; }
 		void print(Storage *sto, std::ostream &out) const;
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
 		bool constant() const { return true; }

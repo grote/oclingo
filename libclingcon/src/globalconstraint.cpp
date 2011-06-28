@@ -10,16 +10,16 @@ namespace Clingcon
 
     void GlobalConstraintHeadLit::enqueue(Grounder *g)
     {
-        gc_->enqueue(g);
+       // gc_->enqueue(g);
     }
 
-    void GlobalConstraintHeadLit::normalize(Grounder *g, Expander *)
+    void GlobalConstraintHeadLit::normalize(Grounder *g, const Lit::Expander&)
     {
         for(size_t i = 0; i < vec_.size(); ++i)
-            vec_[i].normalize(g,0);
+            vec_[i].normalize(g);
     }
 
-    void GlobalConstraintHeadLit::print(Storage *sto, std::ostream &out) const
+     void GlobalConstraintHeadLit::print(Storage *sto, std::ostream &out) const
     {
 
         for(size_t i = 0; i < vec_.size(); ++i)
@@ -41,14 +41,6 @@ namespace Clingcon
 
     GlobalConstraint::~GlobalConstraint(){}
 
-    class BodyExpander : public Expander
-    {
-    public:
-            BodyExpander(GlobalConstraint &d) : d_(d) { }
-            void expand(Lit *lit, Type) { d_.body().push_back(lit); }
-    private:
-            GlobalConstraint &d_;
-    };
 
     void GlobalConstraint::visit(PrgVisitor *visitor)
     {
@@ -80,6 +72,16 @@ namespace Clingcon
         if (type_==COUNT || type_ == COUNT_UNIQUE || type_ == COUNT_GLOBAL)
         {
             out << "$count";
+        }
+        else
+        if (type_==MINIMIZE || type_==MINIMIZE_SET)
+        {
+            out << "$minimize";
+        }
+        else
+        if (type_==MAXIMIZE || type_==MAXIMIZE_SET)
+        {
+            out << "$maximize";
         }
         else
         {
@@ -138,6 +140,20 @@ namespace Clingcon
                     out << "]";
                 }
             }
+            else
+            if (type_==MINIMIZE_SET || type_==MAXIMIZE_SET)
+            {
+                out << "{";
+                heads_[i].print(sto,out);
+                out << "}";
+            }
+            else
+            if (type_==MINIMIZE || type_==MAXIMIZE)
+            {
+                out << "[";
+                heads_[i].print(sto,out);
+                out << "]";
+            }
 
         }
         if (body_.size()>0)
@@ -158,14 +174,35 @@ namespace Clingcon
     void GlobalConstraint::normalize(Grounder *g)
     {
         for (size_t i = 0; i < heads_.size(); ++i)
-        {
-            heads_[i].normalize(g,0);
+        { 
+            heads_[i].normalize(g, boost::bind(&GlobalConstraint::expandHead,*this,g,_1,_2));
         }
-        BodyExpander bodyExp(*this);
+        Lit::Expander bodyExp(boost::bind(&GlobalConstraint::append, this, _1));
         for (size_t i = 0; i < body_.size(); ++i)
         {
-            body_[i].normalize(g,&bodyExp);
+            body_[i].normalize(g,bodyExp);
         }
+    }
+
+    void GlobalConstraint::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
+    {
+            assert(false);
+            switch(type)
+            {
+                    case Lit::RANGE:
+                    case Lit::RELATION:
+                    {
+                            body_.push_back(lit);
+                            break;
+
+                    }
+                    case Lit::POOL:
+                    {
+                            LitPtrVec body(body_);
+                            g->addInternal(new Rule(loc(), lit, body));
+                            break;
+                    }
+            }
     }
 
     void GlobalConstraint::append(Lit *lit)

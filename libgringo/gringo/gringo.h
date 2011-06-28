@@ -75,7 +75,6 @@ class BodyOrderHeuristic;
 class AggrCond;
 class ConstTerm;
 class Domain;
-class Expander;
 class Func;
 class Formula;
 class Grounder;

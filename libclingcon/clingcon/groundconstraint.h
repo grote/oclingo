@@ -58,9 +58,28 @@ namespace Clingcon {
 
 
 	public:	
-                GroundConstraint()
+                GroundConstraint() : a_(0), b_(0)
                 {}
 
+                ~GroundConstraint()
+                {
+                    delete a_;
+                    delete b_;
+                }
+
+                GroundConstraint(const GroundConstraint& copy) : op_(copy.op_),
+                                                                 a_(copy.a_ ? new GroundConstraint(*copy.a_) : 0),
+                                                                 b_(copy.b_ ? new GroundConstraint(*copy.b_) : 0),
+                                                                 value_(copy.value_),
+                                                                 name_(copy.name_)
+                {
+
+                }
+
+                GroundConstraint *clone() const
+                {
+                   return new GroundConstraint(*this);
+                }
 
                 GroundConstraint(Storage* s, const Val& a)
                 {
@@ -76,11 +95,38 @@ namespace Clingcon {
                         a.print(s,ss);
                         name_ = ss.str();
                     }
+                    a_ = 0;
+                    b_ = 0;
                 }
                 GroundConstraint(Storage* , Operator op, GroundConstraint* a, GroundConstraint* b) : op_(op), a_(a), b_(b)
 		{}
 
-                bool operator==(const GroundConstraint& cmp)
+                void print(Storage* s, std::ostream& out)
+                {
+                    out << getString();
+                }
+
+                int compare(const GroundConstraint &cmp, Storage *s) const
+                {
+                    if (isOperator() && cmp.isOperator())
+                    {
+                        if (op_ != cmp.op_)
+                            return -1;
+                        int res = a_->compare(*(cmp.a_),s);
+                        return (res != 0 ? b_->compare(*(cmp.b_),s) : res);
+                    }
+                    if (isInteger() && cmp.isInteger())
+                    {
+                        return value_ - cmp.value_;
+                    }
+                    if (isVariable() && cmp.isVariable())
+                    {
+                        return name_.compare(cmp.name_);
+                    }
+                    return -1;
+                }
+
+                bool operator==(const GroundConstraint& cmp) const
                 {
                     if (isOperator() && cmp.isOperator())
                     {
@@ -99,7 +145,7 @@ namespace Clingcon {
                     return false;
                 }
 
-                bool operator!=(const GroundConstraint& cmp)
+                bool operator!=(const GroundConstraint& cmp) const
                 {
                     return !(*this==cmp);
                 }
@@ -201,11 +247,11 @@ namespace Clingcon {
                             case PLUS:
                                 ret += "+"; break;
                             case MINUS:
-                                ret += "+"; break;
+                                ret += "-"; break;
                             case TIMES:
-                                ret += "+"; break;
+                                ret += "*"; break;
                             case DIVIDE:
-                                ret += "+"; break;
+                                ret += "/"; break;
                             case VARIABLE:
                             case INTEGER:
                             case ABS:
@@ -217,13 +263,10 @@ namespace Clingcon {
 
                 }
 
-                ~GroundConstraint()
-                {
-                }
         public:
 	Operator op_;
-        std::auto_ptr<GroundConstraint> a_;
-        std::auto_ptr<GroundConstraint> b_;
+        GroundConstraint* a_;
+        GroundConstraint* b_;
         //Val val_;
         int value_;
         std::string name_;
@@ -232,15 +275,20 @@ namespace Clingcon {
         struct IndexedGroundConstraint
         {
         public:
-            IndexedGroundConstraint(Storage* s, const Val& a, const Val& b) : a_(s,a), b_(s,b)
+            IndexedGroundConstraint(Storage* s, GroundConstraint* a, const Val& b) : a_(a), b_(s,b)
             {
 
             }
 
-            GroundConstraint a_;
+            clone_ptr<GroundConstraint> a_;
             GroundConstraint b_;
 
         };
+
+        inline GroundConstraint* new_clone(const GroundConstraint& a)
+        {
+           return a.clone();
+        }
 
 //        class IndexedGroundConstraint : public GroundConstraint
 //        {

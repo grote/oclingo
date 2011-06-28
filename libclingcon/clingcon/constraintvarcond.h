@@ -11,6 +11,7 @@
 #include <clingcon/groundconstraintvarlit.h>
 #include <clingcon/constraintterm.h>
 
+
 namespace Clingcon
 {
     class GlobalConstraintHeadLit;
@@ -38,17 +39,17 @@ namespace Clingcon
 
         }
 
-        clone_ptr<Term>* weight()
+        const clone_ptr<Term>* weight() const
         {
             return &weight_;
         }
 
-        clone_ptr<ConstraintTerm>* equal()
+        const clone_ptr<ConstraintTerm>* equal() const
         {
             return &equal_;
         }
 
-        clone_ptr<ConstraintTerm>* head()
+        const clone_ptr<ConstraintTerm>* head() const
         {
             return &t_;
         }
@@ -62,7 +63,7 @@ namespace Clingcon
 
         virtual void grounded(Grounder *grounder, ConstraintVarCond* parent);
 
-        virtual void normalize(Grounder *, Expander *){}
+        virtual void normalize(Grounder *, const Expander& e);
         virtual bool fact() const {return false;}
         virtual void print(Storage *sto, std::ostream &out) const;
         virtual Index *index(Grounder *, Formula *, VarSet &)
@@ -92,10 +93,16 @@ namespace Clingcon
             return a.clone();
     }
 
+    class Container
+    {
+    public:
+         virtual void add(ConstraintVarCond* add) = 0;
+    };
 
     class ConstraintVarCond : public Formula
     {
             friend class GlobalConstraintHeadLit;
+            friend class ConstraintSumTerm;
     public:
             /*
             class Printer : public ::Printer
@@ -114,26 +121,28 @@ namespace Clingcon
     public:
             ConstraintVarCond(const Loc &loc, Term* weight,ConstraintTerm* first, LitPtrVec &lits);
             ConstraintVarCond(const Loc &loc, ConstraintTerm* equal,ConstraintTerm* first, LitPtrVec &lits);
+    private:
+            ConstraintVarCond(const Loc &loc, ConstraintVarLit* head, LitPtrVec &lits);
+    public:
+
+            void expandHead(Lit *lit, Lit::ExpansionType type);
             //AggrLit *aggr();
             //TermPtrVec *terms();
-            GlobalConstraintHeadLit* lit()
+            Container* parent();
+
+            const clone_ptr<Term>* weight() const
             {
-                return lit_;
+                return head_->weight();
             }
 
-            clone_ptr<Term>* weight()
+            const clone_ptr<ConstraintTerm>* equal() const
             {
-                return head_.weight();
+                return head_->equal();
             }
 
-            clone_ptr<ConstraintTerm>* equal()
+            const clone_ptr<ConstraintTerm>* head() const
             {
-                return head_.equal();
-            }
-
-            clone_ptr<ConstraintTerm>* head()
-            {
-                return head_.head();
+                return head_->head();
             }
 
             LitPtrVec *lits();
@@ -148,7 +157,7 @@ namespace Clingcon
             void ground(Grounder *g); //imho dito
             bool grounded(Grounder *g);
 
-            void normalize(Grounder *g, uint32_t number);
+            void normalize(Grounder *g);
             void visit(PrgVisitor *visitor);
             void print(Storage *sto, std::ostream &out) const;
             void addDomain(Grounder *, bool ){}
@@ -173,7 +182,7 @@ namespace Clingcon
                 //printer->begin(&head_);
             }
 
-            void addGround(GroundedConstraintVarLit & gvl)
+            void addGround(GroundedConstraintVarLit* gvl)
             {
                 values_.push_back(gvl);
             }
@@ -181,17 +190,18 @@ namespace Clingcon
             void getVariables(GroundedConstraintVarLitVec& vec)
             {
                 vec.insert(vec.end(),values_.begin(), values_.end());
+                values_.clear();
             }
 
             ~ConstraintVarCond();
     private:
             //SetLit                  set_;  // weights?
-            ConstraintVarLit          head_;
-            LitPtrVec                 lits_;
-            clone_ptr<Instantiator>   inst_;
-            VarVec                    headVars_;
-            GlobalConstraintHeadLit  *lit_; // former known as aggr_
-            GroundedConstraintVarLitVec  values_;
+            clone_ptr<ConstraintVarLit>          head_;
+            LitPtrVec                            lits_;
+            clone_ptr<Instantiator>              inst_;
+            VarVec                               headVars_;
+            Container*                           parent_; // former known as aggr_
+            GroundedConstraintVarLitVec          values_;
             //mutable tribool         complete_;
             //bool                    head_;
     };

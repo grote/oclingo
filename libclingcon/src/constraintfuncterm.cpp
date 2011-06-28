@@ -39,7 +39,7 @@ namespace Clingcon
 		return Val::create(Val::FUNC, grounder->index(Func(grounder, name_, vals)));
 	}
 
-	void ConstraintFuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+        void ConstraintFuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify)
 	{
 		(void)ref;
 		for(ConstraintTermPtrVec::iterator i = args_.begin(); i != args_.end(); i++)
@@ -47,7 +47,7 @@ namespace Clingcon
 			for(ConstraintTerm::Split s = i->split(); s.first; s = i->split())
 			{
 				clone_.reset(new ConstraintFuncTerm(loc(), name_, (*s.second)));
-				expander->expand(parent->clone(), Expander::POOL);
+                                expander(parent->clone(), Lit::POOL);
 				args_.replace(i, s.first);
 			}
 			i->normalize(parent, ConstraintTerm::VecRef(args_, i), g, expander, unify);

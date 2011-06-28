@@ -70,13 +70,13 @@ namespace Clingcon
                     if (a->op_ == GroundConstraint::ABS)
                     {
                         output_->out() << "#abs(";
-                        printGroundConstraint(a->a_.get());
+                        printGroundConstraint(a->a_);
                         output_->out() << ")";
                         return;
                     }
 
                     output_->out() << "(";
-                    printGroundConstraint(a->a_.get());
+                    printGroundConstraint(a->a_);
                     switch (a->op_)
                     {
                         case GroundConstraint::DIVIDE: output_->out() << "/"; break;
@@ -88,7 +88,7 @@ namespace Clingcon
                         case GroundConstraint::ABS:
                         default: assert(false);
                     }
-                    printGroundConstraint(a->b_.get());
+                    printGroundConstraint(a->b_);
                     output_->out() << ")";
 
 

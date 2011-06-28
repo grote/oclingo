@@ -5,6 +5,7 @@
 #include <clingcon/constraintterm.h>
 #include <clingcon/cspprinter.h>
 #include <gringo/litdep.h>
+#include <clingcon/globalconstraint.h>
 
 namespace Clingcon
 {
@@ -33,13 +34,22 @@ namespace Clingcon
 
     void ConstraintVarLit::grounded(Grounder *grounder, ConstraintVarCond* parent)
     {
-        GroundedConstraintVarLit v;
-        v.vt_ = t_->val(grounder);
+        GroundedConstraintVarLit* v = new GroundedConstraintVarLit();
+        v->vt_.reset(t_->toGroundConstraint(grounder));
         if (weight_)
-            v.vweight_ = weight_->val(grounder);
+            v->vweight_ = weight_->val(grounder);
         else
-            v.vweight_ = equal_->val(grounder);
+            v->vweight_ = equal_->val(grounder);
         parent->addGround(v);
+    }
+
+    void ConstraintVarLit::normalize(Grounder * g, const Expander& e)
+    {
+        t_->normalize(this,ConstraintTerm::PtrRef(t_), g, e, false);
+        if (weight_.get())
+            weight_->normalize(this,Term::PtrRef(weight_), g, e, false);
+        if (equal_.get())
+            equal_->normalize(this,ConstraintTerm::PtrRef(equal_), g, e, false);
     }
 
     void ConstraintVarLit::visit(PrgVisitor *visitor)
@@ -57,72 +67,53 @@ namespace Clingcon
 
     ConstraintVarLit::~ConstraintVarLit(){}
 
-
-    class ConstraintVarCondHeadExpander : public Expander
+    Container* ConstraintVarCond::parent()
     {
-    public:
-            ConstraintVarCondHeadExpander(ConstraintVarCond &cond);
-            void expand(Lit *lit, Type type);
-    private:
-            ConstraintVarCond &cond_;
-    };
+        return parent_;
+    }
 
-    class ConstraintVarCondBodyExpander : public Expander
-    {
-    public:
-            ConstraintVarCondBodyExpander(ConstraintVarCond &cond);
-            void expand(Lit *lit, Type type);
-    private:
-            ConstraintVarCond &cond_;
-    };
-
-    ConstraintVarCondHeadExpander::ConstraintVarCondHeadExpander(ConstraintVarCond &cond)
-            : cond_(cond)
-    { }
-
-    void ConstraintVarCondHeadExpander::expand(Lit *lit, Expander::Type type)
+    void ConstraintVarCond::expandHead(Lit *lit, Lit::ExpansionType type)
     {
             switch(type)
             {
-                    case RANGE:
-                    case RELATION:
-                            cond_.add(lit);
+                    case Lit::RANGE:
+                    case Lit::RELATION:
+                            add(lit);
                             break;
-                    case POOL:
+                    case Lit::POOL:
                             LitPtrVec lits;
                             //lits.push_back(lit);
-                            lits.insert(lits.end(), cond_.lits()->begin() + 1, cond_.lits()->end());
-                            if (*cond_.weight())
+                            lits.insert(lits.end(), this->lits()->begin(), this->lits()->end());
+                           // if (*weight())
                             {
-                                clone_ptr<Term> weight(*cond_.weight());
-                                clone_ptr<ConstraintTerm> head(*cond_.head());
-                                cond_.lit()->add(new ConstraintVarCond(cond_.loc(), weight.release(), head.release(), lits));
+                                //clone_ptr<Term> weight(*this->weight());
+                                //clone_ptr<ConstraintTerm> head(*this->head());
+                                //clone_ptr<ConstraintTerm> head(lit);
+                                //this->lit()->add(new ConstraintVarCond(loc(), weight.release(), head.release(), lits));
+                                this->parent()->add(new ConstraintVarCond(loc(), dynamic_cast<ConstraintVarLit*>(lit), lits));
                             }
-                            else
-                            {
-                                clone_ptr<ConstraintTerm> equal(*cond_.equal());
-                                clone_ptr<ConstraintTerm> head(*cond_.head());
-                                cond_.lit()->add(new ConstraintVarCond(cond_.loc(), equal.release(), head.release(), lits));
-                            }
+                            //else
+                            //{
+                                //clone_ptr<ConstraintTerm> equal(*this->equal());
+                                //clone_ptr<ConstraintTerm> head(*this->head());
+                                //clone_ptr<ConstraintTerm> head(lit);
+                                //this->lit()->add(new ConstraintVarCond(loc(), equal.release(), head.release(), lits));
+                                //this->lit()->add(new ConstraintVarCond(loc(), equal.release(), head.release(), lits));
+                           // }
                             break;
             }
     }
 
 
-
-    ConstraintVarCondBodyExpander::ConstraintVarCondBodyExpander(ConstraintVarCond &cond)
-            : cond_(cond)
-    { }
-
-    void ConstraintVarCondBodyExpander::expand(Lit *lit, Expander::Type) { cond_.add(lit); }
-
-
-
-    ConstraintVarCond::ConstraintVarCond(const Loc &loc, Term* weight, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(loc, first, weight), lits_(lits.release())
+    ConstraintVarCond::ConstraintVarCond(const Loc &loc, Term* weight, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(new ConstraintVarLit(loc, first, weight)), lits_(lits.release())
     {
     }
 
-    ConstraintVarCond::ConstraintVarCond(const Loc &loc, ConstraintTerm* equal, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(loc, first, equal), lits_(lits.release())
+    ConstraintVarCond::ConstraintVarCond(const Loc &loc, ConstraintTerm* equal, ConstraintTerm* first, LitPtrVec &lits) : Formula(loc), head_(new ConstraintVarLit(loc, first, equal)), lits_(lits.release())
+    {
+    }
+
+    ConstraintVarCond::ConstraintVarCond(const Loc &loc, ConstraintVarLit* head, LitPtrVec &lits) : Formula(loc), head_(head), lits_(lits.release())
     {
     }
 
@@ -141,7 +132,7 @@ namespace Clingcon
 
     void ConstraintVarCond::enqueue(Grounder *g)
     {
-            lit_->enqueue(g);
+            //parent_->enqueue(g);
     }
 
 
@@ -154,7 +145,7 @@ namespace Clingcon
 
     bool ConstraintVarCond::grounded(Grounder *g)
     {
-        head_.grounded(g, this);
+        head_->grounded(g, this);
         foreach(Lit &lit, lits_)
         {
                 lit.grounded(g);
@@ -220,15 +211,15 @@ namespace Clingcon
     }
 
 
-    void ConstraintVarCond::normalize(Grounder *g, uint32_t )
+    void ConstraintVarCond::normalize(Grounder *g)
     {
-        ConstraintVarCondHeadExpander headExp(*this);
-        head_.normalize(g, &headExp);
+        head_->normalize(g, boost::bind(&ConstraintVarCond::expandHead, this, _1, _2));
 
-        ConstraintVarCondBodyExpander bodyExp(*this);
+        Lit::Expander bodyExp(boost::bind(&ConstraintVarCond::add, this, _1));
         for(LitPtrVec::size_type i = 0; i < lits_.size(); i++)
         {
-                lits_[i].normalize(g, &bodyExp);
+            // an cond anhängen
+                lits_[i].normalize(g, bodyExp);
         }
         /*
             assert(!lits_.empty());
@@ -256,7 +247,7 @@ namespace Clingcon
 
     void ConstraintVarCond::visit(PrgVisitor *visitor)
     {
-        visitor->visit(&head_,false);
+        visitor->visit(head_.get(),false);
         //head_.visit(visitor);
         for(LitPtrVec::size_type i = 0; i < lits_.size(); i++)
         {
@@ -269,7 +260,7 @@ namespace Clingcon
 
     void ConstraintVarCond::print(Storage *sto, std::ostream &out) const
     {
-        head_.print(sto,out);
+        head_->print(sto,out);
         for(LitPtrVec::size_type i = 0; i < lits_.size(); i++)
         {
             out << ":";

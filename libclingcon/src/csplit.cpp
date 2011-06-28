@@ -37,9 +37,13 @@ namespace Clingcon
 	}
 
 	//
-        bool CSPLit::match(Grounder *)
+        bool CSPLit::match(Grounder *g)
 	{
-		return true;
+            if (a_.get())
+                a_->match(g);
+            if (b_.get())
+                b_->match(g);
+            return true;
 	}
 
         Index* CSPLit::index(Grounder *, Formula *, VarSet &)
@@ -82,10 +86,10 @@ namespace Clingcon
 		b_->print(sto, out);
 	}
 
-	void CSPLit::normalize(Grounder *g, Expander *expander)
+        void CSPLit::normalize(Grounder *g, const Lit::Expander& expander)
 	{
-		if(a_.get()) a_->normalize(this, ConstraintTerm::PtrRef(a_), g, expander, false);
-		if(b_.get()) b_->normalize(this, ConstraintTerm::PtrRef(b_), g, expander, false);
+                if(a_.get()) a_->normalize(this, ConstraintTerm::PtrRef(a_), g, expander, false);
+                if(b_.get()) b_->normalize(this, ConstraintTerm::PtrRef(b_), g, expander, false);
 	}
 
 	CSPLit *CSPLit::clone() const

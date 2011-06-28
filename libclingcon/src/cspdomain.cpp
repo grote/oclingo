@@ -23,62 +23,24 @@ namespace Clingcon
     {
     }
 
-    namespace
+
+
+    void CSPDomain::expandHead(Grounder* g, Lit *lit, Lit::ExpansionType type)
     {
-            class CSPDomainHeadExpander : public Expander
-            {
-            public:
-                    CSPDomainHeadExpander(const Loc &loc, LitPtrVec &body, Grounder *g);
-                    void expand(Lit *lit, Type type);
-            private:
-                    const Loc &loc_;
-                    LitPtrVec &body_;
-                    Grounder  *g_;
-            };
-
-            class CSPDomainBodyExpander : public Expander
-            {
-            public:
-                    CSPDomainBodyExpander(LitPtrVec &body);
-                    void expand(Lit *lit, Type type);
-            private:
-                    LitPtrVec &body_;
-            };
-
-            CSPDomainHeadExpander::CSPDomainHeadExpander(const Loc &loc, LitPtrVec &body, Grounder *g)
-                    : loc_(loc)
-                    , body_(body)
-                    , g_(g)
-            {
-            }
-
-            void CSPDomainHeadExpander::expand(Lit *lit, Expander::Type type)
-            {
-                    switch(type)
-                    {
-                            case RANGE:
-                            case RELATION:
-                                    body_.push_back(lit);
-                                    break;
-                            case POOL:
-                                    LitPtrVec body;
-                                    foreach(Lit &l, body_) body.push_back(l.clone());
-                                    g_->addInternal(new CSPDomain(loc_, static_cast<CSPDomainLiteral*>(lit)->clone(), body));
-                                    break;
-                    }
-            }
-
-            CSPDomainBodyExpander::CSPDomainBodyExpander(LitPtrVec &body)
-                    : body_(body)
-            {
-            }
-
-            void CSPDomainBodyExpander::expand(Lit *lit, Expander::Type type)
-            {
-                    (void)type;
-                    body_.push_back(lit);
-            }
+        switch(type)
+        {
+        case Lit::RANGE:
+        case Lit::RELATION:
+            body_.push_back(lit);
+            break;
+        case Lit::POOL:
+            LitPtrVec body;
+            foreach(Lit &l, body_) body.push_back(l.clone());
+            g->addInternal(new CSPDomain(loc(), static_cast<CSPDomainLiteral*>(lit)->clone(), body));
+            break;
+        }
     }
+
 
     void CSPDomain::visit(PrgVisitor *visitor)
     {
@@ -89,13 +51,14 @@ namespace Clingcon
 
     void CSPDomain::normalize(Grounder *g)
     {
-        CSPDomainHeadExpander headExp(loc(), body_, g);
-        dom_->normalize(g, &headExp);
+        //CSPDomainHeadExpander headExp(loc(), body_, g);
+
+        dom_->normalize(g, boost::bind(&CSPDomain::expandHead, this, g, _1, _2 ));
         if(body_.size() > 0)
         {
-            CSPDomainBodyExpander bodyExp(body_);
+            Lit::Expander bodyExp = boost::bind(&CSPDomain::append, this, _1);
             for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
-                    body_[i].normalize(g, &bodyExp);
+                    body_[i].normalize(g, bodyExp);
         }
     }
 

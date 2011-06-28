@@ -31,7 +31,10 @@
 #include <gringo/grounder.h>
 #include <gringo/formula.h>
 #include <gringo/exceptions.h>
-#include <gringo/display.h>
+#include <gringo/show.h>
+#include <gringo/output.h>
+#include <gringo/functerm.h>
+#include <gringo/domain.h>
 #include "cspparser_impl.h"
 #include <gringo/litdep.h>
 
@@ -63,7 +66,6 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
         , weak_(0)
         , number_(new Optimize::SharedNumber::element_type(0))
 	, inc_(inc)
-	, invCurrent_(base)
 	, iId_(0)
 	, iVar_(0)
 	, compat_(compat)
@@ -79,6 +81,8 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
 	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
 	STRING     = "\"" ([^\\"\n]|"\\\""|"\\\\"|"\\n")* "\"";
+        WSNL       = [\t\r\n ]*;
+        SHOWDOT    = "#show" WSNL "-"? WSNL IDENTIFIER WSNL "/" WSNL NUMBER WSNL ".";
 */
 
 int CSPParser::lex()
@@ -108,6 +112,7 @@ start:
 		"#external"      { return CSPPARSER_EXTERNAL; }
 		"#infimum"       { return CSPPARSER_INFIMUM; }
 		"#supremum"      { return CSPPARSER_SUPREMUM; }
+                SHOWDOT          { token_.index  = g_->index(string()); return CSPPARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return CSPPARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return CSPPARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return CSPPARSER_VARIABLE; }
@@ -174,6 +179,8 @@ start:
                 "$binpack"       { return CSPPARSER_CSPBINPACK; }
                 "$count"         { return CSPPARSER_CSPCOUNT; }
                 "$sum"           { return CSPPARSER_CSPSUM; }
+                "$minimi"[sz]"e" { return CSPPARSER_CSPMINIMIZE; }
+                "$maximi"[sz]"e" { return CSPPARSER_CSPMAXIMIZE; }
 		ANY              { syntaxError(); goto start; }
 	*/
 lua:
@@ -237,6 +244,7 @@ start:
 		"#external"      { return CSPPARSER_EXTERNAL; }
 		"#infimum"       { return CSPPARSER_INFIMUM; }
 		"#supremum"      { return CSPPARSER_SUPREMUM; }
+                SHOWDOT          { token_.index  = g_->index(string()); return CSPPARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return CSPPARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return CSPPARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return CSPPARSER_VARIABLE; }
@@ -424,12 +432,6 @@ void CSPParser::incremental(iPart part, uint32_t index)
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
-void CSPParser::invPart()
-{
-	assert(current_ == base_ || invCurrent_ == base_);
-	std::swap(current_, invCurrent_);
-}
-
 WrapperTerm *CSPParser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
 	if(t == Val::ID)
@@ -581,19 +583,17 @@ void CSPParser::add()
 {
 	while(!last_.empty())
 	{
-		bool display = dynamic_cast<Display*>(&last_.back()); 
-		if(!display && current_ == volatile_)
-		{
-			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_)); 
-		}
 		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
 			domAdder.add(&statement);
 		}
-		// bind the incremetal literal if the incremental constant occurs in the statement
-		if(!display && current_ == cumulative_)
+                if(current_ == volatile_)
+                {
+                        last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
+                }
+                else if(current_ == cumulative_)
 		{
 			foreach(Statement &statement, rng)
 			{
@@ -633,6 +633,38 @@ PredLit *CSPParser::predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool
 	if(sign) { id = grounder()->index(std::string("-") + grounder()->string(id)); }
 	return new PredLit(loc, grounder()->domain(id, terms.size()), terms);
 }
+
+void CSPParser::show(uint32_t idx)
+{
+       typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+       tokenizer tokens(g_->string(idx), boost::char_separator<char>("\r\n\t ./"));
+       tokenizer::iterator it = tokens.begin();
+       uint32_t name  = g_->index(*(++it));
+       uint32_t arity = boost::lexical_cast<uint32_t>(*(++it));
+       g_->output()->show(name, arity, true);
+}
+
+void CSPParser::show(Term *term)
+{
+       FuncTerm *func = dynamic_cast<FuncTerm*>(term);
+       if(func)
+       {
+               std::cerr << "do something with: #show ";
+               func->print(g_, std::cerr);
+               std::cerr << "." << std::endl;
+               delete func;
+       }
+       else
+       {
+               std::ostringstream ss;
+               term->print(g_, ss);
+               errors_.push_back(ErrorTok(term->loc(), ss.str()));
+               error_ = true;
+               delete term;
+       }
+}
+
+
 
 CSPParser::~CSPParser()
 {

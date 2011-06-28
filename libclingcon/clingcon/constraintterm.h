@@ -179,9 +179,10 @@ namespace Clingcon
 		ConstraintTerm(const Loc &loc) : Locateable(loc) { }
 		virtual Val val(Grounder *grounder) const = 0;
 		virtual Split split() { return Split(0, 0); }
-		virtual void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify) = 0;
+                virtual void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify) = 0;
 		virtual bool unify(Grounder *grounder, const Val &v, int binder) const = 0;
 		virtual ConstraintAbsTerm::Ref *abstract(ConstraintSubstitution &subst) const = 0;
+                virtual bool match(Grounder* g) = 0;
 		virtual void vars(VarSet &v) const = 0;
 		virtual void visit(PrgVisitor *visitor, bool bind) = 0;
 		virtual bool constant() const = 0;

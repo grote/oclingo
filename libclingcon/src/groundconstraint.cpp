@@ -11,12 +11,15 @@ namespace Clingcon
         {
             vec.push_back(csps->getVariable(name_));
         }
+        else
         if (isOperator())
         {
-            if (a_.get()!= 0)
+            if (a_!= 0)
                 a_->getAllVariables(vec,csps);
-            if (b_.get()!= 0)
+            if (b_!= 0)
                 b_->getAllVariables(vec,csps);
         }
+        else
+            assert(isInteger());
     }
 }

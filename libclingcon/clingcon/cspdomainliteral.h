@@ -32,7 +32,7 @@ namespace Clingcon
         {
         }
 
-        virtual void normalize(Grounder *g, Expander *expander)
+        virtual void normalize(Grounder *g, const Expander& expander)
         {
             if (t_) t_->normalize(this,Term::PtrRef(t_),g,expander,false);
             lower_->normalize(this,Term::PtrRef(lower_),g,expander,false);

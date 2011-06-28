@@ -24,6 +24,7 @@
 #include <clingcon/cspconstraint.h>
 #include <clingcon/cspprinter.h>
 #include <clingcon/cspglobalprinter.h>
+#include <clingcon/groundconstraintvarlit.h>
 #include <gringo/litdep.h>
 
 CSPOutput::CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
@@ -109,25 +110,10 @@ void CSPOutput::printComputeRule(int models, const AtomVec &pos, const AtomVec &
 	foreach(AtomVec::value_type atom, pos) { b_->setCompute(atom, true); }
 }
 
-void CSPOutput::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+void CSPOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name)
 {
-	std::stringstream ss;
-	ss << name;
-	if(arity > 0)
-	{
-		ValVec::const_iterator k = vals_.begin() + atom.offset;
-		ValVec::const_iterator end = k + arity;
-		ss << "(";
-		k->print(s_, ss);
-		for(++k; k != end; ++k)
-		{
-			ss << ",";
-			k->print(s_, ss);
-		}
-		ss << ")";
-	}
-	b_->setAtomName(atom.symbol, ss.str().c_str());
-	atomUnnamed_[atom.symbol - lastUnnamed_] = false;
+       b_->setAtomName(symbol, name.c_str());
+       atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
 void CSPOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
@@ -144,11 +130,12 @@ uint32_t CSPOutput::symbol()
 	return atom;
 }
 
-uint32_t CSPOutput::symbol(const std::string& name, bool)
+uint32_t CSPOutput::symbol(const std::string& name, bool freeze)
 {
     uint32_t atom = b_->newAtom();
     b_->setAtomName(atom, name.c_str());
-    b_->freeze(atom);
+    if (freeze)
+        b_->freeze(atom);
     return atom;
 }
 

@@ -38,20 +38,20 @@ namespace Clingcon
 		b_->print(sto, out);
 	}
 
-	void ConstraintRangeTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify)
+        void ConstraintRangeTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify)
 	{
 		(void)unify;
 		a_->normalize(parent, PtrRef(a_), g, expander, false);
 		b_->normalize(parent, PtrRef(b_), g, expander, false);
 		uint32_t var = g->createVar();
-		expander->expand(new RangeLit(loc(), new VarTerm(a_->loc(), var), a_.get()->toTerm(), b_.get()->toTerm()), Expander::RANGE);
+                expander(new RangeLit(loc(), new VarTerm(a_->loc(), var), a_.get()->toTerm(), b_.get()->toTerm()), Lit::RANGE);
                 //#pragma message "Check with Roland"
                 a_.reset(0);
                 b_.reset(0);
 		ref.reset(new ConstraintVarTerm(loc(), var));
 	}
 
-	ConstraintAbsTerm::Ref* ConstraintRangeTerm::abstract(ConstraintSubstitution& subst) const
+        ConstraintAbsTerm::Ref* ConstraintRangeTerm::abstract(ConstraintSubstitution& subst) const
 	{
 		return subst.anyVar();
 	}
@@ -64,7 +64,7 @@ namespace Clingcon
         GroundConstraint* ConstraintRangeTerm::toGroundConstraint(Grounder* )
 	{
                 assert(false);
-                return new GroundConstraint();
+                return 0;
 	}
 
 	ConstraintRangeTerm::~ConstraintRangeTerm()

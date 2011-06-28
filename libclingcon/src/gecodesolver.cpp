@@ -58,12 +58,15 @@ std::string GecodeSolver::num2name( unsigned int var)
     return s.str();
 }
 
+
+std::vector<int> GecodeSolver::optValues;
+
 GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                            std::string ICLString, std::string branchVarString,
                            std::string branchValString) :
                                 currentSpace_(0), lazyLearn_(lazyLearn),
                                 useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS),
-                                dummyReason_(this)
+                                dummyReason_(this), foundModel_(false)
 
 {
         //domain_.first=INT_MIN/2+1;
@@ -161,9 +164,18 @@ bool GecodeSolver::initialize()
 
 	// convert constraints to literal variables
         // create all csp variables using getAllVariables
+
+
+        //for (AtomIndex::const_iterator i = s_->strategies().symTab->begin(); i != s_->strategies().symTab->end(); ++i)
+         //   std::cout << "At index " << i->first << " we found " << i->second.name  << " with lit " << i->second.lit.var() << " " << i->second.lit.sign() << std::endl;
+        //for (int i = 0; i < s_->strategies().symTab->size(); ++i)
+        //    std::cout << "At index " << i << " we found " << *(s_->strategies().symTab)[i] << std::endl;
+
+
         std::map<int, Constraint*> newConstraints;
         for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
 	{
+            //std::cout << "Var: " << s_->strategies().symTab->find(i->first)->lit.var() << std::endl;
                 newConstraints.insert(std::make_pair(s_->strategies().symTab->find(i->first)->lit.var(), i->second));
                 i->second->getAllVariables(this);
 	}
@@ -174,7 +186,7 @@ bool GecodeSolver::initialize()
             for (boost::ptr_vector<IndexedGroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
                 for (IndexedGroundConstraintVec::iterator k = j->begin(); k != j->end(); ++k)
                 {
-                    k->a_.getAllVariables(vars,this);
+                    k->a_->getAllVariables(vars,this);
                     k->b_.getAllVariables(vars,this);
                 }
 
@@ -304,7 +316,9 @@ bool GecodeSolver::initialize()
 
             }
         }
+
         constraints_.clear();
+        globalConstraints_.clear();
         if(currentSpace_->status() != SS_FAILED)
 	{
                 Clasp::LitVec lv(currentSpace_->getAssignment(Clasp::LitVec()));
@@ -322,7 +336,8 @@ bool GecodeSolver::hasAnswer()
 	asCounter_ = 0;
 	// currently using a depth first search, this could be changed by options
 //	searchEngine_ = new LDS<GecodeSolver::SearchSpace>(currentSpace_, sizeof(*currentSpace_), searchOptions_);
-	searchEngine_ = new DFS<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
+//	searchEngine_ = new DFS<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
+        searchEngine_ = new BAB<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
 #ifdef DEBUGTEXT
         std::cout << "created new SearchEngine_:" << searchEngine_ << std::endl;
         currentSpace_->print(variables_);std::cout << std::endl;
@@ -335,6 +350,7 @@ bool GecodeSolver::hasAnswer()
 	enumerator_ = searchEngine_->next();
 	if (enumerator_ != NULL)
 	{
+                foundModel_=true;
 		asCounter_++;
 		return true;
 	}
@@ -379,11 +395,15 @@ bool GecodeSolver::nextAnswer()
 	if (weakAS_) return false;
 	if (numAS_ && asCounter_ >= numAS_) return false;
 
-        delete enumerator_;
-        enumerator_ = NULL;
+        GecodeSolver::SearchSpace* oldEnum = enumerator_;
+#pragma message("check this with DFS and BAB")
+        //delete enumerator_;
+        //enumerator_ = NULL;
 
 	++asCounter_;
 	enumerator_ = searchEngine_->next();
+        delete oldEnum;
+
 
 	return (enumerator_ != NULL);
 }
@@ -612,6 +632,9 @@ void GecodeSolver::undoUntil(unsigned int level)
 	if (currentSpace_)
 		delete currentSpace_;
 	currentSpace_ = static_cast<GecodeSolver::SearchSpace*>(spaces_[index]->clone());
+        if (foundModel_)
+            currentSpace_->updateOptValues();
+        foundModel_=false;
 
 	//erase all spaces above
 	++index;
@@ -1107,35 +1130,209 @@ GecodeSolver::SearchSpace::SearchSpace(CSPSolver* csps, unsigned int numVar, std
     }
     //        branch(this, x_, branchVar, branchVal);
 
-    for (LParseGlobalConstraintPrinter::GCvec::iterator i = gcvec.begin(); i != gcvec.end(); ++i)
+    std::map<unsigned int,std::vector<std::pair<GroundConstraint*,bool> > > optimize; // true means maximize, false means minimize
+    for (size_t i = 0; i < gcvec.size(); ++i)
     {
-        generateGlobalConstraint(csps, *i);
+        if (!(gcvec[i].type_ == MINIMIZE || gcvec[i].type_ == MINIMIZE_SET || gcvec[i].type_ == MAXIMIZE || gcvec[i].type_ == MAXIMIZE_SET))
+            generateGlobalConstraint(csps, gcvec[i]);
+        else
+        {
+           LParseGlobalConstraintPrinter::GC& gc = gcvec[i];
+           //for (size_t head = 0; head < gc.heads_.size(); ++head)
+           //    for (size_t i = 0; i < gc.heads_[head].size(); ++i)
+           IndexedGroundConstraintVec& igcv = gc.heads_[0];
+           for (size_t i = 0; i < igcv.size(); ++i)
+           {
+                bool max = false;
+                if (gc.type_ == MAXIMIZE_SET || gc.type_ == MAXIMIZE)
+                    max=true;
+                optimize[igcv[i].b_.getInteger()].push_back(std::pair<GroundConstraint*,bool>(igcv[i].a_.get(), max));
+                //optimize[gc.heads_[0][i].b_.getInteger()].push_back(std::pair<GroundConstraintVec,bool>(gc.heads_[0][i].a_.release(), max));
+           }
+        }
     }
+
+    opts_ = IntVarArray(*this, optimize.size(), INT_MIN/2+1, INT_MAX/2-1);
+    //opts_ = IntVarArray(*this,1,0,500);
+
+
+    size_t index = 0;
+    for (std::map<unsigned int,std::vector<std::pair<GroundConstraint*,bool> > >::iterator i = optimize.begin(); i != optimize.end(); ++i)
+    {
+        LinExpr expr(generateSum(csps, i->second));
+    //    if (i->second.second)
+    //        rel(*this, LinRel(opts_[index],IRT_EQ,-expr), ICL); // maximize == minimize the opposite
+    //    else
+            rel(*this, LinRel(opts_[index],IRT_EQ,expr), ICL);
+        ++index;
+    }
+
+    // x_[0]==3;
+    //opts_ = t;
+
+
 
 
     //	// set branching
-    IntVarArgs iva(x_.size());
+    //IntVarArgs iva(x_.size());//+tempVars_.size());
 
+    //IntVar a,b;
+    //int x = a < b;
+    iva_ << opts_;
+    iva_ << x_;
+    //int i = 0;
+    //for (; i < x_.size(); ++i)
+    //{
+    //    iva[i] = x_[i];
+    //}
+//    for (; i < tempVars_.size()+x_.size(); ++i)
+//    {
+//        iva[i] = tempVars_[i];
+//    }
 
-    for (int i = 0; i < x_.size(); ++i)
-    {
-        iva[i] = x_[i];
+    std::sort(iva_.begin(), iva_.end(), boost::bind(&IntVar::before,_1,_2));
+    IntVarArgs::iterator newEnd = std::unique(iva_.begin(), iva_.end(), boost::bind(&IntVar::same,_1,_2));
 
-    }
-
-    branch(*this, iva, branchVar, branchVal);
+    IntVarArgs temp;
+    if (iva_.size())
+            temp << iva_.slice(0,1,std::distance(iva_.begin(),newEnd));
+    branch(*this, temp, branchVar, branchVal);
+    iva_ = IntVarArgs();
 }
 
 GecodeSolver::SearchSpace::SearchSpace(bool share, SearchSpace& sp) : Space(share, sp)
 {
         x_.update(*this, share, sp.x_);
         b_.update(*this, share, sp.b_);
+        opts_.update(*this,share,sp.opts_);
+        //for (int i =0; i < tempVars_.size(); ++i)
+        //    tempVars_[i].update(*this, share, sp.tempVars_[i]);
 	litToVar_ = sp.litToVar_;
 }
 
 GecodeSolver::SearchSpace* GecodeSolver::SearchSpace::copy(bool share)
 {
 	return new GecodeSolver::SearchSpace(share, *this);
+}
+
+
+//optimize function
+void GecodeSolver::SearchSpace::constrain(const Space& _b)
+{
+    GecodeSolver::optValues.clear();
+    const SearchSpace& b = static_cast<const SearchSpace&>(_b);
+    for (int i = 0; i < opts_.size()-1; ++i)
+    {
+        rel(*this, opts_[i] <= b.opts_[i].val(), ICL);
+        GecodeSolver::optValues.push_back(b.opts_[i].val());
+    }
+    if (opts_.size()>0)
+    {
+        rel(*this, opts_[opts_.size()-1] < b.opts_[opts_.size()-1].val(),ICL);
+        GecodeSolver::optValues.push_back(b.opts_[opts_.size()-1].val());
+        /*std::cout << "HIER: " << b.x_[0].val() << std::endl;
+        std::cout << "HIER: " << x_[0] << std::endl;
+        std::cout << "HIER: " << b.opts_[opts_.size()-1] << std::endl;
+        std::cout << "HIER: " << b.opts_[opts_.size()-1].val() << std::endl;
+        //opts_[opts_.size()-1] < b.x_[0].val();
+       // x_[0] < b.x_[0].val();
+        x_[0] < 1;*/
+    }
+}
+
+void GecodeSolver::SearchSpace::updateOptValues()
+{
+    std::cout << "updateOptValues" << std::endl;
+    std::cout << this->failed() << std::endl;
+    for (int i = 0; i < x_.size(); ++i)
+    {
+
+            Int::IntView v(x_[i]);
+            //std::cout << variables[i] << "=";
+            ::operator<<(std::cout, v);
+            std::cout << " ";
+            //for (IntVarRanges i(x); i(); ++i)
+           // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+    }
+     std::cout << std::endl;
+     for (int i = 0; i < opts_.size(); ++i)
+     {
+
+             Int::IntView v(opts_[i]);
+             //std::cout << variables[i] << "=";
+             ::operator<<(std::cout, v);
+             std::cout << " ";
+             //for (IntVarRanges i(x); i(); ++i)
+            // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+     }
+      std::cout << std::endl;
+
+
+    rel(*this, x_[0] <= 1, ICL);
+
+    for (int i = 0; i < opts_.size()-1; ++i)
+    {
+        rel(*this, opts_[i] <= GecodeSolver::optValues[i], ICL);
+    }
+    this->status();
+    std::cout << this->failed() << std::endl;
+    this->status();
+    for (int i = 0; i < x_.size(); ++i)
+    {
+
+            Int::IntView v(x_[i]);
+            //std::cout << variables[i] << "=";
+            ::operator<<(std::cout, v);
+            std::cout << " ";
+            //for (IntVarRanges i(x); i(); ++i)
+           // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+    }
+     std::cout << std::endl;
+     for (int i = 0; i < opts_.size(); ++i)
+     {
+
+             Int::IntView v(opts_[i]);
+             //std::cout << variables[i] << "=";
+             ::operator<<(std::cout, v);
+             std::cout << " ";
+             //for (IntVarRanges i(x); i(); ++i)
+            // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+     }
+      std::cout << std::endl;
+    if (opts_.size()>0)
+    {
+        rel(*this, opts_[opts_.size()-1] < GecodeSolver::optValues[opts_.size()-1],ICL);
+    }
+
+    for (int i = 0; i < x_.size(); ++i)
+    {
+
+            Int::IntView v(x_[i]);
+           // std::cout << variables[i] << "=";
+            ::operator<<(std::cout, v);
+            std::cout << " ";
+            //for (IntVarRanges i(x); i(); ++i)
+           // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+    }
+    std::cout << std::endl;
+    for (int i = 0; i < opts_.size(); ++i)
+    {
+
+            Int::IntView v(opts_[i]);
+            //std::cout << variables[i] << "=";
+            ::operator<<(std::cout, v);
+            std::cout << " ";
+            //for (IntVarRanges i(x); i(); ++i)
+           // std::cout << i.min() << ".." << i.max() << ’ ’;
+
+    }
+     std::cout << std::endl;
+    std::cout << this->failed() << std::endl;
 }
 
 
@@ -1194,6 +1391,8 @@ void GecodeSolver::SearchSpace::print(std::vector<std::string>& variables) const
                 std::cout << variables[i] << "=";
                 ::operator<<(std::cout, v);
                 std::cout << " ";
+                //for (IntVarRanges i(x); i(); ++i)
+               // std::cout << i.min() << ".." << i.max() << ’ ’;
 
 	}
 #ifdef DEBUGTEXT
@@ -1234,11 +1433,7 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
     const GroundConstraint* y;
     CSPLit::Type r = c->getRelation(x,y);
     Gecode::IntRelType ir;
-    //if (!x->isOperator())
-    //{
-    //   std::swap(x,y);
-    //    r = CSPLit::switchRel(r);
-    //}
+
     switch(r)
     {
     case CSPLit::EQUAL:
@@ -1264,44 +1459,34 @@ void GecodeSolver::SearchSpace::generateConstraint(CSPSolver* csps,Constraint* c
         assert(false);
     }
 
-    LinRel rel(generateLinearExpr(csps,x), ir, generateLinearExpr(csps,y));
+    LinRel rela(generateLinearExpr(csps,x), ir, generateLinearExpr(csps,y));
 
-    rel.post(*this, b_[boolvar], true,ICL);
-
-
-//    // transform into linear relation Y*3+Z*Y >= X+3  ==>> Y*3 + Z*Y - X -3 >= 0
-//    if (!y->isOperator())
-//    {
-//        IntVarArgs array(x->getLinearSize() + 1);
-//        IntArgs args(x->getLinearSize() + 1);
-//        generateLinearConstraint(csps, x, args, array, 1);
-//        if (y->isInteger())
-//            array[array.size()-1] = IntVar(*this, y->getInteger(), y->getInteger());
-//        else
-//            array[array.size()-1] = x_[csps->getVariable(y->getString())];
-//        args[args.size()-1] = -1;
-//        Gecode::linear(*this, args, array, ir, 0, b_[boolvar], ICL);
-//        return;
-//    }
-//    else
-//    {
-//        IntVarArgs array(y->getLinearSize());
-//        IntArgs args(y->getLinearSize());
-//        IntVarArgs array2(x->getLinearSize() + array.size());
-//        IntArgs args2(x->getLinearSize() + args.size());
-//        generateLinearConstraint(csps, y, args, array, 0);
-//        generateLinearConstraint(csps, x, args2, array2, array.size());
-//        for (int i = 0; i < array.size(); ++i)
-//        {
-//            array2[i+x->getLinearSize()] = array[i];
-//            args2[i+x->getLinearSize()] = args[i]*-1;
-//        }
-//        Gecode::linear(*this, args2, array2, ir, 0, b_[boolvar], ICL);
-//        return;
-//    }
-
+    Gecode::rel(*this, rela == b_[boolvar],ICL);
 }
 
+
+Gecode::LinExpr GecodeSolver::SearchSpace::generateSum(CSPSolver* csps, std::vector<std::pair<GroundConstraint*,bool> >& vec)
+{
+    return generateSum(csps,vec,0);
+}
+
+Gecode::LinExpr GecodeSolver::SearchSpace::generateSum(CSPSolver* csps, std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i)
+{
+    if (i==vec.size()-1)
+    {
+        if (vec[i].second)
+            return generateLinearExpr(csps,vec[i].first)*-1;
+        else
+            return generateLinearExpr(csps,vec[i].first);
+    }
+    else
+        if (vec[i].second)
+            return generateLinearExpr(csps,vec[i].first)*-1 + generateSum(csps,vec,i+1);
+        else
+            return generateLinearExpr(csps,vec[i].first) + generateSum(csps,vec,i+1);
+
+
+}
 
 Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(CSPSolver* csps, const GroundConstraint* c)
 {
@@ -1315,8 +1500,8 @@ Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(CSPSolver* csps, c
         return LinExpr(x_[csps->getVariable(c->getString())]);
     }
 
-    const GroundConstraint* a = c->a_.get();
-    const GroundConstraint* b = c->b_.get();
+    const GroundConstraint* a = c->a_;
+    const GroundConstraint* b = c->b_;
     GroundConstraint::Operator op = c->getOperator();
 
     switch(op)
@@ -1332,6 +1517,7 @@ Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(CSPSolver* csps, c
         case GroundConstraint::ABS:
             return Gecode::abs(generateLinearExpr(csps,a));
     }
+    assert(false);
 
 }
 
@@ -1341,12 +1527,16 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
 
     if (gc.type_==DISTINCT)
     {
-        IntVarArray z(*this, gc.heads_[0].size());
+        IntVarArgs z(gc.heads_[0].size());
 
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-            z[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+            z[i] = expr(*this,generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+            //if (gc.heads_[0][i].a_->isOperator())
+            //    tempVars_.push_back(z[i]);
         }
+
+        iva_ << z;
 
         Gecode::distinct(*this,z,ICL);
         return;
@@ -1354,16 +1544,20 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
     }
     if (gc.type_==BINPACK)
     {
-        IntVarArray l(*this, gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArgs l(gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-            l[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+            l[i] = expr(*this,generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+            //if (gc.heads_[0][i].a_->isOperator())
+            //    tempVars_.push_back(l[i]);
         }
 
-        IntVarArray b(*this, gc.heads_[1].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArgs b(gc.heads_[1].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
         for (size_t i = 0; i < gc.heads_[1].size(); ++i)
         {
-            b[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[1][i].a_),ICL);
+            b[i] = expr(*this,generateLinearExpr(csps,gc.heads_[1][i].a_.get()),ICL);
+            //if (gc.heads_[1][i].a_->isOperator())
+            //    tempVars_.push_back(b[i]);
         }
 
         IntArgs  s(gc.heads_[2].size());
@@ -1371,11 +1565,13 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
         {
 
 
-            if (!gc.heads_[2][i].a_.isInteger())
+            if (!gc.heads_[2][i].a_->isInteger())
                 throw ASPmCSPException("Third argument of binpacking constraint must be a list of integers.");
 
-            s[i] = gc.heads_[2][i].a_.getInteger();
+            s[i] = gc.heads_[2][i].a_->getInteger();
         }
+        iva_ << l;
+        iva_ << b;
 
         Gecode::binpacking(*this,l,b,s,ICL);
         return;
@@ -1383,12 +1579,14 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
     }
     if (gc.type_==COUNT)
     {
-        IntVarArray a(*this, gc.heads_[0].size());
+        IntVarArgs a(gc.heads_[0].size());
         IntArgs c(gc.heads_[0].size());
 
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-            a[i] = expr(*this,generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+            a[i] = expr(*this,generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+            //if (gc.heads_[0][i].a_->isOperator())
+            //    tempVars_.push_back(a[i]);
 
             assert(gc.heads_[0][i].b_.isInteger());
             c[i] = gc.heads_[0][i].b_.getInteger();
@@ -1408,19 +1606,27 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
         default: assert(false);
         }
 
-        IntVar z(expr(*this,generateLinearExpr(csps,&gc.heads_[1][0].a_),ICL));
+        //IntVar z();
+        //if (gc.heads_[1][0].a_->isOperator())
+        //    tempVars_.push_back(z);
 
-        Gecode::count(*this,a,c,cmp,z,ICL);
+        iva_ << a;
+        IntVar temp(expr(*this,generateLinearExpr(csps,gc.heads_[1][0].a_.get()),ICL));
+        iva_ << temp;
+
+        Gecode::count(*this,a,c,cmp,temp,ICL);
         return;
 
     }
     if (gc.type_==COUNT_UNIQUE)
     {
-        IntVarArray a(*this, gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
+        IntVarArgs a(gc.heads_[0].size());//, Gecode::Int::Limits::min, Gecode::Int::Limits::max);
 
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-              a[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+            a[i] = expr(*this, generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+              //if (gc.heads_[0][i].a_->isOperator())
+              //    tempVars_.push_back(a[i]);
         }
 
         IntRelType cmp;
@@ -1436,28 +1642,73 @@ void GecodeSolver::SearchSpace::generateGlobalConstraint(CSPSolver* csps, LParse
         default: assert(false);
         }
 
-        IntVar c = expr(*this, generateLinearExpr(csps,&gc.heads_[0][0].b_),ICL);
-        IntVar z = expr(*this, generateLinearExpr(csps,&gc.heads_[1][0].a_),ICL);
-        Gecode::count(*this,a,c,cmp,z,ICL);
+        //IntVar c = ;
+        //IntVar z = ;
+        //if (gc.heads_[0][0].b_.isOperator())
+         //   tempVars_.push_back(c);
+        //if (gc.heads_[1][0].a_->isOperator())
+        //    tempVars_.push_back(z);
+
+        iva_ << a;
+        IntVar temp1(expr(*this, generateLinearExpr(csps,&gc.heads_[0][0].b_),ICL));
+        iva_ << temp1;
+        IntVar temp2(expr(*this, generateLinearExpr(csps,gc.heads_[1][0].a_.get()),ICL));
+        iva_ << temp2;
+        Gecode::count(*this,a,temp1,cmp,temp2,ICL);
         return;
     }
     if (gc.type_==COUNT_GLOBAL)
     {
-        IntVarArray a(*this, gc.heads_[0].size());
+        IntVarArgs a(gc.heads_[0].size());
         for (size_t i = 0; i < gc.heads_[0].size(); ++i)
         {
-              a[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[0][i].a_),ICL);
+            a[i] = expr(*this, generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+              //if (gc.heads_[0][i].a_->isOperator())
+                //tempVars_.push_back(a[i]);
         }
 
-        IntVarArray b(*this, gc.heads_[1].size());
+        IntVarArgs b(gc.heads_[1].size());
         IntArgs c(gc.heads_[0].size());
         for (size_t i = 0; i < gc.heads_[1].size(); ++i)
         {
-              b[i] = expr(*this, generateLinearExpr(csps,&gc.heads_[1][i].a_),ICL);
+            b[i] = expr(*this, generateLinearExpr(csps,gc.heads_[1][i].a_.get()),ICL);
+              //if (gc.heads_[1][i].a_->isOperator())
+                //tempVars_.push_back(b[i]);
 
               assert(gc.heads_[1][i].b_.isInteger());
               c[i] = gc.heads_[1][i].b_.getInteger();
         }
+
+        iva_ << a;
+        iva_ << b;
+        Gecode::count(*this,a,b,c,ICL);
+
+        return;
+    }
+    if (gc.type_==MINIMIZE_SET || gc.type_==MINIMIZE)
+    {
+        IntVarArgs a(gc.heads_[0].size());
+        for (size_t i = 0; i < gc.heads_[0].size(); ++i)
+        {
+            a[i] = expr(*this, generateLinearExpr(csps,gc.heads_[0][i].a_.get()),ICL);
+              //if (gc.heads_[0][i].a_->isOperator())
+                //tempVars_.push_back(a[i]);
+        }
+
+        IntVarArgs b(gc.heads_[1].size());
+        IntArgs c(gc.heads_[0].size());
+        for (size_t i = 0; i < gc.heads_[1].size(); ++i)
+        {
+            b[i] = expr(*this, generateLinearExpr(csps,gc.heads_[1][i].a_.get()),ICL);
+              //if (gc.heads_[1][i].a_->isOperator())
+                //tempVars_.push_back(b[i]);
+
+              assert(gc.heads_[1][i].b_.isInteger());
+              c[i] = gc.heads_[1][i].b_.getInteger();
+        }
+
+        iva_ << a;
+        iva_ << b;
         Gecode::count(*this,a,b,c,ICL);
 
         return;

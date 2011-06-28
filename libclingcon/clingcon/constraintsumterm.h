@@ -18,17 +18,15 @@
 #pragma once
 
 #include <gringo/gringo.h>
-#include <gringo/mathterm.h>
 #include <clingcon/constraintterm.h>
-#include <gringo/mathterm.h>
+#include <clingcon/constraintvarcond.h>
 
 namespace Clingcon
 {
-	class ConstraintMathTerm : public ConstraintTerm
+        class ConstraintSumTerm : public ConstraintTerm, public Container
 	{
 	public:
-	public:
-		ConstraintMathTerm(const Loc &loc, const MathTerm::Func &f, ConstraintTerm *a, ConstraintTerm *b = 0);
+                ConstraintSumTerm(const Loc &loc, Clingcon::ConstraintVarCondPtrVec* cond);
 		Val val(Grounder *grounder) const;
                 void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
@@ -36,27 +34,40 @@ namespace Clingcon
 		void vars(VarSet &v) const;
 		void visit(PrgVisitor *visitor, bool bind);
 		bool constant() const;
-                virtual bool match(Grounder* ){ return true; }
 		void print(Storage *sto, std::ostream &out) const;
-                ConstraintMathTerm *clone() const;
-		MathTerm* toTerm() const
+                ConstraintSumTerm *clone() const;
+                virtual bool match(Grounder* );
+                virtual void add(ConstraintVarCond* add)
+                {
+                    cond_->push_back(add);
+                }
+
+                Term* toTerm() const
 		{
-			return new MathTerm(loc(), f_, a_->toTerm(), b_->toTerm());
+                    assert(false);
+                    return 0;
 		}
+
 		virtual void visitVarTerm(PrgVisitor* v)
 		{
-			if(a_.get())a_->visitVarTerm(v);
-			if(b_.get())b_->visitVarTerm(v);
+                    for (ConstraintVarCondPtrVec::iterator i = cond_->begin(); i != cond_->end(); ++i)
+                    {
+                        v->visit(&(*i), false);
+                       // i->visit(v);
+                    }
+                        //if(a_.get())a_->visitVarTerm(v);
+                        //if(b_.get())b_->visitVarTerm(v);
 		}
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
-		~ConstraintMathTerm();
+
+                ~ConstraintSumTerm();
 	private:
-		MathTerm::Func            f_;
-		clone_ptr<ConstraintTerm> a_;
-		clone_ptr<ConstraintTerm> b_;
+                GroundConstraint* toGroundConstraint(Grounder* g, GroundedConstraintVarLitVec& vec, int i);
+                clone_ptr<Clingcon::ConstraintVarCondPtrVec> cond_;
+
 	};
 
-        inline ConstraintMathTerm* new_clone(const ConstraintMathTerm& a)
+        inline ConstraintSumTerm* new_clone(const ConstraintSumTerm& a)
         {
                 return a.clone();
         }

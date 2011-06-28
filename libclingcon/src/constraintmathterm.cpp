@@ -54,6 +54,7 @@ namespace Clingcon
 
 	Val ConstraintMathTerm::val(Grounder *grounder) const
 	{
+            /*
 		try
 		{
 			// TODO: what about moving all the functions into Val
@@ -82,6 +83,7 @@ namespace Clingcon
 			print(grounder, oss);
 			throw TypeException(str, StrLoc(grounder, loc()), oss.str());
 		}
+            */
 		assert(false);
 		return Val::create();
 	}
@@ -119,16 +121,17 @@ namespace Clingcon
                 if(b_.get()){ out << "("; a_->print(sto, out);}
 		switch(f_)
 		{
-			case MathTerm::PLUS:  out << "+"; break;
-			case MathTerm::MINUS: out << "-"; break;
-			case MathTerm::MULT:  out << "*"; break;
-			case MathTerm::DIV:   out << "/"; break;
-			case MathTerm::MOD:   out << "\\"; break;
-			case MathTerm::POW:   out << "**"; break;
-			case MathTerm::AND:   out << "&"; break;
-			case MathTerm::XOR:   out << "^"; break;
-			case MathTerm::OR:    out << "?"; break;
-			case MathTerm::ABS:   break;
+                        case MathTerm::PLUS:   out << "+"; break;
+                        case MathTerm::MINUS:  out << "-"; break;
+                        case MathTerm::MULT:   out << "*"; break;
+                        case MathTerm::DIV:    out << "/"; break;
+                        case MathTerm::MOD:    out << "\\"; break;
+                        case MathTerm::POW:    out << "**"; break;
+                        case MathTerm::AND:    out << "&"; break;
+                        case MathTerm::XOR:    out << "^"; break;
+                        case MathTerm::OR:     out << "?"; break;
+                        case MathTerm::UMINUS: out << "0-"; break;
+                        case MathTerm::ABS:    break;
 		}
                 if(b_.get()) {b_->print(sto, out);out << ")";}
 		else
@@ -139,7 +142,7 @@ namespace Clingcon
 		}
 	}
 
-        void ConstraintMathTerm::normalize(Lit *, const Ref &, Grounder *, Expander *, bool )
+        void ConstraintMathTerm::normalize(Lit *, const Ref &, Grounder *, const Lit::Expander& , bool )
 	{
 //		if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
 //		if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
@@ -170,11 +173,15 @@ namespace Clingcon
                 GroundConstraint::Operator o;
 		switch(f_)
 		{
-                        case MathTerm::PLUS:  o=GroundConstraint::PLUS; break;
-                        case MathTerm::MINUS: o=GroundConstraint::MINUS; break;
-                        case MathTerm::MULT:  o=GroundConstraint::TIMES; break;
-                        case MathTerm::DIV:   o=GroundConstraint::DIVIDE; break;
-                        case MathTerm::ABS:   o=GroundConstraint::ABS; break;
+                        case MathTerm::PLUS:     o=GroundConstraint::PLUS; break;
+                        case MathTerm::MINUS:    o=GroundConstraint::MINUS; break;
+                        case MathTerm::MULT:     o=GroundConstraint::TIMES; break;
+                        case MathTerm::DIV:      o=GroundConstraint::DIVIDE; break;
+                        case MathTerm::ABS:      o=GroundConstraint::ABS; break;
+                        case MathTerm::UMINUS:
+                        {
+                            return new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(b_->loc(), Val::create(Val::NUM,0)).toGroundConstraint(g), a_->toGroundConstraint(g));
+                        }
                         default: throw CSPException("Unsupported Operator");
 		}
 

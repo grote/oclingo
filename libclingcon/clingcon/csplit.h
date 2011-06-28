@@ -40,7 +40,7 @@ namespace Clingcon
 
 		CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b);
                 void grounded(Grounder *grounder);
-		void normalize(Grounder *g, Expander *expander);
+                void normalize(Grounder *g, const Expander& expander);
 		bool fact() const { return false; }
 		void accept(::Printer *v);
                 Index* index(Grounder *g, Formula *gr, VarSet &bound);

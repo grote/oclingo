@@ -1,1 +1,8 @@
-- compute domain of intermediate variables more clever !
+- compute domain of intermediate variables more clever, DONE
+- branch on temporary variables, DONE
+- add global aggregates DONE for DISTINCT;3 times COUNT, BINPACK, more to to
+- add optimization    alle clasp optimums haben vorrang, TODO: decide between search heuristic! (DFS, BAB)
+- add domains for variables, DONE
+- add sum and product, DONE (sum)
+- add spport for constraints in aggregates
+- add statistics from Gecode

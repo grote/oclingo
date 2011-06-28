@@ -24,7 +24,7 @@
 namespace Clingcon
 {
 		
-	class ConstraintPoolTerm : public ConstraintTerm
+        class ConstraintPoolTerm : public ConstraintTerm
 	{
 	public:
 		ConstraintPoolTerm(const Loc &loc, ConstraintTerm *a, ConstraintTerm *b);
@@ -33,8 +33,9 @@ namespace Clingcon
 		bool unify(Grounder *grounder, const Val &v, int binder) const { (void)grounder; (void)v; (void)binder; assert(false); return false; }
 		void vars(VarSet &v) const { (void)v; assert(false); }
 		void visit(PrgVisitor *visitor, bool bind) { (void)visitor; (void)bind; assert(false); }
-		void normalize(Lit *parent, const Ref &ref, Grounder *g, Expander *expander, bool unify);
+                void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution&) const { assert(false); return 0; }
+                virtual bool match(Grounder* ){ return true; }
 		void print(Storage *sto, std::ostream &out) const;
                 ConstraintPoolTerm *clone() const;
 		PoolTerm* toTerm() const

@@ -25,7 +25,7 @@
 
 #include "gringo/rule.h"
 #include "gringo/optimize.h"
-#include "gringo/display.h"
+#include "gringo/show.h"
 #include "gringo/external.h"
 #include "gringo/compute.h"
 
@@ -58,6 +58,7 @@
 #include "clingcon/wrapperfuncterm.h"
 #include "clingcon/wrapperluaterm.h"
 #include "clingcon/wrapperargterm.h"
+#include "clingcon/wrappersumterm.h"
 #include "clingcon/csplit.h"
 #include "clingcon/cspdomain.h"
 #include "clingcon/constraintvarcond.h"
@@ -88,6 +89,8 @@ boost::ptr_vector<T> *vec1(T *x)
 	v->push_back(x);
 	return v;
 }
+
+static unsigned int cspminimizecounter = 1;
 
 }
 
@@ -162,6 +165,9 @@ boost::ptr_vector<T> *vec1(T *x)
 
 %type term { Clingcon::WrapperTerm* }
 %destructor term { del($$); }
+
+%type func { WrapperFuncTerm* }
+%destructor func { del($$); }
 
 %type termlist  { WrapperTermPtrVec* }
 %type nsetterm  { TermPtrVec* }
@@ -249,12 +255,18 @@ boost::ptr_vector<T> *vec1(T *x)
 %destructor ncondcspequallist { del($$); }
 %type condcspequal            { Clingcon::ConstraintVarCond* }
 %destructor condcspequal      { del($$); }
-%type condsetlist       { Clingcon::ConstraintVarCondPtrVec* }
-%destructor condsetlist { del($$); }
-%type ncondsetlist      { Clingcon::ConstraintVarCondPtrVec* }
-%destructor ncondsetlist{ del($$); }
-%type condset           { Clingcon::ConstraintVarCond* }
-%destructor condset     { del($$); }
+%type condsetlist          { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condsetlist    { del($$); }
+%type ncondsetlist         { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondsetlist   { del($$); }
+%type condset              { Clingcon::ConstraintVarCond* }
+%destructor condset        { del($$); }
+%type condatlist           { Clingcon::ConstraintVarCondPtrVec* }
+%destructor condatlist     { del($$); }
+%type ncondatlist          { Clingcon::ConstraintVarCondPtrVec* }
+%destructor ncondatlist    { del($$); }
+%type condat               { Clingcon::ConstraintVarCond* }
+%destructor condat         { del($$); }
 
 %left SEM.
 %left DOTS.
@@ -273,15 +285,15 @@ boost::ptr_vector<T> *vec1(T *x)
 // TODO: remove me!!!
 %left EVEN.
 %left ODD.
-%left MAX.
-%left MIN.
 %left AVG.
 
 start ::= program.
 
 program ::= .
 program ::= program line DOT.
-program ::= program weak(w).  { pCSPParser->add(w); }
+program ::= program weak(w).      { pCSPParser->add(w); }
+program ::= program SHOWDOT(tok). { pCSPParser->show(tok.index); }
+
 
 line ::= INCLUDE STRING(file).                         { pCSPParser->include(file.index); }
 line ::= rule(r).                                      { pCSPParser->add(r); }
@@ -319,53 +331,87 @@ globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; ConstraintVarCond* temp = new ConstraintVarCond(tok.loc(), ONE(tok.loc()),t->toConstraintTerm(), empty); list->push_back(vec1(temp));
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* , Clingcon::CSPLit::Type>(tok, Clingcon::COUNT_UNIQUE,list, cmp); delete t;
                     }
-globalconstrainthead(res) ::= CSPCOUNT(tok) LCBRAC condsetlist(list1) RCBRAC LSBRAC condindexlist(list2) RSBRAC.  {
-                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; list->push_back(list2);
+ globalconstrainthead(res) ::= CSPCOUNT(tok) LCBRAC condsetlist(list1) RCBRAC LSBRAC condindexlist(list2) RSBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); list->push_back(list2);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::COUNT_GLOBAL,list);
                     }
 
+ globalconstrainthead(res) ::= CSPMINIMIZE(tok) LCBRAC condatlist(list1) RCBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MINIMIZE_SET,list);
+                    cspminimizecounter++;
+                    }
 
-ncondsetlist(res) ::= condset(var).                                   { res = vec1(var); }
-ncondsetlist(res) ::= ncondsetlist(list) COMMA condset(var).          { res = list; res->push_back(var); }
-condsetlist(res)  ::= .                                               { res = new ConstraintVarCondPtrVec(); }
-condsetlist(res)  ::= ncondsetlist(list).                             { res = list; }
+ globalconstrainthead(res) ::= CSPMINIMIZE(tok) LSBRAC condatlist(list1) RSBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MINIMIZE,list);
+                    cspminimizecounter++;
+                    }
 
-condset(res) ::= term(t) weightcond(cond).                            { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
+ globalconstrainthead(res) ::= CSPMAXIMIZE(tok) LCBRAC condatlist(list1) RCBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MAXIMIZE_SET,list);
+                    cspminimizecounter++;
+                    }
 
-ncondindexlist(res) ::= condindex(var).                               { res = vec1(var); }
-ncondindexlist(res) ::= ncondindexlist(list) COMMA condindex(var).    { res = list; res->push_back(var); }
-condindexlist(res)  ::= .                                             { res = new ConstraintVarCondPtrVec(); }
-condindexlist(res)  ::= ncondindexlist(list).                              { res = list; }
+ globalconstrainthead(res) ::= CSPMAXIMIZE(tok) LSBRAC condatlist(list1) RSBRAC.  {
+                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
+                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MAXIMIZE,list);
+                    cspminimizecounter++;
+                    }
 
-condindex(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).{ res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+
+ncondsetlist(res) ::= condset(var).                                            { res = vec1(var); }
+ncondsetlist(res) ::= ncondsetlist(list) COMMA condset(var).                   { res = list; res->push_back(var); }
+condsetlist(res)  ::= .                                                        { res = new ConstraintVarCondPtrVec(); }
+condsetlist(res)  ::= ncondsetlist(list).                                      { res = list; }
+
+condset(res) ::= term(t) weightcond(cond).                                     { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
+
+ncondindexlist(res) ::= condindex(var).                                        { res = vec1(var); }
+ncondindexlist(res) ::= ncondindexlist(list) COMMA condindex(var).             { res = list; res->push_back(var); }
+condindexlist(res)  ::= .                                                      { res = new ConstraintVarCondPtrVec(); }
+condindexlist(res)  ::= ncondindexlist(list).                                  { res = list; }
+
+condindex(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).         { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
 
 
-ncondequallist(res) ::= condequal(var).                                         { res = vec1(var); }
-ncondequallist(res) ::= ncondequallist(list) COMMA condequal(var).              { res = list; res->push_back(var); }
-condequallist(res)  ::= .                                                       { res = new ConstraintVarCondPtrVec(); }
-condequallist(res)  ::= ncondequallist(list).                                   { res = list; }
+ncondequallist(res) ::= condequal(var).                                        { res = vec1(var); }
+ncondequallist(res) ::= ncondequallist(list) COMMA condequal(var).             { res = list; res->push_back(var); }
+condequallist(res)  ::= .                                                      { res = new ConstraintVarCondPtrVec(); }
+condequallist(res)  ::= ncondequallist(list).                                  { res = list; }
 
 condequal(res) ::= term(t) EQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
 
 
-ncondcspequallist(res) ::= condcspequal(var).                                         { res = vec1(var); }
-ncondcspequallist(res) ::= ncondcspequallist(list) COMMA condcspequal(var).              { res = list; res->push_back(var); }
-condcspequallist(res)  ::= .                                                       { res = new ConstraintVarCondPtrVec(); }
-condcspequallist(res)  ::= ncondcspequallist(list).                                   { res = list; }
+ncondcspequallist(res) ::= condcspequal(var).                                  { res = vec1(var); }
+ncondcspequallist(res) ::= ncondcspequallist(list) COMMA condcspequal(var).    { res = list; res->push_back(var); }
+condcspequallist(res)  ::= .                                                   { res = new ConstraintVarCondPtrVec(); }
+condcspequallist(res)  ::= ncondcspequallist(list).                            { res = list; }
 
-condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).             { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+
+ncondatlist(res) ::= condat(var).                                              { res = vec1(var); }
+ncondatlist(res) ::= ncondatlist(list) COMMA condat(var).                      { res = list; res->push_back(var); }
+condatlist(res)  ::= .                                                         { res = new ConstraintVarCondPtrVec(); }
+condatlist(res)  ::= ncondatlist(list).                                        { res = list; }
+
+condat(res) ::= term(t) AT term(level) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), level->toTerm(), t->toConstraintTerm(), *cond); delete level; delete cond; }
+condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::create(Val::NUM, cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; }
 
 
+line ::= meta.
 
-meta ::= HIDE      inv_part.                                  { OTP->show(false); }
-meta ::= SHOW      inv_part.                                  { OTP->show(true); }
-meta ::= HIDE      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
-meta ::= SHOW      inv_part signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, true); }
-meta ::= HIDE(tok) inv_part predicate(pred) cond(list).       { pCSPParser->add(new Display(tok.loc(), false, pred, *list)); delete list; }
-meta ::= SHOW(tok) inv_part predicate(pred) cond(list).       { pCSPParser->add(new Display(tok.loc(), true, pred, *list)); delete list; }
-meta ::= CONST     inv_part IDENTIFIER(id) ASSIGN term(term). { pCSPParser->constTerm(id.index, term); }
+meta ::= HIDE.                                       { OTP->hideAll(); }
+meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list, Display::SHOWTERM)); delete term; }
+meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list, Display::SHOWPRED)); delete term; }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::SHOWTERM)); delete list; delete term; }
+meta ::= SHOW(tok) term(term) ncond(list).           { pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::SHOWPRED)); delete list; delete term; }
+meta ::= HIDE(tok) func(f) cond(list).               { pCSPParser->add(new Display(tok.loc(), f->toTerm(), *list, Display::HIDEPRED)); delete list; delete f; }
+meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pCSPParser->add(new Display(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f->toTerm()), *list, Display::HIDEPRED)); delete list; delete f; }
+meta ::= HIDE      signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
+meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pCSPParser->constTerm(id.index, term); }
 
-inv_part ::= . { pCSPParser->invPart(); }
 
 signed(res) ::= IDENTIFIER(id).              { res = id; }
 signed(res) ::= MINUS(minus) IDENTIFIER(id). { res = minus; res.index = GRD->index(std::string("-") + GRD->string(id.index)); }
@@ -403,12 +449,15 @@ lit(res) ::= predlit(pred).            { res = pred; }
 lit(res) ::= term(a) cmp(cmp) term(b). { Term* a_= a->toTerm(); Term* b_ = b->toTerm(); res = new RelLit(a_->loc(), cmp, a_, b_); delete a; delete b;}
 lit(res) ::= TRUE(tok).                { res = new BooleanLit(tok.loc(), true); }
 lit(res) ::= FALSE(tok).               { res = new BooleanLit(tok.loc(), false); }
+lit(res) ::= term(a) CASSIGN term(b).  { res = new RelLit(a->loc(), RelLit::ASSIGN, a->toTerm(), b->toTerm()); delete a; delete b;}
+
 
 csplit(res) ::= term(a) cspcmp(cmp) term(b). { ConstraintTerm* a_= a->toConstraintTerm(); ConstraintTerm* b_ = b->toConstraintTerm(); res = new CSPLit(a_->loc(), cmp, a_, b_); delete a; delete b;}
 
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b->toTerm()); delete b;}
 literal(res) ::= term(a) CASSIGN term(b).      { Term* a_= a->toTerm(); Term* b_ = b->toTerm(); res = new RelLit(a_->loc(), RelLit::ASSIGN, a_, b_); delete a; delete b;}
+
 literal(res) ::= csplit(lit).                  { res = lit; }
 
 body_literal(res) ::= literal(lit).                       { res = lit; }
@@ -461,15 +510,17 @@ term(res) ::= VBAR term(a) VBAR.                            {  res = new Wrapper
 term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.       {  res = new WrapperMathTerm(a->loc(), MathTerm::POW, a, b); }
 term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.       {  res = new WrapperMathTerm(a->loc(), MathTerm::MOD, a, b); }
 term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.       {  res = new WrapperMathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    {  res = new WrapperFuncTerm(id.loc(), id.index, *args); delete args; /*WARUM HIER EIN DELETE, WERDEN TERME/WRAPPERTERME AUCH NICHT GELÖSCHT?*/}
+term(res) ::= func(f).                                      {  res = f; }
 term(res) ::= LBRAC(l) termlist(args) RBRAC.                {  res = args->size() == 1 ? args->pop_back().release() : new WrapperFuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= LBRAC(l) termlist(args) COMMA RBRAC.          {  res = new WrapperFuncTerm(l.loc(), GRD->index(""), *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. {  res = new WrapperLuaTerm(id.loc(), id.index, *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { WrapperTermPtrVec args; res = new WrapperLuaTerm(id.loc(), id.index, args); }
-term(res) ::= MINUS(m) term(a). [UMINUS]                    {  res = new WrapperMathTerm(m.loc(), MathTerm::MINUS, ZERO(m.loc()), a); }
-term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new WrapperMathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
-term(res) ::= CSPSUM(tok) LCBRAC condsetlist(list1) RCBRAC. {tok=tok; list1=list1; res=res;}
+term(res) ::= MINUS(m) term(a). [UMINUS]                    {  res = new WrapperMathTerm(m.loc(), MathTerm::UMINUS, a); }
 
+term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new WrapperMathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
+term(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.  {  res = new WrapperSumTerm(tok.loc(), list); }
+
+func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new WrapperFuncTerm(id.loc(), id.index, *args); delete args; }
 
 
 
