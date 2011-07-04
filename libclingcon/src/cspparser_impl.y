@@ -305,7 +305,7 @@ line ::= VOLATILE IDENTIFIER(id).                      { pCSPParser->incremental
 line ::= BASE.                                         { pCSPParser->incremental(CSPParser::IPART_BASE); }
 line ::= optimize.
 line ::= compute.
-line ::= meta inv_part.
+line ::= meta.
 
 line ::= cspdomain(dom) IF body(body).                                                 {pCSPParser->add(new CSPDomain(dom->loc(), dom, *body)); delete body;}
 line ::= cspdomain(dom).                                                               {pCSPParser->add(new CSPDomain(dom->loc(), dom)); }
@@ -386,7 +386,7 @@ condequal(res) ::= term(t) EQUAL term(index) weightcond(cond).                 {
 
 ncondcspequallist(res) ::= condcspequal(var).                                  { res = vec1(var); }
 ncondcspequallist(res) ::= ncondcspequallist(list) COMMA condcspequal(var).    { res = list; res->push_back(var); }
-condcspequallist(res)  ::= .                                                   { res = new ConstraintVarCondPtrVec(); }
+//condcspequallist(res)  ::= .                                                   { res = new ConstraintVarCondPtrVec(); }
 condcspequallist(res)  ::= ncondcspequallist(list).                            { res = list; }
 
 condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).             { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
@@ -399,8 +399,6 @@ condatlist(res)  ::= ncondatlist(list).                                        {
 condat(res) ::= term(t) AT term(level) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), level->toTerm(), t->toConstraintTerm(), *cond); delete level; delete cond; }
 condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::create(Val::NUM, cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; }
 
-
-line ::= meta.
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
 meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list, Display::SHOWTERM)); delete term; }
@@ -456,7 +454,7 @@ csplit(res) ::= term(a) cspcmp(cmp) term(b). { ConstraintTerm* a_= a->toConstrai
 
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b->toTerm()); delete b;}
-literal(res) ::= term(a) CASSIGN term(b).      { Term* a_= a->toTerm(); Term* b_ = b->toTerm(); res = new RelLit(a_->loc(), RelLit::ASSIGN, a_, b_); delete a; delete b;}
+
 
 literal(res) ::= csplit(lit).                  { res = lit; }
 
