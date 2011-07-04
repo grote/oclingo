@@ -33,9 +33,9 @@ namespace Clingcon
 
 		ConstraintFuncTerm* toConstraintTerm()
 		{
-			ConstraintTermPtrVec vec;
+                        TermPtrVec vec;
 			for (WrapperTermPtrVec::iterator i = args_.begin(); i != args_.end(); ++i)
-				vec.push_back(i->toConstraintTerm());
+                                vec.push_back(i->toTerm());
 			return new ConstraintFuncTerm(loc_,name_, vec);
 		}
 

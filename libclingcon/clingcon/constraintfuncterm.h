@@ -27,7 +27,7 @@ namespace Clingcon
 	class ConstraintFuncTerm : public ConstraintTerm
 	{
 	public:
-		ConstraintFuncTerm(const Loc &loc, uint32_t name, ConstraintTermPtrVec &args);
+                ConstraintFuncTerm(const Loc &loc, uint32_t name, TermPtrVec &args);
 		Val val(Grounder *grounder) const;
                 void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
@@ -40,21 +40,24 @@ namespace Clingcon
                 ConstraintFuncTerm *clone() const;
 		FuncTerm* toTerm() const
 		{
-			TermPtrVec vec;
-			for(ConstraintTermPtrVec::const_iterator i = args_.begin(); i != args_.end(); ++i)
-				vec.push_back(i->toTerm());
-			return new FuncTerm(loc(), name_, vec);
+
+                        #pragma message "can safe a copy here if FuncTerm would take const argument"
+                        TermPtrVec vec = args_;
+                        //for(TermPtrVec::const_iterator i = args_.begin(); i != args_.end(); ++i)
+                        //	vec.push_back(i->toTerm());
+                        return new FuncTerm(loc(), name_, vec);
 		}
 		virtual void visitVarTerm(PrgVisitor* v)
 		{
-			for(ConstraintTermPtrVec::iterator i = args_.begin(); i != args_.end(); ++i)
-				i->visitVarTerm(v);
+                        for(TermPtrVec::iterator i = args_.begin(); i != args_.end(); ++i)
+                                //i->visitVarTerm(v);
+                            v->visit(&(*i),false);
 		}
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
 		~ConstraintFuncTerm();
 	private:
 		uint32_t                name_;
-		ConstraintTermPtrVec              args_;
+                TermPtrVec              args_;
                 mutable clone_ptr<ConstraintFuncTerm> clone_;
 	};
 

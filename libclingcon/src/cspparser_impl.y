@@ -518,7 +518,7 @@ term(res) ::= MINUS(m) term(a). [UMINUS]                    {  res = new Wrapper
 term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new WrapperMathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
 term(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.  {  res = new WrapperSumTerm(tok.loc(), list); }
 
-func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new WrapperFuncTerm(id.loc(), id.index, *args); delete args; }
+func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    {  res = new WrapperFuncTerm(id.loc(), id.index, *args); delete args; }
 
 
 
