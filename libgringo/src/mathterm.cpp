@@ -206,6 +206,7 @@ bool MathTerm::unifiable() const
 				Val a = a_->val(0);
 				return a.type != Val::NUM || a.num != 0;
 			}
+			else { return false; }
 		}
 		case UMINUS: { return a_->unifiable(); }
 		default: { return false; }
