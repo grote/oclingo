@@ -144,7 +144,7 @@ bool JunctionLitDomain::state(Grounder *g)
 
 void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
 {
-	current_->vals.push_back(Val::create(Val::ID, index));
+	current_->vals.push_back(Val::id(index));
 	foreach(uint32_t var, local_[index]) { current_->vals.push_back(g->val(var)); }
 }
 

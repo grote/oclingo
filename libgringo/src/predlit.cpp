@@ -88,7 +88,7 @@ Lit::Monotonicity PredLit::monotonicity() const
 void PredLit::visit(PrgVisitor *v)
 {
 	v->visit(this);
-	foreach(Term &a, terms_) v->visit(&a, !sign() && !head() && !dom()->external());
+	foreach(Term &a, terms_) { v->visit(&a, !sign() && !head() && !dom()->external()); }
 }
 
 void PredLit::vars(VarSet &vars) const

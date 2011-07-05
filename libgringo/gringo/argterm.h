@@ -26,7 +26,7 @@ public:
 	ArgTerm(const Loc &loc, Term *term, TermPtrVec &terms);
 	Split split();
 	void normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify) { (void)parent; (void)ref; (void)g; (void)e; (void)unify; }
-	Val val(Grounder *grounder) const { (void)grounder; assert(false); return Val::create(); }
+	Val val(Grounder *grounder) const { (void)grounder; assert(false); return Val::fail(); }
 	bool constant() const { assert(false); return false; }
 	bool unify(Grounder *grounder, const Val &v, int binder) const { (void)grounder; (void)v; (void)binder; assert(false); return false; }
 	void vars(VarSet &v) const { (void)v; assert(false); }

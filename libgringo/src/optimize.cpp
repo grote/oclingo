@@ -353,7 +353,7 @@ void OptimizeLparseConverter::visit(PredLit *pred)
 		std::stringstream ss;
 		ss << "#pred(" << grounder_->string(pred->dom()->nameId()) << "," << pred->dom()->arity() << ")";
 		uint32_t name  = grounder_->index(ss.str());
-		terms_.push_back(new ConstTerm(pred->loc(), Val::create(Val::ID, name)));
+		terms_.push_back(new ConstTerm(pred->loc(), Val::id(name)));
 	}
 }
 
@@ -387,7 +387,7 @@ void OptimizeLparseConverter::convert(const Loc &loc, Grounder *g, TermPtrVec &t
 		std::stringstream ss;
 		ss << "#multiset(" << (*number)++ << ")";
 		uint32_t name  = g->index(ss.str());
-		terms.push_back(new ConstTerm(loc, Val::create(Val::ID, name)));
+		terms.push_back(new ConstTerm(loc, Val::id(name)));
 		foreach(uint32_t var, conv.vars_) { terms.push_back(new VarTerm(loc, var)); }
 	}
 }

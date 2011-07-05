@@ -32,7 +32,7 @@ Val FuncTerm::val(Grounder *grounder) const
 {
 	ValVec vals;
 	foreach(const Term &term, args_) vals.push_back(term.val(grounder));
-	return Val::create(Val::FUNC, grounder->index(Func(grounder, name_, vals)));
+	return Val::func(grounder->index(Func(grounder, name_, vals)));
 }
 
 void FuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
@@ -54,7 +54,7 @@ AbsTerm::Ref* FuncTerm::abstract(Substitution& subst) const
 {
 	AbsTerm::Children children;
 	foreach(const Term &t, args_) { children.push_back(t.abstract(subst)); }
-	return subst.addTerm(new AbsTerm(Val::create(Val::ID, name_), children));
+	return subst.addTerm(new AbsTerm(Val::id(name_), children));
 }
 
 bool FuncTerm::unify(Grounder *grounder, const Val &v, int binder) const

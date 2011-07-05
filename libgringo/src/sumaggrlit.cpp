@@ -175,7 +175,7 @@ void SumBoundAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &se
 
 SumAssignAggrState::SumAssignAggrState()
 {
-	assign_.push_back(Val::create(Val::NUM, 0));
+	assign_.push_back(Val::number(0));
 	fact_ = true;
 }
 
@@ -191,7 +191,7 @@ void SumAssignAggrState::doAccumulate(Grounder *g, AggrLit &lit, const ValVec &s
 		{
 			if(!fact_ || assign_[i].locked)
 			{
-				assign_.push_back(Val::create(Val::NUM, weight + assign_[i].val.num));
+				assign_.push_back(Val::number(weight + assign_[i].val.num));
 			}
 			else
 			{

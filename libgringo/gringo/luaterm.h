@@ -42,7 +42,7 @@ private:
 
 inline uint32_t LuaTerm::name() const { return name_; }
 
-inline Val LuaTerm::val(Grounder *) const                      { assert(false); return Val::create(); }
+inline Val LuaTerm::val(Grounder *) const                      { assert(false); return Val::fail(); }
 inline bool LuaTerm::constant() const                          { assert(false); return false; }
 inline bool LuaTerm::unify(Grounder *, const Val &, int) const { assert(false); return false; }
 inline void LuaTerm::vars(VarSet &) const                      { assert(false); }

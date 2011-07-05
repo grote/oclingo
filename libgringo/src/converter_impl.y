@@ -21,9 +21,8 @@
 #include "gringo/converter.h"
 #include "gringo/storage.h"
 
-#define ONE   Val::create(Val::NUM, 1)
-#define UNDEF Val::create()
-#define PRIO  Val::create(Val::NUM, pConverter->level())
+#define ONE   Val::number(1)
+#define PRIO  Val::number(pConverter->level())
 
 struct Aggr
 {
@@ -109,10 +108,10 @@ body_literal ::= predlit.
 body_literal ::= aggr_atom.
 body_literal ::= NOT aggr_atom. { pConverter->addSign(); }
 
-string    ::= STRING(id).        { pConverter->addVal(Val::create(Val::ID, id.index)); }
-empty     ::= .                  { pConverter->addVal(Val::create(Val::ID, pConverter->storage()->index(""))); }
-posnumber ::= NUMBER(num).       { pConverter->addVal(Val::create(Val::NUM, num.number)); }
-number    ::= MINUS NUMBER(num). { pConverter->addVal(Val::create(Val::NUM, -num.number)); }
+string    ::= STRING(tok).       { pConverter->addVal(Val::string(tok.index)); }
+empty     ::= .                  { pConverter->addVal(Val::id(pConverter->storage()->index(""))); }
+posnumber ::= NUMBER(num).       { pConverter->addVal(Val::number(num.number)); }
+number    ::= MINUS NUMBER(num). { pConverter->addVal(Val::number(-num.number)); }
 number    ::= posnumber.
 supremum  ::= SUP.               { pConverter->addVal(Val::sup()); }
 infimum   ::= INF.               { pConverter->addVal(Val::inf()); }
@@ -168,7 +167,7 @@ head_ccondlist(res) ::= head_ccondlist(n) VBAR predicate. { res = n + 1; }
 
 disjunction ::= head_ccondlist(n). { pConverter->add(Converter::AGGR_DISJUNCTION, n); }
 
-undef ::= . { pConverter->addVal(UNDEF); }
+undef ::= . { pConverter->addVal(Val::fail()); }
 
 aggr_atom ::= term  aggr_any(aggr) term.  { pConverter->add(aggr.type, aggr.n); }
 aggr_atom ::= undef aggr_any(aggr) term.  { pConverter->add(aggr.type, aggr.n); }

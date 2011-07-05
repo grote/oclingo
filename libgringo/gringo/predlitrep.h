@@ -53,7 +53,7 @@ public:
 	Domain *dom() const { return dom_; }
 	// TODO: remove those functions
 	void push();
-	bool testUnique(PredLitSet &set, Val val=Val::create());
+	bool testUnique(PredLitSet &set, Val val=Val::fail());
 	void pop();
 	void move(size_t p);
 	void clear();

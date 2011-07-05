@@ -80,9 +80,9 @@ namespace reifiedoutput_impl
 		else             { output_->val(head.front()).print(output()->storage(), out()); }
 		out() << ",pos(conjunction(" << body << "))).\n";
 		Val val;
-		val = Val::create(Val::NUM, int(body));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("conjunction"), ValVec(1, val))));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("pos"), ValVec(1, val))));
+		val = Val::number(body);
+		val = Val::func(output_->storage()->index(Func(output_->storage(), output_->storage()->index("conjunction"), ValVec(1, val))));
+		val = Val::func(output_->storage()->index(Func(output_->storage(), output_->storage()->index("pos"), ValVec(1, val))));
 		size_t conjunction = output_->symbol(val);
 		output_->popSet();
 		output_->addDep(conjunction, 2);
@@ -136,12 +136,12 @@ namespace reifiedoutput_impl
 		uint32_t list = output_->addList();
 		output_->popList();
 		ValVec vals;
-		vals.push_back(Val::create(Val::NUM, hasLower_ ? lower_ : min_));
-		vals.push_back(Val::create(Val::NUM, (int)list));
-		vals.push_back(Val::create(Val::NUM, hasUpper_ ? upper_ : max_));
+		vals.push_back(Val::number(hasLower_ ? lower_ : min_));
+		vals.push_back(Val::number(list));
+		vals.push_back(Val::number(hasUpper_ ? upper_ : max_));
 		Val val;
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index("sum"), vals)));
-		val = Val::create(Val::FUNC, output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
+		val = Val::func(output_->storage()->index(Func(output_->storage(), output_->storage()->index("sum"), vals)));
+		val = Val::func(output_->storage()->index(Func(output_->storage(), output_->storage()->index(sign_ ? "neg" : "pos"), ValVec(1, val))));
 		size_t sum = output_->symbol(val);
 		output_->addToSet(sum);
 		if(!sign_ && !head_)

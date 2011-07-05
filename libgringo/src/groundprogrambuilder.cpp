@@ -74,7 +74,7 @@ void GroundProgramBuilder::add()
 				std::copy(stack_->vals.end() - stack_->n, stack_->vals.end(), std::back_inserter(vals));
 				stack_->vals.resize(stack_->vals.size() - stack_->n);
 				uint32_t name = stack_->vals.back().index;
-				stack_->vals.back()  = Val::create(Val::FUNC, storage()->index(Func(storage(), name, vals)));
+				stack_->vals.back()  = Val::func(storage()->index(Func(storage(), name, vals)));
 			}
 			break;
 		}

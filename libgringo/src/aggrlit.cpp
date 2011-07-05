@@ -706,7 +706,7 @@ void LparseAggrCondConverter::visit(PredLit *pred)
 		std::stringstream ss;
 		ss << "#pred(" << grounder_->string(pred->dom()->nameId()) << "," << pred->dom()->arity() << ")";
 		uint32_t name  = grounder_->index(ss.str());
-		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::create(Val::ID, name)));
+		cond_.terms()->push_back(new ConstTerm(cond_.loc(), Val::id(name)));
 	}
 }
 
@@ -738,7 +738,7 @@ void LparseAggrCondConverter::convert(Grounder *g, AggrCond &cond, uint32_t numb
 		std::stringstream ss;
 		ss << "#cond(" << number << ")";
 		uint32_t name  = g->index(ss.str());
-		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::create(Val::ID, name)));
+		cond.terms()->push_back(new ConstTerm(cond.loc(), Val::id(name)));
 		foreach(uint32_t var, conv.vars_) { cond.terms()->push_back(new VarTerm(cond.loc(), var)); }
 	}
 }

@@ -78,8 +78,8 @@ term ::= numterm.
 termlist(res) ::= term.                   { res = 1; }
 termlist(res) ::= termlist(n) COMMA term. { res = n + 1; }
 
-string    ::= STRING(id).        { onlineParser->addVal(Val::create(Val::ID, id.index)); }
+string    ::= STRING(tok).       { onlineParser->addVal(Val::id(tok.index)); }
 numterm   ::= number.            { onlineParser->add(Converter::TERM, 0); }
-number    ::= MINUS NUMBER(num). { onlineParser->addVal(Val::create(Val::NUM, -num.number)); }
+number    ::= MINUS NUMBER(num). { onlineParser->addVal(Val::number(-num.number)); }
 number    ::= posnumber.
-posnumber ::= NUMBER(num).       { onlineParser->addVal(Val::create(Val::NUM, num.number)); }
+posnumber ::= NUMBER(num).       { onlineParser->addVal(Val::number(num.number)); }

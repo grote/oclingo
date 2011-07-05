@@ -40,26 +40,6 @@ namespace
 			return r;
 		}
 	}
-
-	void catchVal(Grounder *g, const MathTerm *term, const Val*val)
-	{
-		std::ostringstream oss;
-		if(term->f() == MathTerm::UMINUS)
-		{
-			oss << "cannot invert term ";
-			val->print(g, oss);
-		}
-		else
-		{
-			oss << "cannot convert ";
-			val->print(g, oss);
-			oss << " to integer";
-		}
-		std::string str(oss.str());
-		oss.str("");
-		term->print(g, oss);
-		throw TypeException(str, StrLoc(g, term->loc()), oss.str());
-	}
 }
 
 MathTerm::MathTerm(const Loc &loc, const Func &f, Term *a, Term *b) :
@@ -69,71 +49,67 @@ MathTerm::MathTerm(const Loc &loc, const Func &f, Term *a, Term *b) :
 
 Val MathTerm::val(Grounder *g) const
 {
-	try
+	Val va = a_->val(g);
+	if(f_ == UMINUS)   { return va.invert(g); }
+	else if(f_ == ABS) { return va.type == Val::NUM ? Val::number(std::abs(va.num)) : Val::undef(); }
+	else
 	{
-		// TODO: what about moving all the functions into Val
-		switch(f_)
+		Val vb = b_->val(g);
+		if(va.type == Val::NUM && vb.type == Val::NUM)
 		{
-			case PLUS:   return Val::create(Val::NUM, a_->val(g).number() + b_->val(g).number()); break;
-			case MINUS:  return Val::create(Val::NUM, a_->val(g).number() - b_->val(g).number()); break;
-			case MULT:   return Val::create(Val::NUM, a_->val(g).number() * b_->val(g).number()); break;
-			case DIV:    return Val::create(Val::NUM, a_->val(g).number() / b_->val(g).number()); break;
-			case MOD:    return Val::create(Val::NUM, a_->val(g).number() % b_->val(g).number()); break;
-			case POW:    return Val::create(Val::NUM, ipow(a_->val(g).number(), b_->val(g).number())); break;
-			case AND:    return Val::create(Val::NUM, a_->val(g).number() & b_->val(g).number()); break;
-			case XOR:    return Val::create(Val::NUM, a_->val(g).number() ^ b_->val(g).number()); break;
-			case OR:     return Val::create(Val::NUM, a_->val(g).number() | b_->val(g).number()); break;
-			case ABS:    return Val::create(Val::NUM, std::abs(a_->val(g).number())); break;
-			case UMINUS: return a_->val(g).invert(g); break;
+			switch(f_)
+			{
+				case PLUS:  { return Val::number(va.num + vb.num); }
+				case MINUS: { return Val::number(va.num - vb.num); }
+				case MULT:  { return Val::number(va.num * vb.num); }
+				case DIV:   { return vb.num == 0 ? Val::undef() : Val::number(va.num / vb.num); }
+				case MOD:   { return vb.num == 0 ? Val::undef() : Val::number(va.num % vb.num); }
+				case POW:   { return Val::number(ipow(va.num, vb.num)); }
+				case AND:   { return Val::number(va.num & vb.num); }
+				case XOR:   { return Val::number(va.num ^ vb.num); }
+				case OR:    { return Val::number(va.num | vb.num); }
+				default:    { assert(false); return Val::fail(); }
+			}
 		}
+		else { return Val::undef(); }
 	}
-	catch(const Val *val) { catchVal(g, this, val); }
-	assert(false);
-	return Val::create();
+}
+
+namespace
+{
+	bool _unify(Grounder *g, MathTerm::Func f, const Term &t, const Val &a, const Val &b, int binder)
+	{
+		assert(t.unifiable() && !t.constant());
+		if(a.type == Val::NUM && b.type == Val::NUM)
+		{
+			switch(f)
+			{
+				case MathTerm::PLUS:  { return t.unify(g, Val::number(a.num - b.num), binder); }
+				case MathTerm::MINUS: { return t.unify(g, Val::number(a.num + b.num), binder); }
+				case MathTerm::MULT:  { return a.num % b.num == 0 && t.unify(g, Val::number(a.num / b.num), binder); }
+				default:              { assert(false); return false; }
+			}
+		}
+		else if(a.type != Val::UNDEF) { return false; }
+		else                          { return t.unify(g, a, binder); }
+	}
 }
 
 bool MathTerm::unify(Grounder *g, const Val &v, int binder) const
 {
 	if(constant()) { return v == val(g); }
-	else if(f_ == UMINUS || b_->constant())
+	else if(f_ == UMINUS)
 	{
 		assert(a_->unifiable());
-		try
-		{
-			switch(f_)
-			{
-				case PLUS:   { return v.type == Val::NUM && a_->unify(g, Val::create(Val::NUM, v.num - b_->val(g).number()), binder); }
-				case MINUS:  { return v.type == Val::NUM && a_->unify(g, Val::create(Val::NUM, v.num + b_->val(g).number()), binder); }
-				case UMINUS: { return v.type == Val::NUM && a_->unify(g, v, binder); }
-				case MULT:
-				{
-					int32_t b = b_->val(g).number();
-					return v.type == Val::NUM && v.num % b == 0 && a_->unify(g, Val::create(Val::NUM, v.num / b), binder);
-				}
-				default: { break; }
-			}
-		} catch(const Val *val) { catchVal(g, this, val); }
+		return a_->unify(g, v.invert(g), binder);
 	}
 	else
 	{
-		assert(a_->constant() && b_->unifiable());
-		try
-		{
-			switch(f_)
-			{
-				case PLUS:  { return v.type == Val::NUM && b_->unify(g, Val::create(Val::NUM, v.num - a_->val(g).number()), binder); }
-				case MINUS: { return v.type == Val::NUM && b_->unify(g, Val::create(Val::NUM, a_->val(g).number() - v.num), binder); }
-				case MULT:
-				{
-					int32_t a = a_->val(g).number();
-					return v.type == Val::NUM && v.num % a == 0 && b_->unify(g, Val::create(Val::NUM, v.num / a), binder);
-				}
-				default: { break; }
-			}
-		} catch(const Val *val) { catchVal(g, this, val); }
+		assert(f_ == PLUS || f_ == MINUS || f_ == MULT);
+		assert(a_->constant() || b_->constant());
+		if(a_->constant()) { return _unify(g, f_, *b_, f_ == MINUS && v.type == Val::NUM ? v.invert(g) : v, a_->val(g), binder); }
+		else               { return _unify(g, f_, *a_, v, b_->val(g), binder); }
 	}
-	assert(false);
-	return false;
 }
 
 void MathTerm::vars(VarSet &v) const
@@ -158,17 +134,17 @@ void MathTerm::print(Storage *sto, std::ostream &out) const
 	if(b_.get()) { a_->print(sto, out); }
 	switch(f_)
 	{
-		case PLUS:  out << "+"; break;
-		case MINUS: out << "-"; break;
-		case MULT:  out << "*"; break;
-		case DIV:   out << "/"; break;
-		case MOD:   out << "\\"; break;
-		case POW:   out << "**"; break;
-		case AND:   out << "&"; break;
-		case XOR:   out << "^"; break;
-		case OR:    out << "?"; break;
+		case PLUS:  { out << "+"; break; }
+		case MINUS: { out << "-"; break; }
+		case MULT:  { out << "*"; break; }
+		case DIV:   { out << "/"; break; }
+		case MOD:   { out << "\\"; break; }
+		case POW:   { out << "**"; break; }
+		case AND:   { out << "&"; break; }
+		case XOR:   { out << "^"; break; }
+		case OR:    { out << "?"; break; }
 		case UMINUS:
-		case ABS:   break;
+		case ABS:   { break; }
 	}
 	if(b_.get()) { b_->print(sto, out); }
 	else if(f_ == UMINUS)
@@ -215,8 +191,8 @@ bool MathTerm::unifiable() const
 
 void MathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Expander &e, bool unify)
 {
-	if(a_.get()) a_->normalize(parent, PtrRef(a_), g, e, false);
-	if(b_.get()) b_->normalize(parent, PtrRef(b_), g, e, false);
+	if(a_.get()) { a_->normalize(parent, PtrRef(a_), g, e, false); }
+	if(b_.get()) { b_->normalize(parent, PtrRef(b_), g, e, false); }
 	if((!a_.get() || a_->constant()) && (!b_.get() || b_->constant()))
 	{
 		ref.reset(new ConstTerm(loc(), val(g)));

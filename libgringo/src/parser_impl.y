@@ -50,9 +50,9 @@
 
 #define GRD pParser->grounder()
 #define OTP pParser->grounder()->output()
-#define ONE(loc) new ConstTerm(loc, Val::create(Val::NUM, 1))
-#define ZERO(loc) new ConstTerm(loc, Val::create(Val::NUM, 0))
-#define MINUSONE(loc) new ConstTerm(loc, Val::create(Val::NUM, -1))
+#define ONE(loc) new ConstTerm(loc, Val::number(1))
+#define ZERO(loc) new ConstTerm(loc, Val::number(0))
+#define MINUSONE(loc) new ConstTerm(loc, Val::number(-1))
 
 template <class T>
 void del(T x)
@@ -305,10 +305,11 @@ cmp(res) ::= INEQUAL. { res = RelLit::INEQUAL; }
 term(res) ::= VARIABLE(var).  { res = new VarTerm(var.loc(), var.index); }
 term(res) ::= IDENTIFIER(id). { res = pParser->term(Val::ID, id.loc(), id.index); }
 term(res) ::= STRING(id).     { res = pParser->term(Val::STRING, id.loc(), id.index); }
-term(res) ::= NUMBER(num).    { res = new ConstTerm(num.loc(), Val::create(Val::NUM, num.number)); }
+term(res) ::= NUMBER(num).    { res = new ConstTerm(num.loc(), Val::number(num.number)); }
 term(res) ::= ANONYMOUS(var). { res = new VarTerm(var.loc()); }
-term(res) ::= INFIMUM(inf).   { res = new ConstTerm(inf.loc(), Val::create(Val::INF, 0)); }
-term(res) ::= SUPREMUM(sup).  { res = new ConstTerm(sup.loc(), Val::create(Val::SUP, 0)); }
+term(res) ::= INFIMUM(tok).   { res = new ConstTerm(tok.loc(), Val::inf()); }
+term(res) ::= SUPREMUM(tok).  { res = new ConstTerm(tok.loc(), Val::sup()); }
+term(res) ::= UNDEF(tok).     { res = new ConstTerm(tok.loc(), Val::undef()); }
 
 term(res) ::= term(a) DOTS term(b).                         { res = new RangeTerm(a->loc(), a, b); }
 term(res) ::= term(a) SEM term(b).                          { res = new PoolTerm(a->loc(), a, b); }

@@ -105,7 +105,7 @@ namespace
 	{
 		if(current_ <= upper_)
 		{
-			grounder->val(var_, Val::create(Val::NUM, current_++), binder);
+			grounder->val(var_, Val::number(current_++), binder);
 			return true;
 		}
 		else { return false; }

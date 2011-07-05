@@ -83,7 +83,7 @@ namespace
 
 	std::pair<bool,bool> IncIndex::firstMatch(Grounder *grounder, int binder)
 	{
-		grounder->val(lit_->var()->index(), Val::create(Val::NUM, lit_->config().incStep), binder);
+		grounder->val(lit_->var()->index(), Val::number(lit_->config().incStep), binder);
 		return std::make_pair(true, hasNew());
 	}
 

@@ -38,15 +38,15 @@ void Val::print(Storage *sto, std::ostream &out) const
 		case NUM:    { out << num; break; }
 		case FUNC:   { sto->func(index).print(sto, out); break; }
 		case INF:    { out << "#infimum"; break; }
+		case UNDEF:  { out << "#undef"; break; }
 		case SUP:    { out << "#supremum"; break; }
-		case UNDEF:  { assert(false); break; }
-		default:     { return sto->print(out, type, index); }
+		default:     { assert(false); break; }
 	}
 }
 
 int Val::compare(const Val &v, Storage *s) const
 {
-	if(type != v.type) return type < v.type ? -1 : 1;
+	if(type != v.type) { return type < v.type ? -1 : 1; }
 	switch(type)
 	{
 		case ID:
@@ -54,18 +54,18 @@ int Val::compare(const Val &v, Storage *s) const
 		case NUM:    { return num - v.num; }
 		case FUNC:   { return s->func(index).compare(s->func(v.index), s); }
 		case INF:
-		case SUP:    { return 0; }
-		case UNDEF:  { assert(false); break; }
+		case SUP:
+		case UNDEF:  { return 0; }
+		default:     { assert(false); return 0; }
 	}
-	return s->compare(type, index, v.index);
 }
 
 int Val::compare(const int64_t &v, Storage *) const
 {
-	if(type != NUM) return type < NUM ? -1 : 1;
-	if(num < v) { return -1; }
-	if(num > v) { return 1; }
-	else        { return 0; }
+	if(type != NUM) { return type < NUM ? -1 : 1; }
+	if(num < v)     { return -1; }
+	if(num > v)     { return 1; }
+	else            { return 0; }
 }
 
 int Val::compare(Storage *s, const ValVec &a, const ValVec &b)
@@ -87,20 +87,19 @@ Val Val::invert(Storage *s) const
 {
 	switch(type)
 	{
-		case ID:     { return Val::create(Val::ID, invertId(this, index, s)); }
-		case STRING: { throw this; }
-		case NUM:    { return Val::create(Val::NUM, -num); }
+		case ID:     { return Val::id(invertId(this, index, s)); }
+		case STRING: { return Val::undef(); }
+		case NUM:    { return Val::number(-num); }
 		case FUNC:
 		{
 			const Func &f = s->func(index);
-			return Val::create(Val::FUNC, s->index(Func(s, invertId(this, f.name(), s), f.args())));
+			return Val::func(s->index(Func(s, invertId(this, f.name(), s), f.args())));
 		}
 		case INF:    { return Val::sup(); }
 		case SUP:    { return Val::inf(); }
-		case UNDEF:  { assert(false); break; }
+		case UNDEF:  { return Val::undef(); }
+		default:     { assert(false); return Val::fail(); }
 	}
-	assert(false);
-	return *this;
 }
 
 ///////////////////////////// anonymous /////////////////////////////

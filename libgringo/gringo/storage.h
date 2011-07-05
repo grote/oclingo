@@ -50,8 +50,6 @@ public:
 	Domain *domain(uint32_t nameId, uint32_t arity);
 	const DomainMap &domains() const { return doms_; }
 	Output *output() const { return output_; }
-	virtual void print(std::ostream &out, uint32_t type, uint32_t index);
-	virtual int compare(uint32_t type, uint32_t a, uint32_t b);
 	~Storage();
 private:
 	StringSet strings_;
@@ -59,6 +57,3 @@ private:
 	DomainMap doms_;
 	Output   *output_;
 };
-
-inline void Storage::print(std::ostream &, uint32_t, uint32_t) { assert(false); }
-inline int Storage::compare(uint32_t, uint32_t, uint32_t) { assert(false); return 0; }

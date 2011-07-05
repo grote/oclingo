@@ -154,7 +154,7 @@ void Converter::parse()
 void Converter::addSigned(uint32_t index, bool sign)
 {
 	if(sign) { index = storage()->index(std::string("-") + storage()->string(index)); }
-	return addVal(Val::create(Val::ID, index));
+	return addVal(Val::id(index));
 }
 
 

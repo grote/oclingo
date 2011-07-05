@@ -199,18 +199,18 @@ size_t ReifiedOutput::symbol(PredLitRep *pred)
 	Val val;
 	if(pred->dom()->arity() > 0)
 	{
-		val = Val::create(Val::FUNC, storage()->index(Func(storage(), pred->dom()->nameId(), ValVec(pred->vals().begin(), pred->vals().end()))));
+		val = Val::func(storage()->index(Func(storage(), pred->dom()->nameId(), ValVec(pred->vals().begin(), pred->vals().end()))));
 	}
-	else { val = Val::create(Val::ID, pred->dom()->nameId()); }
-	val = Val::create(Val::FUNC, storage()->index(Func(storage(), storage()->index("atom"), ValVec(1, val))));
-	val = Val::create(Val::FUNC, storage()->index(Func(storage(), storage()->index(pred->sign() ? "neg" : "pos"), ValVec(1, val))));
+	else { val = Val::id(pred->dom()->nameId()); }
+	val = Val::func(storage()->index(Func(storage(), storage()->index("atom"), ValVec(1, val))));
+	val = Val::func(storage()->index(Func(storage(), storage()->index(pred->sign() ? "neg" : "pos"), ValVec(1, val))));
 	return symbol(val);
 }
 
 void ReifiedOutput::minimize(size_t sym, int weight, int prio)
 {
 	List & list = minimize_[prio];
-	if(weight != 0) { list.push_back(List::value_type(sym, Val::create(Val::NUM, weight))); }
+	if(weight != 0) { list.push_back(List::value_type(sym, Val::number(weight))); }
 }
 
 void ReifiedOutput::tarjan()

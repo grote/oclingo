@@ -106,6 +106,7 @@ start:
 		"#external"      { return PARSER_EXTERNAL; }
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
+		"#undef"         { return PARSER_UNDEF; }
 		SHOWDOT          { token_.index  = g_->index(string()); return PARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return PARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
@@ -225,6 +226,7 @@ start:
 		"#external"      { return PARSER_EXTERNAL; }
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
+		"#undef"         { return PARSER_UNDEF; }
 		SHOWDOT          { token_.index  = g_->index(string()); return PARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return PARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
@@ -425,13 +427,13 @@ Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 		{
 			ConstMap::const_iterator res = constMap_.find(index);
 			if(res != constMap_.end()) { return res->second->clone(); }
-			else                       { return new ConstTerm(loc, Val::create(Val::ID, index)); }
+			else                       { return new ConstTerm(loc, Val::id(index)); }
 		}
 	}
 	else
 	{
 		assert(t == Val::STRING);
-		return new ConstTerm(loc, Val::create(Val::STRING, index));
+		return new ConstTerm(loc, Val::string(index));
 	}
 }
 
@@ -601,15 +603,15 @@ Optimize *Parser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *term
 		if(!weight)
 		{
 			assert(!body->empty());
-			weight = new ConstTerm(loc, Val::create(Val::NUM, 1));
+			weight = new ConstTerm(loc, Val::number(1));
 		}
 		pTerms->push_back(weight);
 	}
 	else { assert(weight == 0); }
 	assert(!pTerms->empty());
-	if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
+	if(!prio) { prio = new ConstTerm(loc, Val::number(level_)); }
 	pTerms->insert(pTerms->begin() + 1, prio);
-	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
+	std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::number(level_)));
 	pTerms->insert(pTerms->begin() + 2, optnum);
 	return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }

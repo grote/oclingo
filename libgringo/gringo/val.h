@@ -30,12 +30,17 @@ typedef std::vector<Val> ValVec;
 
 struct Val
 {
-	enum Type { INF=0, NUM, ID, FUNC, STRING, UNDEF=200, SUP=20000 };
-	static inline Val create();
-	static inline Val create(uint32_t t, int num);
-	static inline Val create(uint32_t t, uint32_t index);
+	enum Type { INF, NUM, ID, FUNC, STRING, FAIL, UNDEF, SUP };
+
 	static inline Val inf();
+	static inline Val number(int32_t num);
+	static inline Val id(uint32_t id);
+	static inline Val func(uint32_t id);
+	static inline Val string(uint32_t id);
+	static inline Val fail();
+	static inline Val undef();
 	static inline Val sup();
+
 	inline size_t hash() const;
 	inline bool operator==(const Val &v) const;
 	bool operator!=(const Val &v) const { return !operator ==(v); }
@@ -43,26 +48,30 @@ struct Val
 	int compare(const int64_t &v, Storage *s) const;
 	static int compare(Storage *s, ValVec const &a, ValVec const &b);
 	void print(Storage *sto, std::ostream &out) const;
-	int number() const;
+	int32_t  number() const;
 	uint32_t type;
 	Val invert(Storage *s) const;
 	union
 	{
-		int num;
+		int32_t  num;
 		uint32_t index;
 	};
 
+private:
+	static inline Val create();
+	static inline Val create(uint32_t t, int32_t num);
+	static inline Val create(uint32_t t, uint32_t index);
 };
 
 Val Val::create()
 {
 	Val v;
-	v.type = UNDEF;
+	v.type = FAIL;
 	v.num  = 0;
 	return v;
 }
 
-Val Val::create(uint32_t t, int n)
+Val Val::create(uint32_t t, int32_t n)
 {
 	Val v;
 	v.type = t;
@@ -86,13 +95,41 @@ Val Val::inf()
 	return v;
 }
 
+Val Val::fail()
+{
+	return create(FAIL, 0);
+}
+
+Val Val::number(int32_t num)
+{
+	return create(NUM, num);
+}
+
+Val Val::id(uint32_t id)
+{
+	return create(ID, id);
+}
+
+Val Val::func(uint32_t id)
+{
+	return create(FUNC, id);
+}
+
+Val Val::string(uint32_t id)
+{
+	return create(STRING, id);
+}
+
+Val Val::undef()
+{
+	return create(UNDEF, 0);
+}
+
 Val Val::sup()
 {
-	Val v;
-	v.type = SUP;
-	v.num  = 0;
-	return v;
+	return create(SUP, 0);
 }
+
 
 size_t Val::hash() const
 {
@@ -100,9 +137,10 @@ size_t Val::hash() const
 	switch(type)
 	{
 		case INF:
-		case SUP: { return hash; }
-		case NUM: { boost::hash_combine(hash, num); return hash; }
-		default:  { boost::hash_combine(hash, index); return hash; }
+		case SUP:
+		case UNDEF: { return hash; }
+		case NUM:   { boost::hash_combine(hash, num); return hash; }
+		default:    { boost::hash_combine(hash, index); return hash; }
 	}
 }
 
@@ -112,9 +150,10 @@ bool Val::operator==(const Val &v) const
 	switch(type)
 	{
 		case INF:
-		case SUP: { return true; }
-		case NUM: { return num == v.num; }
-		default:  { return index == v.index; }
+		case SUP:
+		case UNDEF: { return true; }
+		case NUM:   { return num == v.num; }
+		default:    { return index == v.index; }
 	}
 }
 

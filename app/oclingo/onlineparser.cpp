@@ -93,7 +93,7 @@ void OnlineParser::parse()
 void OnlineParser::addSigned(uint32_t index, bool sign)
 {
 	if(sign) { index = storage()->index(std::string("-") + storage()->string(index)); }
-	addVal(Val::create(Val::ID, index));
+	addVal(Val::id(index));
 }
 
 void OnlineParser::doAdd() {
