@@ -40,21 +40,6 @@ namespace
 {
 	static const char *VAL = "Val";
 
-	static const char *typeVal(lua_State *L, Val *val)
-	{
-		(void)L;
-		switch(val->type)
-		{
-			case Val::INF:    { return "INF"; }
-			case Val::ID:     { return "ID"; }
-			case Val::STRING: { return "STRING"; }
-			case Val::NUM:    { return "NUM"; }
-			case Val::FUNC:   { return "FUNC"; }
-			case Val::SUP:    { return "SUP"; }
-			default:          { return "UNKNOWN"; }
-		}
-	}
-
 	static Val *checkVal (lua_State *L, int index)
 	{
 		Val *val;
@@ -122,17 +107,17 @@ namespace
 			{
 				const char *id   = lua_tostring(L, index);
 				Storage *storage = checkStorage(L);
-				return Val::create(Val::STRING, storage->index(std::string(id)));
+				return Val::string(storage->index(std::string(id)));
 			}
 			case LUA_TNUMBER:
 			{
 				int num = lua_tointeger(L, index);
-				return Val::create(Val::NUM, num);
+				return Val::number(num);
 			}
 			case LUA_TBOOLEAN:
 			{
 				int num = lua_toboolean(L, index);
-				return Val::create(Val::NUM, num);
+				return Val::number(num);
 			}
 			case LUA_TUSERDATA:
 			{
@@ -144,30 +129,24 @@ namespace
 				ss << "string, number, or Val expected, got ";
 				ss << lua_typename(L, type);
 				luaL_argerror(L, index, ss.str().c_str());
-				return Val::create();
-			}
-		}
-	}
-
-	static int typeVal(lua_State *L, int index)
-	{
-		int type = lua_type(L, index);
-		switch(type)
-		{
-			case LUA_TNUMBER: { return Val::NUM; }
-			case LUA_TSTRING: { return Val::STRING; }
-			default:
-			{
-				Val *val  = checkVal(L, index);
-				return val->type;
+				return Val::fail();
 			}
 		}
 	}
 
 	static int Val_isFunc (lua_State *L)
 	{
-		Val *val = getVal(L);
-		lua_pushboolean(L, val && val->type == Val::FUNC);
+		Storage *storage = checkStorage(L);
+		Val     *val     = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::FUNC && storage->string(storage->func(val->index).name()) != "");
+		return 1;
+	}
+
+	static int Val_isTuple (lua_State *L)
+	{
+		Storage *storage = checkStorage(L);
+		Val     *val     = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::FUNC && storage->string(storage->func(val->index).name()) == "");
 		return 1;
 	}
 
@@ -182,6 +161,13 @@ namespace
 	{
 		Val *val = getVal(L);
 		lua_pushboolean(L, val && val->type == Val::SUP);
+		return 1;
+	}
+
+	static int Val_isUndef(lua_State *L)
+	{
+		Val *val = getVal(L);
+		lua_pushboolean(L, val && val->type == Val::UNDEF);
 		return 1;
 	}
 
@@ -206,117 +192,78 @@ namespace
 		return 1;
 	}
 
-	static int Val_new (lua_State *L)
+	static int Val_func (lua_State *L)
 	{
-		int type  = luaL_checkinteger(L, 1);
-		switch(type)
+		Storage *storage = checkStorage(L);
+		const char *name = luaL_checkstring(L, 1);
+		luaL_checktype(L, 2, LUA_TTABLE);
+		ValVec vals;
+		lua_pushnil(L);
+		while (lua_next(L, 2) != 0)
 		{
-			case Val::STRING:
-			{
-				luaL_checkstring(L, 2);
-				lua_pushvalue(L, 2);
-				break;
-			}
-			case Val::NUM:
-			{
-				luaL_checkinteger(L, 2);
-				lua_pushinteger(L, lua_tointeger(L, 2));
-				break;
-			}
-			case Val::SUP:
-			case Val::INF:
-			{
-				pushVal(L, Val::create(type, 0));
-				break;
-			}
-			case Val::ID:
-			{
-				Storage *storage = checkStorage(L);
-				const char *name;
-				name = luaL_checkstring(L, 2);
-				uint32_t index = storage->index(std::string(name));
-				pushVal(L, Val::create(type, index));
-				break;
-			}
-			case Val::FUNC:
-			{
-				Storage *storage = checkStorage(L);
-				const char *name;
-				int table;
-				if(lua_type(L, 2) == LUA_TTABLE)
-				{
-					name = "";
-					luaL_checktype(L, 2, LUA_TTABLE);
-					table = 2;
-				}
-				else
-				{
-					name = luaL_checkstring(L, 2);
-					luaL_checktype(L, 3, LUA_TTABLE);
-					table = 3;
-				}
-				ValVec vals;
-				lua_pushnil(L);
-				while (lua_next(L, table) != 0)
-				{
-					vals.push_back(toVal(L, -1));
-					lua_pop(L, 1); // pop val
-				}
-				uint32_t index = storage->index(Func(storage, storage->index(std::string(name)), vals));
-				pushVal(L, Val::create(type, index));
-				break;
-			}
-			default:
-			{
-				luaL_argerror(L, 2, "unknown type");
-				break;
-			}
+			vals.push_back(toVal(L, -1));
+			lua_pop(L, 1); // pop val
 		}
+		uint32_t index = storage->index(Func(storage, storage->index(std::string(name)), vals));
+		pushVal(L, Val::func(index));
 		return 1;
 	}
 
-	// convienience functions
-	static int Val_func (lua_State *L)
+	static int Val_tuple (lua_State *L)
 	{
-		lua_pushinteger(L, Val::FUNC); lua_insert(L, 1);
-		return Val_new(L);
+		Storage *storage = checkStorage(L);
+		luaL_checktype(L, 1, LUA_TTABLE);
+		ValVec vals;
+		lua_pushnil(L);
+		while (lua_next(L, 1) != 0)
+		{
+			vals.push_back(toVal(L, -1));
+			lua_pop(L, 1); // pop val
+		}
+		uint32_t index = storage->index(Func(storage, storage->index(std::string("")), vals));
+		pushVal(L, Val::func(index));
+		return 1;
 	}
 
 	static int Val_id (lua_State *L)
 	{
-		lua_pushinteger(L, Val::ID); lua_insert(L, 1);
-		return Val_new(L);
+		Storage *storage = checkStorage(L);
+		const char *name;
+		name = luaL_checkstring(L, 1);
+		uint32_t index = storage->index(std::string(name));
+		pushVal(L, Val::id(index));
+		return 1;
 	}
 
 	static int Val_sup (lua_State *L)
 	{
-		lua_pushinteger(L, Val::SUP); lua_insert(L, 1);
-		return Val_new(L);
+		pushVal(L, Val::sup());
+		return 1;
 	}
 
 	static int Val_inf (lua_State *L)
 	{
-		lua_pushinteger(L, Val::INF); lua_insert(L, 1);
-		return Val_new(L);
+		pushVal(L, Val::inf());
+		return 1;
 	}
 
-	static int Val_type (lua_State *L)
+	static int Val_undef (lua_State *L)
 	{
-		lua_pushinteger(L, typeVal(L, 1));
+		pushVal(L, Val::undef());
 		return 1;
 	}
 
 	static int Val_name (lua_State *L)
 	{
-		Val *val  = checkVal(L, 1);
-		if(val->type != Val::FUNC && val->type != Val::ID)
+		Storage *storage = checkStorage(L);
+		Val *val         = checkVal(L, 1);
+		if((val->type != Val::FUNC || storage->string(storage->func(val->index).name()) == "") && val->type != Val::ID)
 		{
 			std::stringstream ss;
-			ss << "Val.FUNC or Val.ID expected, but got Val.";
-			ss << typeVal(L, val);
+			ss << "Function or identifier expected, but got: ";
+			val->print(storage, ss);
 			luaL_argerror(L, 1, ss.str().c_str());
 		}
-		Storage *storage = checkStorage(L);
 		if(val->type == Val::FUNC)
 		{
 			const Func &f = storage->func(val->index);
@@ -331,12 +278,13 @@ namespace
 
 	static int Val_args (lua_State *L)
 	{
-		Val *val  = checkVal(L, 1);
+		Val *val = checkVal(L, 1);
 		if(val->type != Val::FUNC)
 		{
+			Storage *storage = checkStorage(L);
 			std::stringstream ss;
-			ss << "Val.FUNC expected, but got ";
-			ss << typeVal(L, val);
+			ss << "Function expected, but got: ";
+			val->print(storage, ss);
 			luaL_argerror(L, 1, ss.str().c_str());
 		}
 		const Func &f = checkStorage(L)->func(val->index);
@@ -353,57 +301,33 @@ namespace
 
 	static int Val_cmp (lua_State *L)
 	{
-		int t1 = typeVal(L, 1);
-		int t2 = typeVal(L, 2);
-		if(t1 != t2) { lua_pushinteger(L, t1 < t2 ? -1 : 1); }
-		else
-		{
-			switch(t1)
-			{
-				case Val::STRING:
-				{
-					lua_pushinteger(L, strcmp(lua_tostring(L, 1), lua_tostring(L, 2)));
-					break;
-				}
-				case Val::NUM:
-				{
-					lua_pushinteger(L, lua_tointeger(L, 1) - lua_tointeger(L, 2));
-					break;
-				}
-				case Val::ID:
-				case Val::FUNC:
-				{
-					Storage *storage = checkStorage(L);
-					lua_pushinteger(L, checkVal(L, 1)->compare(*checkVal(L, 2), storage));
-					break;
-				}
-				default:
-				{
-					lua_pushinteger(L, 0);
-					break;
-				}
-			}
-		}
+		lua_pushinteger(L, toVal(L, 1).compare(toVal(L, 2), checkStorage(L)));
 		return 1;
 	}
 
 	static const luaL_reg Val_methods[] =
 	{
-		{"new",      Val_new },
 		{"func",     Val_func },
+		{"tuple",    Val_tuple },
 		{"id",       Val_id },
 		{"sup",      Val_sup },
 		{"inf",      Val_inf },
+		{"undef",    Val_undef },
+
 		{"isFunc",   Val_isFunc },
+		{"isTuple",  Val_isTuple },
 		{"isId",     Val_isId },
 		{"isSup",    Val_isSup },
 		{"isInf",    Val_isInf },
 		{"isNum",    Val_isNum },
+		{"isUndef",  Val_isUndef },
 		{"isString", Val_isString },
+
 		{"cmp",      Val_cmp },
-		{"type",     Val_type },
+
 		{"name",     Val_name },
 		{"args",     Val_args },
+
 		{0, 0}
 	};
 
@@ -427,30 +351,6 @@ namespace
 	{
 		luaL_openlib(L, VAL, Val_methods, 0);
 
-		lua_pushliteral(L, "INF");
-		lua_pushinteger(L, Val::INF);
-		lua_rawset(L, -3);
-
-		lua_pushliteral(L, "ID");
-		lua_pushinteger(L, Val::ID);
-		lua_rawset(L, -3);
-
-		lua_pushliteral(L, "STRING");
-		lua_pushinteger(L, Val::STRING);
-		lua_rawset(L, -3);
-
-		lua_pushliteral(L, "NUM");
-		lua_pushinteger(L, Val::NUM);
-		lua_rawset(L, -3);
-
-		lua_pushliteral(L, "FUNC");
-		lua_pushinteger(L, Val::FUNC);
-		lua_rawset(L, -3);
-
-		lua_pushliteral(L, "SUP");
-		lua_pushinteger(L, Val::SUP);
-		lua_rawset(L, -3);
-
 		luaL_newmetatable(L, VAL);
 
 		luaL_openlib(L, 0, Val_meta, 0);
@@ -463,7 +363,7 @@ namespace
 		lua_pushvalue(L, -3);
 		lua_rawset(L, -3);
 
-		lua_pop(L, 2); // pop metatable and meta methods
+		lua_pop(L, 2); // pop meta table and meta methods
 
 		lua_pushliteral(L, "Val.storage");
 		lua_pushlightuserdata(L, storage);
