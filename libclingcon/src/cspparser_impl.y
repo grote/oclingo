@@ -485,8 +485,8 @@ term(res) ::= IDENTIFIER(id). { res = pCSPParser->term(Val::ID, id.loc(), id.ind
 term(res) ::= STRING(id).     { res = pCSPParser->term(Val::STRING, id.loc(), id.index); }
 term(res) ::= NUMBER(num).    { res = new Clingcon::WrapperConstTerm(num.loc(), Val::number(num.number)); }
 term(res) ::= ANONYMOUS(var). { res = new Clingcon::WrapperVarTerm(var.loc()); }
-term(res) ::= INFIMUM(inf).   { res = new Clingcon::WrapperConstTerm(inf.loc(), Val::inf()); }
-term(res) ::= SUPREMUM(sup).  { res = new Clingcon::WrapperConstTerm(sup.loc(), Val::sup()); }
+term(res) ::= INFIMUM(tok).   { res = new Clingcon::WrapperConstTerm(tok.loc(), Val::inf()); }
+term(res) ::= SUPREMUM(tok).  { res = new Clingcon::WrapperConstTerm(tok.loc(), Val::sup()); }
 term(res) ::= UNDEF(tok).     { res = new Clingcon::WrapperConstTerm(tok.loc(), Val::undef()); }
 
 term(res) ::= term(a) DOTS term(b).                         {  res = new WrapperRangeTerm(a->loc(), a, b); }
