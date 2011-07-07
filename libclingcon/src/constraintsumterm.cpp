@@ -41,7 +41,7 @@ namespace Clingcon
         Val ConstraintSumTerm::val(Grounder *grounder) const
 	{
 		assert(false);
-		return Val::create();
+                return Val::fail();
 	}
 
         bool ConstraintSumTerm::unify(Grounder *grounder, const Val &v, int binder) const

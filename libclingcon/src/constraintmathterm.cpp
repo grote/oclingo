@@ -85,7 +85,7 @@ namespace Clingcon
 		}
             */
 		assert(false);
-		return Val::create();
+		return Val::fail();
 	}
 
 	bool ConstraintMathTerm::unify(Grounder *grounder, const Val &v, int binder) const
@@ -180,7 +180,7 @@ namespace Clingcon
                         case MathTerm::ABS:      o=GroundConstraint::ABS; break;
                         case MathTerm::UMINUS:
                         {
-                            return new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(b_->loc(), Val::create(Val::NUM,0)).toGroundConstraint(g), a_->toGroundConstraint(g));
+                            return new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(b_->loc(), Val::number(0)).toGroundConstraint(g), a_->toGroundConstraint(g));
                         }
                         default: throw CSPException("Unsupported Operator");
 		}

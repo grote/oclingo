@@ -77,8 +77,8 @@ CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncCon
 	ANY        = [\000-\377];
 	WS         = [\t\r ]*;
 	NL         = "\n";
-	IDENTIFIER = "_"*[a-z][A-Za-z0-9_]*;
-	VARIABLE   = "_"*[A-Z][A-Za-z0-9_]*;
+	IDENTIFIER = "_"*[a-z]['A-Za-z0-9_]*;
+	VARIABLE   = "_"*[A-Z]['A-Za-z0-9_]*;
 	ANONYMOUS  = "_";
 	STRING     = "\"" ([^\\"\n]|"\\\""|"\\\\"|"\\n")* "\"";
         WSNL       = [\t\r\n ]*;
@@ -112,6 +112,7 @@ start:
 		"#external"      { return CSPPARSER_EXTERNAL; }
 		"#infimum"       { return CSPPARSER_INFIMUM; }
 		"#supremum"      { return CSPPARSER_SUPREMUM; }
+                "#undef"         { return CSPPARSER_UNDEF; }
                 SHOWDOT          { token_.index  = g_->index(string()); return CSPPARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return CSPPARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return CSPPARSER_NUMBER; }
@@ -244,6 +245,7 @@ start:
 		"#external"      { return CSPPARSER_EXTERNAL; }
 		"#infimum"       { return CSPPARSER_INFIMUM; }
 		"#supremum"      { return CSPPARSER_SUPREMUM; }
+                "#undef"         { return CSPPARSER_UNDEF; }
                 SHOWDOT          { token_.index  = g_->index(string()); return CSPPARSER_SHOWDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return CSPPARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return CSPPARSER_NUMBER; }
@@ -444,13 +446,13 @@ WrapperTerm *CSPParser::term(Val::Type t, const Loc &loc, uint32_t index)
 		{
 			ConstMap::const_iterator res = constMap_.find(index);
 			if(res != constMap_.end()) { return res->second->clone(); }
-			else                       { return new WrapperConstTerm(loc, Val::create(Val::ID, index)); }
+			else                       { return new WrapperConstTerm(loc, Val::id(index)); }
 		}
 	}
 	else
 	{
 		assert(t == Val::STRING);
-		return new WrapperConstTerm(loc, Val::create(Val::STRING, index));
+		return new WrapperConstTerm(loc, Val::string(index));
 	}
 }
 
@@ -614,15 +616,15 @@ Optimize *CSPParser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *t
                if(!weight)
                {
                        assert(!body->empty());
-                       weight = new ConstTerm(loc, Val::create(Val::NUM, 1));
+                       weight = new ConstTerm(loc, Val::number(1));
                }
                pTerms->push_back(weight);
        }
        else { assert(weight == 0); }
        assert(!pTerms->empty());
-       if(!prio) { prio = new ConstTerm(loc, Val::create(Val::NUM, level_)); }
+       if(!prio) { prio = new ConstTerm(loc, Val::number(level_)); }
        pTerms->insert(pTerms->begin() + 1, prio);
-       std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::create(Val::NUM, level_)));
+       std::auto_ptr<Term> optnum(new ConstTerm(loc, Val::number(level_)));
        pTerms->insert(pTerms->begin() + 2, optnum);
        return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }

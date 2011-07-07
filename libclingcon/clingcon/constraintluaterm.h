@@ -59,7 +59,7 @@ namespace Clingcon
 
 	inline uint32_t ConstraintLuaTerm::name() const { return name_; }
 
-	inline Val ConstraintLuaTerm::val(Grounder *) const                      { assert(false); return Val::create(); }
+	inline Val ConstraintLuaTerm::val(Grounder *) const                      { assert(false); return Val::fail(); }
 	inline bool ConstraintLuaTerm::constant() const                          { assert(false); return false; }
 	inline bool ConstraintLuaTerm::unify(Grounder *, const Val &, int) const { assert(false); return false; }
 	inline void ConstraintLuaTerm::vars(VarSet &) const                      { assert(false); }

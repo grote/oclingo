@@ -36,7 +36,7 @@ namespace Clingcon
 	{
 		ValVec vals;
                 foreach(const Term &term, args_) vals.push_back(term.val(grounder));
-		return Val::create(Val::FUNC, grounder->index(Func(grounder, name_, vals)));
+		return Val::func(grounder->index(Func(grounder, name_, vals)));
 	}
 
         void ConstraintFuncTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify)
@@ -61,7 +61,7 @@ namespace Clingcon
             return 0;
                 //ConstraintAbsTerm::Children children;
                 //foreach(const Term &t, args_) { children.push_back(t.abstract(subst)); }
-                //return subst.addTerm(new AbsTerm(Val::create(Val::ID, name_), children));
+		//return subst.addTerm(new AbsTerm(Val::id(name_), children));
 	}
 
 	bool ConstraintFuncTerm::unify(Grounder *grounder, const Val &v, int binder) const

@@ -69,10 +69,10 @@
 
 #define GRD pCSPParser->grounder()
 #define OTP pCSPParser->grounder()->output()
-#define ONE(loc) new ConstTerm(loc, Val::create(Val::NUM, 1))
-#define CSPONE(loc) new WrapperConstTerm(loc, Val::create(Val::NUM, 1))
-#define ZERO(loc) new WrapperConstTerm(loc, Val::create(Val::NUM, 0))
-#define MINUSONE(loc) new WrapperConstTerm(loc, Val::create(Val::NUM, -1))
+#define ONE(loc) new ConstTerm(loc, Val::number(1))
+#define CSPONE(loc) new WrapperConstTerm(loc, Val::number(1))
+#define ZERO(loc) new WrapperConstTerm(loc, Val::number(0))
+#define MINUSONE(loc) new WrapperConstTerm(loc, Val::number(-1))
 
 
 using namespace Clingcon;
@@ -397,7 +397,7 @@ condatlist(res)  ::= .                                                         {
 condatlist(res)  ::= ncondatlist(list).                                        { res = list; }
 
 condat(res) ::= term(t) AT term(level) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), level->toTerm(), t->toConstraintTerm(), *cond); delete level; delete cond; }
-condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::create(Val::NUM, cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; }
+condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::number(cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; }
 
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
@@ -483,10 +483,11 @@ cmp(res) ::= INEQUAL. { res = RelLit::INEQUAL; }
 term(res) ::= VARIABLE(var).  { res = new Clingcon::WrapperVarTerm(var.loc(), var.index); }
 term(res) ::= IDENTIFIER(id). { res = pCSPParser->term(Val::ID, id.loc(), id.index); }
 term(res) ::= STRING(id).     { res = pCSPParser->term(Val::STRING, id.loc(), id.index); }
-term(res) ::= NUMBER(num).    { res = new Clingcon::WrapperConstTerm(num.loc(), Val::create(Val::NUM, num.number)); }
+term(res) ::= NUMBER(num).    { res = new Clingcon::WrapperConstTerm(num.loc(), Val::number(num.number)); }
 term(res) ::= ANONYMOUS(var). { res = new Clingcon::WrapperVarTerm(var.loc()); }
-term(res) ::= INFIMUM(inf).   { res = new Clingcon::WrapperConstTerm(inf.loc(), Val::create(Val::INF, 0)); }
-term(res) ::= SUPREMUM(sup).  { res = new Clingcon::WrapperConstTerm(sup.loc(), Val::create(Val::SUP, 0)); }
+term(res) ::= INFIMUM(inf).   { res = new Clingcon::WrapperConstTerm(inf.loc(), Val::inf()); }
+term(res) ::= SUPREMUM(sup).  { res = new Clingcon::WrapperConstTerm(sup.loc(), Val::sup()); }
+term(res) ::= UNDEF(tok).     { res = new Clingcon::WrapperConstTerm(tok.loc(), Val::undef()); }
 
 term(res) ::= term(a) DOTS term(b).                         {  res = new WrapperRangeTerm(a->loc(), a, b); }
 term(res) ::= term(a) SEM term(b).                          {  res = new WrapperPoolTerm(a->loc(), a, b); }
