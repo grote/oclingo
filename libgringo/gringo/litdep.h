@@ -73,11 +73,9 @@ namespace LitDep
 		GrdNodeStack grdStack_;
 		VarNodeVec   varNodes_;
 	};
-}
 
-inline LitDep::FormulaNode* new_clone(const LitDep::FormulaNode& a)
-{
-	(void)a;
-	return 0;
+	inline FormulaNode* new_clone(const LitDep::FormulaNode&)
+	{
+		return 0;
+	}
 }
-

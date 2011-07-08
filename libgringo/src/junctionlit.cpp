@@ -22,6 +22,27 @@
 #include "gringo/grounder.h"
 #include "gringo/output.h"
 
+/*
+  both conjunction and disjunction are grounded the same way
+   - heads must not be used for matching
+   - non-heads grounded in bottom up fashion
+	 - instantiator is finished iff (index of) conjunction is finished
+   - for conjunctions always maintain exactly one conditional
+	 - should be the case because preprocessing is for heads is special
+   - calculate global vaiables wrt. conditionals only
+	 - :- p(X), q(Y), r(Z) : s(X,Z).
+	 - Y might be problematic here because the conjunction might be regrounded
+	 - create an index for the conjunction literal
+	   - store the global variables there (only Z in this case)
+	   - after grounding of an conditional finished mark as finished
+	   - if the containing literal is finished remove the finished mark
+		 (and finish the indices of the conditional)
+	   - global variables or an identifier for them have to be passed as identifier to output
+   - fact heads
+	 - disjunction:  ignore the whole rule
+	 - conjunctions: ignore the literal
+*/
+
 namespace
 {
 

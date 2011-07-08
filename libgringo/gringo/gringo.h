@@ -117,6 +117,7 @@ struct VarDomains;
 namespace LitDep
 {
 	class FormulaNode;
+	FormulaNode* new_clone(const LitDep::FormulaNode& a);
 }
 
 typedef std::vector<std::string> StringVec;
@@ -148,7 +149,6 @@ VarTerm* new_clone(const VarTerm& a);
 Lit* new_clone(const Lit& a);
 WeightLit* new_clone(const WeightLit& a);
 Instantiator* new_clone(const Instantiator& a);
-LitDep::FormulaNode* new_clone(const LitDep::FormulaNode& a);
 AggrCond* new_clone(const AggrCond& a);
 
 #endif

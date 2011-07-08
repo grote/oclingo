@@ -12,4 +12,6 @@ add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 target_link_libraries(gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
-ADD_PRECOMPILED_HEADER(gringo-lib ${CMAKE_SOURCE_DIR}/libgringo/gringo/gringo.h)
+if(PCHSupport_FOUND)
+	ADD_PRECOMPILED_HEADER(gringo-lib ${CMAKE_SOURCE_DIR}/libgringo/gringo/gringo.h)
+endif()
