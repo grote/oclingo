@@ -24,6 +24,11 @@
 namespace Clingcon {
 
 
+CSPSolver::CSPSolver() : optimize_(false)
+{
+
+}
+
 
 unsigned int CSPSolver::getVariable(const std::string& v)
 {
@@ -118,6 +123,11 @@ void CSPSolver::setClingconPropagator(Clingcon::ClingconPropagator* cp)
 {
 	assert(cp);
 	clingconPropagator_ = cp;
+}
+
+void CSPSolver::setOptimize(bool opt)
+{
+    optimize_=opt;
 }
 
 CSPSolver::~CSPSolver(){}

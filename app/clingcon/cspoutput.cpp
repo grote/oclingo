@@ -132,8 +132,9 @@ uint32_t CSPOutput::symbol()
 
 uint32_t CSPOutput::symbol(const std::string& name, bool freeze)
 {
-    uint32_t atom = b_->newAtom();
+    uint32_t atom = symbol();
     b_->setAtomName(atom, name.c_str());
+    atomUnnamed_[atom - lastUnnamed_] = false;
     if (freeze)
         b_->freeze(atom);
     return atom;

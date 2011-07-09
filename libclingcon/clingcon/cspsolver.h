@@ -53,6 +53,7 @@ private:
 	class CSPSolver
 	{
                 public:
+                        CSPSolver();
                         typedef std::vector<int> RangeVec;
                         typedef std::map<std::string,  RangeVec> Domains;
                         virtual ~CSPSolver();
@@ -94,7 +95,10 @@ private:
 			 */
 			virtual void printAnswer() = 0;
 
+                        void setOptimize(bool opt);
+
 		protected:
+
                         std::vector<std::string> variables_;
                         //boost::unordered_map<Val,unsigned int> variables_;
 			Clasp::Solver* s_;
@@ -106,6 +110,7 @@ private:
                         Domains domains_;
                         RangeVec domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)
                         //bool addedDomain_; // true if domain was already added
+                        bool optimize_;
 
 	};
 }

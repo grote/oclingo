@@ -118,7 +118,9 @@ namespace Clingcon {
 
 			//everything for enumerating answers
 			Search::Options searchOptions_;
-                        BAB<GecodeSolver::SearchSpace>* searchEngine_; // depth first search
+                        DFS<GecodeSolver::SearchSpace>* dfsSearchEngine_; // depth first search
+                        BAB<GecodeSolver::SearchSpace>* babSearchEngine_; // branch and bound search
+
 
 
 			bool lazyLearn_; // true for lazy(dummy) learning
@@ -126,7 +128,7 @@ namespace Clingcon {
 			bool weakAS_;    // true if only weak Answer sets shall be calculated
 			int  numAS_;     // number of answer sets of weakAS_ is false
                         int  asCounter_; // current number of answer sets calculated of the same propositional answer set
-                        bool foundModel_; // found model since last backtracking?
+                        bool updateOpt_; // found model since last backtracking?
 
 			class CSPDummy : public Clasp::Constraint
 			{
@@ -196,6 +198,7 @@ namespace Clingcon {
 				BoolVarArray b_;
 				std::map<unsigned int, unsigned int>* litToVar_; // translates from clasp Clasp::Literal to boolean csp variable for reified constraints
                                 IntVarArgs iva_; // for collecting temporary variables
+                        public:
                                 IntVarArray opts_; // optimization variables
                                 //std::vector<IntVar> tempVars_;
 			};
