@@ -38,3 +38,5 @@ endif()
 add_executable(oclingo-app oclingo.cpp)
 target_link_libraries(oclingo-app appoclingo-lib appclingo-lib appgringo-lib clasp-lib ${gringo-libs})
 set_target_properties(oclingo-app PROPERTIES OUTPUT_NAME oclingo)
+
+add_subdirectory(test)
