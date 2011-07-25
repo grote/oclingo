@@ -8,6 +8,6 @@ if(Boost_UNIT_TEST_FRAMEWORK_FOUND)
     file(GLOB_RECURSE TEST_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.h)
 
     add_executable(test-app test.cpp ${TEST_SRC})
-    target_link_libraries(test-app appclingo-lib appgringo-lib clasp-lib gringo-lib ${Boost_LIBRARIES})
+	target_link_libraries(test-app appclingo-lib appgringo-lib clasp-lib ${gringo-libs} ${Boost_LIBRARIES})
     set_target_properties(test-app PROPERTIES OUTPUT_NAME test)
 endif()
