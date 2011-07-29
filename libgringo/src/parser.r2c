@@ -566,19 +566,16 @@ void Parser::add()
 {
 	while(!last_.empty())
 	{
+		if(current_ == volatile_)
+		{
+			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
+		}
 		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
 		foreach(Statement &statement, rng)
 		{
 			DomAdder domAdder(this);
 			domAdder.add(&statement);
-		}
-		if(current_ == volatile_)
-		{
-			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
-		}
-		else if(current_ == cumulative_)
-		{
-			foreach(Statement &statement, rng)
+			if(current_ == cumulative_)
 			{
 				IncVarAdder adder(iVar_);
 				adder.add(&statement, config_);
