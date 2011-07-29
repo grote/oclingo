@@ -323,6 +323,7 @@ void LparseConverter::finalize()
 	doFinalize();
 	newSymbols_.clear();
 	newSymbolsDone_.clear();
+	symMap_.clear();
 }
 
 void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)
