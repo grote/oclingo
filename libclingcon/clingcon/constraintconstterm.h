@@ -36,7 +36,7 @@ namespace Clingcon
                 virtual bool match(Grounder* ){ return true; }
 		void print(Storage *sto, std::ostream &out) const;
 		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
-		bool constant() const { return true; }
+                bool constant() const { return val_.type==Val::NUM; }
 		ConstraintConstTerm *clone() const;
 		ConstTerm* toTerm() const {return new ConstTerm(loc(),val_);};
                 virtual GroundConstraint* toGroundConstraint(Grounder* );

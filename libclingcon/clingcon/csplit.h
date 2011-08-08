@@ -29,66 +29,74 @@ namespace Clingcon
         class CSPLit : public Lit, public Matchable
 	{
 	public:
-                enum Type { ASSIGN, GREATER, LOWER, EQUAL, GEQUAL, LEQUAL, INEQUAL };
+                enum Type { ASSIGN, GREATER, LOWER, EQUAL, GEQUAL, LEQUAL, INEQUAL, AND, OR, XOR, EQ };
 	public:
 	        class Printer : public ::Printer
 	        {
 	        public:
-                        virtual void begin(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b) = 0;
-	                virtual ~Printer(){};
+                    virtual void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b) = 0;
+                    virtual void start() = 0;
+                    virtual void open() = 0;
+                    virtual void conn(CSPLit::Type t) = 0;
+                    virtual void close() = 0;
+                    virtual void end() = 0;
+                    virtual ~Printer(){};
 		};
 
-		CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b);
+                CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b);
+                CSPLit(const Loc &loc, Type t, CSPLit *a, CSPLit *b);
                 void grounded(Grounder *grounder);
                 void normalize(Grounder *g, const Expander& expander);
-		bool fact() const { return false; }
+                bool fact() const;
 		void accept(::Printer *v);
                 Index* index(Grounder *g, Formula *gr, VarSet &bound);
 		void visit(PrgVisitor *visitor);
 		bool match(Grounder *grounder);
 		void print(Storage *sto, std::ostream &out) const;
-		CSPLit *clone() const;
+                CSPLit *clone() const;
 		void revert();
-		~CSPLit();
-                static Type switchRel(Type t)
+                ~CSPLit();
+        private:
+                bool isFixed(Grounder *g) const;
+                bool getValue(Grounder *g) const;
+                /*static Type switchRel(Type t)
                 {
                     switch(t)
                     {
-                            case CSPLit::GREATER: return CSPLit::LOWER;
-                            case CSPLit::LOWER:   return CSPLit::GREATER;
-                            case CSPLit::EQUAL:   return CSPLit::INEQUAL;
-                            case CSPLit::GEQUAL:   return CSPLit::LEQUAL;
-                            case CSPLit::LEQUAL:   return CSPLit::GEQUAL;
-                            case CSPLit::INEQUAL: return CSPLit::EQUAL;
+                            case CSPExpr::GREATER:  return CSPExpr::LOWER;
+                            case CSPExpr::LOWER:    return CSPExpr::GREATER;
+                            case CSPExpr::EQUAL:    return CSPExpr::INEQUAL;
+                            case CSPExpr::GEQUAL:   return CSPExpr::LEQUAL;
+                            case CSPExpr::LEQUAL:   return CSPExpr::GEQUAL;
+                            case CSPExpr::INEQUAL:  return CSPExpr::EQUAL;
+                        case CSPExpr::AND:  return CSPExpr::EQUAL;
+                        case CSPExpr::OR:  return CSPExpr::EQUAL;
+                        case CSPExpr::XOR:  return CSPExpr::EQUAL;
+                        case CSPExpr::EQ:  return CSPExpr::EQUAL;
+                        todo, not finished
+
                             default: assert("Illegal comparison operator in Constraint"!=0);
                     }
                     assert(false); // should never reach this
-                    return CSPLit::ASSIGN;
+                    return CSPExpr::ASSIGN;
 
-                }
+                }*/
 
-                static Type revert(Type t)
-                {
-                    switch(t)
-                    {
-                            case CSPLit::GREATER: return CSPLit::LEQUAL;
-                            case CSPLit::LOWER:   return CSPLit::GEQUAL;
-                            case CSPLit::EQUAL:   return CSPLit::INEQUAL;
-                            case CSPLit::GEQUAL:   return CSPLit::LOWER;
-                            case CSPLit::LEQUAL:   return CSPLit::GREATER;
-                            case CSPLit::INEQUAL: return CSPLit::EQUAL;
-                            default: assert("Illegal comparison operator in Constraint"!=0);
-                    }
-                    assert(false); // should never reach this
-                    return CSPLit::ASSIGN;
 
-                }
 
 	private:
-		Type            t_;
+                Type                      t_;
 		clone_ptr<ConstraintTerm> a_;
 		clone_ptr<ConstraintTerm> b_;
+                clone_ptr<CSPLit>         lhs_;
+                clone_ptr<CSPLit>         rhs_;
                 GroundConstraint*         ag_;
                 GroundConstraint*         bg_;
+                bool                      isFact_;
 	};
+
+        inline CSPLit* new_clone(const CSPLit& a)
+        {
+                return a.clone();
+        }
 }

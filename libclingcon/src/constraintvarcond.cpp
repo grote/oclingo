@@ -3,7 +3,7 @@
 #include <clingcon/constraintvarcond.h>
 #include <clingcon/globalconstraint.h>
 #include <clingcon/constraintterm.h>
-#include <clingcon/cspprinter.h>
+//#include <clingcon/cspprinter.h>
 #include <gringo/litdep.h>
 #include <clingcon/globalconstraint.h>
 

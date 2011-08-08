@@ -287,6 +287,12 @@ static unsigned int cspminimizecounter = 1;
 %left ODD.
 %left AVG.
 
+
+%left CSPXOR CSPEQ.
+%left CSPOR.
+%left CSPAND.
+
+
 start ::= program.
 
 program ::= .
@@ -310,18 +316,18 @@ line ::= meta.
 line ::= cspdomain(dom) IF body(body).                                                 {pCSPParser->add(new CSPDomain(dom->loc(), dom, *body)); delete body;}
 line ::= cspdomain(dom).                                                               {pCSPParser->add(new CSPDomain(dom->loc(), dom)); }
 cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(a) DOTS term(b) RBRAC.                    {res= new CSPDomainLiteral(tok.loc(), 0, a->toTerm(), b->toTerm()); delete a; delete b;}
-cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(term) COMMA term(a) DOTS term(b) RBRAC.   {res= new CSPDomainLiteral(tok.loc(), term->toTerm(), a->toTerm(), b->toTerm()); delete term; delete a; delete b;}
+//cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(term) COMMA term(a) DOTS term(b) RBRAC.   {res= new CSPDomainLiteral(tok.loc(), term->toTerm(), a->toTerm(), b->toTerm()); delete term; delete a; delete b;}
 
 line ::= globalconstrainthead(gc) IF body(body). {pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
 line ::= globalconstrainthead(gc).               {LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(),  boost::tuples::get<1>(*gc),  *boost::tuples::get<2>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
 line ::= globalconstraintcounthead(gc) IF body(body). {pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
 line ::= globalconstraintcounthead(gc).               {LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(),  boost::tuples::get<1>(*gc),  *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
 globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC condsetlist(list) RCBRAC.      { res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::DISTINCT,vec1(list)); }
-globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC LSBRAC condindexlist(list2) RSBRAC LSBRAC condindexlist(list3) RSBRAC.  {
-                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);list->push_back(list2);
-                    list->push_back(list3);
-                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::BINPACK,list);
-                    }
+//globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC LSBRAC condindexlist(list2) RSBRAC LSBRAC condindexlist(list3) RSBRAC.  {
+//                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);list->push_back(list2);
+//                    list->push_back(list3);
+//                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::BINPACK,list);
+//                    }
  globalconstraintcounthead(res) ::= CSPCOUNT(tok) LSBRAC condequallist(list1) RSBRAC cspcmp(cmp) term(t).  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; ConstraintVarCond* temp = new ConstraintVarCond(tok.loc(), ONE(tok.loc()),t->toConstraintTerm(), empty); list->push_back(vec1(temp));
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* , Clingcon::CSPLit::Type>(tok, Clingcon::COUNT,list, cmp); delete t;
@@ -331,10 +337,10 @@ globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); LitPtrVec empty; ConstraintVarCond* temp = new ConstraintVarCond(tok.loc(), ONE(tok.loc()),t->toConstraintTerm(), empty); list->push_back(vec1(temp));
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* , Clingcon::CSPLit::Type>(tok, Clingcon::COUNT_UNIQUE,list, cmp); delete t;
                     }
- globalconstrainthead(res) ::= CSPCOUNT(tok) LCBRAC condsetlist(list1) RCBRAC LSBRAC condindexlist(list2) RSBRAC.  {
-                    boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); list->push_back(list2);
-                    res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::COUNT_GLOBAL,list);
-                    }
+ //globalconstrainthead(res) ::= CSPCOUNT(tok) LCBRAC condsetlist(list1) RCBRAC LSBRAC condindexlist(list2) RSBRAC.  {
+ //                   boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1); list->push_back(list2);
+ //                   res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::COUNT_GLOBAL,list);
+ //                   }
 
  globalconstrainthead(res) ::= CSPMINIMIZE(tok) LCBRAC condatlist(list1) RCBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
@@ -452,11 +458,18 @@ lit(res) ::= term(a) CASSIGN term(b).  { res = new RelLit(a->loc(), RelLit::ASSI
 
 csplit(res) ::= term(a) cspcmp(cmp) term(b). { ConstraintTerm* a_= a->toConstraintTerm(); ConstraintTerm* b_ = b->toConstraintTerm(); res = new CSPLit(a_->loc(), cmp, a_, b_); delete a; delete b;}
 
+csplit(res) ::= LBRAC csplit(a) RBRAC.       { res = a; }
+csplit(res) ::= csplit(a) CSPAND csplit(b).  { res=new CSPLit(a->loc(), CSPLit::AND, a, b); }
+csplit(res) ::= csplit(a) CSPOR  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::OR,  a, b); }
+csplit(res) ::= csplit(a) CSPXOR csplit(b).  { res=new CSPLit(a->loc(), CSPLit::XOR, a, b); }
+csplit(res) ::= csplit(a) CSPEQ  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::EQ,  a, b); }
+
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b->toTerm()); delete b;}
 
 
 literal(res) ::= csplit(lit).                  { res = lit; }
+//lit(res) ::= csplit(lit).                  { res = lit; }
 
 body_literal(res) ::= literal(lit).                       { res = lit; }
 body_literal(res) ::= NOT csplit(lit).                    { lit->revert(); res = lit; }

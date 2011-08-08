@@ -1,8 +1,50 @@
+DONE
+
 - compute domain of intermediate variables more clever, DONE
 - branch on temporary variables, DONE
-- add global aggregates DONE for DISTINCT;3 times COUNT, BINPACK, more to to
-- add optimization    alle clasp optimums haben vorrang, TODO: decide between search heuristic! (DFS, BAB)
-- add domains for variables, DONE
-- add sum and product, DONE (sum)
-- add spport for constraints in aggregates
+- enable lazy learning on options, DONE
+- add automatic domain restriction for variables, DONE
+- add global aggregate distinct DONE
+- add global aggregate count DONE
+- add optimization DONE
+- added sum aggregate style DONE
+- getAssignment() function optimized via callbacks DONE
+
+
+TODO
+
+- disable lookahead, --no-lookback implies lookahead muss heu=None nutzen
+- newest gecode version
+- write Makefile
+- add show/hide statements
+- add more global aggregates
+- decide between search heuristic! (DFS, BAB)
 - add statistics from Gecode
+- reason muss nicht aus den csp lits bestehen sondern kann über uip auf jedem level verkleinert werden
+- add IIS (Irreducible Infeasible Set) for generating reasons (also try grouped by dl)
+	-WARNING: asserting clauses are not asserting on current dl -> this makes clasp backjump, if this is the case maybe stop the propagation
+	- linear
+	- exponential grouped
+	- internal (Gecode:)
+		Reason:
+			b=="a$>x"
+			kein labeling auf b, minimiere alle anderen b'
+			constraint a \/ b, wobei a nicht hergeleitet werden kann
+		Conflict:
+			reason für -b
+- do initial lookahead of gecode constraints
+- order constraints to the number of variables to speed up initial propagation
+
+
+BUGS
+
+- gringo error mit 1{}1 wird bei test18 getriggered
+- constraints in aggregates, triggered with test9.lpa (Roland has to change something first)
+
+
+
+COMMENTS
+
+
+export WITH_CLINGCON=1
+make target=clingcon-app

@@ -15,6 +15,7 @@ namespace Clingcon
         class ConstraintLuaTerm;
         class ConstraintFuncTerm;
         class ConstraintConstTerm;
+        class CSPLit;
 	typedef boost::ptr_vector<ConstraintTerm> ConstraintTermPtrVec;
 	typedef boost::ptr_vector<WrapperTerm> WrapperTermPtrVec;
         typedef boost::ptr_vector<ConstraintVarCond> ConstraintVarCondPtrVec;
@@ -28,6 +29,7 @@ namespace Clingcon
         ConstraintLuaTerm* new_clone(const ConstraintLuaTerm& a);
         ConstraintFuncTerm* new_clone(const ConstraintFuncTerm& a);
         ConstraintConstTerm* new_clone(const ConstraintConstTerm& a);
+        CSPLit* new_clone(const CSPLit& a);
 
 }
 

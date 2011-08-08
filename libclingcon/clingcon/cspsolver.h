@@ -23,6 +23,7 @@
 #include <clingcon/cspconstraint.h>
 #include <clasp/literal.h>
 #include <clingcon/cspglobalprinter.h>
+#include <clingcon/interval.h>
 
 #include <vector>
 namespace Clasp {
@@ -53,24 +54,24 @@ private:
 	class CSPSolver
 	{
                 public:
+                        typedef Interval<int> Domain;
                         CSPSolver();
-                        typedef std::vector<int> RangeVec;
-                        typedef std::map<std::string,  RangeVec> Domains;
                         virtual ~CSPSolver();
 			/*
 			 * adds a constraint with the uid of the atom representing the constraint
 			 *
 			 **/
-                        virtual void addDomain(int lower, int upper);
+                        virtual void setDomain(int lower, int upper);
                         virtual void addConstraint(Constraint c, int uid);
                         virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
-                        virtual void addDomain(const std::string& var, int lower, int upper);
+                        virtual bool hasOptimizeStm() const;
+                        //virtual void addDomain(const std::string& var, int lower, int upper);
                         virtual unsigned int getVariable(const std::string& s);
-                        virtual void combineWithDefaultDomain();
+                        //virtual void combineWithDefaultDomain();
                         virtual const std::vector<std::string>&  getVariables();
-                        virtual bool hasDomain(const std::string& s) const;
-                        virtual const RangeVec& getDomain(const std::string& s) const;
-                        virtual const RangeVec& getDomain() const;
+                        //virtual bool hasDomain(const std::string& s) const;
+                        //virtual const RangeVec& getDomain(const std::string& s) const;
+                        virtual const Domain& getDomain() const;
 			virtual void setSolver(Clasp::Solver* s);
 			virtual Clasp::Solver* getSolver();
 			virtual void setClingconPropagator(Clingcon::ClingconPropagator* cp);
@@ -107,8 +108,8 @@ private:
                         std::map<int, Constraint*> constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
 
-                        Domains domains_;
-                        RangeVec domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)
+                        //Domains domains_;
+                        Domain domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)
                         //bool addedDomain_; // true if domain was already added
                         bool optimize_;
 

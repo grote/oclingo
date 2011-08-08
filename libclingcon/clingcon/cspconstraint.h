@@ -39,23 +39,33 @@ class GroundConstraint;
 		public:
                         Constraint();
                         Constraint(CSPLit::Type type, const GroundConstraint* a, const GroundConstraint* b);
+                        Constraint(CSPLit::Type type);
                         Constraint(Constraint& cc);
                         //Constraint operator=(Constraint& cc);
                         ~Constraint();
+                        // set lhs, if lhs is already set, set rhs
+                        void add(const Constraint* a);
 
                         unsigned int getLinearSize() const;
 
+                        // true of no boolean connectives are used
+                        bool isSimple() const;
+
                         CSPLit::Type getType() const;
 
-                        CSPLit::Type getRelation(const GroundConstraint*& a, const GroundConstraint*& b) const;
+                        CSPLit::Type getRelations(const GroundConstraint*& a, const GroundConstraint*& b) const;
+                        CSPLit::Type getConstraints(const Constraint*& a, const Constraint*& b) const;
 
-                        std::vector<unsigned int> getAllVariables(CSPSolver* csps) const;
+                        void registerAllVariables(CSPSolver* csps) const;
+                        void getAllVariables(std::vector<unsigned int>& vec, CSPSolver* csps) const;
 
 		private:
 
                         CSPLit::Type type_;
                         std::auto_ptr<const GroundConstraint> a_;
                         std::auto_ptr<const GroundConstraint> b_;
+                        std::auto_ptr<const Constraint>       lhs_;
+                        std::auto_ptr<const Constraint>       rhs_;
 
 
 	};

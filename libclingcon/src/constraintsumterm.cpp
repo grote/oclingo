@@ -38,7 +38,7 @@ namespace Clingcon
                 i->parent_ = this;
 	}
 
-        Val ConstraintSumTerm::val(Grounder *grounder) const
+        Val ConstraintSumTerm::val(Grounder *) const
 	{
 		assert(false);
                 return Val::fail();
@@ -150,7 +150,10 @@ namespace Clingcon
 
             for (size_t i = 0; i < cond_->size(); ++i)
                 (*cond_)[i].getVariables(vec);
-            return toGroundConstraint(g,vec,0);
+            if (vec.size())
+                return toGroundConstraint(g,vec,0);
+            else
+                return new GroundConstraint(g,Val::number(0));
 	}
 
         ConstraintSumTerm::~ConstraintSumTerm()

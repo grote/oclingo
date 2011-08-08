@@ -24,9 +24,14 @@
 namespace Clingcon {
 
 
-CSPSolver::CSPSolver() : optimize_(false)
+CSPSolver::CSPSolver() : optimize_(false), domain_(std::numeric_limits<int>::min(), std::numeric_limits<int>::max())
 {
 
+}
+
+bool CSPSolver::hasOptimizeStm() const
+{
+    return optimize_;
 }
 
 
@@ -56,7 +61,7 @@ void CSPSolver::addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec
 {
     globalConstraints_ = gcvec.release();
 }
-
+/*
 void CSPSolver::addDomain(const std::string& var, int lower, int upper)
 {
     //Domains::iterator found = domains_.find(var);
@@ -69,44 +74,46 @@ void CSPSolver::addDomain(const std::string& var, int lower, int upper)
     //found->second.push_back(lower);
     //found->second.push_back(upper);
 }
-
+*/
+/*
 bool CSPSolver::hasDomain(const std::string& s) const
 {
     Domains::const_iterator i = domains_.find(s);
     if (i==domains_.end())
         return false;
     return (i->second.size() > 0 ? true : false);
-}
-
+}*/
+/*
 const CSPSolver::RangeVec& CSPSolver::getDomain(const std::string& s) const
 {
     return domains_.find(s)->second;
 }
-
-const CSPSolver::RangeVec& CSPSolver::getDomain() const
+*/
+const CSPSolver::Domain& CSPSolver::getDomain() const
 {
     return domain_;
 }
 
-void CSPSolver::addDomain(int lower, int upper)
+void CSPSolver::setDomain(int lower, int upper)
 {
-        //if (addedDomain_)
-        //        throw ASPmCSPException("Only one domain predicate allowed!");
-    domain_.push_back(lower);
-    domain_.push_back(upper);
-
-        //domain_.first = lower;
-        //domain_.second = upper;
-        //addedDomain_ = true;
+    if (upper==std::numeric_limits<int>::max())
+    {
+        upper--;
+        std::cerr << "Warning: Reduced upper domain to " << upper;
+    }
+        //throw ASPmCSPException("Only one domain predicate allowed!");
+    domain_.left = lower;
+    domain_.right = upper+1;
 }
 
+/*
 void CSPSolver::combineWithDefaultDomain()
 {
     for(std::vector<std::string>::const_iterator var = variables_.begin(); var != variables_.end(); ++var)
     {
         domains_[*var].insert(domains_[*var].end(), domain_.begin(), domain_.end());
     }
-}
+}*/
 
 void CSPSolver::setSolver(Clasp::Solver* s)
 {

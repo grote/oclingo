@@ -157,17 +157,17 @@ void CSPOutput::doFinalize()
             cspsolver_->addConstraint(*i->second,i->first);
         }
 
-        Clingcon::LParseCSPDomainPrinter::Domains* domains = static_cast<Clingcon::LParseCSPDomainPrinter*>(storage()->output()->printer<Clingcon::CSPDomainLiteral::Printer>())->getDomains();
+        //Clingcon::LParseCSPDomainPrinter::Domains* domains = static_cast<Clingcon::LParseCSPDomainPrinter*>(storage()->output()->printer<Clingcon::CSPDomainLiteral::Printer>())->getDomains();
 
+        /*
         for(Clingcon::LParseCSPDomainPrinter::Domains::iterator i = domains->begin(); i != domains->end(); ++i)
         {
             for (Clingcon::LParseCSPDomainPrinter::Domain::iterator j = i->second.begin(); j != i->second.end(); ++j)
                 cspsolver_->addDomain(i->first, j->lower, j->upper);
-        }
+        }*/
 
         const Clingcon::LParseCSPDomainPrinter::Domain& r = static_cast<Clingcon::LParseCSPDomainPrinter*>(storage()->output()->printer<Clingcon::CSPDomainLiteral::Printer>())->getDefaultDomain();
-        for (Clingcon::LParseCSPDomainPrinter::Domain::const_iterator i = r.begin(); i != r.end(); ++i)
-            cspsolver_->addDomain(i->lower, i->upper);
+        cspsolver_->setDomain(r.left, r.right);
 
         Clingcon::LParseGlobalConstraintPrinter::GCvec& t = static_cast<Clingcon::LParseGlobalConstraintPrinter*>(storage()->output()->printer<Clingcon::GlobalConstraint::Printer>())->getGlobalConstraints();
         cspsolver_->addGlobalConstraints(t);

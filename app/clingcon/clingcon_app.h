@@ -151,7 +151,7 @@ struct CSPFromGringo : public Clasp::Input
 	OutputPtr              out;
 	IncConfig              config;
 	Clasp::Solver*         solver;
-        Clingcon::CSPSolver*   cspsolver_;
+        //Clingcon::CSPSolver*   cspsolver_;
 };
 
 #ifdef WITH_LUA
@@ -250,7 +250,14 @@ bool CSPFromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 		}
 	}
+
 	out->finalize();
+        //if (api->hasMinimize())
+        //  throw std::runtime_error("Can not optimize on ASP and CSP at the same time");
+        //if (api->hasMinimize())
+        //    std::cout << "Funzt" << std::endl;
+        //if (cspsolver_->hasOptimizeStm())
+         //   std::cout << "Funzt2" << std::endl;
 	release();
 	return true;
 }
@@ -324,7 +331,7 @@ void ClingconApp<M>::configureInOut(Streams& s)
 	{
 
 		s.open(generic.input, constStream());
-                cspsolver_ = new Clingcon::GecodeSolver(true,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal);
+                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal);
                 in_.reset(new CSPFromGringo<M>(*this, s,cspsolver_));
 
                                                                            /*clingcon_.cspLazyLearn,
@@ -456,16 +463,7 @@ void ClingconApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	}
 	else if (e == ClaspFacade::event_state_exit)
 	{
-            if(f.state() == ClaspFacade::state_preprocess)
-            {
-                cspsolver_->setSolver(&solver_);
-                cp_ = new Clingcon::ClingconPropagator(cspsolver_);
-                solver_.addPost(cp_);
-                //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
-                //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
-                //initialize cspsolver
-                cspsolver_->initialize();
-            }
+
 
 		timer_[f.state()].stop();
 		if (generic.verbose > 1)
@@ -539,7 +537,18 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 		}
                 else
                 {
-
+                    //if(f.state() == ClaspFacade::state_preprocess)
+                    {
+                        cspsolver_->setSolver(&solver_);
+                        cp_ = new Clingcon::ClingconPropagator(cspsolver_);
+                        solver_.addPost(cp_);
+                        //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
+                        //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
+                        //initialize cspsolver
+                        cspsolver_->initialize();
+                        if (f.api()->hasMinimize() && cspsolver_->hasOptimizeStm())
+                            throw std::runtime_error("Can not optimize asp and csp at the same time!");
+                    }
                     //in_.release();
                     out_->initSolve(solver_, f.api(), f.config()->solve.enumerator());
                 }

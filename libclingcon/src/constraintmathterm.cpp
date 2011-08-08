@@ -52,40 +52,36 @@ namespace Clingcon
 	{
 	}
 
-	Val ConstraintMathTerm::val(Grounder *grounder) const
+        Val ConstraintMathTerm::val(Grounder *g) const
 	{
-            /*
-		try
-		{
-			// TODO: what about moving all the functions into Val
-			switch(f_)
-			{
-				case MathTerm::PLUS:  return Val::create(Val::NUM, a_->val(grounder).number() + b_->val(grounder).number()); break;
-				case MathTerm::MINUS: return Val::create(Val::NUM, a_->val(grounder).number() - b_->val(grounder).number()); break;
-				case MathTerm::MULT:  return Val::create(Val::NUM, a_->val(grounder).number() * b_->val(grounder).number()); break;
-				case MathTerm::DIV:   return Val::create(Val::NUM, a_->val(grounder).number() / b_->val(grounder).number()); break;
-				case MathTerm::MOD:   return Val::create(Val::NUM, a_->val(grounder).number() % b_->val(grounder).number()); break;
-				case MathTerm::POW:   return Val::create(Val::NUM, ipow(a_->val(grounder).number(), b_->val(grounder).number())); break;
-				case MathTerm::AND:   return Val::create(Val::NUM, a_->val(grounder).number() & b_->val(grounder).number()); break;
-				case MathTerm::XOR:   return Val::create(Val::NUM, a_->val(grounder).number() ^ b_->val(grounder).number()); break;
-				case MathTerm::OR:    return Val::create(Val::NUM, a_->val(grounder).number() | b_->val(grounder).number()); break;
-				case MathTerm::ABS:   return Val::create(Val::NUM, std::abs(a_->val(grounder).number())); break;
-			}
-		}
-		catch(const Val *val)
-		{
-			std::ostringstream oss;
-			oss << "cannot convert ";
-			val->print(grounder, oss);
-			oss << " to integer";
-			std::string str(oss.str());
-			oss.str("");
-			print(grounder, oss);
-			throw TypeException(str, StrLoc(grounder, loc()), oss.str());
-		}
-            */
-		assert(false);
-		return Val::fail();
+            if((a_.get() && a_->constant()) && a_->val(g).type==Val::NUM)
+            {
+                Val va = a_->val(g);
+                if(f_ == MathTerm::UMINUS)   { return va.invert(g); }
+                else if(f_ == MathTerm::ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
+            }
+
+#pragma message "Warning: throw exception if division by zero"
+            if((a_.get() && a_->constant() && a_->val(g).type==Val::NUM) && (b_.get() && b_->constant() && b_->val(g).type==Val::NUM))
+            {
+                Val va = a_->val(g);
+                Val vb = b_->val(g);
+                switch(f_)
+                {
+                case MathTerm::PLUS:  { return Val::number(va.num + vb.num); }
+                case MathTerm::MINUS: { return Val::number(va.num - vb.num); }
+                case MathTerm::MULT:  { return Val::number(va.num * vb.num); }
+                case MathTerm::DIV:   { return vb.num == 0 ? Val::undef() : Val::number(va.num / vb.num); }
+                case MathTerm::MOD:   { return vb.num == 0 ? Val::undef() : Val::number(va.num % vb.num); }
+                case MathTerm::POW:   { return Val::number(ipow(va.num, vb.num)); }
+                case MathTerm::AND:   { return Val::number(va.num & vb.num); }
+                case MathTerm::XOR:   { return Val::number(va.num ^ vb.num); }
+                case MathTerm::OR:    { return Val::number(va.num | vb.num); }
+                default:    { assert(false); return Val::fail(); }
+                }
+            }
+            assert(false);
+            return Val::fail();
 	}
 
 	bool ConstraintMathTerm::unify(Grounder *grounder, const Val &v, int binder) const
@@ -110,6 +106,14 @@ namespace Clingcon
 		//visitor->visit(a_.get(), false);
 		//if(b_.get()) visitor->visit(b_.get(), false);
 	}
+
+        bool ConstraintMathTerm::match(Grounder* g)
+        {
+            assert(a_.get());
+            a_->match(g);
+            if (b_.get())
+                b_->match(g);
+        }
 
 	bool ConstraintMathTerm::constant() const
 	{
@@ -142,20 +146,14 @@ namespace Clingcon
 		}
 	}
 
-        void ConstraintMathTerm::normalize(Lit *, const Ref &, Grounder *, const Lit::Expander& , bool )
+        void ConstraintMathTerm::normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool )
 	{
-//		if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
-//		if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
-//		if((!a_.get() || a_->constant()) && (!b_.get() || b_->constant()))
-//		{
-//			ref.reset(new ConstraintConstTerm(loc(), val(g)));
-//		}
-//		else if(unify)
-//		{
-//			uint32_t var = g->createVar();
-//			expander->expand(new RelLit(a_->loc(), RelLit::ASSIGN, new VarTerm(a_->loc(), var), this->toTerm()), Expander::RELATION);
-//			ref.reset(new ConstraintVarTerm(a_->loc(), var));
-//		}
+            if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
+            if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
+            if((a_.get() && a_->constant() && a_->val(g).type==Val::NUM) && (!b_.get() || b_->constant()  && b_->val(g).type==Val::NUM))
+            {
+                ref.reset(new ConstraintConstTerm(loc(), val(g)));
+            }
 	}
 
 	ConstraintAbsTerm::Ref* ConstraintMathTerm::abstract(ConstraintSubstitution& subst) const
@@ -170,6 +168,7 @@ namespace Clingcon
 
         GroundConstraint* ConstraintMathTerm::toGroundConstraint(Grounder* g)
 	{
+            GroundConstraint* ret;
                 GroundConstraint::Operator o;
 		switch(f_)
 		{
@@ -180,12 +179,16 @@ namespace Clingcon
                         case MathTerm::ABS:      o=GroundConstraint::ABS; break;
                         case MathTerm::UMINUS:
                         {
-                            return new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(b_->loc(), Val::number(0)).toGroundConstraint(g), a_->toGroundConstraint(g));
+                            ret = new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(a_->loc(), Val::number(0)).toGroundConstraint(g), a_->toGroundConstraint(g));
+                            ret->simplify();
+                            return ret;
                         }
                         default: throw CSPException("Unsupported Operator");
 		}
 
-                return new GroundConstraint(g,o,a_.get() ? a_->toGroundConstraint(g) : 0, b_.get() ? b_->toGroundConstraint(g) : 0);
+                ret = new GroundConstraint(g,o,a_.get() ? a_->toGroundConstraint(g) : 0, b_.get() ? b_->toGroundConstraint(g) : 0);
+                ret->simplify();
+                return ret;
 	}
 
 	ConstraintMathTerm::~ConstraintMathTerm()

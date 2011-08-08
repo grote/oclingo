@@ -24,7 +24,7 @@ namespace Clingcon
         {
         public:
                 virtual void begin(Val lower, Val upper) = 0;
-                virtual void begin(Val t, Val lower, Val upper) = 0;
+                //virtual void begin(Val t, Val lower, Val upper) = 0;
                 virtual ~Printer(){}
         };
 
@@ -82,9 +82,9 @@ namespace Clingcon
         virtual void accept(::Printer *v)
         {
             Printer *printer = v->output()->printer<Printer>();
-            if (t_)
-                printer->begin(vt_,vlower_, vupper_);
-            else
+            //if (t_)
+            //    printer->begin(vt_,vlower_, vupper_);
+            //else
                 printer->begin(vlower_, vupper_);
         }
 

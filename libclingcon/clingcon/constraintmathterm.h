@@ -36,7 +36,7 @@ namespace Clingcon
 		void vars(VarSet &v) const;
 		void visit(PrgVisitor *visitor, bool bind);
 		bool constant() const;
-                virtual bool match(Grounder* ){ return true; }
+                virtual bool match(Grounder* );
 		void print(Storage *sto, std::ostream &out) const;
                 ConstraintMathTerm *clone() const;
 		MathTerm* toTerm() const

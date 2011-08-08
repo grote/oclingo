@@ -28,7 +28,7 @@ namespace Clingcon {
         {
         }
 
-        Constraint::Constraint(Constraint& cc) : type_(cc.type_), a_(cc.a_), b_(cc.b_)
+        Constraint::Constraint(Constraint& cc) : type_(cc.type_), a_(cc.a_), b_(cc.b_), lhs_(cc.lhs_), rhs_(cc.rhs_)
         {
         }
 
@@ -36,9 +36,29 @@ namespace Clingcon {
 	{
 	}
 
+        Constraint::Constraint(CSPLit::Type type) : type_(type), a_(0), b_(0)
+        {
+        }
+
         Constraint::~Constraint()
 	{
 	}
+
+
+        void Constraint::add(const Constraint* a)
+        {
+            if (lhs_.get()==0)
+                lhs_.reset(a);
+            else
+                rhs_.reset(a);
+        }
+
+        bool Constraint::isSimple() const
+        {
+            if (lhs_.get()==0)
+                return true;
+            return false;
+        }
 
 
        /* Constraint Constraint::operator=(Constraint& cc)
@@ -65,21 +85,48 @@ namespace Clingcon {
 		return type_;
 	}
 
-        CSPLit::Type Constraint::getRelation(const GroundConstraint*& a, const GroundConstraint*& b) const
+        CSPLit::Type Constraint::getRelations(const GroundConstraint*& a, const GroundConstraint*& b) const
 	{
                 a = a_.get();
                 b = b_.get();
                 return type_;
 	}
 
+        CSPLit::Type Constraint::getConstraints(const Constraint*& a, const Constraint*& b) const
+        {
+                a = lhs_.get();
+                b = rhs_.get();
+                return type_;
+        }
 
-        std::vector<unsigned int> Constraint::getAllVariables(CSPSolver* csps) const
+
+        void Constraint::registerAllVariables(CSPSolver* csps) const
 	{
-            std::vector<unsigned int> re;
-            a_->getAllVariables(re,csps);
-            b_->getAllVariables(re,csps);
-            return re;
+            if (lhs_.get())
+            {
+                lhs_->registerAllVariables(csps);
+                rhs_->registerAllVariables(csps);
+            }
+            else
+            {
+                a_->registerAllVariables(csps);
+                b_->registerAllVariables(csps);
+            }
 	}
+
+        void Constraint::getAllVariables(std::vector<unsigned int>& vec, CSPSolver* csps) const
+        {
+            if (lhs_.get())
+            {
+                lhs_->getAllVariables(vec, csps);
+                rhs_->getAllVariables(vec, csps);
+            }
+            else
+            {
+                a_->getAllVariables(vec, csps);
+                b_->getAllVariables(vec, csps);
+            }
+        }
 
 }
 

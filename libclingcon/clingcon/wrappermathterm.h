@@ -33,17 +33,17 @@ namespace Clingcon
 
 		ConstraintMathTerm* toConstraintTerm()
 		{
-			return new ConstraintMathTerm(loc_,f_,a_->toConstraintTerm(),b_->toConstraintTerm());
+                        return new ConstraintMathTerm(loc_,f_,a_->toConstraintTerm(),(b_.get() ? b_->toConstraintTerm() : 0));
 		}
 
 		MathTerm* toTerm() const
 		{
-			return new MathTerm(loc_,f_,a_->toTerm(),b_->toTerm());
+                        return new MathTerm(loc_,f_,a_->toTerm(),(b_.get() ? b_->toTerm() : 0));
 		}
 
 		WrapperMathTerm *clone() const
 		{
-			return new WrapperMathTerm(loc_,f_,a_->clone(),b_->clone());
+                        return new WrapperMathTerm(loc_,f_,a_->clone(),(b_.get() ? b_->clone() : 0));
 		}
 	private:
 		MathTerm::Func         f_;

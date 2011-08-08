@@ -126,9 +126,12 @@
                     else
                     {
                         //default
+                        if (!(type_==COUNT_UNIQUE))
+                        {
                         output_->out() << "[";
                         vec[i].vweight_.print(output_->storage(), output_->out());
                         output_->out() << "]";
+                        }
                     }
 
                     if (i+1<vec.size())
@@ -300,9 +303,12 @@
                     else
                     {
                         //default
-                        out_ << "[";
-                        vec[i].vweight_.print(output_->storage(), out_);
-                        out_ << "]";
+                        if (!(tempGC_->type_==COUNT_UNIQUE))
+                        {
+                            out_ << "[";
+                            vec[i].vweight_.print(output_->storage(), out_);
+                            out_ << "]";
+                        }
                     }
 
                     if (i+1<vec.size())

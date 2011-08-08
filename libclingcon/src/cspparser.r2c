@@ -177,11 +177,14 @@ start:
                 "$<="            { return CSPPARSER_CLTHAN; }
                 "$domain"        { return CSPPARSER_CSPDOMAIN; }
                 "$distinct"      { return CSPPARSER_CSPDISTINCT; }
-                "$binpack"       { return CSPPARSER_CSPBINPACK; }
                 "$count"         { return CSPPARSER_CSPCOUNT; }
                 "$sum"           { return CSPPARSER_CSPSUM; }
                 "$minimi"[sz]"e" { return CSPPARSER_CSPMINIMIZE; }
                 "$maximi"[sz]"e" { return CSPPARSER_CSPMAXIMIZE; }
+                "$and"           { return CSPPARSER_CSPAND; }
+                "$or"            { return CSPPARSER_CSPOR; }
+                "$xor"           { return CSPPARSER_CSPXOR; }
+                "$eq"            { return CSPPARSER_CSPEQ; }
 		ANY              { syntaxError(); goto start; }
 	*/
 lua:
@@ -585,23 +588,21 @@ void CSPParser::add()
 {
 	while(!last_.empty())
 	{
-		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
-		foreach(Statement &statement, rng)
-		{
-			DomAdder domAdder(this);
-			domAdder.add(&statement);
-		}
                 if(current_ == volatile_)
                 {
                         last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
                 }
-                else if(current_ == cumulative_)
-		{
-			foreach(Statement &statement, rng)
-			{
-				IncVarAdder adder(iVar_);
-				adder.add(&statement, config_);
-			}
+
+                StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
+                foreach(Statement &statement, rng)
+                {
+                    DomAdder domAdder(this);
+                    domAdder.add(&statement);
+                    if(current_ == cumulative_)
+                    {
+                        IncVarAdder adder(iVar_);
+                        adder.add(&statement, config_);
+                    }
 		}
 	}
 }

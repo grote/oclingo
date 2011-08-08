@@ -106,6 +106,45 @@ namespace Clingcon {
                     out << getString();
                 }
 
+                void simplify()
+                {
+                    if (a_)
+                        a_->simplify();
+                    if (b_)
+                        b_->simplify();
+
+                    if (op_==ABS && a_->isInteger())
+                    {
+                        op_=INTEGER;
+                        value_ = a_->getInteger();
+                        delete a_;
+                        a_ = 0;
+                        return;
+                    }
+
+#pragma message "avoid dividing by zero"
+                    if (a_ && a_->isInteger() && b_ && b_->isInteger())
+                    {
+                        switch (op_)
+                        {
+                        case PLUS:
+                            value_ = a_->getInteger() + b_->getInteger(); break;
+                        case MINUS:
+                            value_ = a_->getInteger() - b_->getInteger(); break;
+                        case TIMES:
+                            value_ = a_->getInteger() * b_->getInteger(); break;
+                        case DIVIDE:
+                            value_ = a_->getInteger() / b_->getInteger(); break;
+                        }
+                        op_=INTEGER;
+                        delete a_;
+                        delete b_;
+                        a_ = 0;
+                        b_ = 0;
+                    }
+
+                }
+
                 int compare(const GroundConstraint &cmp, Storage *s) const
                 {
                     if (isOperator() && cmp.isOperator())
@@ -214,6 +253,7 @@ namespace Clingcon {
                 }
 
                 void getAllVariables(std::vector<unsigned int>& vec, CSPSolver* csps) const;
+                void registerAllVariables(CSPSolver* csps) const;
 
                 int getInteger() const
                 {

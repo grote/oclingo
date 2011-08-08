@@ -64,6 +64,7 @@ struct ClingconOptions
         std::string      cspICL; // Default: "default"
         std::string      cspBranchVar;     // Default: "SIZE_MIN"
         std::string      cspBranchVal;     // Default: "SPLIT_MIN"
+        bool             cspLazyLearn;     // Default: true
 
 	CSPMode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
@@ -82,7 +83,8 @@ ClingconOptions<M>::ClingconOptions()
 	: claspMode(false)
 	, clingconMode(M == CLINGCON)
 	, mode(M)
-	, iStats(false)
+        , iStats(false)
+        , cspLazyLearn(true)
 { }
 
 template <CSPMode M>
@@ -137,6 +139,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                         "      weak   : Compute weak answer sets\n"
                         "      0      : Compute all constraint answer sets\n"
                         "      <x>    : Compute at most x constraint solutions for each standard answer set\n");
+        csp.addOptions()("csp-lazy-learn", bool_switch(&cspLazyLearn), "Enable lazy learning for csp reasons\n");
         csp.addOptions()("csp-icl", storeTo(cspICL)->defaultValue("default"),
                         "Set propagator by consistency level\n"
                         "      value  : Value propagation or consistency (naive)\n"
