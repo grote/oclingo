@@ -81,7 +81,7 @@ struct AggrTodoVal
 	typedef AggrCond::Printer::State State;
 
 	AggrTodoVal();
-	AggrTodoVal(uint32_t symbol, bool head);
+	AggrTodoVal(bool head);
 
 	uint32_t symbol;
 	bool     head;
@@ -133,6 +133,7 @@ private:
 	TodoMap          todo_;
 	AggrTodoKey      key_;
 	AggrTodoVal      val_;
+	bool             sign_;
 };
 
 class SumAggrLitPrinter : public AggrLitPrinter<SumAggrLit>

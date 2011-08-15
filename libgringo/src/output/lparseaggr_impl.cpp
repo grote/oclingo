@@ -148,8 +148,8 @@ AggrTodoVal::AggrTodoVal()
 {
 }
 
-AggrTodoVal::AggrTodoVal(uint32_t symbol, bool head)
-	: symbol(symbol)
+AggrTodoVal::AggrTodoVal(bool head)
+	: symbol(0)
 	, head(head)
 {
 }
@@ -166,15 +166,9 @@ AggrLitPrinter<T, Type>::AggrLitPrinter(LparseConverter *output)
 template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::begin(State state, bool head, bool sign, bool, bool)
 {
-	key_ = AggrTodoKey(state);
-	val_ = AggrTodoVal(output_->symbol(), head);
-	RulePrinter *printer = static_cast<RulePrinter*>(output()->template printer<Rule::Printer>());
-	if(head)
-	{
-		assert(!sign);
-		printer->setHead(val_.symbol);
-	}
-	else { printer->addBody(val_.symbol, sign); }
+	sign_ = sign;
+	key_  = AggrTodoKey(state);
+	val_  = AggrTodoVal(head);
 }
 
 template <class T, uint32_t Type>
@@ -194,7 +188,15 @@ void AggrLitPrinter<T, Type>::upper(const Val &u, bool leq)
 template <class T, uint32_t Type>
 void AggrLitPrinter<T, Type>::end()
 {
-	todo_.insert(TodoMap::value_type(key_, val_));
+	std::pair<TodoMap::iterator, bool> res = todo_.insert(TodoMap::value_type(key_, val_));
+	if (res.second) { res.first->second.symbol = output_->symbol(); }
+	RulePrinter *printer = static_cast<RulePrinter*>(output()->template printer<Rule::Printer>());
+	if(val_.head)
+	{
+		assert(!sign_);
+		printer->setHead(res.first->second.symbol);
+	}
+	else { printer->addBody(res.first->second.symbol, sign_); }
 }
 
 template <class T, uint32_t Type>
