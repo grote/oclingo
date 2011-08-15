@@ -405,6 +405,9 @@ aggr_ass(res) ::=            LCBRAC(tok)      condlist(list) RCBRAC. { res = new
 //aggr(res) ::= EVEN(tok) LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, true, false); delete list; }
 //aggr(res) ::= ODD(tok)  LSBRAC weightlist(list) RSBRAC. { res = new ParityAggrLit(tok.loc(), *list, false, false); delete list; }
 
+
+// TODO: re-add
+/*
 conjunction(res) ::= lit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
 
 disjlist(res) ::= VBAR predicate(lit) cond(cond).                { res = vec1<JunctionCond>(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
@@ -412,6 +415,10 @@ disjlist(res) ::= disjlist(list) VBAR predicate(lit) cond(cond). { res = list; l
 
 disjunction(res) ::= predicate(lit) cond(cond) disjlist(list). { list->insert(list->begin(), new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), *list); delete list; }
 disjunction(res) ::= predicate(lit) ncond(cond).               { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
+*/
+conjunction ::= X.
+disjunction ::= X.
+
 
 aggr_num(res) ::= aggr_ass(lit). { res = lit; }
 aggr(res)     ::= aggr_num(lit). { res = lit; }

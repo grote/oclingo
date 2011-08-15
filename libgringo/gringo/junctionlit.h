@@ -24,58 +24,11 @@
 
 class JunctionLit;
 
-struct JunctionState
-{
-	JunctionState();
-
-	bool   match;
-	bool   fact;
-	bool   isNew;
-	bool   groundSwitch;
-	ValVec vals;
-};
-
-class JunctionLitDomain
-{
-	typedef std::vector<VarVec> VarVecVec;
-	typedef boost::unordered_map<ValVec, JunctionState>  StateMap;
-public:
-	JunctionLitDomain();
-
-	bool state(Grounder *g);
-	void accumulate(Grounder *g, uint32_t index);
-	BoolPair match(Grounder *g);
-	void print(Printer *p);
-
-	bool fact() const;
-	bool hasNew() const;
-	bool newState() const;
-	void finish();
-	void enqueue(Grounder *g);
-
-	void initGlobal(Grounder *g, Formula *f, const VarVec &global, bool head_);
-	void initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head);
-private:
-	VarVec         global_;
-	VarVecVec      local_;
-	LitVec         heads_;
-	StateMap       state_;
-	IndexPtrVec    indices_;
-	Grounder      *g_;
-	JunctionState *current_;
-	Formula       *f_;
-	bool           new_;
-	bool           newState_;
-	bool           head_;
-	bool           groundSwitch_;
-};
-
 class JunctionCond : public Formula
 {
 	friend class JunctionLit;
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
-	void init(Grounder *g, JunctionLitDomain &dom);
 	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
 	void finish();
@@ -108,11 +61,13 @@ public:
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
 
-	BoolPair ground(Grounder *g);
+	uint32_t newUid();
+
+	bool ground(Grounder *g);
+	void finish();
 	void enqueue(Grounder *g);
 	bool groundedCond(Grounder *grounder, uint32_t index);
 
-	JunctionLitDomain &domain();
 	JunctionCondVec &conds();
 
 	void normalize(Grounder *g, const Expander &e);
@@ -137,15 +92,8 @@ private:
 	bool              match_;
 	bool              fact_;
 	JunctionCondVec   conds_;
-	JunctionLitDomain dom_;
 };
-
-/////////////////////////// JunctionLitDomain ///////////////////////////
-inline bool JunctionLitDomain::hasNew() const { return new_; }
-inline bool JunctionLitDomain::newState() const { return newState_; }
 
 /////////////////////////// JunctionLit ///////////////////////////
 
 inline JunctionCondVec &JunctionLit::conds() { return conds_; }
-inline JunctionLitDomain &JunctionLit::domain() { return dom_; }
-

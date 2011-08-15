@@ -25,10 +25,13 @@
 /*
   both conjunction and disjunction are grounded the same way
    - heads must not be used for matching
+
    - non-heads grounded in bottom up fashion
 	 - instantiator is finished iff (index of) conjunction is finished
+
    - for conjunctions always maintain exactly one conditional
 	 - should be the case because preprocessing is for heads is special
+
    - calculate global vaiables wrt. conditionals only
 	 - :- p(X), q(Y), r(Z) : s(X,Z).
 	 - Y might be problematic here because the conjunction might be regrounded
@@ -38,200 +41,98 @@
 	   - if the containing literal is finished remove the finished mark
 		 (and finish the indices of the conditional)
 	   - global variables or an identifier for them have to be passed as identifier to output
-   - fact heads
+
+	- fact heads
 	 - disjunction:  ignore the whole rule
 	 - conjunctions: ignore the literal
+
+   - rule:         head :-    ..., conjunction,      ... .
+	 instantiator: idx(head), ..., idx(conjunction), ...
+	 conjunction:  a : b : ...
+	 instantiator: idx(cond), idx(a), idx(b), ...
+
 */
 
 namespace
 {
 
-	class JunctionIndex : public Index
+struct JunctionIndex : public StaticIndex
+{
+	struct Status
 	{
-	public:
-		JunctionIndex(JunctionLit &lit);
-		Match firstMatch(Grounder *grounder, int binder);
-		Match nextMatch(Grounder *grounder, int binder);
-		void reset();
-		void finish();
-		bool hasNew() const;
-	private:
-		JunctionLit &lit_;
-		bool         finished_;
+		Status()
+			: generation(1)
+			, uid(0)
+		{
+		}
+
+		uint32_t generation;
+		uint32_t uid;
 	};
+	typedef boost::unordered_map<ValVec, Status> Done;
 
-	class JunctionStateNewIndex : public NewOnceIndex
+	JunctionIndex(JunctionLit &lit, VarSet &global)
+		: lit_(lit)
+		, global_(global.begin(), global.end())
+		, generation_(2)
+		, dirty_(false)
 	{
-	public:
-		JunctionStateNewIndex(JunctionLitDomain &dom);
-		Match firstMatch(Grounder *g, int binder);
-		bool hasNew() const;
-	private:
-		JunctionLitDomain &dom_;
-	};
-
-	void addIndex(Instantiator *inst, Grounder *g, Formula *f, VarSet &bound, Lit *head, Lit *lit)
-	{
-		if(lit != head) { inst->append(lit->index(g, f, bound)); }
 	}
 
-}
-
-///////////////////////////// JunctionState /////////////////////////////
-
-JunctionState::JunctionState()
-	: match(false)
-	, fact(false)
-	, isNew(true)
-	, groundSwitch(true)
-{
-}
-
-///////////////////////////// JunctionLitDomain /////////////////////////////
-
-JunctionLitDomain::JunctionLitDomain()
-	: f_(0)
-	, new_(false)
-	, newState_(false)
-	, head_(false)
-	, groundSwitch_(true)
-{
-}
-
-bool JunctionLitDomain::fact() const
-{
-	return current_->fact;
-}
-
-void JunctionLitDomain::finish()
-{
-	groundSwitch_ = !groundSwitch_;
-	foreach(StateMap::reference ref, state_)
+	bool first(Grounder *grounder, int binder)
 	{
-		if(ref.second.match) { ref.second.isNew = false; }
-		ref.second.groundSwitch = groundSwitch_;
-	}
-	new_ = false;
-}
-
-void JunctionLitDomain::initGlobal(Grounder *g, Formula *f, const VarVec &global, bool head)
-{
-	head_   = head;
-	g_      = g;
-	f_      = f;
-	global_ = global;
-}
-
-void JunctionLitDomain::initLocal(Grounder *g, Formula *f, uint32_t index, Lit &head)
-{
-	if(local_.size() <= index)
-	{
-
-		heads_.push_back(&head);
-		local_.push_back(VarVec());
-		VarSet bound;
-		GlobalsCollector::collect(head, bound, f->level());
-		std::set_difference(bound.begin(), bound.end(), global_.begin(), global_.end(), std::back_inserter(local_.back()));
-		indices_.push_back(head.index(g, f, bound));
-	}
-
-}
-
-void JunctionLitDomain::enqueue(Grounder *g)
-{
-	new_ = true;
-	f_->enqueue(g);
-}
-
-bool JunctionLitDomain::state(Grounder *g)
-{
-	ValVec global;
-	foreach(uint32_t var, global_) { global.push_back(g->val(var)); }
-	std::pair<StateMap::iterator, bool> res = state_.insert(StateMap::value_type(global, JunctionState()));
-	newState_ = res.second;
-	current_  = &res.first->second;
-	if(newState_)
-	{
-		current_->groundSwitch = !groundSwitch_;
+		ValVec global;
+		foreach (uint32_t var, global_) { global.push_back(grounder->val(var)); }
+		Status &status = done_[global];
+		if (status.generation == 0) { return false; }
+		if (status.generation == 1) { status.uid = lit_.newUid(); }
+		if (status.generation < generation_)
+		{
+			if (!lit_.ground(grounder))
+			{
+				status.generation = 1;
+				return false;
+			}
+			status.generation = generation_;
+		}
 		return true;
 	}
-	else
+
+	void reset()
 	{
-		bool oldSwitch = current_->groundSwitch;
-		current_->groundSwitch = !groundSwitch_;
-		return oldSwitch == groundSwitch_;
+		done_.clear();
+		generation_ = 2;
+		dirty_      = false;
 	}
+
+	void finish()
+	{
+		lit_.finish();
+		generation_++;
+		dirty_ = false;
+	}
+
+	void setDirty()
+	{
+		dirty_ = true;
+	}
+
+	bool hasNew() const
+	{
+		return dirty_;
+	}
+
+private:
+	JunctionLit &lit_;
+	Done         done_;
+	VarVec       global_;
+	uint32_t     generation_;
+	bool         dirty_;
+};
+
 }
 
-void JunctionLitDomain::accumulate(Grounder *g, uint32_t index)
-{
-	current_->vals.push_back(Val::id(index));
-	foreach(uint32_t var, local_[index]) { current_->vals.push_back(g->val(var)); }
-}
-
-BoolPair JunctionLitDomain::match(Grounder *g)
-{
-	if(head_)
-	{
-		current_->match = true;
-		current_->fact  = false;
-		current_->isNew = true;
-	}
-	else
-	{
-		foreach(Index &idx, indices_) { idx.init(g); }
-		// TODO: this is unnerving
-		foreach(Lit *head, heads_) { head->head(false); }
-		if(!current_->match)
-		{
-			current_->match = true;
-			current_->fact  = true;
-			for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
-			{
-				uint32_t index = it->index;
-				foreach(uint32_t var, local_[index]) { g->val(var, *++it, 0); }
-				if(!indices_[index].firstMatch(g, 0).first)
-				{
-					current_->match = false;
-					current_->fact  = false;
-					break;
-				}
-				if(current_->fact)
-				{
-					heads_[index]->grounded(g);
-					current_->fact = heads_[index]->fact();
-				}
-			}
-			foreach(VarVec &vars, local_)
-			{
-				foreach(uint32_t var, vars) { g->unbind(var); }
-			}
-		}
-		foreach(Lit *head, heads_) { head->head(true); }
-	}
-	return BoolPair(current_->match, current_->match && current_->isNew);
-}
-
-void JunctionLitDomain::print(Printer *p)
-{
-	// note: just for bodies
-	if(!current_->fact || head_)
-	{
-		if(!head_) { foreach(Lit *head, heads_) { head->head(false); } }
-		for(ValVec::iterator it = current_->vals.begin(); it != current_->vals.end(); it++)
-		{
-			uint32_t index = it->index;
-			foreach(uint32_t var, local_[index]) { g_->val(var, *++it, 0); }
-			heads_[index]->grounded(g_);
-			if(head_ || !heads_[index]->fact()) { heads_[index]->accept(p); }
-		}
-		foreach(VarVec &vars, local_)
-		{
-			foreach(uint32_t var, vars) { g_->unbind(var); }
-		}
-		if(!head_) { foreach(Lit *head, heads_) { head->head(true); } }
-	}
-}
+/*
 
 ///////////////////////////// JunctionCond /////////////////////////////
 
@@ -447,54 +348,4 @@ JunctionLit::~JunctionLit()
 {
 }
 
-///////////////////////////// JunctionIndex /////////////////////////////
-
-JunctionIndex::JunctionIndex(JunctionLit &lit)
-	: lit_(lit)
-	, finished_(false)
-{
-}
-
-Index::Match JunctionIndex::firstMatch(Grounder *grounder, int)
-{
-	return lit_.ground(grounder);
-}
-
-Index::Match JunctionIndex::nextMatch(Grounder *, int)
-{
-	return Match(false, false);
-}
-
-void JunctionIndex::reset()
-{
-	finished_ = false;
-}
-
-void JunctionIndex::finish()
-{
-	foreach(JunctionCond &cond, lit_.conds()) { cond.finish(); }
-	lit_.domain().finish();
-	finished_ = true;
-}
-
-bool JunctionIndex::hasNew() const
-{
-	return !finished_ || lit_.domain().hasNew();
-}
-
-///////////////////////////// JunctionStateNewIndex /////////////////////////////
-
-JunctionStateNewIndex::JunctionStateNewIndex(JunctionLitDomain &dom)
-	: dom_(dom)
-{
-}
-
-Index::Match JunctionStateNewIndex::firstMatch(Grounder *, int)
-{
-	return Match(true, dom_.newState());
-}
-
-bool JunctionStateNewIndex::hasNew() const
-{
-	return NewOnceIndex::hasNew() || dom_.newState();
-}
+*/
