@@ -35,20 +35,18 @@ public:
 
 inline Index *new_clone(const Index &) { return 0; }
 
-class NewOnceIndex : public Index
+class StaticIndex : public Index
 {
 public:
-	NewOnceIndex();
-	virtual bool first(Grounder *grounder, int binder);
+	virtual bool first(Grounder *grounder, int binder) = 0;
 	virtual bool next(Grounder *grounder, int binder);
 	virtual Match firstMatch(Grounder *grounder, int binder);
 	virtual Match nextMatch(Grounder *grounder, int binder);
 	virtual void reset();
 	virtual void finish();
 	virtual bool hasNew() const;
-	virtual ~NewOnceIndex();
-private:
-	bool finished_;
+	virtual bool init(Grounder* g);
+	virtual ~StaticIndex();
 };
 
 class Matchable
@@ -58,55 +56,14 @@ public:
 	virtual ~Matchable();
 };
 
-class MatchIndex : public NewOnceIndex
+class MatchIndex : public StaticIndex
 {
 public:
 	MatchIndex(Matchable *m);
 	virtual bool first(Grounder *grounder, int binder);
+	virtual bool next(Grounder *grounder, int binder);
+	virtual ~MatchIndex();
+
 private:
 	Matchable *m_;
 };
-
-// ========================= Index =========================
-inline bool Index::init(Grounder*)
-{
-	return hasNew();
-}
-
-inline Index::~Index() { }
-
-// ========================= NewOnceIndex =========================
-inline NewOnceIndex::NewOnceIndex()
-	: finished_(false)
-{
-}
-
-inline bool NewOnceIndex::first(Grounder *, int) { return true; }
-inline bool NewOnceIndex::next(Grounder *, int) { return false; }
-
-inline Index::Match NewOnceIndex::firstMatch(Grounder *grounder, int binder)
-{
-	bool match = first(grounder, binder);
-	return Match(match, !finished_ && match);
-}
-
-inline Index::Match NewOnceIndex::nextMatch(Grounder *grounder, int binder)
-{
-	bool match = next(grounder, binder);
-	return Match(match, !finished_ && match);
-}
-
-inline void NewOnceIndex::reset()        { finished_ = false; }
-inline void NewOnceIndex::finish()       { finished_ = true; }
-inline bool NewOnceIndex::hasNew() const { return !finished_; }
-
-inline NewOnceIndex::~NewOnceIndex() { }
-
-// ========================= Matchable =========================
-
-inline Matchable::~Matchable() { }
-
-// ========================= MatchIndex =========================
-inline MatchIndex::MatchIndex(Matchable *m) : m_(m)
-{
-}

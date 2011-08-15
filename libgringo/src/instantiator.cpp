@@ -20,11 +20,47 @@
 #include <gringo/index.h>
 #include <gringo/grounder.h>
 
+struct NewOnceIndex : public Index
+{
+public:
+	NewOnceIndex()
+		: finished(false)
+	{
+	}
+
+	Match firstMatch(Grounder *, int)
+	{
+		return Match(true, !finished);
+	}
+	Match nextMatch(Grounder *, int)
+	{
+		return Match(false, false);
+	}
+	void reset()
+	{
+		finished = false;
+	}
+
+	void finish()
+	{
+		finished = true;
+	}
+
+	bool hasNew() const
+	{
+		return !finished;
+	}
+
+	bool finished;
+};
+
+
 Instantiator::Instantiator(const VarVec &vars, const GroundedCallback &grounded)
 	: vars_(vars)
 	, grounded_(grounded)
 	, new_(1, false)
 {
+	append(new NewOnceIndex());
 }
 
 void Instantiator::append(Index *i)
@@ -34,11 +70,7 @@ void Instantiator::append(Index *i)
 		indices_.push_back(i);
 		new_.push_back(false);
 	}
-}
 
-void Instantiator::fix()
-{
-	if(indices_.empty()) { append(new NewOnceIndex()); }
 }
 
 void Instantiator::ground(Grounder *g)

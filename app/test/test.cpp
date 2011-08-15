@@ -136,3 +136,71 @@ BOOST_AUTO_TEST_CASE( aggr_test )
 	);
 }
 
+BOOST_AUTO_TEST_CASE( company1 )
+{
+	Tester
+	(
+		"controls(X,Y) :- 51 #sum+ [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y ], company(X), company(Y), X != Y."
+		"company(c1;c2;c3;c4)."
+		"owns(c1,c2,60). owns(c1,c3,20). owns(c2,c3,40). owns(c3,c4,51).",
+
+		"controls(c3,c4)", "controls(c1,c2)", "controls(c1,c3)", "controls(c1,c4)",
+		"owns(c1,c2,60)", "owns(c1,c3,20)", "owns(c2,c3,40)", "owns(c3,c4,51)",
+		"company(c1)", "company(c2)", "company(c3)", "company(c4)", NULL,
+
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( company2 )
+{
+	Tester
+	(
+		"controls(X,Y) :- 51 #sum [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y ], company(X), company(Y), X != Y."
+		"company(c1;c2;c3;c4)."
+		"owns(c1,c2,60). owns(c1,c3,20). owns(c2,c3,40). owns(c3,c4,51).",
+
+		"controls(c3,c4)", "controls(c1,c2)", "controls(c1,c3)", "controls(c1,c4)",
+		"owns(c1,c2,60)", "owns(c1,c3,20)", "owns(c2,c3,40)", "owns(c3,c4,51)",
+		"company(c1)", "company(c2)", "company(c3)", "company(c4)", NULL,
+
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( company3 )
+{
+	Tester
+	(
+		"controls(X,Y) :- not [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls(X,Z) : X != Y ] 50, company(X), company(Y), X != Y."
+		"company(c1;c2;c3;c4)."
+		"owns(c1,c2,60). owns(c1,c3,20). owns(c2,c3,40). owns(c3,c4,51).",
+
+		"controls(c3,c4)", "controls(c1,c2)", "controls(c1,c3)", "controls(c1,c4)",
+		"owns(c1,c2,60)", "owns(c1,c3,20)", "owns(c2,c3,40)", "owns(c3,c4,51)",
+		"company(c1)", "company(c2)", "company(c3)", "company(c4)", NULL,
+
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( company4 )
+{
+	Tester
+	(
+		"controls(X,Y)  :- owns(X,Y,_), 51 #sum+ [ owns(X,Y,S) = S ]."
+		"reach(X,Z)     :- controls(X,Y), owns(Y,Z,_), 51 [ owns(_,Z,S) = S ]."
+		"controls(X,Z)  :- reach(X,Z), X != Z, 51 #sum+ [ owns(X,Z,S) = S, owns(Y,Z,S) = S : controls(X,Y) ]."
+		"company(c1;c2;c3;c4)."
+		"owns(c1,c2,60). owns(c1,c3,20). owns(c2,c3,40). owns(c3,c4,51).",
+
+		"reach(c1,c3)", "reach(c1,c4)",
+		"controls(c3,c4)", "controls(c1,c2)", "controls(c1,c3)", "controls(c1,c4)",
+		"owns(c1,c2,60)", "owns(c1,c3,20)", "owns(c2,c3,40)", "owns(c3,c4,51)",
+		"company(c1)", "company(c2)", "company(c3)", "company(c4)", NULL,
+
+		NULL
+	);
+}
+
+

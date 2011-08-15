@@ -43,7 +43,7 @@ bool LuaLit::match(Grounder *grounder)
 
 namespace
 {
-	class LuaIndex : public NewOnceIndex
+	class LuaIndex : public StaticIndex
 	{
 	public:
 		LuaIndex(uint32_t var, LuaLit *lit, const VarVec &bind);

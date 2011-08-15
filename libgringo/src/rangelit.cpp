@@ -65,7 +65,7 @@ bool RangeLit::match(Grounder *grounder)
 
 namespace
 {
-	class RangeIndex : public NewOnceIndex
+	class RangeIndex : public StaticIndex
 	{
 	public:
 		RangeIndex(uint32_t var, RangeLit *lit, Term *a, Term *b, const VarVec &bind);

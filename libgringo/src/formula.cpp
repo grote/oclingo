@@ -231,7 +231,6 @@ void IndexAdder::add(Grounder *g, Formula *f, Instantiator &inst)
 	if(f->level() > 0) { GlobalsCollector::collect(*f, adder.bound_, f->level() - 1); }
 	if(f->litDep()) { f->litDep()->order(g, boost::bind(&IndexAdder::visit, &adder, _1, false), adder.bound_); }
 	else { f->visit(&adder); }
-	inst.fix();
 }
 
 //////////////////////////////// VarCollector ////////////////////////////////

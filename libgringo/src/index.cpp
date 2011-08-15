@@ -18,7 +18,79 @@
 #include <gringo/index.h>
 #include <gringo/lit.h>
 
+// ========================= Index =========================
+bool Index::init(Grounder*)
+{
+	return hasNew();
+}
+
+Index::~Index() { }
+
+// ========================= StaticIndex =========================
+
+bool StaticIndex::next(Grounder *, int)
+{
+	return false;
+}
+
+Index::Match StaticIndex::firstMatch(Grounder *grounder, int binder)
+{
+	bool match = first(grounder, binder);
+	return Match(match, false);
+}
+
+Index::Match StaticIndex::nextMatch(Grounder *grounder, int binder)
+{
+	bool match = next(grounder, binder);
+	return Match(match, false);
+}
+
+void StaticIndex::reset()
+{
+}
+
+void StaticIndex::finish()
+{
+}
+
+bool StaticIndex::hasNew() const
+{
+	return false;
+}
+
+bool StaticIndex::init(Grounder* g)
+{
+	return hasNew();
+}
+
+StaticIndex::~StaticIndex()
+{
+}
+
+
+// ========================= Matchable =========================
+
+Matchable::~Matchable()
+{
+}
+
+// ========================= MatchIndex =========================
+MatchIndex::MatchIndex(Matchable *m)\
+	: m_(m)
+{
+}
+
 bool MatchIndex::first(Grounder *grounder, int)
 {
 	return m_->match(grounder);
+}
+
+bool MatchIndex::next(Grounder *, int)
+{
+	return false;
+}
+
+MatchIndex::~MatchIndex()
+{
+
 }

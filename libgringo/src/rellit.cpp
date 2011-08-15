@@ -53,7 +53,7 @@ bool RelLit::match(Grounder *g)
 
 namespace
 {
-	class AssignIndex : public NewOnceIndex
+	class AssignIndex : public StaticIndex
 	{
 	public:
 		AssignIndex(Term *a, Term *b, const VarVec &bind);

@@ -81,12 +81,16 @@ namespace
 		bool       finished_;
 	};
 
-	class AggrStateDirtyIndex : public NewOnceIndex
+	class AggrStateDirtyIndex : public Index
 	{
 	public:
 		AggrStateDirtyIndex(AggrLit &lit);
 		Match firstMatch(Grounder *grounder, int binder);
+		Match nextMatch(Grounder *grounder, int binder);
 		bool hasNew() const;
+		void reset();
+		void finish();
+
 	private:
 		AggrLit &lit_;
 	};
@@ -818,7 +822,10 @@ AggrIndex::~AggrIndex()
 
 //////////////////////////////////////// AggrStateDirtyIndex ////////////////////////////////////////
 
-AggrStateDirtyIndex::AggrStateDirtyIndex(AggrLit &lit) : lit_(lit) { }
+AggrStateDirtyIndex::AggrStateDirtyIndex(AggrLit &lit)
+	: lit_(lit)
+{
+}
 
 Index::Match AggrStateDirtyIndex::firstMatch(Grounder *, int)
 {
@@ -827,5 +834,19 @@ Index::Match AggrStateDirtyIndex::firstMatch(Grounder *, int)
 
 bool AggrStateDirtyIndex::hasNew() const
 {
-	return NewOnceIndex::hasNew() || lit_.isNewAggrState();
+	return lit_.isNewAggrState();
 }
+
+AggrStateDirtyIndex::Match AggrStateDirtyIndex::nextMatch(Grounder *, int)
+{
+	return Match(false, false);
+}
+
+void AggrStateDirtyIndex::reset()
+{
+}
+
+void AggrStateDirtyIndex::finish()
+{
+}
+
