@@ -132,8 +132,6 @@ private:
 
 }
 
-/*
-
 ///////////////////////////// JunctionCond /////////////////////////////
 
 JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
@@ -149,11 +147,6 @@ JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
 void JunctionCond::finish()
 {
 	inst_->finish();
-}
-
-void JunctionCond::init(Grounder *g, JunctionLitDomain &dom)
-{
-	dom.initLocal(g, this, index_, *head_);
 }
 
 void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
@@ -172,18 +165,24 @@ void JunctionCond::enqueue(Grounder *g)
 	parent_->enqueue(g);
 }
 
+void JunctionCond::addIndex(Grounder *g, VarSet &bound, Lit *lit)
+{
+	inst_->append(lit->index(g, this, bound));
+}
+
+// TODO: anything might be passed from aggrlit now
 void JunctionCond::initInst(Grounder *g)
 {
 	if(!inst_.get())
 	{
 		assert(level() > 0);
+		// TODO: need a connection to JunctionIndex::state
 		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
-		inst_->append(new JunctionStateNewIndex(parent_->domain()));
 		VarSet bound;
 		GlobalsCollector::collect(*this, bound, level() - 1);
 		if(litDep_.get())
 		{
-			litDep_->order(g, boost::bind(addIndex, inst_.get(), g, this, boost::ref(bound), parent_->head() ? (Lit*)0 : head_.get(), _1), bound);
+			litDep_->order(g, boost::bind(&JunctionCond::addIndex, this, g, boost::ref(bound), _1), bound);
 		}
 		else
 		{
@@ -193,9 +192,9 @@ void JunctionCond::initInst(Grounder *g)
 	if(inst_->init(g)) { enqueue(g); }
 }
 
-void JunctionCond::ground(Grounder *g)
+bool JunctionCond::ground(Grounder *g)
 {
-	inst_->ground(g);
+	return inst_->ground(g);
 }
 
 void JunctionCond::visit(PrgVisitor *visitor)
@@ -218,6 +217,7 @@ JunctionCond::~JunctionCond()
 {
 }
 
+/*
 ///////////////////////////// JunctionLit /////////////////////////////
 
 JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)

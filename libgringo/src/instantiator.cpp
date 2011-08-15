@@ -73,8 +73,9 @@ void Instantiator::append(Index *i)
 
 }
 
-void Instantiator::ground(Grounder *g)
+bool Instantiator::ground(Grounder *g)
 {
+	bool ret = true;
 	int lastNew = -1;
 	int numNew  = 0;
 	
@@ -101,7 +102,11 @@ void Instantiator::ground(Grounder *g)
 		{
 			if(++l == static_cast<int>(indices_.size()))
 			{
-				if(!grounded_(g)) { break; }
+				if(!grounded_(g))
+				{
+					ret = false;
+					break;
+				}
 				matched.first = false;
 			}
 			else
@@ -113,6 +118,7 @@ void Instantiator::ground(Grounder *g)
 		}
 	}
 	foreach(uint32_t var, vars_) { g->unbind(var); }
+	return ret;
 }
 
 void Instantiator::finish()

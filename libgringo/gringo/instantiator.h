@@ -29,7 +29,7 @@ public:
 	Instantiator(const VarVec &vars, const GroundedCallback &grounded);
 	void append(Index *i);
 	void fix();
-	void ground(Grounder *g);
+	bool ground(Grounder *g);
 	void reset();
 	void finish();
 	bool init(Grounder *g);

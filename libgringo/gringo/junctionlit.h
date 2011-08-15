@@ -32,13 +32,16 @@ public:
 	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
 	void finish();
-	void ground(Grounder *g);
+	bool ground(Grounder *g);
 	void initInst(Grounder *g);
 	void enqueue(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
 
 	~JunctionCond();
+
+private:
+	void addIndex(Grounder *g, VarSet &bound, Lit *lit);
 
 private:
 	clone_ptr<Lit>          head_;

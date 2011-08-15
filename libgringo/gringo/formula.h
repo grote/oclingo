@@ -25,7 +25,6 @@ class Formula : public Locateable
 public:
 	Formula(const Loc &loc);
 
-	virtual void initInst(Grounder *g) = 0;
 	virtual void visit(PrgVisitor *visitor) = 0;
 	virtual void print(Storage *sto, std::ostream &out) const = 0;
 	virtual void enqueue(Grounder *g) = 0;
@@ -58,8 +57,9 @@ class Statement : public Formula
 public:
 	Statement(const Loc &loc);
 	void check(Grounder *g);
-	void init(Grounder *g);
 
+	virtual void init(Grounder *g);
+	virtual void initInst(Grounder *g) = 0;
 	virtual void normalize(Grounder *g) = 0;
 	virtual void append(Lit *lit) = 0;
 	virtual bool edbFact() const;

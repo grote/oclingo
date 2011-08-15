@@ -315,7 +315,7 @@ void AggrLit::endGround(Grounder *g)
 	foreach(AggrCond &cond, conds_) { cond.endGround(g); }
 }
 
-Index *AggrLit::index(Grounder *, Formula *gr, VarSet &bound)
+Index *AggrLit::index(Grounder *g, Formula *gr, VarSet &bound)
 {
 	parent_ = gr;
 	VarSet global;
@@ -329,6 +329,7 @@ Index *AggrLit::index(Grounder *, Formula *gr, VarSet &bound)
 	domain_.init(global);
 	AggrIndex *idx = new AggrIndex(*this, bound);
 	if(assign()) { assign()->vars(bound); }
+	foreach (AggrCond &cond, conds_) { cond.initInst(g); }
 	return idx;
 }
 

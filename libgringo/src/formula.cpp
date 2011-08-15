@@ -42,21 +42,6 @@ namespace
 		VarSet        bound_;
 	};
 
-	class FormulaInitializer : private PrgVisitor
-	{
-	private:
-		FormulaInitializer(Grounder *g);
-		void visit(Lit *lit, bool domain);
-		void visit(Formula *f, bool choice);
-
-	public:
-		static void init(Grounder *g, Formula *f);
-
-	private:
-		Grounder *g_;
-	};
-
-
 	class VarCollector : public PrgVisitor
 	{
 		typedef std::map<uint32_t, VarTerm*> VarMap;
@@ -111,7 +96,7 @@ Statement::Statement(const Loc &loc)
 
 void Statement::init(Grounder *g)
 {
-	FormulaInitializer::init(g, this);
+	initInst(g);
 }
 
 void Statement::check(Grounder *g)
@@ -186,29 +171,6 @@ void SimpleStatement::ground(Grounder *g)
 
 SimpleStatement::~SimpleStatement()
 {
-}
-
-//////////////////////////////// FormulaInitializer ////////////////////////////////
-
-FormulaInitializer::FormulaInitializer(Grounder *g)
-	: g_(g)
-{ }
-
-void FormulaInitializer::visit(Lit *lit, bool)
-{
-	lit->visit(this);
-}
-
-void FormulaInitializer::visit(Formula *f, bool)
-{
-	f->initInst(g_);
-	f->visit(this);
-}
-
-void FormulaInitializer::init(Grounder *g, Formula *f)
-{
-	FormulaInitializer init(g);
-	init.visit(f, false);
 }
 
 //////////////////////////////// IndexAdder ////////////////////////////////
