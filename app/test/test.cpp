@@ -27,12 +27,14 @@ struct Tester : public Clasp::Enumerator::Report
 			Clasp::Solver s;
 			Module *mb = g.createModule();
 			Module *mc = g.createModule();
+			mc->parent(mb);
 			Module *mv = g.createModule();
+			mv->parent(mc);
 			IncConfig ic;
 			Streams in;
 			Parser p(&g, mb, mc, mv, ic, in, false, false);
 			Streams::StreamPtr sp(new std::stringstream(is));
-			in.appendStream(sp, "test");
+			in.appendStream(sp, "<test>");
 			o.setProgramBuilder(&pb);
 			pb.startProgram(ai, new Clasp::DefaultUnfoundedCheck());
 			o.initialize();
@@ -101,7 +103,7 @@ struct Tester : public Clasp::Enumerator::Report
 	std::vector<Model> models;
 };
 
-BOOST_AUTO_TEST_CASE( fail )
+BOOST_AUTO_TEST_CASE( simple_test )
 {
 	Tester
 	(
@@ -113,3 +115,24 @@ BOOST_AUTO_TEST_CASE( fail )
 		NULL
 	);
 }
+
+BOOST_AUTO_TEST_CASE( aggr_test )
+{
+	// Note: failed because of bug in lparse aggregate translation
+	Tester
+	(
+		"location(1..3)."
+		"box(a;b;c)."
+		"1 { loc(B,L) : location(L) } 1 :- box(B)."
+		":- { not loc(B,L) } 0, { not loc(B1,L) } 0, B != B1, location(L), box(B;B1).",
+
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,3)", "loc(b,2)", "loc(a,1)", NULL,
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,3)", "loc(b,1)", "loc(a,2)", NULL,
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,2)", "loc(b,3)", "loc(a,1)", NULL,
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,2)", "loc(b,1)", "loc(a,3)", NULL,
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,1)", "loc(b,3)", "loc(a,2)", NULL,
+		"box(a)", "box(b)", "box(c)", "location(1)", "location(2)", "location(3)", "loc(c,1)", "loc(b,2)", "loc(a,3)", NULL,
+		NULL
+	);
+}
+
