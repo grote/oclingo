@@ -58,8 +58,7 @@ public:
 	Statement(const Loc &loc);
 	void check(Grounder *g);
 
-	virtual void init(Grounder *g);
-	virtual void initInst(Grounder *g) = 0;
+	virtual void init(Grounder *g) = 0;
 	virtual void normalize(Grounder *g) = 0;
 	virtual void append(Lit *lit) = 0;
 	virtual bool edbFact() const;
@@ -73,10 +72,9 @@ public:
 	SimpleStatement(const Loc &loc);
 
 	virtual bool grounded(Grounder *g) = 0;
-
-	void initInst(Grounder *g);
-	void ground(Grounder *g);
-	void enqueue(Grounder *g);
+	virtual void init(Grounder *g);
+	virtual void ground(Grounder *g);
+	virtual void enqueue(Grounder *g);
 
 	virtual ~SimpleStatement();
 

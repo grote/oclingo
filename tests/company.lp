@@ -14,6 +14,12 @@ controls1(X,Y) :- 51 #sum+ [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls1(X,Z) :
 controls2(X,Y) :- 51 #sum [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls2(X,Z) : X != Y ], company(X), company(Y), X != Y.
 controls3(X,Y) :- not [ owns(X,Y,S) = S, owns(Z,Y,S) = S : controls3(X,Z) : X != Y ] 50, company(X), company(Y), X != Y.
 
+% should be the best possible way to encode this
+controls4(X,Y)  :- owns(X,Y,_), 51 #sum+ [ owns(X,Y,S) = S ].
+reach4(X,Z)     :- controls4(X,Y), owns(Y,Z,_), 51 [ owns(_,Z,S) = S ].
+controls4(X,Z)  :- reach4(X,Z), X != Z, 51 #sum+ [ owns(X,Z,S) = S, owns(Y,Z,S) = S : controls4(X,Y) ].
+
+
 company(c1).
 company(c2).
 company(c3).

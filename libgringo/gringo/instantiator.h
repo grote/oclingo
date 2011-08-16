@@ -33,6 +33,7 @@ public:
 	void reset();
 	void finish();
 	bool init(Grounder *g);
+	void callback(const GroundedCallback &grounded);
 	~Instantiator();
 private:
 	VarVec           vars_;

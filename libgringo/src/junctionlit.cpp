@@ -53,21 +53,22 @@
 
 */
 
-namespace
-{
-
 struct JunctionIndex : public StaticIndex
 {
 	struct Status
 	{
-		Status()
+		// Note: conjunction are facts as long as there are no non-facts
+		//       disjunctions are facts if there is some fact
+		Status(bool head)
 			: generation(1)
 			, uid(0)
+			, fact(!head)
 		{
 		}
 
 		uint32_t generation;
 		uint32_t uid;
+		bool     fact;
 	};
 	typedef boost::unordered_map<ValVec, Status> Done;
 
@@ -75,26 +76,30 @@ struct JunctionIndex : public StaticIndex
 		: lit_(lit)
 		, global_(global.begin(), global.end())
 		, generation_(2)
+		, uid_(0)
 		, dirty_(false)
 	{
 	}
 
-	bool first(Grounder *grounder, int binder)
+	bool first(Grounder *grounder, int)
 	{
 		ValVec global;
 		foreach (uint32_t var, global_) { global.push_back(grounder->val(var)); }
-		Status &status = done_[global];
-		if (status.generation == 0) { return false; }
-		if (status.generation == 1) { status.uid = lit_.newUid(); }
-		if (status.generation < generation_)
+		Done::iterator it = done_.find(global);
+		status_ = &(it != done_.end() ? it : done_.insert(Done::value_type(global, Status(lit_.head()))).first)->second;
+		if (status_->generation == 0) { return false; }
+		if (status_->generation == 1) { status_->uid = uid_++; }
+		if (status_->generation < generation_)
 		{
 			if (!lit_.ground(grounder))
 			{
-				status.generation = 1;
+				status_->generation = 1;
 				return false;
 			}
-			status.generation = generation_;
+			status_->generation = generation_;
 		}
+		lit_.fact(status_->fact);
+		status_ = 0;
 		return true;
 	}
 
@@ -102,6 +107,7 @@ struct JunctionIndex : public StaticIndex
 	{
 		done_.clear();
 		generation_ = 2;
+		uid_        = 0;
 		dirty_      = false;
 	}
 
@@ -110,6 +116,16 @@ struct JunctionIndex : public StaticIndex
 		lit_.finish();
 		generation_++;
 		dirty_ = false;
+	}
+
+	bool fact() const
+	{
+		return status_->fact;
+	}
+
+	void fact(bool fact)
+	{
+		status_->fact = fact;
 	}
 
 	void setDirty()
@@ -123,14 +139,16 @@ struct JunctionIndex : public StaticIndex
 	}
 
 private:
+	Status      *status_;
 	JunctionLit &lit_;
 	Done         done_;
 	VarVec       global_;
 	uint32_t     generation_;
+	uint32_t     uid_;
 	bool         dirty_;
+public:
+	IndexPtrVec  headIndices;
 };
-
-}
 
 ///////////////////////////// JunctionCond /////////////////////////////
 
@@ -170,14 +188,45 @@ void JunctionCond::addIndex(Grounder *g, VarSet &bound, Lit *lit)
 	inst_->append(lit->index(g, this, bound));
 }
 
-// TODO: anything might be passed from aggrlit now
-void JunctionCond::initInst(Grounder *g)
+bool JunctionCond::complete() const
+{
+	if (!head_->complete()) { return false; }
+	foreach (Lit const &lit, body_)
+	{
+		if (!lit.complete()) { return false; }
+	}
+	return true;
+}
+
+bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t offset)
+{
+	Index::Match match = head.firstMatch(g, 0);
+	head_->grounded(g);
+	bool fact = true;
+	foreach (Lit &lit, body_)
+	{
+		lit.grounded(g);
+		if (!lit.fact()) { fact = false; }
+	}
+	if (!parent_->head())
+	{
+		if (head_->complete() && fact && !match.first) { return false; }
+		if (!fact || !head_->fact()) { index.fact(false); }
+	}
+	else
+	{
+		if (fact && head_->fact()) { index.fact(true); }
+	}
+	std::cerr << "pass cond to printer..." << std::endl;
+	return true;
+}
+
+void JunctionCond::init(Grounder *g, JunctionIndex &parent)
 {
 	if(!inst_.get())
 	{
 		assert(level() > 0);
-		// TODO: need a connection to JunctionIndex::state
-		inst_.reset(new Instantiator(vars(), boost::bind(&JunctionLit::groundedCond, parent_, _1, index_)));
+		inst_.reset(new Instantiator(vars(), 0));
 		VarSet bound;
 		GlobalsCollector::collect(*this, bound, level() - 1);
 		if(litDep_.get())
@@ -188,6 +237,8 @@ void JunctionCond::initInst(Grounder *g)
 		{
 			foreach(Lit &lit, body_) { inst_->append(lit.index(g, this, bound)); }
 		}
+		parent.headIndices.push_back(head_->index(g, this, bound));
+		inst_->callback(boost::bind(&JunctionCond::grounded, this, _1, boost::ref(parent.headIndices.back()), boost::ref(parent), index_));
 	}
 	if(inst_->init(g)) { enqueue(g); }
 }
@@ -200,7 +251,7 @@ bool JunctionCond::ground(Grounder *g)
 void JunctionCond::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
-	foreach(Lit &lit, body_) { visitor->visit(&lit, true); }
+	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
 
 void JunctionCond::print(Storage *sto, std::ostream &out) const
@@ -217,24 +268,24 @@ JunctionCond::~JunctionCond()
 {
 }
 
-/*
 ///////////////////////////// JunctionLit /////////////////////////////
 
 JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 	: Lit(loc)
-	, match_(false)
-	, fact_(false)
 	, conds_(conds)
+	, parent_(0)
+	, uid_(0)
+	, fact_(false)
 {
 }
 
-BoolPair JunctionLit::ground(Grounder *g)
+bool JunctionLit::ground(Grounder *g)
 {
-	if(dom_.state(g))
+	foreach (JunctionCond &cond, conds_)
 	{
-		foreach(JunctionCond &cond, conds_) { cond.ground(g); }
+		if (!cond.ground(g)) { return false; }
 	}
-	return dom_.match(g);
+	return true;
 }
 
 void JunctionLit::expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, Lit *lit, Lit::ExpansionType type)
@@ -281,11 +332,26 @@ void JunctionLit::normalize(Grounder *g, const Expander &e)
 		Expander bodyExp = boost::bind(static_cast<void (LitPtrVec::*)(Lit *)>(&LitPtrVec::push_back), &conds_[i].body_, _1);
 		conds_[i].normalize(g, headExp, bodyExp, this, i);
 	}
+	uid_ = g->aggrUid();
+}
+
+bool JunctionLit::complete() const
+{
+	foreach(const JunctionCond &cond, conds_)
+	{
+		if (!cond.complete()) { return false; }
+	}
+	return true;
+}
+
+void JunctionLit::fact(bool fact)
+{
+	fact_ = fact;
 }
 
 bool JunctionLit::fact() const
 {
-	return dom_.fact();
+	if (head() || complete()) { return fact_; }
 }
 
 void JunctionLit::print(Storage *sto, std::ostream &out) const
@@ -299,14 +365,19 @@ void JunctionLit::print(Storage *sto, std::ostream &out) const
 	}
 }
 
+void JunctionLit::finish()
+{
+	foreach (JunctionCond &cond, conds_) { cond.finish(); }
+}
+
 Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 {
-	// Note: no variables are bound
-	VarVec global;
+	parent_ = f;
+	VarSet global;
 	GlobalsCollector::collect(*this, global, f->level());
-	dom_.initGlobal(g, f, global, head());
-	foreach(JunctionCond &cond, conds_) { cond.init(g, dom_); }
-	return new JunctionIndex(*this);
+	std::auto_ptr<JunctionIndex> idx(new JunctionIndex(*this, global));
+	foreach (JunctionCond &cond, conds_) { cond.init(g, *idx); }
+	return idx.release();
 }
 
 Lit::Score JunctionLit::score(Grounder *, VarSet &)
@@ -316,7 +387,7 @@ Lit::Score JunctionLit::score(Grounder *, VarSet &)
 
 void JunctionLit::enqueue(Grounder *g)
 {
-	dom_.enqueue(g);
+	parent_->enqueue(g);
 }
 
 void JunctionLit::visit(PrgVisitor *visitor)
@@ -327,10 +398,12 @@ void JunctionLit::visit(PrgVisitor *visitor)
 void JunctionLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
-	printer->begin(head());
-	dom_.print(printer);
-	printer->end();
-
+	std::cerr << "pass lit to printer..." << std::endl;
+	// I need the respective index here ...
+	// printer->begin(head());
+	// dom_.print(printer);
+	// TODO ...
+	// printer->end();
 }
 
 Lit *JunctionLit::clone() const
@@ -338,14 +411,6 @@ Lit *JunctionLit::clone() const
 	return new JunctionLit(*this);
 }
 
-bool JunctionLit::groundedCond(Grounder *grounder, uint32_t index)
-{
-	dom_.accumulate(grounder, index);
-	return true;
-}
-
 JunctionLit::~JunctionLit()
 {
 }
-
-*/

@@ -22,6 +22,7 @@
 #include <gringo/printer.h>
 #include <gringo/formula.h>
 
+struct JunctionIndex;
 class JunctionLit;
 
 class JunctionCond : public Formula
@@ -31,9 +32,11 @@ public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
 	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
+	bool complete() const;
+	bool grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t offset);
 	void finish();
 	bool ground(Grounder *g);
-	void initInst(Grounder *g);
+	void init(Grounder *g, JunctionIndex &index);
 	void enqueue(Grounder *g);
 	void visit(PrgVisitor *visitor);
 	void print(Storage *sto, std::ostream &out) const;
@@ -64,8 +67,6 @@ public:
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
 
-	uint32_t newUid();
-
 	bool ground(Grounder *g);
 	void finish();
 	void enqueue(Grounder *g);
@@ -75,7 +76,9 @@ public:
 
 	void normalize(Grounder *g, const Expander &e);
 
+	bool complete() const;
 	bool fact() const;
+	void fact(bool fact);
 
 	void print(Storage *sto, std::ostream &out) const;
 
@@ -92,9 +95,11 @@ private:
 	void expandHead(const Lit::Expander &ruleExp, JunctionCond &cond, Lit *lit, Lit::ExpansionType type);
 
 private:
-	bool              match_;
-	bool              fact_;
 	JunctionCondVec   conds_;
+	Formula          *parent_;
+	uint32_t          uid_;
+	bool              fact_;
+
 };
 
 /////////////////////////// JunctionLit ///////////////////////////

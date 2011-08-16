@@ -94,11 +94,6 @@ Statement::Statement(const Loc &loc)
 {
 }
 
-void Statement::init(Grounder *g)
-{
-	initInst(g);
-}
-
 void Statement::check(Grounder *g)
 {
 	VarCollector collector(g);
@@ -134,7 +129,7 @@ SimpleStatement::SimpleStatement(const Loc &loc)
 
 }
 
-void SimpleStatement::initInst(Grounder *g)
+void SimpleStatement::init(Grounder *g)
 {
 	if(!inst_.get())
 	{

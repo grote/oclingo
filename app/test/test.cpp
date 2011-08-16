@@ -203,4 +203,19 @@ BOOST_AUTO_TEST_CASE( company4 )
 	);
 }
 
+BOOST_AUTO_TEST_CASE( conjunction_test1 )
+{
+	Tester
+	(
+		"d(a;b)."
+		"p(a,1..2)."
+		"2 { p(b,1..2) } 2."
+		"q(X) :- p(X,Y) : p(X,Y), d(X).",
 
+		"d(a)", "d(b)",
+		"p(a,1)", "p(a,2)", "q(a)",
+		"p(b,1)", "p(b,2)", "q(b)", NULL,
+
+		NULL
+	);
+}

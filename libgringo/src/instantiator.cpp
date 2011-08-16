@@ -63,6 +63,11 @@ Instantiator::Instantiator(const VarVec &vars, const GroundedCallback &grounded)
 	append(new NewOnceIndex());
 }
 
+void Instantiator::callback(const GroundedCallback &grounded)
+{
+	grounded_ = grounded;
+}
+
 void Instantiator::append(Index *i)
 {
 	if(i)
