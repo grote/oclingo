@@ -199,10 +199,13 @@ namespace plainoutput_impl
 	{
 	public:
 		JunctionLitPrinter(PlainOutput *output) : output_(output) { }
-		void begin(bool head);
+		void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond);
+		void beginBody();
+		void printCond();
+		void printJunc(uint32_t juncUid, uint32_t substUid);
 		void print(PredLitRep *l);
-		void end() { }
 		PlainOutput *output() const { return output_; }
+		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;
 	};

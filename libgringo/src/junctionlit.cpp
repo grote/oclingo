@@ -76,7 +76,7 @@ struct JunctionIndex : public StaticIndex
 		: lit_(lit)
 		, global_(global.begin(), global.end())
 		, generation_(2)
-		, uid_(0)
+		, uids_(0)
 		, dirty_(false)
 	{
 	}
@@ -88,7 +88,7 @@ struct JunctionIndex : public StaticIndex
 		Done::iterator it = done_.find(global);
 		status_ = &(it != done_.end() ? it : done_.insert(Done::value_type(global, Status(lit_.head()))).first)->second;
 		if (status_->generation == 0) { return false; }
-		if (status_->generation == 1) { status_->uid = uid_++; }
+		if (status_->generation == 1) { status_->uid = uids_++; }
 		if (status_->generation < generation_)
 		{
 			if (!lit_.ground(grounder))
@@ -98,7 +98,7 @@ struct JunctionIndex : public StaticIndex
 			}
 			status_->generation = generation_;
 		}
-		lit_.fact(status_->fact);
+		lit_.setState(status_->fact, uid());
 		status_ = 0;
 		return true;
 	}
@@ -107,7 +107,7 @@ struct JunctionIndex : public StaticIndex
 	{
 		done_.clear();
 		generation_ = 2;
-		uid_        = 0;
+		uids_        = 0;
 		dirty_      = false;
 	}
 
@@ -128,6 +128,11 @@ struct JunctionIndex : public StaticIndex
 		status_->fact = fact;
 	}
 
+	uint32_t uid()
+	{
+		return status_->uid;
+	}
+
 	void setDirty()
 	{
 		dirty_ = true;
@@ -144,7 +149,7 @@ private:
 	Done         done_;
 	VarVec       global_;
 	uint32_t     generation_;
-	uint32_t     uid_;
+	uint32_t     uids_;
 	bool         dirty_;
 public:
 	IndexPtrVec  headIndices;
@@ -170,6 +175,7 @@ void JunctionCond::finish()
 void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
 {
 	parent_ = parent;
+#pragma message "probably not needed!"
 	index_  = index;
 	head_->normalize(g, headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
@@ -198,7 +204,7 @@ bool JunctionCond::complete() const
 	return true;
 }
 
-bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t offset)
+bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t uidCond)
 {
 	Index::Match match = head.firstMatch(g, 0);
 	head_->grounded(g);
@@ -217,7 +223,15 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 	{
 		if (fact && head_->fact()) { index.fact(true); }
 	}
-	std::cerr << "pass cond to printer..." << std::endl;
+	JunctionLit::Printer *printer = g->output()->printer<JunctionLit::Printer>();
+	printer->beginHead(parent_->head(), parent_->uid(), index.uid(), uidCond);
+	if (head_->fact()) { head_->accept(printer); }
+	printer->beginBody();
+	foreach (Lit &lit, body_)
+	{
+		if (lit.fact()) { lit.accept(printer); }
+	}
+	printer->printCond();
 	return true;
 }
 
@@ -274,9 +288,16 @@ JunctionLit::JunctionLit(const Loc &loc, JunctionCondVec &conds)
 	: Lit(loc)
 	, conds_(conds)
 	, parent_(0)
+	, index_(0)
 	, uid_(0)
+	, substUid_(0)
 	, fact_(false)
 {
+}
+
+uint32_t JunctionLit::uid() const
+{
+	return uid_;
 }
 
 bool JunctionLit::ground(Grounder *g)
@@ -344,9 +365,10 @@ bool JunctionLit::complete() const
 	return true;
 }
 
-void JunctionLit::fact(bool fact)
+void JunctionLit::setState(bool fact, uint32_t substUid)
 {
-	fact_ = fact;
+	fact_     = fact;
+	substUid_ = substUid;
 }
 
 bool JunctionLit::fact() const
@@ -377,6 +399,7 @@ Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 	GlobalsCollector::collect(*this, global, f->level());
 	std::auto_ptr<JunctionIndex> idx(new JunctionIndex(*this, global));
 	foreach (JunctionCond &cond, conds_) { cond.init(g, *idx); }
+	index_ = idx.get();
 	return idx.release();
 }
 
@@ -387,6 +410,7 @@ Lit::Score JunctionLit::score(Grounder *, VarSet &)
 
 void JunctionLit::enqueue(Grounder *g)
 {
+	if(index_) { index_->setDirty(); }
 	parent_->enqueue(g);
 }
 
@@ -398,12 +422,7 @@ void JunctionLit::visit(PrgVisitor *visitor)
 void JunctionLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
-	std::cerr << "pass lit to printer..." << std::endl;
-	// I need the respective index here ...
-	// printer->begin(head());
-	// dom_.print(printer);
-	// TODO ...
-	// printer->end();
+	printer->printJunc(uid(), substUid_);
 }
 
 Lit *JunctionLit::clone() const

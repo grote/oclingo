@@ -33,7 +33,7 @@ public:
 	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
 	bool complete() const;
-	bool grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t offset);
+	bool grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t uidCond);
 	void finish();
 	bool ground(Grounder *g);
 	void init(Grounder *g, JunctionIndex &index);
@@ -60,13 +60,16 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void begin(bool head) = 0;
-		virtual void end() = 0;
+		virtual void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond) = 0;
+		virtual void beginBody() = 0;
+		virtual void printCond() = 0;
+		virtual void printJunc(uint32_t juncUid, uint32_t substUid) = 0;
 		virtual ~Printer() { }
 	};
 public:
 	JunctionLit(const Loc &loc, JunctionCondVec &conds);
 
+	uint32_t uid() const;
 	bool ground(Grounder *g);
 	void finish();
 	void enqueue(Grounder *g);
@@ -78,7 +81,7 @@ public:
 
 	bool complete() const;
 	bool fact() const;
-	void fact(bool fact);
+	void setState(bool fact, uint32_t substUid);
 
 	void print(Storage *sto, std::ostream &out) const;
 
@@ -97,7 +100,10 @@ private:
 private:
 	JunctionCondVec   conds_;
 	Formula          *parent_;
+	JunctionIndex    *index_;
 	uint32_t          uid_;
+	// Note: fluent state information (best find another way)
+	uint32_t          substUid_;
 	bool              fact_;
 
 };

@@ -290,15 +290,30 @@ void MinMaxAggrLitPrinter<Type>::func()
 
 //////////////////////////////////////// JunctionLitPrinter ////////////////////////////////////////
 
-void JunctionLitPrinter::begin(bool)
+void JunctionLitPrinter::beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond)
 {
+}
+
+void JunctionLitPrinter::beginBody()
+{
+}
+
+void JunctionLitPrinter::printCond()
+{
+
+}
+
+void JunctionLitPrinter::printJunc(uint32_t juncUid, uint32_t substUid)
+{
+	output()->print();
+	out() << "<junc: " << juncUid << ", " << substUid << ">";
 }
 
 void JunctionLitPrinter::print(PredLitRep *l)
 {
-	output_->print();
-	output_->print(l, output_->out());
 }
+
+//////////////////////////////////////// OptimizePrinter ////////////////////////////////////////
 
 void OptimizePrinter::begin(Optimize::Type type, bool maximize)
 {
