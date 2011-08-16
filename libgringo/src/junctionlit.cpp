@@ -254,7 +254,6 @@ void JunctionCond::init(Grounder *g, JunctionIndex &parent)
 		parent.headIndices.push_back(head_->index(g, this, bound));
 		inst_->callback(boost::bind(&JunctionCond::grounded, this, _1, boost::ref(parent.headIndices.back()), boost::ref(parent), index_));
 	}
-	if(inst_->init(g)) { enqueue(g); }
 }
 
 bool JunctionCond::ground(Grounder *g)
@@ -398,8 +397,8 @@ Index *JunctionLit::index(Grounder *g, Formula *f, VarSet &)
 	VarSet global;
 	GlobalsCollector::collect(*this, global, f->level());
 	std::auto_ptr<JunctionIndex> idx(new JunctionIndex(*this, global));
-	foreach (JunctionCond &cond, conds_) { cond.init(g, *idx); }
 	index_ = idx.get();
+	foreach (JunctionCond &cond, conds_) { cond.init(g, *idx); }
 	return idx.release();
 }
 
@@ -410,7 +409,7 @@ Lit::Score JunctionLit::score(Grounder *, VarSet &)
 
 void JunctionLit::enqueue(Grounder *g)
 {
-	if(index_) { index_->setDirty(); }
+	assert(index_);
 	parent_->enqueue(g);
 }
 
