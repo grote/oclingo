@@ -107,7 +107,7 @@ struct JunctionIndex : public StaticIndex
 	{
 		done_.clear();
 		generation_ = 2;
-		uids_        = 0;
+		uids_       = 0;
 		dirty_      = false;
 	}
 
@@ -123,9 +123,14 @@ struct JunctionIndex : public StaticIndex
 		return status_->fact;
 	}
 
+	void stop()
+	{
+		status_->generation = 0;
+	}
+
 	void fact(bool fact)
 	{
-		status_->fact = fact;
+		status_->fact       = fact;
 	}
 
 	uint32_t uid()
@@ -175,7 +180,6 @@ void JunctionCond::finish()
 void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
 {
 	parent_ = parent;
-#pragma message "probably not needed!"
 	index_  = index;
 	head_->normalize(g, headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
@@ -216,12 +220,22 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 	}
 	if (!parent_->head())
 	{
-		if (head_->complete() && fact && !match.first) { return false; }
-		if (!fact || !head_->fact()) { index.fact(false); }
+		if (head_->complete() && fact && !match.first)
+		{
+			index.stop();
+			return false;
+		}
+		else if (!fact || !head_->fact()) { index.fact(false); }
 	}
 	else
 	{
-		if (fact && head_->fact()) { index.fact(true); }
+		if (fact && head_->fact())
+		{
+			index.stop();
+			index.fact(true);
+		}
+		// Note: this way some facts might be skipped
+		else { head_->addDomain(g, false); }
 	}
 	JunctionLit::Printer *printer = g->output()->printer<JunctionLit::Printer>();
 	printer->beginHead(parent_->head(), parent_->uid(), index.uid(), uidCond);
@@ -254,6 +268,7 @@ void JunctionCond::init(Grounder *g, JunctionIndex &parent)
 		parent.headIndices.push_back(head_->index(g, this, bound));
 		inst_->callback(boost::bind(&JunctionCond::grounded, this, _1, boost::ref(parent.headIndices.back()), boost::ref(parent), index_));
 	}
+	inst_->init(g);
 }
 
 bool JunctionCond::ground(Grounder *g)
@@ -263,6 +278,7 @@ bool JunctionCond::ground(Grounder *g)
 
 void JunctionCond::visit(PrgVisitor *visitor)
 {
+
 	visitor->visit(head_.get(), false);
 	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
@@ -410,6 +426,7 @@ Lit::Score JunctionLit::score(Grounder *, VarSet &)
 void JunctionLit::enqueue(Grounder *g)
 {
 	assert(index_);
+	index_->setDirty();
 	parent_->enqueue(g);
 }
 
