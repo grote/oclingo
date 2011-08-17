@@ -1,4 +1,5 @@
 #step 1.
+:- not a.
 #volatile :2.
 e(1).
 #endstep.
