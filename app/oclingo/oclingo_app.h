@@ -43,17 +43,24 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			if(vol_atom) {
 				a.push_back(i.find(vol_atom)->lit);
 			}
-
 			// only deprecate volatile atom if we want the answer set this step
 			if(!o_output->getExternalKnowledge().needsNewStep()) {
 				o_output->deprecateVolAtom();
 			}
 
+			// assume volatile atoms for sliding window to be true
+/*			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
+			foreach(VarVec::value_type atom, window_ass) {
+				if(atom) {
+					a.push_back(i.find(atom)->lit);
+				}
+			}
+*/
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();
-
 			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
 				Clasp::Atom* atom = i.find(*lit);
 				if(atom) { // atom is not in AtomIndex if hidden with #hide
+					// assume external atom to be false
 					a.push_back(~atom->lit);
 					// create conflict to skip solving for next step
 					if(o_output->getExternalKnowledge().needsNewStep())

@@ -257,6 +257,7 @@ void ExternalKnowledge::endIteration() {
 	model_ = false;
 
 	// unfreeze volatile atom, so we can have fresh one for the next iteration
+	// TODO comment?
 	output_->finalizeVolAtom();
 }
 

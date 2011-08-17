@@ -76,17 +76,22 @@ uint32_t oClaspOutput::getVolAtom() {
 	if(vol_atom_ == 0) {
 		vol_atom_ = unnamedSymbol();
 	}
+
 	return vol_atom_;
 }
 
 uint32_t oClaspOutput::getVolWindowAtom(int window) {
-	return getVolAtom(); // TODO remove this and take care of vol_window_atoms
+	return getVolAtom(); // TODO remove this and take care of freeze/unfreeze vol_window_atoms
 
-	int step = window + ext_->getControllerStep();
+	int step = window + ext_->getControllerStep() + 1;
 
 	if(vol_atom_map_.find(step) == vol_atom_map_.end()) {
 		vol_atom_map_[step] = unnamedSymbol();
 	}
+
+	// freeze new atom right away
+	b_->freeze(vol_atom_map_[step]);
+	std::cout << "FREEZE VALUE " << vol_atom_map_[step] << " FOR KEY " << step << std::endl;
 
 	return vol_atom_map_[step];
 }
@@ -95,8 +100,50 @@ uint32_t oClaspOutput::getVolAtomAss() {
 	return vol_atom_;
 }
 
-VarVec& oClaspOutput::getVolAtomFalseAss() {
-	return vol_atoms_old_;
+VarVec oClaspOutput::getVolWindowAtomAss(int step) {
+	std::cerr << "CURRENT STEP: " << step << std::endl;
+
+	VarVec vec;
+	std::map<int, uint32_t>::iterator del = vol_atom_map_.begin();
+	std::map<int, uint32_t>::const_iterator end = vol_atom_map_.end();
+
+	// find old volatile atoms
+	for(std::map<int, uint32_t>::iterator it = vol_atom_map_.begin(); it != end; ++it) {
+		std::cout << "KEY " << it->first << std::endl;
+		std::cout << "VALUE " << it->second << std::endl;
+		// extract assumption atoms from map
+		if(it->first > step) {
+			vec.push_back(it->second);
+			std::cout << "ASS KEY " << it->first << std::endl;
+			std::cout << "ASS VALUE " << it->second << std::endl;
+		} else {
+			// make sure old atoms are unfreezed
+			vol_window_atoms_old_.push_back(it->second);
+			std::cout << "OLD KEY " << it->first << std::endl;
+			std::cout << "OLD VALUE " << it->second << std::endl;
+
+			// set deletion marker
+			if(it->first >= del->first) {
+				del = it;
+				std::cout << "SET NEW BORDER TO " << del->first;
+				std::cout << " - " << del->second << std::endl;
+			}
+		}
+	}
+
+	// deprecate and erase old volatile atoms
+	if(vol_atom_map_.size() > 0 && del->first <= step) {
+		// vol_window_atoms_old_.push_back()
+		if(del == vol_atom_map_.end()) {
+			vol_atom_map_.clear();
+			std::cerr << "   del == end" << std::endl;
+		} else {
+			vol_atom_map_.erase(vol_atom_map_.begin(), ++del);
+			std::cerr << "   del++" << std::endl;
+		}
+	}
+
+	return vec;
 }
 
 void oClaspOutput::finalizeVolAtom() {
@@ -116,14 +163,16 @@ void oClaspOutput::deprecateVolAtom() {
 
 // make sure to call between updateProgram and endProgram
 void oClaspOutput::unfreezeOldVolAtoms() {
+	// also unfreeze old volatile sliding window atoms
+	vol_atoms_old_.insert(vol_atoms_old_.end(), vol_window_atoms_old_.begin(), vol_window_atoms_old_.end());
+
 	// unfreeze all old (deprecated) volatile atoms
 	foreach(VarVec::value_type atom, vol_atoms_old_) {
 		unfreezeAtom(atom);
 	}
 	vol_atoms_old_.clear();
+	vol_window_atoms_old_.clear();
 }
-
-// TODO add volatile window handling
 
 void oClaspOutput::doFinalize() {
 	printExternalTable();
