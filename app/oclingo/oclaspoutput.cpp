@@ -104,12 +104,14 @@ void oClaspOutput::deprecateVolAtom() {
 
 // make sure to call between updateProgram and endProgram
 void oClaspOutput::unfreezeOldVolAtoms() {
-	// unfreeze all old volatile atoms
+	// unfreeze all old (deprecated) volatile atoms
 	foreach(VarVec::value_type atom, vol_atoms_old_) {
 		unfreezeAtom(atom);
 	}
 	vol_atoms_old_.clear();
 }
+
+// TODO add volatile window handling
 
 void oClaspOutput::doFinalize() {
 	printExternalTable();

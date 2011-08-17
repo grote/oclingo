@@ -53,7 +53,7 @@ IN_PARSER = {
 	'step'			: re.compile("#step (\d+)\."),
 	'endstep'		: re.compile("#endstep\."),
 	'cumulative'	: re.compile("#cumulative\."),
-	'volatile'		: re.compile("#volatile\."),
+	'volatile'		: re.compile("#volatile( : ?\d+)?\."),
 	'forget'		: re.compile("#forget (\d+)\."),
 	'stop'			: re.compile("#stop\."),
 }

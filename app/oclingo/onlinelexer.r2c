@@ -50,6 +50,7 @@ start:
 		"#volatile"   { return OPARSER_VOLATILE; }
 		"#endstep"    { return OPARSER_ENDSTEP; }
 		"."           { return OPARSER_DOT; }
+		":"           { return OPARSER_COLON; }
 		":-"          { return OPARSER_IF; }
 		","           { return OPARSER_COMMA; }
 		"-"           { return OPARSER_MINUS; }

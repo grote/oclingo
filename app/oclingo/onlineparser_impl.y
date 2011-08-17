@@ -43,13 +43,14 @@ start ::= program.
 program ::= .
 program ::= program line DOT.
 
-line ::= STEP NUMBER(num).   { onlineParser->setStep(num.number); }
+line ::= STEP NUMBER(num).           { onlineParser->setStep(num.number); }
 line ::= rule.
-line ::= CUMULATIVE.         { onlineParser->setCumulative(); }
-line ::= VOLATILE.           { onlineParser->setVolatile(); }
-line ::= FORGET NUMBER(num). { onlineParser->forget(num.number); }
+line ::= CUMULATIVE.                 { onlineParser->setCumulative(); }
+line ::= VOLATILE.                   { onlineParser->setVolatile(); }
+line ::= VOLATILE COLON NUMBER(num). { onlineParser->setVolatile(); onlineParser->setVolatileWindow(num.number); }
+line ::= FORGET NUMBER(num).         { onlineParser->forget(num.number); }
 line ::= ENDSTEP.
-line ::= STOP.               { onlineParser->terminate(); }
+line ::= STOP.                       { onlineParser->terminate(); }
 
 id ::= IDENTIFIER(id). { onlineParser->addSigned(id.index, false); }
 

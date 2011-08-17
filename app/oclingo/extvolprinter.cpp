@@ -26,4 +26,10 @@ void ExtVolPrinter::print() {
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 
+void ExtVolPrinter::printWindow() {
+	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolAtom();
+	if(atom > 0) { printer->addBody(atom, false); }
+}
+
 GRINGO_REGISTER_PRINTER(ExtVolPrinter, ExtBasePrinter, LparseConverter)

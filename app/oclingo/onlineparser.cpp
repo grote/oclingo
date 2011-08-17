@@ -38,6 +38,7 @@ OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	, terminated_(false)
 	, got_step_(false)
 	, volatile_(false)
+	, volatile_window_(0)
 { }
 
 OnlineParser::~OnlineParser()
@@ -97,6 +98,7 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 }
 
 void OnlineParser::doAdd() {
+	// special printing of volatile rules
 	if(stack_->type == USER or stack_->type == USER+1) {
 		Rule::Printer *printer = output_->printer<Rule::Printer>();
 		printer->begin();
@@ -106,7 +108,11 @@ void OnlineParser::doAdd() {
 
 		// add volatile atom with special Printer
 		ExtBasePrinter *vol_printer = output_->printer<ExtBasePrinter>();
-		vol_printer->print();
+		if(volatile_window_ == 0) {
+			vol_printer->print();
+		} else {
+			vol_printer->printWindow();
+		}
 
 		printer->end();
 		GroundProgramBuilder::pop(stack_->n + (stack_->type == USER));
@@ -167,6 +173,15 @@ void OnlineParser::setCumulative() {
 
 void OnlineParser::setVolatile() {
 	volatile_ = true;
+}
+
+void OnlineParser::setVolatileWindow(int window) {
+	if(volatile_window_ != 0) {
+		output_->getExternalKnowledge().sendToClient(
+					"Warning: Second '#volatile' window used, only one per transmisson is supported.");
+	} else {
+		volatile_window_ = window;
+	}
 }
 
 bool OnlineParser::isTerminated() {

@@ -63,6 +63,7 @@ public:
 	void terminate();
 	void setCumulative();
 	void setVolatile();
+	void setVolatileWindow(int window);
 
 	bool isTerminated();
 
@@ -84,5 +85,6 @@ private:
 	bool terminated_;
 	bool got_step_;
 	bool volatile_;
+	int volatile_window_;
 };
 
