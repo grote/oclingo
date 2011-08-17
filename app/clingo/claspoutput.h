@@ -55,7 +55,9 @@ class iClaspOutput : public ClaspOutput
 public:
 	iClaspOutput(bool shiftDisj);
 	void initialize();
-	int getIncAtom();
+	uint32_t getNewIncUid();
+	int getIncAtom(uint32_t vol_window = 1);
 private:
-	int incUid_;
+	bool initialized;
+	std::deque<uint32_t> incUids_;
 };

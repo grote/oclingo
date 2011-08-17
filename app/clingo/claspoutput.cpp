@@ -146,20 +146,46 @@ ClaspOutput::~ClaspOutput()
 
 iClaspOutput::iClaspOutput(bool shiftDisj)
 	: ClaspOutput(shiftDisj)
-	, incUid_(0)
+	, initialized(false)
 {
 }
 
 void iClaspOutput::initialize()
 {
-	if(!incUid_) { ClaspOutput::initialize(); }
-	else { b_->unfreeze(incUid_); }
-	// create a new uid
-	incUid_ = symbol();
-	b_->freeze(incUid_);
+	if(!initialized) {
+		initialized = true;
+		ClaspOutput::initialize();
+	}
+	else {
+		std::cerr << "REMOVE AND UNFREEZE ATOM " << incUids_.at(0) << std::endl;
+		b_->unfreeze(incUids_.at(0));
+		incUids_.pop_front();
+	}
 }
 
-int iClaspOutput::getIncAtom()
+uint32_t iClaspOutput::getNewIncUid()
 {
-	return incUid_;
+	// create a new uid
+	int uid = symbol();
+	b_->freeze(uid);
+
+	std::cerr << "GOT AND FROZE ATOM " << uid << std::endl;
+
+	return uid;
+}
+
+int iClaspOutput::getIncAtom(uint32_t vol_window)
+{
+	// TODO remove!!!
+	vol_window = 1;
+
+	if(incUids_.size() < vol_window) {
+		incUids_.resize(vol_window, 0);
+	}
+	if(incUids_.at(vol_window-1) == 0) {
+		incUids_.at(vol_window-1) = getNewIncUid();
+	}
+
+	std::cerr << "VOL WINDOW IN CLASP OUTPUT " << vol_window << std::endl;
+	return incUids_.at(vol_window-1);
 }

@@ -391,7 +391,7 @@ void Parser::parse()
 	}
 }
 
-void Parser::incremental(iPart part, uint32_t index)
+void Parser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 {
 	switch(part)
 	{
@@ -412,6 +412,8 @@ void Parser::incremental(iPart part, uint32_t index)
 		}
 	}
 	iId_   = index;
+	vol_window_ = vol_window;
+	std::cerr << "VOL WINDOW " << vol_window_ << std::endl;
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
@@ -568,7 +570,7 @@ void Parser::add()
 	{
 		if(current_ == volatile_)
 		{
-			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_));
+			last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_, vol_window_));
 		}
 		StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
 		foreach(Statement &statement, rng)

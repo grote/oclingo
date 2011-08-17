@@ -26,11 +26,12 @@
 #include <gringo/output.h>
 #include <gringo/exceptions.h>
 
-IncLit::IncLit(const Loc &loc, IncConfig &config, Type type, uint32_t varId)
+IncLit::IncLit(const Loc &loc, IncConfig &config, Type type, uint32_t varId, uint32_t vol_window)
 	: Lit(loc)
 	, config_(config)
 	, type_(type)
 	, var_(new VarTerm(loc, varId))
+	, vol_window_(vol_window)
 {
 }
 
@@ -108,7 +109,7 @@ void IncLit::accept(::Printer *v)
 	if(type_ == VOLATILE)
 	{
 		Printer *printer = v->output()->printer<Printer>();
-		printer->print();
+		printer->print(vol_window_);
 	}
 }
 

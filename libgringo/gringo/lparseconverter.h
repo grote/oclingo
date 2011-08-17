@@ -93,7 +93,7 @@ public:
 	virtual void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name) = 0;
 	virtual uint32_t symbol() = 0;
 	virtual void doFinalize() = 0;
-	virtual int getIncAtom() { return -1; }
+	virtual int getIncAtom(uint32_t vol_window = 1) { (void) vol_window; return -1; }
 protected:
 	DisplayMap            atomsHidden_;
 	DisplayMap            atomsShown_;
