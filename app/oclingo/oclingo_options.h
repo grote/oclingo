@@ -70,7 +70,6 @@ void oClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOp
 	using namespace ProgramOptions;
 	if(M == OCLINGO)
 	{
-		// TODO actually use this option!
 		OptionGroup online_opts("Online Options");
 		online_opts.addOptions()("port", storeTo(online.port), "Port oclingo daemon should listen to\n", "<num>");
 		root.addOptions(online_opts);
