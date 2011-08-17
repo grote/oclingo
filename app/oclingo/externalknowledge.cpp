@@ -131,6 +131,10 @@ int ExternalKnowledge::poll() {
 }
 
 void ExternalKnowledge::get() {
+	// first update sliding window atoms
+	// needs to be here because before EndProgram and after new step
+	output_->updateVolWindowAtoms(step_);
+
 	try {
 		if(!reading_) {
 			if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
@@ -268,8 +272,7 @@ void ExternalKnowledge::endIteration() {
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
 
-	// unfreeze volatile atom, so we can have fresh one for the next iteration
-	// TODO comment?
+	// freeze volatile atom
 	output_->finalizeVolAtom();
 }
 

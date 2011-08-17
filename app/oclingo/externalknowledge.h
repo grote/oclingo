@@ -80,7 +80,6 @@ private:
 
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
-	std::list<uint32_t> heads_for_stacks_;
 	int volatile_window_;
 
 	// externals handling
