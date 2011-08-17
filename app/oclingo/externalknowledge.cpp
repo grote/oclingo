@@ -237,6 +237,10 @@ void ExternalKnowledge::setControllerStep(int step) {
 	controller_step_ = step;
 }
 
+int ExternalKnowledge::getControllerStep() {
+	return controller_step_;
+}
+
 bool ExternalKnowledge::needsNewStep() {
 	return
 			step_ == 0 ||				// is first iteration

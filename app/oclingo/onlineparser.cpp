@@ -111,7 +111,7 @@ void OnlineParser::doAdd() {
 		if(volatile_window_ == 0) {
 			vol_printer->print();
 		} else {
-			vol_printer->printWindow();
+			vol_printer->printWindow(volatile_window_);
 		}
 
 		printer->end();

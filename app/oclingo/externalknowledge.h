@@ -53,12 +53,13 @@ public:
 	bool checkHead(uint32_t symbol);
 	void addHead(uint32_t symbol);
 	void addPrematureKnowledge();
+	void setControllerStep(int step);
+	int getControllerStep();
 	bool needsNewStep();
 	VarVec& getExternals();
 	void endIteration();
 	void endStep();
 	void forgetExternals(uint32_t step);
-	void setControllerStep(int step);
 
 protected:
 	struct PostPropagator : public Clasp::PostPropagator {

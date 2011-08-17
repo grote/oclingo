@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <tr1/unordered_map>
 #include "clingo/claspoutput.h"
 
 class ExternalKnowledge;
@@ -33,6 +34,7 @@ public:
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void unfreezeAtom(uint32_t symbol);
 	uint32_t getVolAtom();
+	uint32_t getVolWindowAtom(int window);
 	uint32_t getVolAtomAss();
 	VarVec& getVolAtomFalseAss();
 	void finalizeVolAtom();
@@ -48,4 +50,6 @@ private:
 	uint32_t vol_atom_;
 	uint32_t vol_atom_frozen_;
 	VarVec vol_atoms_old_;
+
+	std::tr1::unordered_map<int, uint32_t> vol_atom_map_;
 };

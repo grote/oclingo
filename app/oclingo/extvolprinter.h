@@ -26,7 +26,7 @@ class ExtBasePrinter : public Printer
 {
 public:
 	virtual void print() { }
-	virtual void printWindow() { }
+	virtual void printWindow(int window) { (void) window;}
 	virtual ~ExtBasePrinter() { }
 };
 
@@ -36,7 +36,7 @@ public:
 	ExtVolPrinter(LparseConverter *output) : output_(output) {  }
 	void print(PredLitRep *l) { (void) l; }
 	void print();
-	void printWindow();
+	void printWindow(int window);
 	Output *output() const { return output_; }
 private:
 	LparseConverter *output_;

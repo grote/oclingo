@@ -79,6 +79,18 @@ uint32_t oClaspOutput::getVolAtom() {
 	return vol_atom_;
 }
 
+uint32_t oClaspOutput::getVolWindowAtom(int window) {
+	return getVolAtom(); // TODO remove this and take care of vol_window_atoms
+
+	int step = window + ext_->getControllerStep();
+
+	if(vol_atom_map_.find(step) == vol_atom_map_.end()) {
+		vol_atom_map_[step] = unnamedSymbol();
+	}
+
+	return vol_atom_map_[step];
+}
+
 uint32_t oClaspOutput::getVolAtomAss() {
 	return vol_atom_;
 }

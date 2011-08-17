@@ -26,9 +26,9 @@ void ExtVolPrinter::print() {
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 
-void ExtVolPrinter::printWindow() {
+void ExtVolPrinter::printWindow(int window) {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolAtom();
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolWindowAtom(window);
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 
