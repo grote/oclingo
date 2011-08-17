@@ -28,6 +28,7 @@ class ClaspOutput : public LparseConverter
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
+	virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	const SymbolMap &symbolMap(uint32_t domId) const;
 	ValRng vals(Domain *dom, uint32_t offset) const;

@@ -34,12 +34,12 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 
-		foreach(uint32_t atom, dynamic_cast<iClaspOutput*>(out.get())->getIncUids()) {
+		foreach(uint32_t atom, out->getIncUids()) {
 			if(atom) a.push_back(i.find(atom)->lit);
 		}
 
 		if(app.clingo.mode == OCLINGO) {
-			oClaspOutput *o_output = dynamic_cast<oClaspOutput*>(out.get());
+			oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
 
 			// assume volatile atom to be true for this iteration only
 			uint32_t vol_atom = o_output->getVolAtomAss();
@@ -51,7 +51,7 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 				o_output->deprecateVolAtom();
 			}
 
-			// assume volatile atoms for sliding window to be true
+			// assume volatile atoms for time decay to be true
 			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
 			foreach(VarVec::value_type atom, window_ass) {
 				if(atom) {

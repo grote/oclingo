@@ -131,7 +131,7 @@ int ExternalKnowledge::poll() {
 }
 
 void ExternalKnowledge::get() {
-	// first update sliding window atoms
+	// first update time decay atoms
 	// needs to be here because before EndProgram and after new step
 	output_->updateVolWindowAtoms(step_);
 
@@ -180,7 +180,7 @@ bool ExternalKnowledge::addInput() {
 	if(new_input_) {
 		new_input_ = false;
 
-		// clear sliding window volatile setting, for new input
+		// clear time decay volatile setting, for new input
 		setVolatileWindow(0);
 
 		std::istream is(&b_);

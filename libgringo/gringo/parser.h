@@ -110,7 +110,7 @@ private:
 	uint32_t        iId_;
 	uint32_t        iVar_;
 	// parsing the volatile part
-	uint32_t        vol_window_;
+	uint32_t        volWindow_;
 	// parsing const directives
 	ConstMap        constMap_;
 	// parsing domain statements

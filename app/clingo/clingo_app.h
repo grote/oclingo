@@ -208,7 +208,7 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 
-		foreach(uint32_t atom, dynamic_cast<iClaspOutput*>(out.get())->getIncUids()) {
+		foreach(uint32_t atom, out->getIncUids()) {
 			if(atom) a.push_back(i.find(atom)->lit);
 		}
 	}
