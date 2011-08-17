@@ -33,7 +33,10 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 	if(app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-		a.push_back(i.find(out->getIncAtom())->lit);
+
+		foreach(uint32_t atom, dynamic_cast<iClaspOutput*>(out.get())->getIncUids()) {
+			if(atom) a.push_back(i.find(atom)->lit);
+		}
 
 		if(app.clingo.mode == OCLINGO) {
 			oClaspOutput *o_output = dynamic_cast<oClaspOutput*>(out.get());

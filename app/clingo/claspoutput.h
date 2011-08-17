@@ -57,6 +57,7 @@ public:
 	void initialize();
 	uint32_t getNewIncUid();
 	int getIncAtom(uint32_t vol_window = 1);
+	std::deque<uint32_t> getIncUids();
 private:
 	bool initialized;
 	std::deque<uint32_t> incUids_;

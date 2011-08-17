@@ -413,7 +413,6 @@ void Parser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 	}
 	iId_   = index;
 	vol_window_ = vol_window;
-	std::cerr << "VOL WINDOW " << vol_window_ << std::endl;
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 

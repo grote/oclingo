@@ -207,7 +207,10 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 	if(M == ICLINGO && app.clingo.mode == ICLINGO)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-		a.push_back(i.find(out->getIncAtom())->lit);
+
+		foreach(uint32_t atom, dynamic_cast<iClaspOutput*>(out.get())->getIncUids()) {
+			if(atom) a.push_back(i.find(atom)->lit);
+		}
 	}
 }
 

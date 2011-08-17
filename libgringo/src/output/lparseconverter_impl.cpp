@@ -231,8 +231,6 @@ void IncPrinter::print(PredLitRep *) { }
 
 void IncPrinter::print(uint32_t vol_window)
 {
-	std::cerr << "VOL WINDOW ARRIVED IN PRINTER " << vol_window << std::endl;
-
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = output_->getIncAtom(vol_window);
 	if(atom > 0) { printer->addBody(atom, false); }
