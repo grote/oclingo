@@ -4,30 +4,27 @@ e(1).
 #endstep.
 
 #step 2.
-#volatile : 2.
-:- not a.
-e(2).
+%#volatile : 3.
+%e(2).
 #endstep.
 
-%#step 2.
-%#volatile :2.
-%:- not b.
-%#endstep.
+#step 3.
+%#volatile :1.
+%e(3).
+#endstep.
 
-%#step 2.
-%#volatile :2.
-%:- not a.
-%#endstep.
+#step 4.
+#volatile :2.
+e(4).
+#endstep.
 
-%#step 6.
-%#volatile :3.
-%:- not b.
-%#cumulative.
-%e(6).
-%#endstep.
+#step 5.
+#volatile :3.
+e(5).
+#endstep.
 
-%#step 9.
-%e(9).
-%#endstep.
+#step 9.
+e(9).
+#endstep.
 
 #stop.

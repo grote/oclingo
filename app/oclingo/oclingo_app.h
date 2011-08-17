@@ -49,13 +49,13 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			}
 
 			// assume volatile atoms for sliding window to be true
-/*			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
+			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
 			foreach(VarVec::value_type atom, window_ass) {
 				if(atom) {
 					a.push_back(i.find(atom)->lit);
 				}
 			}
-*/
+
 			VarVec& ass = o_output->getExternalKnowledge().getExternals();
 			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
 				Clasp::Atom* atom = i.find(*lit);

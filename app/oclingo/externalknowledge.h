@@ -50,6 +50,8 @@ public:
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
+	void setVolatileWindow(int window);
+	int getVolatileWindow();
 	bool checkHead(uint32_t symbol);
 	void addHead(uint32_t symbol);
 	void addPrematureKnowledge();
@@ -79,6 +81,7 @@ private:
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
 	std::list<uint32_t> heads_for_stacks_;
+	int volatile_window_;
 
 	// externals handling
 	VarVec externals_;

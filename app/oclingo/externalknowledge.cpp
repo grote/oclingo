@@ -24,6 +24,7 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
+	, volatile_window_(0)
 	, forget_(0)
 	, socket_(NULL)
 	, port_(port)
@@ -175,6 +176,9 @@ bool ExternalKnowledge::addInput() {
 	if(new_input_) {
 		new_input_ = false;
 
+		// clear sliding window volatile setting, for new input
+		setVolatileWindow(0);
+
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		parser.parse();
@@ -189,6 +193,14 @@ bool ExternalKnowledge::addInput() {
 
 void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 	stacks_.push_back(stack);
+}
+
+void ExternalKnowledge::setVolatileWindow(int window) {
+	volatile_window_ = window;
+}
+
+int ExternalKnowledge::getVolatileWindow() {
+	return volatile_window_;
 }
 
 bool ExternalKnowledge::checkHead(uint32_t symbol) {

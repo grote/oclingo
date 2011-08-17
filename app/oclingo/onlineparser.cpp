@@ -38,7 +38,6 @@ OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	, terminated_(false)
 	, got_step_(false)
 	, volatile_(false)
-	, volatile_window_(0)
 { }
 
 OnlineParser::~OnlineParser()
@@ -108,10 +107,11 @@ void OnlineParser::doAdd() {
 
 		// add volatile atom with special Printer
 		ExtBasePrinter *vol_printer = output_->printer<ExtBasePrinter>();
-		if(volatile_window_ == 0) {
+		int volatile_window = output_->getExternalKnowledge().getVolatileWindow();
+		if(volatile_window == 0) {
 			vol_printer->print();
 		} else {
-			vol_printer->printWindow(volatile_window_);
+			vol_printer->printWindow(volatile_window);
 		}
 
 		printer->end();
@@ -130,11 +130,11 @@ void OnlineParser::add(Type type, uint32_t n) {
 		if(volatile_) type = USER;	// set custom rule type
 		StackPtr stack = get(type, n);
 
-		ExternalKnowledge& ext = output_->getExternalKnowledge();
-
-		if(ext.needsNewStep()) {
-			ext.addStackPtr(stack);
+		if(output_->getExternalKnowledge().needsNewStep()) {
+			// add rules in later step, so externals are declared
+			output_->getExternalKnowledge().addStackPtr(stack);
 		} else {
+			// add rules right away
 			output_->startExtInput();
 			GroundProgramBuilder::add(stack);
 			output_->stopExtInput();
@@ -176,11 +176,13 @@ void OnlineParser::setVolatile() {
 }
 
 void OnlineParser::setVolatileWindow(int window) {
-	if(volatile_window_ != 0) {
+	setVolatile();
+
+	if(output_->getExternalKnowledge().getVolatileWindow() != 0) {
 		output_->getExternalKnowledge().sendToClient(
 					"Warning: Second '#volatile' window used, only one per transmisson is supported.");
 	} else {
-		volatile_window_ = window;
+		output_->getExternalKnowledge().setVolatileWindow(window);
 	}
 }
 
