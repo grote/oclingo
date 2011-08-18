@@ -225,7 +225,8 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 			index.stop();
 			return false;
 		}
-		else if (!fact || !head_->fact()) { index.fact(false); }
+		else if (head_->fact()) { return true; }
+		else if (!fact)         { index.fact(false); }
 	}
 	else
 	{
@@ -239,11 +240,11 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 	}
 	JunctionLit::Printer *printer = g->output()->printer<JunctionLit::Printer>();
 	printer->beginHead(parent_->head(), parent_->uid(), index.uid(), uidCond);
-	if (head_->fact()) { head_->accept(printer); }
+	head_->accept(printer);
 	printer->beginBody();
 	foreach (Lit &lit, body_)
 	{
-		if (lit.fact()) { lit.accept(printer); }
+		if (!lit.fact()) { lit.accept(printer); }
 	}
 	printer->printCond();
 	return true;

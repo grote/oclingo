@@ -195,19 +195,29 @@ namespace plainoutput_impl
 	};
 	*/
 
-	class JunctionLitPrinter : public JunctionLit::Printer
+	class JunctionLitPrinter : public JunctionLit::Printer, public DelayedPrinter
 	{
+		typedef boost::tuples::tuple<uint32_t, uint32_t, uint32_t> CondKey;
+		typedef std::pair<bool, std::string> CondValue;
+		typedef std::map<CondKey, CondValue> CondMap;
+		typedef boost::tuples::tuple<DelayedOutput::Offset, uint32_t, uint32_t> TodoValue;
+		typedef std::vector<TodoValue> TodoVec;
 	public:
-		JunctionLitPrinter(PlainOutput *output) : output_(output) { }
+		JunctionLitPrinter(PlainOutput *output);
 		void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond);
 		void beginBody();
 		void printCond();
 		void printJunc(uint32_t juncUid, uint32_t substUid);
 		void print(PredLitRep *l);
+		void finish();
 		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;
+		std::string *current_;
+		CondMap      condMap_;
+		TodoVec      todo_;
+		bool         body_;
 	};
 
 	class OptimizePrinter : public Optimize::Printer

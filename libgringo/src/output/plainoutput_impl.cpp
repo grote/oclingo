@@ -290,28 +290,70 @@ void MinMaxAggrLitPrinter<Type>::func()
 
 //////////////////////////////////////// JunctionLitPrinter ////////////////////////////////////////
 
+JunctionLitPrinter::JunctionLitPrinter(PlainOutput *output)
+	: output_(output)
+	, current_(0)
+	, body_(false)
+{
+	output->regDelayedPrinter(this);
+}
+
 void JunctionLitPrinter::beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond)
 {
+	body_ = false;
+	current_ = &condMap_.insert(CondMap::value_type(CondKey(uidJunc, uidSubst, uidCond), CondValue(disjunction, ""))).first->second.second;
+	if (!current_->empty()) { *current_+= disjunction ? "|" : ","; }
 }
 
 void JunctionLitPrinter::beginBody()
 {
+	body_ = true;
 }
 
 void JunctionLitPrinter::printCond()
 {
-
 }
 
-void JunctionLitPrinter::printJunc(uint32_t juncUid, uint32_t substUid)
+void JunctionLitPrinter::printJunc(uint32_t uidJunc, uint32_t uidSubst)
 {
 	output()->print();
-	out() << "<junc: " << juncUid << ", " << substUid << ">";
+	DelayedOutput::Offset todo = output_->beginDelay();
+	todo_.push_back(TodoValue(todo, uidJunc, uidSubst));
 }
 
 void JunctionLitPrinter::print(PredLitRep *l)
 {
+	std::stringstream ss;
+	if (body_) { ss << ":"; }
+	output()->print(l, ss);
+	*current_+= ss.str();
 }
+
+void JunctionLitPrinter::finish()
+{
+	foreach (TodoVec::value_type &value, todo_)
+	{
+		bool     comma    = false;
+		uint32_t lastCond = 0;
+		for (CondMap::iterator it = condMap_.lower_bound(CondKey(value.get<1>(), value.get<2>(), 0)); it != condMap_.end() && it->first.get<0>() == value.get<1>() && it->first.get<1>() == value.get<2>(); it++)
+		{
+			if (comma)
+			{
+				if (lastCond != it->first.get<2>()) { out() << it->second.first ? "|" : ","; }
+				else                                { out() << ":"; }
+			}
+			else       { comma = true; }
+			out() << it->second.second;
+			lastCond = it->first.get<2>();
+		}
+		if (!comma) { out() << "#true"; }
+		output_->contDelay(value.get<0>());
+		output_->endDelay(value.get<0>());
+	}
+	todo_.clear();
+	condMap_.clear();
+}
+
 
 //////////////////////////////////////// OptimizePrinter ////////////////////////////////////////
 
