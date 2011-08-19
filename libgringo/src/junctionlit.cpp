@@ -22,37 +22,6 @@
 #include "gringo/grounder.h"
 #include "gringo/output.h"
 
-/*
-  both conjunction and disjunction are grounded the same way
-   - heads must not be used for matching
-
-   - non-heads grounded in bottom up fashion
-	 - instantiator is finished iff (index of) conjunction is finished
-
-   - for conjunctions always maintain exactly one conditional
-	 - should be the case because preprocessing is for heads is special
-
-   - calculate global vaiables wrt. conditionals only
-	 - :- p(X), q(Y), r(Z) : s(X,Z).
-	 - Y might be problematic here because the conjunction might be regrounded
-	 - create an index for the conjunction literal
-	   - store the global variables there (only Z in this case)
-	   - after grounding of an conditional finished mark as finished
-	   - if the containing literal is finished remove the finished mark
-		 (and finish the indices of the conditional)
-	   - global variables or an identifier for them have to be passed as identifier to output
-
-	- fact heads
-	 - disjunction:  ignore the whole rule
-	 - conjunctions: ignore the literal
-
-   - rule:         head :-    ..., conjunction,      ... .
-	 instantiator: idx(head), ..., idx(conjunction), ...
-	 conjunction:  a : b : ...
-	 instantiator: idx(cond), idx(a), idx(b), ...
-
-*/
-
 struct JunctionIndex : public StaticIndex
 {
 	struct Status
@@ -166,7 +135,6 @@ JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
 	: Formula(loc)
 	, head_(head)
 	, body_(body)
-	, index_(0)
 	, parent_(0)
 {
 	head_->head(true);
@@ -180,7 +148,6 @@ void JunctionCond::finish()
 void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
 {
 	parent_ = parent;
-	index_  = index;
 	head_->normalize(g, headExp);
 	for(LitPtrVec::size_type i = 0; i < body_.size(); i++)
 	{
@@ -208,7 +175,7 @@ bool JunctionCond::complete() const
 	return true;
 }
 
-bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t uidCond)
+bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index)
 {
 	Index::Match match = head.firstMatch(g, 0);
 	head_->grounded(g);
@@ -225,8 +192,15 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 			index.stop();
 			return false;
 		}
-		else if (head_->fact()) { return true; }
-		else if (!fact)         { index.fact(false); }
+		else if (match.first && head_->fact()) { return true; }
+		else { index.fact(false); }
+		// TODO: if the body is fact and the head does not match
+		//       then the junctionlit need not match yet
+		//       this requires that the literal is enqueued if the head changes
+		//       to properly implement this I would need to connect indices with
+		//       enqueue methods on-the-fly
+		//       it is not possible to just return false here instead the JunctionIndex has to fail
+		//       for this it would need some kind of counter
 	}
 	else
 	{
@@ -239,14 +213,19 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index, uint
 		else { head_->addDomain(g, false); }
 	}
 	JunctionLit::Printer *printer = g->output()->printer<JunctionLit::Printer>();
-	printer->beginHead(parent_->head(), parent_->uid(), index.uid(), uidCond);
+	printer->beginHead(parent_->head(), parent_->uid(), index.uid());
 	head_->accept(printer);
 	printer->beginBody();
+	bool bodyComplete = true;
 	foreach (Lit &lit, body_)
 	{
-		if (!lit.fact()) { lit.accept(printer); }
+		if (!lit.fact())
+		{
+			lit.accept(printer);
+			if (!lit.complete()) { bodyComplete = false; }
+		}
 	}
-	printer->printCond();
+	printer->printCond(bodyComplete);
 	return true;
 }
 
@@ -267,7 +246,7 @@ void JunctionCond::init(Grounder *g, JunctionIndex &parent)
 			foreach(Lit &lit, body_) { inst_->append(lit.index(g, this, bound)); }
 		}
 		parent.headIndices.push_back(head_->index(g, this, bound));
-		inst_->callback(boost::bind(&JunctionCond::grounded, this, _1, boost::ref(parent.headIndices.back()), boost::ref(parent), index_));
+		inst_->callback(boost::bind(&JunctionCond::grounded, this, _1, boost::ref(parent.headIndices.back()), boost::ref(parent)));
 	}
 	inst_->init(g);
 }
@@ -439,7 +418,7 @@ void JunctionLit::visit(PrgVisitor *visitor)
 void JunctionLit::accept(::Printer *v)
 {
 	Printer *printer = v->output()->printer<Printer>();
-	printer->printJunc(uid(), substUid_);
+	printer->printJunc(head(), uid(), substUid_);
 }
 
 Lit *JunctionLit::clone() const

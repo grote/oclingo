@@ -83,20 +83,27 @@ private:
 	LparseConverter *output_;
 };
 
-class JunctionPrinter : public JunctionLit::Printer
+class JunctionLitPrinter : public JunctionLit::Printer, public DelayedPrinter
 {
+	typedef std::pair<uint32_t, uint32_t> CondKey;
+	typedef std::pair<uint32_t, LparseConverter::LitVec> CondValue;
+	typedef std::map<CondKey, CondValue> CondMap;
 public:
-	JunctionPrinter(LparseConverter *output) : output_(output) { }
-	void begin(bool head);
+	JunctionLitPrinter(LparseConverter *output);
+	void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst);
+	void beginBody();
+	void printCond(bool bodyComplete);
+	void printJunc(bool disjunction, uint32_t juncUid, uint32_t substUid);
 	void print(PredLitRep *l);
-	void weight(const Val &v) { (void)v; }
-	void end();
+	void finish();
 	LparseConverter *output() const { return output_; }
 private:
-	LparseConverter           *output_;
-	LparseConverter::AtomVec   pos_;
-	LparseConverter::AtomVec   neg_;
-	bool                       head_;
+	LparseConverter         *output_;
+	LparseConverter::LitVec *current_;
+	LparseConverter::LitVec  head_;
+	LparseConverter::LitVec  body_;
+	CondMap                  condMap_;
+	bool                     disjunction_;
 };
 
 class IncPrinter : public IncLit::Printer
@@ -175,54 +182,95 @@ void ComputePrinter::print(PredLitRep *l)
 	output_->addCompute(l);
 }
 
-///////////////////////////////// JunctionPrinter /////////////////////////////////
+///////////////////////////////// JunctionLitPrinter /////////////////////////////////
 
-void JunctionPrinter::begin(bool head)
+JunctionLitPrinter::JunctionLitPrinter(LparseConverter *output)
+	: output_(output)
+	, current_(0)
+	, disjunction_(false)
 {
-	head_ = head;
-	pos_.clear();
-	neg_.clear();
+	output->regDelayedPrinter(this);
 }
 
-void JunctionPrinter::print(PredLitRep *l)
+void JunctionLitPrinter::beginHead(bool disjunction, uint32_t juncUid, uint32_t substUid)
 {
-	uint32_t sym = output_->symbol(l);
-	assert(sym > 0);
-	if(l->sign()) { neg_.push_back(sym); }
-	else          { pos_.push_back(sym); }
-}
-
-void JunctionPrinter::end()
-{
-	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	if(head_)
+	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
+	if (it == condMap_.end())
 	{
-		if(pos_.size() == 1 && neg_.size() == 0) { printer->setHead(pos_[0]); }
-		else if(!output_->shiftDisjunctions())   { printer->setHead(pos_, false); }
-		else
-		{
-			// add replacement as head
-			uint32_t d = output_->symbol();
-			printer->setHead(d);
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(output_->symbol(), LparseConverter::LitVec()))).first;
+	}
+	current_ = &it->second.second;
+	disjunction_ = disjunction;
+	body_.clear();
+	head_.clear();
+}
 
-			// write a shifted rule for every atom in the disjunction
-			for(size_t i = 0; i < pos_.size(); i++)
-			{
-				LparseConverter::AtomVec neg;
-				for(size_t k = 0; k < pos_.size(); k++)
-				{
-					if(k != i) { neg.push_back(pos_[k]); }
-				}
-				output_->printBasicRule(pos_[i], LparseConverter::AtomVec(1, d), neg);
-			}
+void JunctionLitPrinter::beginBody()
+{
+	std::swap(body_, head_);
+}
 
-		}
+void JunctionLitPrinter::printCond(bool bodyComplete)
+{
+	if (disjunction_)
+	{
+		// Note: should not happen but could be handled too
+		// assert(head > 0);
+
 	}
 	else
 	{
-		for(size_t i = 0; i < pos_.size(); i++) { printer->addBody(pos_[i], false); }
-		for(size_t i = 0; i < neg_.size(); i++) { printer->addBody(neg_[i], true); }
+		foreach (int32_t head, head_)
+		{
+			if (body_.empty()) { current_->push_back(head); }
+			else
+			{
+				int32_t sym = output()->symbol();
+				int32_t neg = output()->symbol();
+				output()->printBasicRule(sym, 1, head);
+				output()->printBasicRule(neg, body_);
+				output()->printBasicRule(sym, 1, -neg);
+				if (!bodyComplete)
+				{
+					uint32_t negHead = output()->symbol();
+					output()->printBasicRule(negHead, 1, -neg);
+					LparseConverter::AtomVec h, p, n;
+					h.push_back(sym);
+					h.push_back(neg);
+					n.push_back(negHead);
+					//sym | -head | neg
+					output()->printDisjunctiveRule(h, p, n);
+				}
+				current_->push_back(sym);
+			}
+		}
 	}
+}
+
+void JunctionLitPrinter::printJunc(bool disjunction, uint32_t juncUid, uint32_t substUid)
+{
+	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
+	if (it == condMap_.end())
+	{
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(output_->symbol(), LparseConverter::LitVec()))).first;
+	}
+	RulePrinter *printer = static_cast<RulePrinter*>(output()->printer<Rule::Printer>());
+	if (disjunction) { printer->setHead(it->second.first); }
+	else { printer->addBody(it->second.first, false); }
+}
+
+void JunctionLitPrinter::print(PredLitRep *l)
+{
+	body_.push_back(output_->symbol(l));
+}
+
+void JunctionLitPrinter::finish()
+{
+	foreach (CondMap::value_type &value, condMap_)
+	{
+		output_->printBasicRule(value.second.first, value.second.second);
+	}
+	condMap_.clear();
 }
 
 ///////////////////////////////// IncPrinter /////////////////////////////////
@@ -242,6 +290,5 @@ GRINGO_REGISTER_PRINTER(lparseconverter_impl::DisplayPrinter, Display::Printer, 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::OptimizePrinter, Optimize::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)
-// TODO: readd
-// GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionPrinter, JunctionLit::Printer, LparseConverter)
+GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionLitPrinter, JunctionLit::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::IncPrinter, IncLit::Printer, LparseConverter)

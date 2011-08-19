@@ -298,10 +298,10 @@ JunctionLitPrinter::JunctionLitPrinter(PlainOutput *output)
 	output->regDelayedPrinter(this);
 }
 
-void JunctionLitPrinter::beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond)
+void JunctionLitPrinter::beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst)
 {
-	body_ = false;
-	current_ = &condMap_.insert(CondMap::value_type(CondKey(uidJunc, uidSubst, uidCond), CondValue(disjunction, ""))).first->second.second;
+	body_    = false;
+	current_ = &condMap_.insert(CondMap::value_type(CondKey(uidJunc, uidSubst), "")).first->second;
 	if (!current_->empty()) { *current_+= disjunction ? "|" : ","; }
 }
 
@@ -310,15 +310,15 @@ void JunctionLitPrinter::beginBody()
 	body_ = true;
 }
 
-void JunctionLitPrinter::printCond()
+void JunctionLitPrinter::printCond(bool)
 {
 }
 
-void JunctionLitPrinter::printJunc(uint32_t uidJunc, uint32_t uidSubst)
+void JunctionLitPrinter::printJunc(bool, uint32_t uidJunc, uint32_t uidSubst)
 {
 	output()->print();
 	DelayedOutput::Offset todo = output_->beginDelay();
-	todo_.push_back(TodoValue(todo, uidJunc, uidSubst));
+	todo_.push_back(TodoValue(todo, CondKey(uidJunc, uidSubst)));
 }
 
 void JunctionLitPrinter::print(PredLitRep *l)
@@ -333,22 +333,10 @@ void JunctionLitPrinter::finish()
 {
 	foreach (TodoVec::value_type &value, todo_)
 	{
-		bool     comma    = false;
-		uint32_t lastCond = 0;
-		for (CondMap::iterator it = condMap_.lower_bound(CondKey(value.get<1>(), value.get<2>(), 0)); it != condMap_.end() && it->first.get<0>() == value.get<1>() && it->first.get<1>() == value.get<2>(); it++)
-		{
-			if (comma)
-			{
-				if (lastCond != it->first.get<2>()) { out() << it->second.first ? "|" : ","; }
-				else                                { out() << ":"; }
-			}
-			else       { comma = true; }
-			out() << it->second.second;
-			lastCond = it->first.get<2>();
-		}
-		if (!comma) { out() << "#true"; }
-		output_->contDelay(value.get<0>());
-		output_->endDelay(value.get<0>());
+		CondMap::iterator it = condMap_.find(value.second);
+		out() << (it != condMap_.end() ? it->second : "#true");
+		output_->contDelay(value.first);
+		output_->endDelay(value.first);
 	}
 	todo_.clear();
 	condMap_.clear();

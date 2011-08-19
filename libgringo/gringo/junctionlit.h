@@ -33,7 +33,7 @@ public:
 	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
 
 	bool complete() const;
-	bool grounded(Grounder *g, Index &head, JunctionIndex &index, uint32_t uidCond);
+	bool grounded(Grounder *g, Index &head, JunctionIndex &index);
 	void finish();
 	bool ground(Grounder *g);
 	void init(Grounder *g, JunctionIndex &index);
@@ -50,7 +50,6 @@ private:
 	clone_ptr<Lit>          head_;
 	LitPtrVec               body_;
 	clone_ptr<Instantiator> inst_;
-	uint32_t                index_;
 	JunctionLit            *parent_;
 };
 
@@ -60,10 +59,10 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
-		virtual void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst, uint32_t uidCond) = 0;
+		virtual void beginHead(bool disjunction, uint32_t uidJunc, uint32_t uidSubst) = 0;
 		virtual void beginBody() = 0;
-		virtual void printCond() = 0;
-		virtual void printJunc(uint32_t juncUid, uint32_t substUid) = 0;
+		virtual void printCond(bool bodyComplete) = 0;
+		virtual void printJunc(bool disjunction, uint32_t juncUid, uint32_t substUid) = 0;
 		virtual ~Printer() { }
 	};
 public:
