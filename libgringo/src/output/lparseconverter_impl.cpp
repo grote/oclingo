@@ -86,7 +86,7 @@ private:
 class JunctionLitPrinter : public JunctionLit::Printer, public DelayedPrinter
 {
 	typedef std::pair<uint32_t, uint32_t> CondKey;
-	typedef std::pair<uint32_t, LparseConverter::LitVec> CondValue;
+	typedef boost::tuples::tuple<bool, int32_t, LparseConverter::LitVec> CondValue;
 	typedef std::map<CondKey, CondValue> CondMap;
 public:
 	JunctionLitPrinter(LparseConverter *output);
@@ -99,7 +99,7 @@ public:
 	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter         *output_;
-	LparseConverter::LitVec *current_;
+	CondValue               *current_;
 	LparseConverter::LitVec  head_;
 	LparseConverter::LitVec  body_;
 	CondMap                  condMap_;
@@ -197,9 +197,9 @@ void JunctionLitPrinter::beginHead(bool disjunction, uint32_t juncUid, uint32_t 
 	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
 	if (it == condMap_.end())
 	{
-		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(output_->symbol(), LparseConverter::LitVec()))).first;
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, output_->symbol(), LparseConverter::LitVec()))).first;
 	}
-	current_ = &it->second.second;
+	current_ = &it->second;
 	disjunction_ = disjunction;
 	body_.clear();
 	head_.clear();
@@ -214,15 +214,52 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 {
 	if (disjunction_)
 	{
-		// Note: should not happen but could be handled too
-		// assert(head > 0);
+		foreach (int32_t head, head_)
+		{
+			// Note: should not happen but could be handled too
+			assert(head > 0);
+			if (body_.empty()) { current_->get<2>().push_back(head); }
+			else
+			{
+				if (bodyComplete)
+				{
+					int32_t strat = output()->symbol();
+					current_->get<2>().push_back(strat);
+					output()->printBasicRule(head, 1, strat);
+					int32_t neg = output()->symbol();
+					output()->printBasicRule(neg, body_);
+					output()->printBasicRule(output()->falseSymbol(), strat, -neg);
+				}
+				else
+				{
+					int32_t sym    = current_->get<1>();
+					uint32_t next  = output()->symbol();
+					uint32_t local = output()->symbol();
 
+					// head :- local, body.
+					body_.push_back(local);
+					output()->printBasicRule(head, body_);
+					body_.pop_back();
+					// next | local :- sym.
+					LparseConverter::AtomVec h, p, n;
+					h.push_back(next);
+					h.push_back(local);
+					p.push_back(sym);
+					output()->printDisjunctiveRule(h, p, n);
+					// next  :- sym, not body.
+					int32_t neg = output()->symbol();
+					output()->printBasicRule(neg, body_);
+					output()->printBasicRule(next, sym, -neg);
+					current_->get<1>() = next;
+				}
+			}
+		}
 	}
 	else
 	{
 		foreach (int32_t head, head_)
 		{
-			if (body_.empty()) { current_->push_back(head); }
+			if (body_.empty()) { current_->get<2>().push_back(head); }
 			else
 			{
 				int32_t sym = output()->symbol();
@@ -238,10 +275,10 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 					h.push_back(sym);
 					h.push_back(neg);
 					n.push_back(negHead);
-					//sym | -head | neg
+					//sym | -head | neg.
 					output()->printDisjunctiveRule(h, p, n);
 				}
-				current_->push_back(sym);
+				current_->get<2>().push_back(sym);
 			}
 		}
 	}
@@ -249,14 +286,15 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 
 void JunctionLitPrinter::printJunc(bool disjunction, uint32_t juncUid, uint32_t substUid)
 {
+	// TODO: duplicated code
 	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
 	if (it == condMap_.end())
 	{
-		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(output_->symbol(), LparseConverter::LitVec()))).first;
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, output_->symbol(), LparseConverter::LitVec()))).first;
 	}
 	RulePrinter *printer = static_cast<RulePrinter*>(output()->printer<Rule::Printer>());
-	if (disjunction) { printer->setHead(it->second.first); }
-	else { printer->addBody(it->second.first, false); }
+	if (disjunction) { printer->setHead(it->second.get<1>()); }
+	else { printer->addBody(it->second.get<1>(), false); }
 }
 
 void JunctionLitPrinter::print(PredLitRep *l)
@@ -268,7 +306,29 @@ void JunctionLitPrinter::finish()
 {
 	foreach (CondMap::value_type &value, condMap_)
 	{
-		output_->printBasicRule(value.second.first, value.second.second);
+		uint32_t sym = value.second.get<1>();
+		if (value.second.get<0>())
+		{
+			if (value.second.get<2>().empty())
+			{
+				output_->printBasicRule(output()->falseSymbol(), 1, sym);
+			}
+			else if (value.second.get<2>().size() == 1)
+			{
+				output_->printBasicRule(value.second.get<2>().front(), 1, sym);
+			}
+			else
+			{
+				LparseConverter::AtomVec head(value.second.get<2>().begin(), value.second.get<2>().end());
+				LparseConverter::AtomVec pos, neg;
+				pos.push_back(sym);
+				output_->printDisjunctiveRule(head, pos, neg);
+			}
+		}
+		else
+		{
+			output_->printBasicRule(sym, value.second.get<2>());
+		}
 	}
 	condMap_.clear();
 }
