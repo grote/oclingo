@@ -430,7 +430,7 @@ void Builder::analyze(Grounder *g)
 	}
 	foreach(Todo &todo, todo_)
 	{
-		if(todo.provided < todo.stm->component())
+		if(todo.provided < todo.stm->component() && !todo.lit->dom()->external())
 		{
 			todo.lit->complete(true);
 		}
