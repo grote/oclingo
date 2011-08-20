@@ -52,9 +52,9 @@ struct Tester : public Clasp::Enumerator::Report
 		}
 		// check
 		{
-			uint32_t n = 0;
 			va_list vl;
 			va_start(vl, x);
+			std::set<Model> modelSet(models.begin(), models.end());
 			while(x)
 			{
 				Model m;
@@ -63,11 +63,19 @@ struct Tester : public Clasp::Enumerator::Report
 					m.insert(std::string(x));
 					x = va_arg(vl, const char *);
 				}
-				BOOST_CHECK(std::find(models.begin(), models.end(), m) != models.end());
-				n++;
+				std::stringstream ss;
+				ss << "expected model:";
+				foreach (std::string const &s, m) { ss << " " << s; }
+				BOOST_CHECK_MESSAGE(modelSet.erase(m), ss.str());
 				x = va_arg(vl, const char *);
 			}
-			BOOST_CHECK(models.size() == n);
+			foreach (Model const &m, modelSet)
+			{
+				std::stringstream ss;
+				ss << "unexpected model:";
+				foreach (std::string const &s, m) { ss << " " << s; }
+				BOOST_CHECK_MESSAGE(false, ss.str());
+			}
 			va_end(vl);
 		}
 	}
@@ -216,6 +224,65 @@ BOOST_AUTO_TEST_CASE( conjunction_test1 )
 		"p(a,1)", "p(a,2)", "q(a)",
 		"p(b,1)", "p(b,2)", "q(b)", NULL,
 
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( aggr_test_martin )
+{
+	Tester
+	(
+		"value(0;1)."
+		"term(yipp;nopp)."
+		"aggregate(count;sum;min;max)."
+
+		"neutral(count,0)."
+		"neutral(sum,0)."
+		"neutral(min,1)."
+		"neutral(max,-1)."
+
+
+		"true(count,no,x,T) :- term(T),             #count{p(T) : d(T)}  ."
+		"true(count,lo,V,T) :- term(T), value(V), V #count{p(T) : d(T)}  ."
+		"true(count,up,V,T) :- term(T), value(V),   #count{p(T) : d(T)} V."
+
+		"true(sum,no,x,T)   :- term(T),             #sum[p(T) : d(T) = 1]  ."
+		"true(sum,lo,V,T)   :- term(T), value(V), V #sum[p(T) : d(T) = 1]  ."
+		"true(sum,up,V,T)   :- term(T), value(V),   #sum[p(T) : d(T) = 1] V."
+
+		"true(min,no,x,T)   :- term(T),             #min[p(T) : d(T) = 1]  ."
+		"true(min,lo,V,T)   :- term(T), value(V), V #min[p(T) : d(T) = 1]  ."
+		"true(min,up,V,T)   :- term(T), value(V),   #min[p(T) : d(T) = 1] V."
+
+		"true(max,no,x,T)   :- term(T),             #max[p(T) : d(T) = 1]  ."
+		"true(max,lo,V,T)   :- term(T), value(V), V #max[p(T) : d(T) = 1]  ."
+		"true(max,up,V,T)   :- term(T), value(V),   #max[p(T) : d(T) = 1] V."
+
+
+		"diff(A,B,V,T)      :- true(A,B,V,T), term(TT), TT!=T, not true(A,B,V,TT)."
+
+
+		"weird(A,no,x,T)    :- aggregate(A), term(T), not true(A,no,x,T)."
+
+		"weird(A,lo,V,T)    :- aggregate(A), term(T), value(V), neutral(A,1),      not true(A,lo,V,T)."
+		"weird(A,lo,1,T)    :- aggregate(A), term(T),           neutral(A,N), N<1,     true(A,lo,1,T)."
+		"weird(A,lo,0,T)    :- aggregate(A), term(T),           neutral(A,-1),         true(A,lo,0,T)."
+		"weird(A,lo,0,T)    :- aggregate(A), term(T),           neutral(A,0),      not true(A,lo,0,T)."
+
+		"weird(A,up,V,T)    :- aggregate(A), term(T), value(V), neutral(A,N), N<1, not true(A,up,V,T)."
+		"weird(A,up,V,T)    :- aggregate(A), term(T), value(V), neutral(A,1),          true(A,up,V,T)."
+
+		"{p(yipp)}."
+		":- p(yipp)."
+		"d(yipp)."
+
+		"#hide."
+		"#show d/1."
+		"#show p/1."
+		"#show diff/4."
+		"#show weird/4.",
+
+		"d(yipp)", NULL,
 		NULL
 	);
 }
