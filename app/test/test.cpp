@@ -363,3 +363,32 @@ BOOST_AUTO_TEST_CASE( conj_test_basic )
 		NULL
 	);
 }
+
+BOOST_AUTO_TEST_CASE( conj_test_strat )
+{
+	Tester
+	(
+		"2 { p(1..2) } 2."
+		"{ q(1..2) }."
+		"none :- not q(X) : p(X)."
+		":- not none.",
+
+		"none", "p(1)", "p(2)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( conj_test_nonstrat )
+{
+	Tester
+	(
+		"2 { p(1..2) } 2."
+		"{ q(1..2) }."
+		"none :- not q(X) : p(X)."
+		"2 { p(1..2) } 2 :- none."
+		":- not none.",
+
+		"none", "p(1)", "p(2)", NULL,
+		NULL
+	);
+}
