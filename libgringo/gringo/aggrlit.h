@@ -70,6 +70,9 @@ protected:
 		Val64(const Val &val);
 
 	public:
+		uint32_t type() const;
+		int64_t num() const;
+		Val const &val() const { return val_; }
 		int compare(const Val64 &v, Storage *s) const;
 		static Val64 create(const int64_t &num);
 		static Val64 create(const Val &val);

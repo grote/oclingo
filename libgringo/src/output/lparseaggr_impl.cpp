@@ -557,9 +557,9 @@ void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVa
 
 	std::sort(condVec.begin(), condVec.end(), CondLess());
 	condVec.erase(combine_adjacent(condVec.begin(), condVec.end(), CondEqual(), boost::bind(&MinMaxAggrLitPrinter::combine, s, _1, _2)), condVec.end());
-	Val min = Val::sup();
-	Val max = Val::inf();
-	Val fix = T == MinMaxAggrLit::MINIMUM ? Val::sup() : Val::inf();
+	Val min = T == MinMaxAggrLit::MINIMUM ? Val::sup() : Val::inf(); //Val::sup();
+	Val max = min;
+	Val fix = min;
 	condVec.erase(std::remove_if(condVec.begin(), condVec.end(), boost::bind(&MinMaxAggrLitPrinter::analyze, s, _1, boost::ref(min), boost::ref(max), boost::ref(fix))), condVec.end());
 
 	if(T == MinMaxAggrLit::MINIMUM && max.compare(fix, s) > 0) { max = fix; }
@@ -571,7 +571,7 @@ void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVa
 	// NOTE: in theory some choices could be dropped, e.g., p(1) and p(2) in:
 	//       2 < #min { <X>:p(X) : X=1..5 } < 5.
 	//       this holds for aggregates in general if a literal would make the aggregate false
-	//       no choices has to be generated (but the literal is still important for the check)
+	//       no choices have to be generated (but the literal is still important for the check)
 	if(handleAggr(b, val, condVec, conds))
 	{
 		uint32_t mp = 0, ap = 0;

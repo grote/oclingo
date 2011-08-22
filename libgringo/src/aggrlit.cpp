@@ -129,7 +129,7 @@ BoundAggrState::Val64::Val64(const int64_t &num)
 { }
 
 BoundAggrState::Val64::Val64(const Val &val)
-	: isNum_(true)
+	: isNum_(false)
 	, val_(val)
 { }
 
@@ -144,16 +144,27 @@ BoundAggrState::Val64 BoundAggrState::Val64::create(const Val &val)
 	else                     { return Val64(val);     }
 }
 
+int64_t BoundAggrState::Val64::num() const
+{
+	assert(isNum_ || val_.type == Val::NUM);
+	return isNum_ ? num_ : val_.num;
+}
+
+uint32_t BoundAggrState::Val64::type() const
+{
+	return isNum_ ? Val::NUM : val_.type;
+}
 
 int BoundAggrState::Val64::compare(const Val64 &v, Storage *s) const
 {
-	if(isNum_ && v.isNum_)
+	if (type() != v.type())      { return type() < v.type() ? -1 : 1; }
+	else if(type() == Val::NUM && v.type() == Val::NUM)
 	{
-		if(num_ < v.num_)      { return -1; }
-		else if(num_ > v.num_) { return 1; }
-		else                   { return 0; }
+		if(num() < v.num())      { return -1; }
+		else if(num() > v.num()) { return 1; }
+		else                     { return 0; }
 	}
-	else { return val_.compare(v.val_, s); }
+	else                         { return val_.compare(v.val_, s); }
 }
 
 //////////////////////////////////////// BoundAggrState ////////////////////////////////////////
@@ -238,6 +249,7 @@ AggrLit::AggrLit(const Loc &loc, AggrCondVec &conds, bool set)
 	, sign_(false)
 	, assign_(false)
 	, fact_(false)
+	, isNewAggrState_(false)
 	, set_(set)
 	, lowerEq_(true)
 	, upperEq_(true)
