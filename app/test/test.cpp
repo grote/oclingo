@@ -20,7 +20,7 @@ struct Tester : public Clasp::Enumerator::Report
 		// ground/solve
 		{
 			Clasp::ProgramBuilder pb;
-			ClaspOutput o(false);
+			ClaspOutput o(true);
 			TermExpansionPtr te(new TermExpansion());
 			BodyOrderHeuristicPtr bo(new BasicBodyOrderHeuristic());
 			Grounder g(&o, false, te, bo);
@@ -283,6 +283,83 @@ BOOST_AUTO_TEST_CASE( aggr_test_martin )
 		"#show weird/4.",
 
 		"d(yipp)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( disj_test_basic )
+{
+	Tester
+	(
+		"p(1..2)."
+		"q(X) : p(X).",
+
+		"p(1)", "p(2)", "q(1)", NULL,
+		"p(1)", "p(2)", "q(2)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( disj_test_strat )
+{
+	Tester
+	(
+		"{ p(1..2) }."
+		"0 { b } 0."
+		"q(X) : p(X) :- not b.",
+
+		"p(1)", "q(1)", NULL,
+		"p(2)", "q(2)", NULL,
+		"p(1)", "p(2)", "q(1)", NULL,
+		"p(1)", "p(2)", "q(2)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( disj_test_nonstrat )
+{
+	Tester
+	(
+		"{ p(1..2) }."
+		"0 { b } 0."
+		"p(X) :- q(X), #false."
+		"q(X) : p(X) :- not b.",
+
+		"p(1)", "q(1)", NULL,
+		"p(2)", "q(2)", NULL,
+		"p(1)", "p(2)", "q(1)", NULL,
+		"p(1)", "p(2)", "q(2)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( disj_test_plus_fact )
+{
+	Tester
+	(
+		"{ p(1..2) }."
+		"0 { b } 0."
+		"p(X) :- q(X), #false."
+		"q(X) : p(X) :- not b."
+		"q(1).",
+
+		"p(1)", "q(1)", NULL,
+		"p(1)", "p(2)", "q(1)", NULL,
+		"q(1)", "p(2)", "q(2)", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( conj_test_basic )
+{
+	Tester
+	(
+		"p(1..2)."
+		"{ q(1..2) }."
+		"none :- not q(X) : p(X)."
+		":- not none.",
+
+		"none", "p(1)", "p(2)", NULL,
 		NULL
 	);
 }

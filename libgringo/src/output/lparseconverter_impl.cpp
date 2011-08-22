@@ -222,33 +222,14 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 			if (body_.empty()) { current_->get<3>().push_back(head); }
 			else
 			{
-				if (bodyComplete)
-				{
-					int32_t strat = output()->symbol();
-					current_->get<3>().push_back(strat);
-					output()->printBasicRule(head, 1, strat);
-					int32_t neg = output()->symbol();
-					output()->printBasicRule(neg, body_);
-					output()->printBasicRule(output()->falseSymbol(), 2, strat, -neg);
-				}
-				else
-				{
-					int32_t sym   = current_->get<2>();
-					int32_t next  = output()->symbol();
-					int32_t local = output()->symbol();
-
-					// head :- local, body.
-					body_.push_back(local);
-					output()->printBasicRule(head, body_);
-					body_.pop_back();
-					// next | local :- sym.
-					output()->transformDisjunctiveRule(2, next, local, 1, sym);
-					// next  :- sym, not body.
-					int32_t neg = output()->symbol();
-					output()->printBasicRule(neg, body_);
-					output()->printBasicRule(next, 2, sym, -neg);
-					current_->get<2>() = next;
-				}
+				int32_t sym  = output()->symbol();
+				int32_t body = output()->symbol();
+				output()->printBasicRule(body, body_);
+				output()->printBasicRule(head, 2, sym, body);
+				output()->printBasicRule(sym, 2, head, body);
+				// Note: this fixes the disjunction with the answer set candidate guess
+				output()->printBasicRule(output()->falseSymbol(), 2, sym, -body);
+				current_->get<3>().push_back(sym);
 			}
 		}
 	}
@@ -291,7 +272,8 @@ void JunctionLitPrinter::printJunc(bool disjunction, uint32_t juncUid, uint32_t 
 
 void JunctionLitPrinter::print(PredLitRep *l)
 {
-	body_.push_back(output_->symbol(l));
+	int32_t sym = output_->symbol(l);
+	body_.push_back(l->sign() ? -sym : sym);
 }
 
 void JunctionLitPrinter::finish()
@@ -301,7 +283,6 @@ void JunctionLitPrinter::finish()
 		uint32_t sym = value.second.get<2>();
 		if (value.second.get<0>())
 		{
-			std::cerr << "hi!" << std::endl;
 			if (value.second.get<3>().empty())
 			{
 				output_->printBasicRule(output()->falseSymbol(), 1, sym);
