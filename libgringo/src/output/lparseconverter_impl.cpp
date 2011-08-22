@@ -86,7 +86,7 @@ private:
 class JunctionLitPrinter : public JunctionLit::Printer, public DelayedPrinter
 {
 	typedef std::pair<uint32_t, uint32_t> CondKey;
-	typedef boost::tuples::tuple<bool, int32_t, LparseConverter::LitVec> CondValue;
+	typedef boost::tuples::tuple<bool, int32_t, int32_t, LparseConverter::LitVec> CondValue;
 	typedef std::map<CondKey, CondValue> CondMap;
 public:
 	JunctionLitPrinter(LparseConverter *output);
@@ -197,7 +197,8 @@ void JunctionLitPrinter::beginHead(bool disjunction, uint32_t juncUid, uint32_t 
 	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
 	if (it == condMap_.end())
 	{
-		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, output_->symbol(), LparseConverter::LitVec()))).first;
+		int32_t sym = output_->symbol();
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, sym, sym, LparseConverter::LitVec()))).first;
 	}
 	current_ = &it->second;
 	disjunction_ = disjunction;
@@ -218,21 +219,21 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 		{
 			// Note: should not happen but could be handled too
 			assert(head > 0);
-			if (body_.empty()) { current_->get<2>().push_back(head); }
+			if (body_.empty()) { current_->get<3>().push_back(head); }
 			else
 			{
 				if (bodyComplete)
 				{
 					int32_t strat = output()->symbol();
-					current_->get<2>().push_back(strat);
+					current_->get<3>().push_back(strat);
 					output()->printBasicRule(head, 1, strat);
 					int32_t neg = output()->symbol();
 					output()->printBasicRule(neg, body_);
-					output()->printBasicRule(output()->falseSymbol(), strat, -neg);
+					output()->printBasicRule(output()->falseSymbol(), 2, strat, -neg);
 				}
 				else
 				{
-					int32_t sym    = current_->get<1>();
+					int32_t sym   = current_->get<2>();
 					int32_t next  = output()->symbol();
 					int32_t local = output()->symbol();
 
@@ -245,8 +246,8 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 					// next  :- sym, not body.
 					int32_t neg = output()->symbol();
 					output()->printBasicRule(neg, body_);
-					output()->printBasicRule(next, sym, -neg);
-					current_->get<1>() = next;
+					output()->printBasicRule(next, 2, sym, -neg);
+					current_->get<2>() = next;
 				}
 			}
 		}
@@ -255,7 +256,7 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 	{
 		foreach (int32_t head, head_)
 		{
-			if (body_.empty()) { current_->get<2>().push_back(head); }
+			if (body_.empty()) { current_->get<3>().push_back(head); }
 			else
 			{
 				int32_t sym = output()->symbol();
@@ -268,7 +269,7 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 					//sym | -head | neg.
 					output()->transformDisjunctiveRule(3, sym, -head, neg, 0);
 				}
-				current_->get<2>().push_back(sym);
+				current_->get<3>().push_back(sym);
 			}
 		}
 	}
@@ -280,7 +281,8 @@ void JunctionLitPrinter::printJunc(bool disjunction, uint32_t juncUid, uint32_t 
 	CondMap::iterator it = condMap_.find(CondKey(juncUid, substUid));
 	if (it == condMap_.end())
 	{
-		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, output_->symbol(), LparseConverter::LitVec()))).first;
+		int32_t sym = output_->symbol();
+		it = condMap_.insert(CondMap::value_type(CondKey(juncUid, substUid), CondValue(disjunction, sym, sym, LparseConverter::LitVec()))).first;
 	}
 	RulePrinter *printer = static_cast<RulePrinter*>(output()->printer<Rule::Printer>());
 	if (disjunction) { printer->setHead(it->second.get<1>()); }
@@ -296,27 +298,28 @@ void JunctionLitPrinter::finish()
 {
 	foreach (CondMap::value_type &value, condMap_)
 	{
-		uint32_t sym = value.second.get<1>();
+		uint32_t sym = value.second.get<2>();
 		if (value.second.get<0>())
 		{
-			if (value.second.get<2>().empty())
+			std::cerr << "hi!" << std::endl;
+			if (value.second.get<3>().empty())
 			{
 				output_->printBasicRule(output()->falseSymbol(), 1, sym);
 			}
-			else if (value.second.get<2>().size() == 1)
+			else if (value.second.get<3>().size() == 1)
 			{
-				output_->printBasicRule(value.second.get<2>().front(), 1, sym);
+				output_->printBasicRule(value.second.get<3>().front(), 1, sym);
 			}
 			else
 			{
 				LparseConverter::LitVec body;
 				body.push_back(sym);
-				output_->transformDisjunctiveRule(value.second.get<2>(), body);
+				output_->transformDisjunctiveRule(value.second.get<3>(), body);
 			}
 		}
 		else
 		{
-			output_->printBasicRule(sym, value.second.get<2>());
+			output_->printBasicRule(sym, value.second.get<3>());
 		}
 	}
 	condMap_.clear();
