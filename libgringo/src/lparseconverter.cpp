@@ -352,6 +352,56 @@ void LparseConverter::printBasicRule(uint32_t head, const LitVec &lits)
 	printBasicRule(head, pos, neg);
 }
 
+void LparseConverter::transformDisjunctiveRule(uint32_t n, ...)
+{
+	va_list vl;
+	va_start(vl, n);
+	LitVec head, body;
+	for (uint32_t i = 0; i < n; i++) { head.push_back(va_arg(vl, int32_t)); }
+	n = va_arg(vl, uint32_t);
+	for (uint32_t i = 0; i < n; i++) { body.push_back(va_arg(vl, int32_t)); }
+	va_end(vl);
+	transformDisjunctiveRule(head, body);
+}
+
+void LparseConverter::transformDisjunctiveRule(LitVec const &head, LitVec const &body)
+{
+	AtomVec pos, neg, atoms;
+	foreach (int32_t lit, head)
+	{
+		if (lit > 0) { atoms.push_back(lit); }
+		else
+		{
+			uint32_t sym = symbol();
+			printBasicRule(sym, 1, lit);
+			neg.push_back(sym);
+		}
+	}
+	foreach (int32_t lit, body)
+	{
+		if (lit > 0) { pos.push_back(lit); }
+		else         { neg.push_back(lit); }
+	}
+	boost::range::sort(atoms);
+	atoms.resize(boost::range::unique(atoms).size());
+	if (!shiftDisjunctions_) { printDisjunctiveRule(atoms, pos, neg); }
+	else
+	{
+		foreach (uint32_t a, atoms)
+		{
+			foreach (uint32_t b, atoms)
+			{
+				if (a != b) { neg.push_back(b); }
+			}
+			printBasicRule(a, pos, neg);
+			foreach (uint32_t b, atoms)
+			{
+				if (a != b) { neg.pop_back(); }
+			}
+		}
+	}
+}
+
 LparseConverter::~LparseConverter()
 {
 }

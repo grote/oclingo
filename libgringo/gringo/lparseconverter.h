@@ -74,13 +74,15 @@ public:
 	void externalAtom(PredLitRep *l);
 	void printSymbolTable();
 	void printExternalTable();
-	bool shiftDisjunctions() const { return shiftDisjunctions_; }
+	void transformDisjunctiveRule(uint32_t n, ...);
+	void transformDisjunctiveRule(LitVec const &head, LitVec const &body);
 	void addCompute(PredLitRep *l);\
 	void printBasicRule(uint32_t head, uint32_t n, ...);
 	void printBasicRule(uint32_t head, const LitVec &lits);
 	void display(const Val &head, LitVec body, bool show);
 	void prepareSymbolTable();
 	virtual ~LparseConverter();
+
 public:
 	virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg) = 0;

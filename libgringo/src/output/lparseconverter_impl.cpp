@@ -233,19 +233,15 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 				else
 				{
 					int32_t sym    = current_->get<1>();
-					uint32_t next  = output()->symbol();
-					uint32_t local = output()->symbol();
+					int32_t next  = output()->symbol();
+					int32_t local = output()->symbol();
 
 					// head :- local, body.
 					body_.push_back(local);
 					output()->printBasicRule(head, body_);
 					body_.pop_back();
 					// next | local :- sym.
-					LparseConverter::AtomVec h, p, n;
-					h.push_back(next);
-					h.push_back(local);
-					p.push_back(sym);
-					output()->printDisjunctiveRule(h, p, n);
+					output()->transformDisjunctiveRule(2, next, local, 1, sym);
 					// next  :- sym, not body.
 					int32_t neg = output()->symbol();
 					output()->printBasicRule(neg, body_);
@@ -269,14 +265,8 @@ void JunctionLitPrinter::printCond(bool bodyComplete)
 				output()->printBasicRule(sym, 1, -neg);
 				if (!bodyComplete)
 				{
-					uint32_t negHead = output()->symbol();
-					output()->printBasicRule(negHead, 1, -neg);
-					LparseConverter::AtomVec h, p, n;
-					h.push_back(sym);
-					h.push_back(neg);
-					n.push_back(negHead);
 					//sym | -head | neg.
-					output()->printDisjunctiveRule(h, p, n);
+					output()->transformDisjunctiveRule(3, sym, -head, neg, 0);
 				}
 				current_->get<2>().push_back(sym);
 			}
@@ -319,10 +309,9 @@ void JunctionLitPrinter::finish()
 			}
 			else
 			{
-				LparseConverter::AtomVec head(value.second.get<2>().begin(), value.second.get<2>().end());
-				LparseConverter::AtomVec pos, neg;
-				pos.push_back(sym);
-				output_->printDisjunctiveRule(head, pos, neg);
+				LparseConverter::LitVec body;
+				body.push_back(sym);
+				output_->transformDisjunctiveRule(value.second.get<2>(), body);
 			}
 		}
 		else
