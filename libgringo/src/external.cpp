@@ -53,9 +53,19 @@ void External::addDomain(Grounder *g)
 bool External::grounded(Grounder *g)
 {
 	head_->grounded(g);
+	if (head_->fact()) { return true; }
 	addDomain(g);
 	Printer *printer = g->output()->printer<Printer>();
-	printer->print(head_.get());
+	printer->begin();
+	if(head_.get()) { head_->accept(printer); }
+	printer->endHead();
+	foreach(Lit &lit, body_)
+	{
+		lit.grounded(g);
+		if(!lit.fact()) { lit.accept(printer); }
+		else if(lit.forcePrint()) { lit.accept(printer); }
+	}
+	printer->end();
 	return true;
 }
 
@@ -91,7 +101,7 @@ void External::normalize(Grounder *g)
 void External::visit(PrgVisitor *visitor)
 {
 	visitor->visit(head_.get(), false);
-	foreach(Lit &lit, body_) visitor->visit(&lit, true);
+	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
 
 void External::print(Storage *sto, std::ostream &out) const

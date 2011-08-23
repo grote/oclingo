@@ -23,6 +23,8 @@
 namespace plainoutput_impl
 {
 
+//////////////////////////////////////// DisplayPrinter ////////////////////////////////////////
+
 void DisplayPrinter::begin(const Val &head, Type type)
 {
 	out() << (type == Display::HIDEPRED ? "#hide " : "#show ");
@@ -47,13 +49,32 @@ void DisplayPrinter::end()
 	output()->endStatement();
 }
 
+//////////////////////////////////////// ExternalPrinter ////////////////////////////////////////
+
 void ExternalPrinter::print(PredLitRep *l)
 {
-	out() << "#external ";
+	if (printed_) { out() << ":"; }
+	else          { printed_ = true; }
 	output_->print(l, out());
-	out() << ".\n";
-	output()->endStatement();
 }
+
+void ExternalPrinter::begin()
+{
+	out() << "#external ";
+	printed_ = false;
+}
+
+void ExternalPrinter::endHead()
+{
+}
+
+void ExternalPrinter::end()
+{
+	out() << ".\n";
+	output_->endStatement();
+}
+
+//////////////////////////////////////// RulePrinter ////////////////////////////////////////
 
 void RulePrinter::begin()
 {

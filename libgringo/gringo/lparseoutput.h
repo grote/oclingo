@@ -34,7 +34,7 @@ public:
 	void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
 	void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+	void printExternalTableEntry(uint32_t symbol, uint32_t mapped);
 	uint32_t symbol();
 private:
 	std::ostream &out_;

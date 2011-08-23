@@ -51,12 +51,16 @@ namespace plainoutput_impl
 	class ExternalPrinter : public External::Printer
 	{
 	public:
-		ExternalPrinter(PlainOutput *output) : output_(output) { }
+		ExternalPrinter(PlainOutput *output) : output_(output), printed_(false) { }
 		void print(PredLitRep *l);
+		void begin();
+		void endHead();
+		void end();
 		PlainOutput *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:
 		PlainOutput *output_;
+		bool         printed_;
 	};
 
 	class RulePrinter : public Rule::Printer

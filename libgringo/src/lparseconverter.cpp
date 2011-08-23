@@ -123,6 +123,27 @@ void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
 	prioMap_[set[1]][set].push_back(maximize ? -lit : lit);
 }
 
+void LparseConverter::prepareExternalTable()
+{
+	if(external_.size() > 0)
+	{
+		for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
+		{
+			uint32_t nameId = i->second->nameId();
+			uint32_t arity  = i->second->arity();
+			uint32_t domId  = i->second->domId();
+			if(external_.find(Signature(nameId, arity)) != external_.end())
+			{
+				if(newSymbols_.size() <= domId) newSymbols_.resize(domId + 1);
+				foreach(AtomRef &j, newSymbols_[domId])
+				{
+					externalAtom(j.symbol, true);
+				}
+			}
+		}
+	}
+}
+
 void LparseConverter::prepareSymbolTable()
 {
 	if(!hideAll_) { atomsShown_.clear(); }
@@ -234,28 +255,33 @@ void LparseConverter::printExternalTable()
 	{
 		for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
 		{
-			uint32_t nameId = i->second->nameId();
-			uint32_t arity  = i->second->arity();
-			uint32_t domId  = i->second->domId();
-			ExternalMap::iterator ext = atomsExternal_.find(Signature(nameId, arity));
-			bool globExt = external_.find(Signature(nameId, arity)) != external_.end();
-			if(globExt || ext != atomsExternal_.end())
+			uint32_t domId = i->second->domId();
+			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
+			foreach(AtomRef &j, newSymbols_[domId])
 			{
-				if(newSymbols_.size() <= domId) newSymbols_.resize(domId + 1);
-				const std::string &name = s_->string(nameId);
-				foreach(AtomRef &j, newSymbols_[domId])
-				{
-					if(globExt || ext->second.find(j.symbol) != ext->second.end())
-						printExternalTableEntry(j, arity, name);
-				}
+				uint32_t ext = mapExternalAtom(j.symbol);
+				if (ext != j.symbol) { printExternalTableEntry(j.symbol, ext); }
 			}
 		}
 	}
 }
 
-void LparseConverter::externalAtom(PredLitRep *l)
+uint32_t LparseConverter::mapExternalAtom(uint32_t symbol)
 {
-	atomsExternal_[ExternalMap::key_type(l->dom()->nameId(), l->dom()->arity())].insert(symbol(l));
+	ExternalMap::iterator it = atomsExternal_.find(symbol);
+	if (it != atomsExternal_.end()) { return it->second; }
+	else                            { return symbol; }
+}
+
+uint32_t LparseConverter::externalAtom(uint32_t symbol, bool addRule)
+{
+	uint32_t &sym = atomsExternal_[symbol];
+	if (!sym)
+	{
+		sym = this->symbol();
+		if (addRule) { printBasicRule(symbol, 1, int32_t(sym)); }
+	}
+	return sym;
 }
 
 void LparseConverter::addCompute(PredLitRep *l)
@@ -319,6 +345,7 @@ void LparseConverter::finalize()
 		}
 		printMinimizeRule(pos, neg, wPos, wNeg);
 	}
+	prepareExternalTable();
 	prepareSymbolTable();
 	doFinalize();
 	newSymbols_.clear();

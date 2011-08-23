@@ -108,11 +108,8 @@ void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name
 	atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
-void ClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+void ClaspOutput::printExternalTableEntry(uint32_t, uint32_t)
 {
-	(void)atom;
-	(void)arity;
-	(void)name;
 }
 
 uint32_t ClaspOutput::symbol()

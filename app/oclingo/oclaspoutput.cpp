@@ -50,6 +50,7 @@ void oClaspOutput::stopExtInput() {
 
 void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
+		head = mapExternalAtom(head);
 		if(ext_->checkHead(head)) {
 			ext_->addHead(head);
 		} else {

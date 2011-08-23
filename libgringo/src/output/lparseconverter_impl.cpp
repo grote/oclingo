@@ -49,11 +49,16 @@ private:
 class ExternalPrinter : public External::Printer
 {
 public:
-	ExternalPrinter(LparseConverter *output) : output_(output) { }
+	ExternalPrinter(LparseConverter *output) : output_(output), head_(false) { }
 	void print(PredLitRep *l);
+	void begin();
+	void endHead();
+	void end();
 	LparseConverter *output() const { return output_; }
 private:
-	LparseConverter *output_;
+	LparseConverter         *output_;
+	LparseConverter::AtomVec ext_;
+	bool                     head_;
 };
 
 class OptimizePrinter : public Optimize::Printer
@@ -140,7 +145,29 @@ void DisplayPrinter::end()
 
 void ExternalPrinter::print(PredLitRep *l)
 {
-	output_->externalAtom(l);
+	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->print(l);
+	if (head_) { ext_.push_back(output_->externalAtom(output_->symbol(l), false)); }
+}
+
+void ExternalPrinter::begin()
+{
+	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->begin();
+	head_ = true;
+	ext_.clear();
+}
+
+void ExternalPrinter::endHead()
+{
+	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->endHead();
+	head_ = false;
+
+}
+
+void ExternalPrinter::end()
+{
+	RulePrinter *printer = static_cast<RulePrinter *>(output()->printer<Rule::Printer>());
+	foreach(uint32_t sym, ext_) { printer->addBody(sym, false); }
+	printer->end();
 }
 
 ///////////////////////////////// OptimizePrinter /////////////////////////////////

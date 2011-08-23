@@ -28,6 +28,9 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
+		virtual void begin() = 0;
+		virtual void endHead() = 0;
+		virtual void end() = 0;
 		virtual ~Printer() { }
 	};
 public:

@@ -47,6 +47,9 @@ namespace reifiedoutput_impl
 	public:
 		ExternalPrinter(ReifiedOutput *output) : output_(output) { }
 		void print(PredLitRep *l);
+		void begin();
+		void endHead();
+		void end();
 		Output *output() const { return output_; }
 		std::ostream &out() const { return output_->out(); }
 	private:

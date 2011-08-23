@@ -61,7 +61,7 @@ protected:
 	typedef boost::unordered_map<ValVec, LitVec> MiniMap;
 	typedef std::map<Val, MiniMap, boost::function2<bool, const Val&, const Val &> >            PrioMap;
 	typedef boost::unordered_map<std::string, std::vector<LitVec> >                             DisplayMap;
-	typedef boost::unordered_map<std::pair<uint32_t,uint32_t>, boost::unordered_set<uint32_t> > ExternalMap;
+	typedef boost::unordered_map<uint32_t, uint32_t> ExternalMap;
 public:
 	LparseConverter(bool shiftDisj);
 	void addDomain(Domain *d);
@@ -71,7 +71,8 @@ public:
 	virtual void initialize();
 	virtual void endModule();
 	void finalize();
-	void externalAtom(PredLitRep *l);
+	uint32_t mapExternalAtom(uint32_t symbol);
+	uint32_t externalAtom(uint32_t symbol, bool addRule);
 	void printSymbolTable();
 	void printExternalTable();
 	void transformDisjunctiveRule(uint32_t n, ...);
@@ -81,6 +82,7 @@ public:
 	void printBasicRule(uint32_t head, const LitVec &lits);
 	void display(const Val &head, LitVec body, bool show);
 	void prepareSymbolTable();
+	void prepareExternalTable();
 	virtual ~LparseConverter();
 
 public:
@@ -92,7 +94,7 @@ public:
 	virtual void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printSymbolTableEntry(uint32_t symbol, const std::string &name) = 0;
-	virtual void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name) = 0;
+	virtual void printExternalTableEntry(uint32_t symbol, uint32_t mapped) = 0;
 	virtual uint32_t symbol() = 0;
 	virtual void doFinalize() = 0;
 	virtual int getIncAtom(uint32_t vol_window = 1) { (void) vol_window; return -1; }

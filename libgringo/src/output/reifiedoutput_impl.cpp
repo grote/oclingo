@@ -50,6 +50,21 @@ namespace reifiedoutput_impl
 		out() << ").\n";
 	}
 
+	void ExternalPrinter::begin()
+	{
+		assert(false);
+	}
+
+	void ExternalPrinter::endHead()
+	{
+		assert(false);
+	}
+
+	void ExternalPrinter::end()
+	{
+		assert(false);
+	}
+
 	void RulePrinter::begin()
 	{
 		output_->startSet();
