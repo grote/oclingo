@@ -153,7 +153,7 @@ void iClaspOutput::initialize()
 		initialized = true;
 		ClaspOutput::initialize();
 	}
-	else {
+	else if(incUids_.size()) {
 		if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
 		incUids_.pop_front();
 	}
