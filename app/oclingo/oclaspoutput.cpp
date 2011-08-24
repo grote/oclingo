@@ -182,9 +182,7 @@ void oClaspOutput::doFinalize() {
 	ClaspOutput::doFinalize();
 }
 
-void oClaspOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+void oClaspOutput::printExternalTableEntry(uint32_t, uint32_t mapped)
 {
-	(void) arity;
-	(void) name;
-	ext_->addExternal(atom.symbol);
+	ext_->addExternal(mapped);
 }

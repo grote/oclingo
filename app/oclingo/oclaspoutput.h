@@ -43,7 +43,7 @@ public:
 	void unfreezeOldVolAtoms();
 protected:
 	void doFinalize();
-	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+	void printExternalTableEntry(uint32_t symbol, uint32_t mapped);
 private:
 	uint32_t unnamedSymbol();
 	ExternalKnowledge* ext_;
