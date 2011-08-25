@@ -116,7 +116,7 @@ void LparseConverter::prepareExternalTable()
 	foreach (Symbol const *sym, newSymbols_)
 	{
 		Domain const *dom = storage()->domain(sym->repr.first);
-		if (!dom->external() && sym->external == 0)
+		if (dom->external() && sym->external == 0)
 		{
 			sym->external = this->symbol();
 			printBasicRule(sym->symbol, 1, int32_t(sym->external));
