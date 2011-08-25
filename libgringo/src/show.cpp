@@ -84,7 +84,7 @@ void Display::expandHead(Grounder *g, Lit *lit, Lit::ExpansionType type)
 void Display::normalize(Grounder *g)
 {
 	head_->normalize(g, boost::bind(&Display::expandHead, this, g, _1, _2));
-	if(type_ != SHOWTERM)
+	if(!type_.term)
 	{
 		std::auto_ptr<PredLit> pred = static_cast<DisplayHeadLit&>(*head_).toPred(g);
 		if(pred.get()) { body_.insert(body_.begin(), pred); }
@@ -111,8 +111,8 @@ void Display::visit(PrgVisitor *visitor)
 
 void Display::print(Storage *sto, std::ostream &out) const
 {
-	out << (type_ == HIDEPRED ? "#hide " : "#show ");
-	if(type_ == SHOWTERM)
+	out << (type_.show ? "#show " : "#hide ");
+	if(type_.term)
 	{
 		head_->print(sto, out);
 		out << ":";
@@ -127,7 +127,7 @@ void Display::print(Storage *sto, std::ostream &out) const
 		else      { comma = true; }
 		lit->print(sto, out);
 	}
-	out << (type_ == SHOWTERM ? ":" : "") << ".";
+	out << (type_.term ? ":" : "") << ".";
 }
 
 void Display::append(Lit *lit)
@@ -199,7 +199,7 @@ std::auto_ptr<PredLit> DisplayHeadLit::toPred(Grounder *g)
 	if(func)
 	{
 		TermPtrVec args = func->args();
-		Domain    *dom  = g->domain(func->name(), args.size());
+		Domain    *dom  = g->newDomain(func->name(), args.size());
 		pred.reset(new PredLit(term_->loc(), dom, args));
 	}
 	else
@@ -208,7 +208,7 @@ std::auto_ptr<PredLit> DisplayHeadLit::toPred(Grounder *g)
 		if(id && id->val(g).type == Val::ID)
 		{
 			TermPtrVec args;
-			Domain    *dom  = g->domain(id->val(g).index, args.size());
+			Domain    *dom  = g->newDomain(id->val(g).index, args.size());
 			pred.reset(new PredLit(term_->loc(), dom, args));
 		}
 	}

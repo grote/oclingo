@@ -95,14 +95,16 @@ void LparseOutput::printSymbolTableEntry(uint32_t symbol, const std::string &nam
 	out_ << symbol << " " << name << "\n";
 }
 
-void LparseOutput::printExternalTableEntry(uint32_t symbol, uint32_t mapped)
+void LparseOutput::printExternalTableEntry(const Symbol &symbol)
 {
 	if(!hasExternal_)
 	{
 		out_ << "E\n";
 		hasExternal_ = true;
 	}
-	out_ << symbol << " " << mapped << "\n";
+	out_ << symbol.symbol << " ";
+	symbol.print(storage(), out_);
+	out_ << "\n";
 }
 
 uint32_t LparseOutput::symbol()

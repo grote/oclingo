@@ -29,7 +29,7 @@ uint32_t invertId(const Val *v, uint32_t id, Storage *s);
 
 ///////////////////////////// Val /////////////////////////////
 
-void Val::print(Storage *sto, std::ostream &out) const
+void Val::print(Storage const *sto, std::ostream &out) const
 {
 	switch(type)
 	{

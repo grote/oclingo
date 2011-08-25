@@ -226,7 +226,8 @@ start ::= program.
 program ::= .
 program ::= program line DOT.
 program ::= program weak(w).      { pParser->add(w); }
-program ::= program SHOWDOT(tok). { pParser->show(tok.index); }
+program ::= program SHOWDOT(tok). { pParser->show(tok.index, true); }
+program ::= program HIDEDOT(tok). { pParser->show(tok.index, false); }
 
 line ::= INCLUDE STRING(file).                         { pParser->include(file.index); }
 line ::= rule(r).                                      { pParser->add(r); }
@@ -242,13 +243,15 @@ line ::= compute.
 line ::= meta.
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
-meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Display(tok.loc(), term, list, Display::SHOWTERM)); }
-meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pParser->add(new Display(tok.loc(), term, list, Display::SHOWPRED)); }
-meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pParser->add(new Display(tok.loc(), term, *list, Display::SHOWTERM));       delete list; }
-meta ::= SHOW(tok) term(term) ncond(list).           { pParser->add(new Display(tok.loc(), term, *list, Display::SHOWPRED)); delete list; }
-meta ::= HIDE(tok) func(f) cond(list).               { pParser->add(new Display(tok.loc(), f, *list, Display::HIDEPRED)); delete list; }
-meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pParser->add(new Display(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f), *list, Display::HIDEPRED)); delete list;  }
-meta ::= HIDE      signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
+meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(true, true)));                }
+meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(true, false)));               }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.     {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(true, true)));  delete list;  }
+meta ::= SHOW(tok) term(term) ncond(list).           {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(true, false))); delete list;  }
+meta ::= HIDE(tok) term(term) COLON.                 { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(false, true)));               }
+meta ::= HIDE(tok) term(term).                       { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(false, false)));              }
+meta ::= HIDE(tok) term(term) ncond(list) COLON.     {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(false, true)));  delete list; }
+meta ::= HIDE(tok) term(term) ncond(list).           {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(false, false))); delete list; }
+
 meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
 
 signed(res) ::= IDENTIFIER(id).              { res = id; }

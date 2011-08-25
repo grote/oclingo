@@ -172,7 +172,7 @@ void PredLit::normalize(Grounder *g, const Expander &e)
 	{
 		for(Term::Split s = i->split(); s.first; s = i->split())
 		{
-			e(new PredLit(loc(), g->domain(dom_->nameId(), s.second->size()), *s.second), POOL);
+			e(new PredLit(loc(), g->newDomain(dom_->nameId(), s.second->size()), *s.second), POOL);
 			terms_.replace(i, s.first);
 		}
 		i->normalize(this, Term::VecRef(terms_, i), g, e, !head() && !sign());

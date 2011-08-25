@@ -30,7 +30,6 @@ public:
 	virtual void initialize();
 	virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
-	const SymbolMap &symbolMap(uint32_t domId) const;
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
 protected:
@@ -42,7 +41,8 @@ protected:
 	void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
 	void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-	void printExternalTableEntry(uint32_t symbol, uint32_t mapped);
+	void printExternalTableEntry(const Symbol &symbol);
+	using LparseConverter::symbol;
 	uint32_t symbol();
 	virtual void doFinalize();
 protected:

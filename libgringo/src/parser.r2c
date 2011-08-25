@@ -368,15 +368,15 @@ void Parser::parse()
 	}
 	while(streams_.next());
 	incremental(IPART_BASE);
-	foreach(DomainMap::const_reference val, grounder()->domains())
+	foreach(Domain *dom, grounder()->domains())
 	{
-		const std::string &name = grounder()->string(val.first.first);
+		const std::string &name = grounder()->string(dom->nameId());
 		if(name.size() > 0 && name[0] == '-')
 		{
 			uint32_t pos = grounder()->index(std::string(name.begin() + 1, name.end()));
 			Loc loc(grounder()->index("#internal"), 1, 1);
 			TermPtrVec t1, t2;
-			for(uint32_t i = 0; i < val.first.second; i++)
+			for(uint32_t i = 0; i < dom->arity(); i++)
 			{
 				std::ostringstream oss;
 				oss << "#I" << i;
@@ -385,8 +385,8 @@ void Parser::parse()
 				t2.push_back(new VarTerm(loc, index));
 			}
 			LitPtrVec body;
-			body.push_back(new PredLit(loc, grounder()->domain(pos, val.first.second), t1));
-			body.push_back(new PredLit(loc, grounder()->domain(val.first.first, val.first.second), t2));
+			body.push_back(new PredLit(loc, grounder()->newDomain(pos, dom->arity()), t1));
+			body.push_back(new PredLit(loc, dom, t2));
 			base_->add(g_, new Rule(loc, 0, body));
 		}
 	}
@@ -478,7 +478,7 @@ namespace
 				TermPtrVec terms;
 				foreach(const VarSig &sig, dom.second->vars)
 					terms.push_back(new VarTerm(sig.first, sig.second));
-				statement_->append(new PredLit(dom.second->loc, parser_->grounder()->domain(dom.second->id, terms.size()), terms));
+				statement_->append(new PredLit(dom.second->loc, parser_->grounder()->newDomain(dom.second->id, terms.size()), terms));
 			}
 		}
 	}
@@ -589,7 +589,7 @@ void Parser::add()
 PredLit *Parser::predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign)
 {
 	if(sign) { id = grounder()->index(std::string("-") + grounder()->string(id)); }
-	return new PredLit(loc, grounder()->domain(id, terms.size()), terms);
+	return new PredLit(loc, grounder()->newDomain(id, terms.size()), terms);
 }
 
 Optimize *Parser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body)
@@ -615,14 +615,14 @@ Optimize *Parser::optimize(Optimize::Type type, const Loc &loc, TermPtrVec *term
 	return new Optimize(loc, *pTerms, *pBody, maximize_, type, number_);
 }
 
-void Parser::show(uint32_t idx)
+void Parser::show(uint32_t idx, bool show)
 {
 	typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 	tokenizer tokens(g_->string(idx), boost::char_separator<char>("\r\n\t ./"));
 	tokenizer::iterator it = tokens.begin();
 	uint32_t name  = g_->index(*(++it));
 	uint32_t arity = boost::lexical_cast<uint32_t>(*(++it));
-	g_->output()->show(name, arity, true);
+	g_->output()->show(name, arity, show);
 }
 
 void Parser::show(Term *term)

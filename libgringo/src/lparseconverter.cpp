@@ -45,26 +45,32 @@ GRINGO_EXPORT_PRINTER(IncPrinter)
 
 }
 
-LparseConverter::ValCmp::ValCmp(const ValVec *v, uint32_t s) :
-	vals(v),
-	size(s)
+//////////////////////////// LparseConverter::Symbol ////////////////////////////
+
+void LparseConverter::Symbol::print(const Storage *s, std::ostream &out) const
 {
+	out << s->string(s->domain(repr.first)->nameId());
+	if (!repr.second.empty())
+	{
+		out << "(";
+		bool comma = false;
+		foreach (Val const &val, repr.second)
+		{
+			if (comma) { out << ","; }
+			else       { comma = true; }
+			val.print(s, out);
+		}
+		out << ")";
+	}
+
 }
 
-size_t LparseConverter::ValCmp::operator()(uint32_t i) const
-{
-	return boost::hash_range(vals->begin() + i, vals->begin() + i + size);
-}
-
-bool LparseConverter::ValCmp::operator()(uint32_t a, uint32_t b) const
-{
-	return std::equal(vals->begin() + a, vals->begin() + a + size, vals->begin() + b);
-}
+//////////////////////////// LparseConverter ////////////////////////////
 
 LparseConverter::LparseConverter(bool shiftDisj)
 	: prioMap_(boost::bind(static_cast<int (Val::*)(const Val&, Storage *) const>(&Val::compare), _1, _2, boost::ref(s_)) < 0)
 	, shiftDisjunctions_(shiftDisj)
-
+	, newSymbolsDone_(0)
 {
 	initPrinters<LparseConverter>();
 }
@@ -74,40 +80,22 @@ void LparseConverter::initialize()
 	false_ = symbol();
 }
 
-void LparseConverter::addDomain(Domain *d)
+LparseConverter::Symbol const &LparseConverter::symbol(uint32_t symbol)
 {
-	symTab_.push_back(SymbolMap(0, ValCmp(&vals_, d->arity()), ValCmp(&vals_, d->arity())));
-	domains_.push_back(d);
-
+	return *symbolMap_.get<BySymbol>().find(symbol);
 }
 
-uint32_t LparseConverter::symbol(PredLitRep *l)
+LparseConverter::Symbol const &LparseConverter::symbol(PredLitRep *l)
 {
-	uint32_t domId = l->dom()->domId();
-	uint32_t size  = vals_.size();
-	std::copy(l->vals().begin(), l->vals().end(), std::back_insert_iterator<ValVec>(vals_));
-	std::pair<SymbolMap::iterator, bool> res = symTab_[domId].insert(SymbolMap::value_type(size, 0));
-	if(res.second)
+	Symbol::Repr repr(l->dom()->domId(), ValVec());
+	repr.second.assign(l->vals().begin(), l->vals().end());
+	SymbolMap::iterator it = symbolMap_.find(repr);
+	if (it == symbolMap_.end())
 	{
-		uint32_t sym = symbol();
-		res.first->second = sym;
-		if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
-		newSymbols_[domId].push_back(AtomRef(sym, size));
+		it = symbolMap_.insert(Symbol(repr, symbol())).first;
+		newSymbols_.push_back(&*it);
 	}
-	else
-	{
-		// spend a new symbol if the symbol itself did not occur in a head yet
-		uint32_t sym = res.first->second;
-		if(sym < undefined_.size() && undefined_[sym] && !l->dom()->external())
-		{
-			sym = symbol();
-			res.first->second = sym;
-			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
-			newSymbols_[domId].push_back(AtomRef(sym, res.first->first));
-		}
-		vals_.resize(size);
-	}
-	return res.first->second;
+	return *it;
 }
 
 void LparseConverter::display(const Val &head, LitVec body, bool show)
@@ -125,187 +113,103 @@ void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
 
 void LparseConverter::prepareExternalTable()
 {
-	if(external_.size() > 0)
+	foreach (Symbol const *sym, newSymbols_)
 	{
-		for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
+		Domain const *dom = storage()->domain(sym->repr.first);
+		if (!dom->external() && sym->external == 0)
 		{
-			uint32_t nameId = i->second->nameId();
-			uint32_t arity  = i->second->arity();
-			uint32_t domId  = i->second->domId();
-			if(external_.find(Signature(nameId, arity)) != external_.end())
-			{
-				if(newSymbols_.size() <= domId) newSymbols_.resize(domId + 1);
-				foreach(AtomRef &j, newSymbols_[domId])
-				{
-					externalAtom(j.symbol, true);
-				}
-			}
+			sym->external = this->symbol();
+			printBasicRule(sym->symbol, 1, int32_t(sym->external));
 		}
 	}
 }
 
 void LparseConverter::prepareSymbolTable()
 {
-	if(!hideAll_) { atomsShown_.clear(); }
-	for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
+	foreach (Symbol const* symbol, newSymbols_)
 	{
-		uint32_t nameId = i->second->nameId();
-		uint32_t arity  = i->second->arity();
-		uint32_t domId  = i->second->domId();
-		if(shown(nameId, arity))
+		Domain *dom = storage()->domain(symbol->repr.first);
+		if (dom->show || (!hideAll_ && !dom->hide))
 		{
-			const std::string &name = s_->string(nameId);
-			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
-			foreach(AtomRef &j, newSymbols_[domId])
+			std::stringstream ss;
+			symbol->print(storage(), ss);
+			LitVec lits;
+			lits.push_back(symbol->symbol);
+			atomsShown_[ss.str()].push_back(lits);
+		}
+	}
+
+	foreach (DisplayMap::reference ref, atomsShown_)
+	{
+		uint32_t sym;
+		DisplayMap::iterator it = atomsHidden_.find(ref.first);
+		if (it != atomsHidden_.end())
+		{
+			int32_t show;
+			int32_t hide;
+			if (ref.second.size() != 1 || ref.second.back().size() != 1)
 			{
-				std::stringstream ss;
-				ss << name;
-				if(arity > 0)
-				{
-					ValVec::const_iterator k = vals_.begin() + j.offset;
-					ValVec::const_iterator end = k + arity;
-					ss << "(";
-					k->print(s_, ss);
-					for(++k; k != end; ++k)
-					{
-						ss << ",";
-						k->print(s_, ss);
-					}
-					ss << ")";
-				}
-				std::string atom = ss.str();
-				if(hideAll_)
-				{
-					DisplayMap::iterator l = atomsShown_.find(atom);
-					if(l != atomsShown_.end())
-					{
-						LitVec lits;
-						lits.push_back(j.symbol);
-						l->second.push_back(lits);
-					}
-					else { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
-				}
-				else
-				{
-					DisplayMap::iterator l = atomsHidden_.find(atom);
-					if(l != atomsHidden_.end())
-					{
-						LitVec show;
-						show.push_back(j.symbol);
-						foreach(LitVec &lits, l->second)
-						{
-							lits.erase(std::remove(lits.begin(), lits.end(), j.symbol), lits.end());
-							if(lits.empty())
-							{
-								show.clear();
-								break;
-							}
-							else if(lits.size() == 1) { show.push_back(-lits.back()); }
-							else
-							{
-								uint32_t newSymbol = symbol();
-								printBasicRule(newSymbol, lits);
-								show.push_back(-newSymbol);
-							}
-						}
-						if(show.size() == 1) { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
-						else if(show.size() > 1)
-						{
-							uint32_t newSymbol = symbol();
-							printBasicRule(newSymbol, show);
-							symMap_.push_back(TempSymbolTable::value_type(atom, newSymbol));
-						}
-					}
-					else { symMap_.push_back(TempSymbolTable::value_type(atom, j.symbol)); }
-				}
+				show = symbol();
+				foreach (LitVec &lits, ref.second) { printBasicRule(show, lits); }
 			}
+			else { show = ref.second.back().back(); }
+			if (it->second.size() != 1 || it->second.back().size() != 1)
+			{
+				hide = symbol();
+				foreach (LitVec &lits, it->second) { printBasicRule(hide, lits); }
+			}
+			else { hide = it->second.back().back(); }
+			if (hide != show)
+			{
+				sym = symbol();
+				printBasicRule(sym, 2, show, -hide);
+
+			}
+			else { continue; }
 		}
-	}
-
-	atomsHidden_.clear();
-
-	foreach(DisplayMap::value_type &item, atomsShown_)
-	{
-		std::sort(item.second.begin(), item.second.end());
-		item.second.erase(std::unique(item.second.begin(), item.second.end()), item.second.end());
-		if(item.second.size() == 1 && item.second.back().size() == 1 && item.second.back().back() > 0)
+		else if(ref.second.size() != 1 || ref.second.back().size() != 1 || ref.second.back().back() < 0)
 		{
-			symMap_.push_back(TempSymbolTable::value_type(item.first, item.second.back().back()));
+			sym = symbol();
+			foreach (LitVec &lits, ref.second) { printBasicRule(sym, lits); }
 		}
-		else
-		{
-			uint32_t newSymbol = symbol();
-			foreach(LitVec &lits, item.second) { printBasicRule(newSymbol, lits); }
-			symMap_.push_back(TempSymbolTable::value_type(item.first, newSymbol));
-		}
+		else { sym = ref.second.back().back(); }
+		shownSymbols_.push_back(ShownSymbols::value_type(sym, ref.first));
 	}
-
 	atomsShown_.clear();
-
+	atomsHidden_.clear();
 }
 
 void LparseConverter::printSymbolTable()
 {
-	foreach(TempSymbolTable::value_type &item, symMap_) { printSymbolTableEntry(item.second, item.first); }
+	foreach (ShownSymbols::value_type &shown, shownSymbols_)
+	{
+		printSymbolTableEntry(shown.first, shown.second);
+	}
 }
 
 void LparseConverter::printExternalTable()
 {
-	if(external_.size() > 0 || atomsExternal_.size() > 0)
+	foreach (Symbol const *sym, newSymbols_)
 	{
-		for(DomainMap::const_iterator i = s_->domains().begin(); i != s_->domains().end(); ++i)
-		{
-			uint32_t domId = i->second->domId();
-			if(newSymbols_.size() <= domId) { newSymbols_.resize(domId + 1); }
-			foreach(AtomRef &j, newSymbols_[domId])
-			{
-				uint32_t ext = mapExternalAtom(j.symbol);
-				if (ext != j.symbol) { printExternalTableEntry(j.symbol, ext); }
-			}
-		}
+		if (sym->external) { printExternalTableEntry(*sym); }
 	}
-}
-
-uint32_t LparseConverter::mapExternalAtom(uint32_t symbol)
-{
-	ExternalMap::iterator it = atomsExternal_.find(symbol);
-	if (it != atomsExternal_.end()) { return it->second; }
-	else                            { return symbol; }
-}
-
-uint32_t LparseConverter::externalAtom(uint32_t symbol, bool addRule)
-{
-	uint32_t &sym = atomsExternal_[symbol];
-	if (!sym)
-	{
-		sym = this->symbol();
-		if (addRule) { printBasicRule(symbol, 1, int32_t(sym)); }
-	}
-	return sym;
 }
 
 void LparseConverter::addCompute(PredLitRep *l)
 {
-	if(l->sign()) computeNeg_.push_back(symbol(l));
-	else computePos_.push_back(symbol(l));
+	if(l->sign()) { computeNeg_.push_back(symbol(l)); }
+	else          { computePos_.push_back(symbol(l)); }
 }
 
 void LparseConverter::endModule()
 {
-	newSymbolsDone_.resize(newSymbols_.size());
-	for(uint32_t domId = 0; domId < newSymbols_.size(); domId++)
+	foreach (Symbol const *sym, boost::make_iterator_range(newSymbols_.begin() + newSymbolsDone_, newSymbols_.end()))
 	{
-		const Domain *dom = domains_[domId];
-		for(std::vector<AtomRef>::iterator it = newSymbols_[domId].begin() + newSymbolsDone_[domId]; it != newSymbols_[domId].end(); it++)
-		{
-			// mark symbols that do not appear in any head
-			if(!dom->find(vals_.begin() + it->offset).valid())
-			{
-				if(undefined_.size() <= it->symbol) { undefined_.resize(it->symbol + 1, false); }
-				undefined_[it->symbol] = true;
-			}
-		}
+		Domain const *dom = storage()->domain(sym->repr.first);
+		// mark symbols that do not appear in any head
+		if (!dom->find(sym->repr.second.begin()).valid()) { sym->undefined = true; }
 	}
+	newSymbolsDone_ = newSymbols_.size();
 }
 
 void LparseConverter::finalize()
@@ -348,9 +252,9 @@ void LparseConverter::finalize()
 	prepareExternalTable();
 	prepareSymbolTable();
 	doFinalize();
+	shownSymbols_.clear();
 	newSymbols_.clear();
-	newSymbolsDone_.clear();
-	symMap_.clear();
+	newSymbolsDone_ = 0;
 }
 
 void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)

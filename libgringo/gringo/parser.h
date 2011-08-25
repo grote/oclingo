@@ -77,7 +77,7 @@ public:
 	void constTerm(uint32_t index, Term *term);
 	void domainStm(const Loc &loc, uint32_t id, const VarSigVec &vars);
 	DomStmRng domainStm(uint32_t var);
-	void show(uint32_t idx);
+	void show(uint32_t idx, bool show);
 	void show(Term *term);
 	~Parser();
 

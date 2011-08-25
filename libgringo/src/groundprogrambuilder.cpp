@@ -160,19 +160,19 @@ void GroundProgramBuilder::add()
 #pragma message "reimplement me!"
 		//case META_SHOW:
 		//case META_HIDE:
-		case META_EXTERNAL:
-		{
-			Val num = stack_->vals.back();
-			stack_->vals.pop_back();
-			Val id  = stack_->vals.back();
-			stack_->vals.pop_back();
-			assert(id.type == Val::ID);
-			assert(num.type == Val::NUM);
-			storage()->domain(id.index, num.num);
-			if(stack_->type == META_EXTERNAL) { output_->external(id.index, num.num); }
-			//else { output_->show(id.index, num.num, stack_->type == META_SHOW); }
-			break;
-		}
+//		case META_EXTERNAL:
+//		{
+//			Val num = stack_->vals.back();
+//			stack_->vals.pop_back();
+//			Val id  = stack_->vals.back();
+//			stack_->vals.pop_back();
+//			assert(id.type == Val::ID);
+//			assert(num.type == Val::NUM);
+//			storage()->newDomain(id.index, num.num);
+//			if(stack_->type == META_EXTERNAL) { output_->external(id.index, num.num); }
+//			//else { output_->show(id.index, num.num, stack_->type == META_SHOW); }
+//			break;
+//		}
 #pragma message "reimplement me!"
 		//case META_GLOBALSHOW:
 		case META_GLOBALHIDE:
@@ -334,7 +334,7 @@ void GroundProgramBuilder::printAggrLits(AggrLit::Printer *printer, Lit &a, bool
 
 PredLitRep *GroundProgramBuilder::predLitRep(Lit &a)
 {
-	Domain *dom = storage()->domain(stack_->vals[a.offset].index, a.n);
+	Domain *dom = storage()->newDomain(stack_->vals[a.offset].index, a.n);
 	lit_.dom_   = dom;
 	lit_.sign_  = a.sign;
 	lit_.vals_.resize(a.n);

@@ -284,16 +284,6 @@ void ReifiedOutput::finalize()
 		popList();
 		out() << "minimize(" << ref.first << "," << list << ").\n";
 	}
-	foreach(const Signature &sig, external_)
-	{
-		DomainMap::const_iterator i = s_->domains().find(sig);
-		if(i != s_->domains().end())
-		{
-			const std::string &name  = s_->string(i->second->nameId());
-			uint32_t           arity = i->second->arity();
-			out_ << "external(sig(" << name << "," << arity << ")).\n";
-		}
-	}
 	if(!getSet().empty()) out_ << "compute(" << addSet() << ").\n";
 	popSet();
 }

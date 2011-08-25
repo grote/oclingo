@@ -55,12 +55,15 @@ namespace
 
 		void begin(lua_State *L, const char *name, uint32_t arity)
 		{
+			assert(false && "reimplement me!");
+			/*
 			if(!active) { luaL_error(L, "Assignment.begin() may only be called in onModel"); }
 			dom     = grounder->domain(grounder->index(name), arity);
 			const LparseConverter::SymbolMap &map = output->symbolMap(dom->domId());
 			start   = map.begin();
 			end     = map.end();
 			started = false;
+			*/
 		}
 
 		void pushNext(lua_State *L)
@@ -99,6 +102,8 @@ namespace
 
 		void pushArgs(lua_State *L)
 		{
+			assert(false && "reimplement me");
+			/*
 			checkIter(L, "pushArgs");
 			ValRng rng = output->vals(dom, start->first);
 			lua_createtable(L, rng.size(), 0);
@@ -109,34 +114,47 @@ namespace
 				grounder->luaPushVal(val);
 				lua_rawset(L, -3);
 			}
+			*/
 		}
 
 		void pushIsTrue(lua_State *L)
 		{
+			assert(false && "reimplement me!");
+			/*
 			checkIter(L, "pushIsTrue");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->isTrue(atom->lit));
+			*/
 		}
 
 		void pushIsFalse(lua_State *L)
 		{
+			assert(false && "reimplement me!");
+			/*
 			checkIter(L, "pushIsFalse");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->isFalse(atom->lit));
+			*/
 		}
 
 		void pushIsUndef(lua_State *L)
 		{
+			assert(false && "reimplement me!");
+			/*
 			checkIter(L, "pushIsUndef");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushboolean(L, atom && solver->value(atom->lit.var()) == Clasp::value_free);
+			*/
 		}
 
 		void pushLevel(lua_State *L)
 		{
+			assert(false && "reimplement me!");
+			/*
 			checkIter(L, "pushLevel");
 			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
 			lua_pushnumber(L, !atom || solver->value(atom->lit.var()) == Clasp::value_free ? -1 : solver->level(atom->lit.var()));
+			*/
 		}
 
 		typedef LparseConverter::SymbolMap::const_iterator SymIt;

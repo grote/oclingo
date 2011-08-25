@@ -26,7 +26,7 @@ public:
 	Func(Storage *s, uint32_t name, const ValVec& args);
 	size_t hash() const;
 	bool operator==(const Func& a) const;
-	void print(Storage *sto, std::ostream& out) const;
+	void print(Storage const *sto, std::ostream& out) const;
 	int compare(const Func &b, Storage *s) const;
 	uint32_t name() const { return name_; }
 	const ValVec &args() const { return args_; }

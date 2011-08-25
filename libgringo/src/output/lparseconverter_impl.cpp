@@ -34,7 +34,7 @@ namespace lparseconverter_impl
 class DisplayPrinter : public Display::Printer
 {
 public:
-	DisplayPrinter(LparseConverter *output) : output_(output) { }
+	DisplayPrinter(LparseConverter *output) : output_(output), type_(true, true) { }
 	void begin(const Val &head, Type type);
 	void print(PredLitRep *l);
 	void end();
@@ -138,7 +138,7 @@ void DisplayPrinter::print(PredLitRep *l)
 
 void DisplayPrinter::end()
 {
-	output()->display(head_, body_, type_ != Display::HIDEPRED);
+	output()->display(head_, body_, type_.show);
 }
 
 ///////////////////////////////// ExternalPrinter /////////////////////////////////
@@ -146,7 +146,12 @@ void DisplayPrinter::end()
 void ExternalPrinter::print(PredLitRep *l)
 {
 	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->print(l);
-	if (head_) { ext_.push_back(output_->externalAtom(output_->symbol(l), false)); }
+	if (head_)
+	{
+		LparseConverter::Symbol const &sym = output_->symbol(l);
+		if (sym.external == 0) { sym.external = output_->symbol(); }
+		ext_.push_back(sym.external);
+	}
 }
 
 void ExternalPrinter::begin()

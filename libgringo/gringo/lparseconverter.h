@@ -23,22 +23,42 @@
 class LparseConverter : public Output
 {
 public:
+
+	struct Symbol
+	{
+		typedef std::pair<uint32_t, ValVec> Repr;
+
+		Symbol(Repr &repr, uint32_t symbol)
+			: symbol(symbol)
+			, external(0)
+			, undefined(false)
+		{
+			std::swap(this->repr, repr);
+		}
+
+		operator uint32_t() const { return symbol; }
+		void print(Storage const *s, std::ostream &out) const;
+
+		Repr     repr;
+		uint32_t symbol;
+		uint32_t mutable external;
+		bool     mutable undefined;
+	};
+
+	struct BySymbol { };
+	typedef boost::multi_index::multi_index_container
+	<
+		Symbol, boost::multi_index::indexed_by
+		<
+			boost::multi_index::hashed_unique<boost::multi_index::member<Symbol, Symbol::Repr const, &Symbol::repr> >,
+			boost::multi_index::hashed_unique<boost::multi_index::tag<BySymbol>, boost::multi_index::member<Symbol, uint32_t const, &Symbol::symbol> >
+		>
+	> SymbolMap;
+
 	typedef std::vector<uint32_t> AtomVec;
 	typedef std::vector<int32_t>  WeightVec;
 	typedef std::vector<int32_t>  LitVec;
-	struct ValCmp
-	{
-		ValCmp(const ValVec *v, uint32_t s);
-		size_t operator()(uint32_t i) const;
-		bool operator()(uint32_t a, uint32_t b) const;
-		const ValVec *vals;
-		uint32_t size;
-	};
-	typedef boost::unordered_map<uint32_t, uint32_t, ValCmp, ValCmp> SymbolMap;
 protected:
-	typedef std::vector<SymbolMap> SymbolTable;
-	typedef std::vector<std::pair<std::string, uint32_t> > TempSymbolTable;
-
 	struct Minimize
 	{
 		AtomVec pos;
@@ -46,33 +66,20 @@ protected:
 		WeightVec wPos;
 		WeightVec wNeg;
 	};
-	struct AtomRef
-	{
-		AtomRef(uint32_t symbol, uint32_t offset)
-			: symbol(symbol)
-			, offset(offset) { }
-		uint32_t symbol;
-		uint32_t offset;
-	};
-
-	typedef std::vector<std::vector<AtomRef> >   NewSymbols;
-	typedef std::vector<const Domain*>           DomainVec;
-	typedef std::vector<bool>                    BoolVec;
-	typedef boost::unordered_map<ValVec, LitVec> MiniMap;
-	typedef std::map<Val, MiniMap, boost::function2<bool, const Val&, const Val &> >            PrioMap;
-	typedef boost::unordered_map<std::string, std::vector<LitVec> >                             DisplayMap;
-	typedef boost::unordered_map<uint32_t, uint32_t> ExternalMap;
+	typedef std::vector<Symbol const *>                                              NewSymbols;
+	typedef boost::unordered_map<ValVec, LitVec>                                     MiniMap;
+	typedef std::map<Val, MiniMap, boost::function2<bool, const Val&, const Val &> > PrioMap;
+	typedef boost::unordered_map<std::string, std::vector<LitVec> >                  DisplayMap;
+	typedef std::vector<std::pair<uint32_t, std::string> >                           ShownSymbols;
 public:
 	LparseConverter(bool shiftDisj);
-	void addDomain(Domain *d);
 	void prioLit(int32_t lit, const ValVec &set, bool maximize);
-	uint32_t symbol(PredLitRep *l);
+	Symbol const &symbol(uint32_t symbol);
+	Symbol const &symbol(PredLitRep *l);
 	uint32_t falseSymbol() const { return false_; }
 	virtual void initialize();
 	virtual void endModule();
 	void finalize();
-	uint32_t mapExternalAtom(uint32_t symbol);
-	uint32_t externalAtom(uint32_t symbol, bool addRule);
 	void printSymbolTable();
 	void printExternalTable();
 	void transformDisjunctiveRule(uint32_t n, ...);
@@ -93,25 +100,22 @@ public:
 	virtual void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg) = 0;
 	virtual void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg) = 0;
 	virtual void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg) = 0;
-	virtual void printSymbolTableEntry(uint32_t symbol, const std::string &name) = 0;
-	virtual void printExternalTableEntry(uint32_t symbol, uint32_t mapped) = 0;
+	virtual void printSymbolTableEntry(uint32_t symbol, std::string const &name) = 0;
+	virtual void printExternalTableEntry(Symbol const &symbol) = 0;
 	virtual uint32_t symbol() = 0;
 	virtual void doFinalize() = 0;
 	virtual int getIncAtom(uint32_t vol_window = 1) { (void) vol_window; return -1; }
 protected:
 	DisplayMap            atomsHidden_;
 	DisplayMap            atomsShown_;
-	ExternalMap           atomsExternal_;
-	SymbolTable           symTab_;
-	TempSymbolTable       symMap_;
 	PrioMap               prioMap_;
-	ValVec                vals_;
 	uint32_t              false_;
-	NewSymbols            newSymbols_;
-	DomainVec             domains_;
-	BoolVec               undefined_;
-	std::vector<uint32_t> newSymbolsDone_;
 	bool                  shiftDisjunctions_;
 	std::vector<int32_t>  computePos_;
 	std::vector<int32_t>  computeNeg_;
+
+	SymbolMap             symbolMap_;
+	ShownSymbols          shownSymbols_;
+	NewSymbols            newSymbols_;
+	uint32_t              newSymbolsDone_;
 };

@@ -246,13 +246,12 @@ void PlainOutput::finalize()
 			<< (ref.second.get<1>() ? "]" : "}")
 			<< ".\n";
 	}
-	foreach(const Signature &sig, external_)
+	foreach(Domain *dom, storage()->domains())
 	{
-		DomainMap::const_iterator i = s_->domains().find(sig);
-		if(i != s_->domains().end())
+		if (dom->external())
 		{
-			const std::string &name  = s_->string(i->second->nameId());
-			uint32_t           arity = i->second->arity();
+			const std::string &name  = s_->string(dom->nameId());
+			uint32_t           arity = dom->arity();
 			out_.output() << "#external " << name << "/" << arity << ".\n";
 		}
 	}

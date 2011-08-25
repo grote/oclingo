@@ -47,7 +47,7 @@ struct Val
 	int compare(const Val &v, Storage *s) const;
 	int compare(const int64_t &v, Storage *s) const;
 	static int compare(Storage *s, ValVec const &a, ValVec const &b);
-	void print(Storage *sto, std::ostream &out) const;
+	void print(Storage const *sto, std::ostream &out) const;
 	int32_t  number() const;
 	uint32_t type;
 	Val invert(Storage *s) const;
