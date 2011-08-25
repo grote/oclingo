@@ -67,6 +67,7 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 {
 }
 
+// TODO: in theory we have to step in SHOWDOT/ HIDEDOT
 /*!re2c
 	NUMBER     = "0"|([1-9][0-9]*);
 	ANY        = [\000-\377];
@@ -78,6 +79,7 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	STRING     = "\"" ([^\\"\n]|"\\\""|"\\\\"|"\\n")* "\"";
 	WSNL       = [\t\r\n ]*;
 	SHOWDOT    = "#show" WSNL "-"? WSNL IDENTIFIER WSNL "/" WSNL NUMBER WSNL ".";
+	HIDEDOT    = "#hide" WSNL "-"? WSNL IDENTIFIER WSNL "/" WSNL NUMBER WSNL ".";
 */
 
 int Parser::lex()
@@ -109,6 +111,7 @@ start:
 		"#supremum"      { return PARSER_SUPREMUM; }
 		"#undef"         { return PARSER_UNDEF; }
 		SHOWDOT          { token_.index  = g_->index(string()); return PARSER_SHOWDOT; }
+		HIDEDOT          { token_.index  = g_->index(string()); return PARSER_HIDEDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return PARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
