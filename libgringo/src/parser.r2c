@@ -110,8 +110,8 @@ start:
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
 		"#undef"         { return PARSER_UNDEF; }
-		SHOWDOT          { token_.index  = g_->index(string()); return PARSER_SHOWDOT; }
-		HIDEDOT          { token_.index  = g_->index(string()); return PARSER_HIDEDOT; }
+		SHOWDOT          { token_.index  = g_->index(string()); step('\n'); return PARSER_SHOWDOT; }
+		HIDEDOT          { token_.index  = g_->index(string()); step('\n'); return PARSER_HIDEDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return PARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
@@ -231,7 +231,8 @@ start:
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
 		"#undef"         { return PARSER_UNDEF; }
-		SHOWDOT          { token_.index  = g_->index(string()); return PARSER_SHOWDOT; }
+		SHOWDOT          { token_.index  = g_->index(string()); step('\n'); return PARSER_SHOWDOT; }
+		HIDEDOT          { token_.index  = g_->index(string()); step('\n'); return PARSER_HIDEDOT; }
 		IDENTIFIER       { token_.index  = g_->index(string()); return PARSER_IDENTIFIER; }
 		NUMBER           { token_.number = integer(); return PARSER_NUMBER; }
 		VARIABLE         { token_.index = g_->index(string()); return PARSER_VARIABLE; }
