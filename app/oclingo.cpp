@@ -16,7 +16,6 @@
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "oclingo/oclingo_app.h"
-#include "oclingo/oclaspoutput.h"
 
 template <>
 void FromGringo<OCLINGO>::otherOutput()

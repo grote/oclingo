@@ -15,11 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <gringo/storage.h>
-#include <gringo/domain.h>
-#include "clingo/claspoutput.h"
-#include "clingo/clingo_app.h"
-
 #if WITH_LUA == 1
 extern "C"
 {
@@ -35,7 +30,7 @@ extern "C"
 
 #define ASSIGNMENT "Assignment"
 
-namespace
+namespace lua_impl_h
 {
 	struct DomainIter
 	{
@@ -305,7 +300,7 @@ public:
 			onModel_     = onIndex(L, "onModel");
 			onBeginStep_ = onIndex(L, "onBeginStep");
 			onEndStep_   = onIndex(L, "onEndStep");
-			Assignment_register(L, &domIter_);
+			lua_impl_h::Assignment_register(L, &domIter_);
 		}
 	}
 
@@ -342,10 +337,10 @@ public:
 		return onModel_ != -1 || onBeginStep_ != -1 || onEndStep_ != -1;
 	}
 private:
-	DomainIter domIter_;
-	int        onModel_;
-	int        onBeginStep_;
-	int        onEndStep_;
+	lua_impl_h::DomainIter domIter_;
+	int onModel_;
+	int onBeginStep_;
+	int onEndStep_;
 };
 
 #undef ASSIGNMENT
