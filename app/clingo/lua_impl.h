@@ -30,6 +30,10 @@ extern "C"
 
 #define ASSIGNMENT "Assignment"
 
+#include <gringo/lparseconverter.h>
+#include <gringo/grounder.h>
+#include <clingo/claspoutput.h>
+
 namespace lua_impl_h
 {
 	struct DomainIter
@@ -42,23 +46,24 @@ namespace lua_impl_h
 			, started(false)
 		{ }
 
+		Domain *dom(lua_State *L)
+		{
+			return grounder->domain(start->repr.first);
+		}
+
 		void reset()
 		{
 			active  = true;
 			started = false;
 		}
 
-		void begin(lua_State *L, const char *name, uint32_t arity)
+		void begin(lua_State *L)
 		{
-			assert(false && "reimplement me!");
-			/*
 			if(!active) { luaL_error(L, "Assignment.begin() may only be called in onModel"); }
-			dom     = grounder->domain(grounder->index(name), arity);
-			const LparseConverter::SymbolMap &map = output->symbolMap(dom->domId());
+			const LparseConverter::SymbolMap &map = output->symbolMap();
 			start   = map.begin();
 			end     = map.end();
 			started = false;
-			*/
 		}
 
 		void pushNext(lua_State *L)
@@ -77,14 +82,14 @@ namespace lua_impl_h
 		{
 			if(!active)  { luaL_error(L, "Assignment.name() may only be called in onModel"); }
 			if(!started) { luaL_error(L, "Assignment.name() called without prior call to Assignment.begin()"); }
-			lua_pushstring(L, grounder->string(dom->nameId()).c_str());
+			lua_pushstring(L, grounder->string(dom(L)->nameId()).c_str());
 		}
 
 		void pushArity(lua_State *L)
 		{
-			if(!active)  { luaL_error(L, "Assignment.arity() may only be called in onModel"); }
-			if(!started) { luaL_error(L, "Assignment.arity() called without prior call to Assignment.begin()"); }
-			lua_pushinteger(L, dom->arity());
+			if (!active)      { luaL_error(L, "Assignment.arity() may only be called in onModel"); }
+			if (!started)     { luaL_error(L, "Assignment.arity() called without prior call to Assignment.begin()"); }
+			lua_pushinteger(L, dom(L)->arity());
 		}
 
 		void checkIter(lua_State *L, const char *func)
@@ -92,15 +97,12 @@ namespace lua_impl_h
 			if(!active)      { luaL_error(L, "Assignment.%s() may only be called in on{Assignment,BeginStep,EndStep}", func); }
 			if(!started)     { luaL_error(L, "Assignment.%s() called without prior call to Assignment.begin()", func); }
 			if(start == end) { luaL_error(L, "Assignment.%s() called after Assignment.next() returned false", func); }
-
 		}
 
 		void pushArgs(lua_State *L)
 		{
-			assert(false && "reimplement me");
-			/*
 			checkIter(L, "pushArgs");
-			ValRng rng = output->vals(dom, start->first);
+			ValRng rng(start->repr.second);
 			lua_createtable(L, rng.size(), 0);
 			int i = 1;
 			foreach(const Val &val, rng)
@@ -109,56 +111,42 @@ namespace lua_impl_h
 				grounder->luaPushVal(val);
 				lua_rawset(L, -3);
 			}
-			*/
 		}
 
 		void pushIsTrue(lua_State *L)
 		{
-			assert(false && "reimplement me!");
-			/*
 			checkIter(L, "pushIsTrue");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
 			lua_pushboolean(L, atom && solver->isTrue(atom->lit));
-			*/
 		}
 
 		void pushIsFalse(lua_State *L)
 		{
-			assert(false && "reimplement me!");
-			/*
 			checkIter(L, "pushIsFalse");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
 			lua_pushboolean(L, atom && solver->isFalse(atom->lit));
-			*/
 		}
 
 		void pushIsUndef(lua_State *L)
 		{
-			assert(false && "reimplement me!");
-			/*
 			checkIter(L, "pushIsUndef");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
 			lua_pushboolean(L, atom && solver->value(atom->lit.var()) == Clasp::value_free);
-			*/
 		}
 
 		void pushLevel(lua_State *L)
 		{
-			assert(false && "reimplement me!");
-			/*
 			checkIter(L, "pushLevel");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->second);
+			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
 			lua_pushnumber(L, !atom || solver->value(atom->lit.var()) == Clasp::value_free ? -1 : solver->level(atom->lit.var()));
-			*/
 		}
 
-		typedef LparseConverter::SymbolMap::const_iterator SymIt;
+		typedef LparseConverter::SymbolMap::iterator SymIt;
 
 		Grounder      *grounder;
 		Clasp::Solver *solver;
 		ClaspOutput   *output;
 		bool           active;
-		Domain        *dom;
 		bool           started;
 		SymIt          start;
 		SymIt          end;
@@ -176,11 +164,7 @@ namespace lua_impl_h
 	static int Assignment_begin(lua_State *L)
 	{
 		DomainIter *domIter = checkDomainIter(L);
-		luaL_checkstring(L, 1);
-		luaL_checkinteger(L, 2);
-		const char *name = lua_tostring(L, 1);
-		int arity  = lua_tointeger(L, 2);
-		domIter->begin(L, name, arity);
+		domIter->begin(L);
 		return 0;
 	}
 

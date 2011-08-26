@@ -477,4 +477,3 @@ BOOST_AUTO_TEST_CASE( show_hide_test6 )
 		NULL
 	);
 }
-

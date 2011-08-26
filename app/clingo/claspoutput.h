@@ -30,6 +30,7 @@ public:
 	virtual void initialize();
 	virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
+	SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
 protected:
