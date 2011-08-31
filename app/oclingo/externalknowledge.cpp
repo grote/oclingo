@@ -20,12 +20,13 @@
 #include "oclaspoutput.h"
 #include <gringo/grounder.h>
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port)
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port, bool import)
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
 	, volatile_window_(0)
 	, forget_(0)
+	, import_(import)
 	, socket_(NULL)
 	, port_(port)
 	, reading_(false)
@@ -209,14 +210,18 @@ int ExternalKnowledge::getVolatileWindow() {
 
 bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
 	// check if head atom has been defined as external
-	if(find(externals_.begin(), externals_.end(), sym.external) == externals_.end()) {
+	if(!sym.external || find(externals_.begin(), externals_.end(), sym.external) == externals_.end()) {
 		std::ostringstream emsg;
 		emsg << "Warning: Head ";
 		sym.print(output_->storage(), emsg);
-		emsg << " has not been declared external. The entire rule will be ignored.";
+		emsg << " has not been declared external.";
+
+		if(!import_) {
+			emsg << " The entire rule will be ignored. Try starting oclingo with --import=all";
+		}
 		std::cerr << emsg.str() << std::endl;
 		sendToClient(emsg.str());
-		return false;
+		if(!import_) return false;
 	}
 	return true;
 }
@@ -224,16 +229,17 @@ bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
 void ExternalKnowledge::addHead(uint32_t symbol) {
 	// first remove head atom from externals
 	VarVec::iterator it = find(externals_.begin(), externals_.end(), symbol);
-	assert(it != externals_.end()); // call checkHead() first
-	externals_.erase(it);
-	// TODO do we want to keep it if this is a volatile rule?
+	// only continue if head has been defined as external
+	if(it != externals_.end()) {
+		externals_.erase(it); // TODO do we want to keep it if this is a volatile rule?
 
-	// don't freeze added head and unfreeze it if necessary
-	it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
-	if(it != to_freeze_.end()) {
-		to_freeze_.erase(it);
-	} else {
-		output_->unfreezeAtom(symbol);
+		// don't freeze added head or unfreeze it if necessary
+		it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
+		if(it != to_freeze_.end()) {
+			to_freeze_.erase(it);
+		} else {
+			output_->unfreezeAtom(symbol);
+		}
 	}
 }
 
