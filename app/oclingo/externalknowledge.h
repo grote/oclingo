@@ -20,6 +20,7 @@
 #include <gringo/gringo.h>
 #include <gringo/val.h>
 #include <gringo/groundprogrambuilder.h>
+#include <gringo/lparseconverter.h>
 
 #include "onlineparser.h"
 
@@ -52,7 +53,7 @@ public:
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void setVolatileWindow(int window);
 	int getVolatileWindow();
-	bool checkHead(uint32_t symbol);
+	bool checkHead(LparseConverter::Symbol const &sym);
 	void addHead(uint32_t symbol);
 	void addPrematureKnowledge();
 	void setControllerStep(int step);
