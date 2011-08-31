@@ -207,12 +207,15 @@ int ExternalKnowledge::getVolatileWindow() {
 	return volatile_window_;
 }
 
-bool ExternalKnowledge::checkHead(uint32_t symbol) {
+bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
 	// check if head atom has been defined as external
-	if(find(externals_.begin(), externals_.end(), symbol) == externals_.end()) {
-		std::string emsg = "Warning: Head of rule has not been declared external. The entire rule will be ignored.";
-		std::cerr << emsg << std::endl;
-		sendToClient(emsg);
+	if(find(externals_.begin(), externals_.end(), sym.external) == externals_.end()) {
+		std::ostringstream emsg;
+		emsg << "Warning: Head ";
+		sym.print(output_->storage(), emsg);
+		emsg << " has not been declared external. The entire rule will be ignored.";
+		std::cerr << emsg.str() << std::endl;
+		sendToClient(emsg.str());
 		return false;
 	}
 	return true;
