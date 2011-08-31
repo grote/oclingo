@@ -22,7 +22,7 @@
 #include <gringo/groundprogrambuilder.h>
 #include <gringo/lparseconverter.h>
 
-#include "onlineparser.h"
+#include <oclingo/onlineparser.h>
 
 #include <clasp/solver.h>
 #include <clasp/constraint.h>
@@ -36,7 +36,7 @@ class oClaspOutput;
 class ExternalKnowledge
 {
 public:
-	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port);
+	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port, bool import);
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
@@ -88,6 +88,7 @@ private:
 	VarVec to_freeze_;
 	std::vector<VarVec> externals_per_step_;
 	uint32_t forget_;
+	bool import_;
 
 	// socket stuff
 	boost::asio::io_service io_service_;

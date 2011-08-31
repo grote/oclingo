@@ -30,6 +30,7 @@ struct oClingoConfig : public Clasp::IncrementalControl
 		: minSteps(1)
 		, maxSteps(~uint32(0))
 		, port(25277)
+		, import(false)
 		, iQuery(1)
 		, stopUnsat(false)
 		, keepLearnt(true)
@@ -41,12 +42,15 @@ struct oClingoConfig : public Clasp::IncrementalControl
 	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
 	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
 	uint32 port;          /**< Socket port oclingo daemon should listen to */
+	bool   import;        /**< Import all external head atoms? */
 	int    iQuery;
 	bool   stopUnsat;     /**< Stop on first unsat problem? */
 	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
 	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */
 
 };
+
+bool mapImport(const std::string& s, bool&);
 
 template <Mode M>
 struct oClingoOptions
@@ -71,7 +75,14 @@ void oClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOp
 	if(M == OCLINGO)
 	{
 		OptionGroup online_opts("Online Options");
-		online_opts.addOptions()("port", storeTo(online.port), "Port oclingo daemon should listen to\n", "<num>");
+		online_opts.addOptions()
+				("port", storeTo(online.port), "Port oclingo daemon should listen to\n", "<num>")
+				("import", storeTo(online.import)->parser(mapImport),
+					"What head atoms should be imported from external modules\n"
+					"      Default: ext\n"
+					"      Valid:   ext, all\n"
+					"        ext   : Import only heads that have been defined as external\n"
+					"        all   : Import all head atoms");
 		root.addOptions(online_opts);
 
 		OptionGroup basic("Basic Options");
@@ -150,4 +161,10 @@ bool oClingoConfig::nextStep(Clasp::ClaspFacade& f)
 	//return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
 	(void) f;
 	return --maxSteps;
+}
+
+bool mapImport(const std::string& s, bool& b)
+{
+	std::string temp = ProgramOptions::toLower(s);
+	return (b=true,(temp == "all")) || (b=false,(temp == "ext"));
 }
