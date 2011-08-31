@@ -25,4 +25,8 @@ e(6).
 e(7).
 #endstep.
 
+#step 8.
+e(8).
+#endstep.
+
 #stop.
