@@ -76,11 +76,11 @@ bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) 
 
 void TermDepthExpansion::expand(Grounder *g)
 {
-	foreach (const DomainMap::const_reference &ref, g->domains())
+	foreach (Domain *dom, g->domains())
 	{
 		for( ; start < config.incStep; start++)
 		{
-			const_cast<Domain*>(ref.second)->addOffset(start);
+			dom->addOffset(start);
 		}
 	}
 }
@@ -205,10 +205,10 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 		
 		stats_.numPred = domains().size();
 		size_t paramCount = 0;
-		foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+		foreach(Domain *dom, domains())
 		{
-			paramCount += dom.second->arity();
-			stats_.numPredVisible += output()->shown(dom.second->nameId(),dom.second->arity());
+			paramCount += dom->arity();
+			stats_.numPredVisible += output()->shown(dom->domId());
 		}
 		stats_.avgPredParams = (stats_.numPred == 0) ? 0 : paramCount*1.0 / stats_.numPred;
 		stats_.print(std::cerr);
@@ -239,9 +239,9 @@ void Grounder::ground(Module &module)
 		output()->endComponent();
 	}
 	output()->endModule();
-	foreach(DomainMap::reference dom, const_cast<DomainMap&>(domains()))
+	foreach(Domain *dom, domains())
 	{
-		dom.second->fix();
+		dom->fix();
 	}
 }
 
@@ -271,8 +271,7 @@ uint32_t Grounder::createVar()
 
 void Grounder::externalStm(uint32_t nameId, uint32_t arity)
 {
-	domain(nameId, arity)->external(true);
-	output()->external(nameId, arity);
+	newDomain(nameId, arity)->external(true);
 }
 
 BodyOrderHeuristic& Grounder::heuristic() const

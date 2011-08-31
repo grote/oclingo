@@ -48,7 +48,17 @@ private:
 class Display : public SimpleStatement
 {
 public:
-	enum Type { SHOWPRED, HIDEPRED, SHOWTERM };
+	struct Type
+	{
+		Type(bool show, bool term)
+			: show(show)
+			, term(term)
+		{
+		}
+
+		bool show;
+		bool term;
+	};
 	class Printer : public ::Printer
 	{
 	public:
@@ -74,4 +84,5 @@ private:
 	clone_ptr<Lit> head_;
 	LitPtrVec      body_;
 	Type           type_;
+
 };

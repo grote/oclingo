@@ -50,7 +50,8 @@ void oClaspOutput::stopExtInput() {
 
 void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
-		head = mapExternalAtom(head);
+		Symbol const &sym = symbol(head);
+		if (sym.external) { head = sym.external; }
 		if(ext_->checkHead(head)) {
 			ext_->addHead(head);
 		} else {
@@ -182,7 +183,7 @@ void oClaspOutput::doFinalize() {
 	ClaspOutput::doFinalize();
 }
 
-void oClaspOutput::printExternalTableEntry(uint32_t, uint32_t mapped)
+void oClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
-	ext_->addExternal(mapped);
+	ext_->addExternal(symbol.external);
 }

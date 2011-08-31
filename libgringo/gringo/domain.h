@@ -55,5 +55,8 @@ private:
 	uint32_t       new_;
 	uint32_t       lastInsertPos_;
 	bool           external_;
+public:
+	bool           show;
+	bool           hide;
 };
 

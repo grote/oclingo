@@ -34,6 +34,8 @@ Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
 	, new_(0)
 	, lastInsertPos_(0)
 	, external_(false)
+	, show(false)
+	, hide(false)
 {
 }
 

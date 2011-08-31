@@ -392,3 +392,88 @@ BOOST_AUTO_TEST_CASE( conj_test_nonstrat )
 		NULL
 	);
 }
+
+BOOST_AUTO_TEST_CASE( show_hide_test1 )
+{
+	Tester
+	(
+		"#hide a.\n"
+		"a."
+		"b.",
+
+		"b", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( show_hide_test2 )
+{
+	Tester
+	(
+		"#hide."
+		"#show b."
+		"a."
+		"b.",
+
+		"b", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( show_hide_test3 )
+{
+	Tester
+	(
+		"#hide a."
+		"#show a."
+		"a."
+		"b.",
+
+		"b", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( show_hide_test4 )
+{
+	Tester
+	(
+		"#show a : b."
+		"0 { a } 0."
+		"b.",
+
+		"b", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( show_hide_test5 )
+{
+	Tester
+	(
+		"#hide."
+		"#show b : a :."
+		"a.",
+
+		"b", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( show_hide_test6 )
+{
+	Tester
+	(
+		"#show a : b :."
+		"#show a : c :."
+		"#hide a : d :."
+		"1 { b, c } 1."
+		"{ d }.",
+
+		"a", "b", NULL,
+		"a", "c", NULL,
+		"d", "b", NULL,
+		"d", "c", NULL,
+		NULL
+	);
+}

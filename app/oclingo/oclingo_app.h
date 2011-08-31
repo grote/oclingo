@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "clingo/clingo_app.h"
 #include "oclingo/oclaspoutput.h"
 #include "oclingo/externalknowledge.h"
+#include "clingo/clingo_app.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // FromGringo

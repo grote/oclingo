@@ -74,7 +74,7 @@ int Func::compare(const Func &b, Storage *s) const
 
 }
 
-void Func::print(Storage *sto, std::ostream& out) const
+void Func::print(Storage const *sto, std::ostream& out) const
 {
 	out << sto->string(name_);
 	out << "(";

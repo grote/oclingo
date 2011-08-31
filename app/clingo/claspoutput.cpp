@@ -108,7 +108,7 @@ void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name
 	atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
-void ClaspOutput::printExternalTableEntry(uint32_t, uint32_t)
+void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
 }
 
@@ -125,16 +125,6 @@ void ClaspOutput::doFinalize()
 	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
 	lastUnnamed_+= atomUnnamed_.size();
 	atomUnnamed_.clear();
-}
-
-const LparseConverter::SymbolMap &ClaspOutput::symbolMap(uint32_t domId) const
-{
-	return symTab_[domId];
-}
-
-ValRng ClaspOutput::vals(Domain *dom, uint32_t offset) const
-{
-	return ValRng(vals_.begin() + offset, vals_.begin() + offset + dom->arity());
 }
 
 ClaspOutput::~ClaspOutput()

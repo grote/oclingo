@@ -31,6 +31,8 @@
 #include "oclingo/oclingo_options.h"
 #include "clingo/claspoutput.h"
 #include "clingo/timer.h"
+#include <gringo/storage.h>
+#include <gringo/domain.h>
 #include <iomanip>
 
 // (i)Clingo application, i.e. gringo+clasp

@@ -118,6 +118,13 @@ protected:
 		string_.assign(state().start_ + start, state().cursor_ - end);
 		return string_;
 	}
+	void step(char s)
+	{
+		for (char *c = state().start_; c != state().cursor_; c++)
+		{
+			if (*c == s) { step(); }
+		}
+	}
 	void step() { state().step(); }
 	int integer()
 	{

@@ -22,6 +22,8 @@
 
 class Storage
 {
+public:
+	typedef std::vector<Domain*> DomainVec;
 private:
 	typedef boost::multi_index::multi_index_container
 	<
@@ -40,20 +42,24 @@ private:
 		>
 	> FuncSet;
 public:
-	std::string quote(const std::string &str);
-	std::string unquote(const std::string &str);
+	std::string quote(const std::string &str) const;
+	std::string unquote(const std::string &str) const;
 	Storage(Output *output);
 	uint32_t index(const Func &f);
-	const Func &func(uint32_t i);
+	const Func &func(uint32_t i) const;
 	uint32_t index(const std::string &s);
-	const std::string &string(uint32_t i);
-	Domain *domain(uint32_t nameId, uint32_t arity);
-	const DomainMap &domains() const { return doms_; }
+	const std::string &string(uint32_t i) const;
+	Domain *domain(uint32_t domId);
+	Domain const *domain(uint32_t domId) const;
+	Domain *newDomain(uint32_t nameId, uint32_t arity);
+	DomainVec &domains() { return domains_; }
+	DomainVec const &domains() const { return domains_; }
 	Output *output() const { return output_; }
 	~Storage();
 private:
 	StringSet strings_;
 	FuncSet   funcs_;
 	DomainMap doms_;
+	DomainVec domains_;
 	Output   *output_;
 };

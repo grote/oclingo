@@ -32,7 +32,7 @@ uint32_t Storage::index(const Func &f)
 	return it - funcs_.begin();
 }
 
-const Func &Storage::func(uint32_t i)
+const Func &Storage::func(uint32_t i) const
 {
 	return funcs_.at(i);
 }
@@ -43,12 +43,12 @@ uint32_t Storage::index(const std::string &s)
 	return it - strings_.begin();
 }
 
-const std::string &Storage::string(uint32_t i)
+const std::string &Storage::string(uint32_t i) const
 {
 	return strings_.at(i);
 }
 
-std::string Storage::quote(const std::string &str)
+std::string Storage::quote(const std::string &str) const
 {
 	std::string res;
 	foreach(char c, str)
@@ -75,7 +75,7 @@ std::string Storage::quote(const std::string &str)
 	return res;
 }
 
-std::string Storage::unquote(const std::string &str)
+std::string Storage::unquote(const std::string &str) const
 {
 	std::string res;
 	bool slash = false;
@@ -106,14 +106,24 @@ std::string Storage::unquote(const std::string &str)
 	return res;
 }
 
-Domain *Storage::domain(uint32_t nameId, uint32_t arity)
+Domain *Storage::domain(uint32_t domId)
+{
+	return domains_[domId];
+}
+
+Domain const *Storage::domain(uint32_t domId) const
+{
+	return domains_[domId];
+}
+
+Domain *Storage::newDomain(uint32_t nameId, uint32_t arity)
 {
 	Signature sig(nameId, arity);
 	DomainMap::iterator i = doms_.find(sig);
 	if(i == doms_.end())
 	{
-		Domain *dom = new Domain(nameId, arity, doms_.size());
-		output_->addDomain(dom);
+		std::auto_ptr<Domain> dom(new Domain(nameId, arity, doms_.size()));
+		domains_.push_back(dom.get());
 		return doms_.insert(sig, dom).first->second;
 	}
 	else return i->second;

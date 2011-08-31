@@ -33,7 +33,6 @@ class Output
 private:
 	typedef std::vector<DelayedPrinter*> DelayedPrinters;
 	typedef std::set<Signature> DisplaySet;
-	typedef std::set<Signature> ExternalSet;
 	typedef boost::ptr_vector<boost::nullable<Printer> > PrinterVec;
 public:
 	Output();
@@ -41,15 +40,13 @@ public:
 	virtual void endModule() { }
 	virtual void endComponent() { foreach(DelayedPrinter *printer, delayedPrinters_) { printer->finish(); } }
 	virtual void finalize() {  }
-	virtual void addDomain(Domain *d) { (void)d; }
 	Storage *storage() const { return s_; }
 	void storage(Storage *s) { s_ = s; }
 	void hideAll();
 	void show(uint32_t nameId, uint32_t arity, bool show);
-	bool shown(uint32_t nameId, uint32_t arity);
+	bool shown(uint32_t domId);
 	virtual void doHideAll() { }
 	virtual void doShow(uint32_t, uint32_t, bool) { }
-	void external(uint32_t nameId, uint32_t arity);
 	void regDelayedPrinter(DelayedPrinter *printer) { delayedPrinters_.push_back(printer); }
 	template<class P>
 	static bool expPrinter();
@@ -69,7 +66,6 @@ private:
 protected:
 	DisplaySet      showSet_;
 	DisplaySet      hideSet_;
-	ExternalSet     external_;
 	Storage        *s_;
 	bool            hideAll_;
 private:

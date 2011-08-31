@@ -27,9 +27,9 @@ namespace plainoutput_impl
 
 void DisplayPrinter::begin(const Val &head, Type type)
 {
-	out() << (type == Display::HIDEPRED ? "#hide " : "#show ");
+	out() << (type.show ? "#show " : "#hide ");
 	head.print(output()->storage(), out());
-	ignore_  = type != Display::SHOWTERM;
+	ignore_  = !type.term;
 	ignored_ = false;
 }
 
