@@ -14,6 +14,9 @@ DONE
 TODO
 
 - disable lookahead, --no-lookback implies lookahead muss heu=None nutzen
+- disable project/brave coutious etc...
+- remove warnings
+- implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
 - write Makefile
 - add show/hide statements
@@ -23,17 +26,23 @@ TODO
 - reason muss nicht aus den csp lits bestehen sondern kann über uip auf jedem level verkleinert werden
 - add IIS (Irreducible Infeasible Set) for generating reasons (also try grouped by dl)
 	-WARNING: asserting clauses are not asserting on current dl -> this makes clasp backjump, if this is the case maybe stop the propagation
+	- VORSICHT, wenn ich in anderer Reihenfolge propagiere kann sich der Fixpunkt ändern -> unsat kann rauskommen (theoretisch :-) )
 	- linear
 	- exponential grouped
+	!!!!!!!!!!! while(original->getValueOfConstraint((end-1)->var()!=GecodeSolver::SearchSpace::BFREE))!!!!!!!!! das ganze nochmal vorwärts statt rückwärts mit dieser optimierung, dadurch könnte man die Propagation wieder raushauen...
 	- internal (Gecode:)
+		GEHT NICHT, nach branching sind alle variablen assigned
 		Reason:
 			b=="a$>x"
 			kein labeling auf b, minimiere alle anderen b'
 			constraint a \/ b, wobei a nicht hergeleitet werden kann
 		Conflict:
 			reason für -b
+        - grouped via DL
+	
 - do initial lookahead of gecode constraints
 - order constraints to the number of variables to speed up initial propagation
+- force statt setconflict benutzen, spart Codepath!?
 
 
 BUGS

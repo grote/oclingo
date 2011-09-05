@@ -374,12 +374,12 @@ condsetlist(res)  ::= ncondsetlist(list).                                      {
 
 condset(res) ::= term(t) weightcond(cond).                                     { res = new Clingcon::ConstraintVarCond(t->loc(), ONE(t->loc()), t->toConstraintTerm(), *cond); delete cond; }
 
-ncondindexlist(res) ::= condindex(var).                                        { res = vec1(var); }
-ncondindexlist(res) ::= ncondindexlist(list) COMMA condindex(var).             { res = list; res->push_back(var); }
-condindexlist(res)  ::= .                                                      { res = new ConstraintVarCondPtrVec(); }
-condindexlist(res)  ::= ncondindexlist(list).                                  { res = list; }
+//ncondindexlist(res) ::= condindex(var).                                        { res = vec1(var); }
+//ncondindexlist(res) ::= ncondindexlist(list) COMMA condindex(var).             { res = list; res->push_back(var); }
+//condindexlist(res)  ::= .                                                      { res = new ConstraintVarCondPtrVec(); }
+//condindexlist(res)  ::= ncondindexlist(list).                                  { res = list; }
 
-condindex(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).         { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+//condindex(res) ::= term(t) LSBRAC term(index) RSBRAC weightcond(cond).         { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
 
 
 ncondequallist(res) ::= condequal(var).                                        { res = vec1(var); }

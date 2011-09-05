@@ -77,9 +77,11 @@ private:
 			virtual void setClingconPropagator(Clingcon::ClingconPropagator* cp);
                         virtual bool initialize() = 0;
 			virtual bool propagate() = 0;
+                        //propagate after model was found
+                        virtual bool propagateMinimize() = 0;
 			virtual void reset() = 0;
 			virtual void propagateLiteral(const Clasp::Literal& l, int date) = 0;
-			virtual void undoUntil(unsigned int level) = 0;
+                        virtual void undo(unsigned int level) = 0;
 			/*
 			 * pre: complete assignment
 			 * return true if a valid solution for the asp vars exists
@@ -105,8 +107,11 @@ private:
 			Clasp::Solver* s_;
 			ClingconPropagator* clingconPropagator_;
 
+#pragma message "DEBUG: make it protected or friend or accessor method"
+        public:
                         std::map<int, Constraint*> constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
+        protected:
 
                         //Domains domains_;
                         Domain domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)
