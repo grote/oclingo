@@ -9,12 +9,12 @@ DONE
 - add optimization DONE
 - added sum aggregate style DONE
 - getAssignment() function optimized via callbacks DONE
+- reduced csp-assignment to literals propagated from clasp, results in smaller reasons/conflicts
+- disabled lookahead and --no-lookback
 
 
 TODO
 
-- disable lookahead, --no-lookback implies lookahead muss heu=None nutzen
-- disable project/brave coutious etc...
 - remove warnings
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
@@ -23,7 +23,6 @@ TODO
 - add more global aggregates
 - decide between search heuristic! (DFS, BAB)
 - add statistics from Gecode
-- reason muss nicht aus den csp lits bestehen sondern kann über uip auf jedem level verkleinert werden
 - add IIS (Irreducible Infeasible Set) for generating reasons (also try grouped by dl)
 	-WARNING: asserting clauses are not asserting on current dl -> this makes clasp backjump, if this is the case maybe stop the propagation
 	- VORSICHT, wenn ich in anderer Reihenfolge propagiere kann sich der Fixpunkt ändern -> unsat kann rauskommen (theoretisch :-) )
@@ -47,7 +46,6 @@ TODO
 
 BUGS
 
-- gringo error mit 1{}1 wird bei test18 getriggered
 - constraints in aggregates, triggered with test9.lpa (Roland has to change something first)
 
 

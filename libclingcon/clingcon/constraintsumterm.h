@@ -37,6 +37,14 @@ namespace Clingcon
 		void print(Storage *sto, std::ostream &out) const;
                 ConstraintSumTerm *clone() const;
                 virtual bool match(Grounder* );
+                virtual void initInst(Grounder *g)
+                {
+                    for (ConstraintVarCondPtrVec::iterator i = cond_->begin(); i != cond_->end(); ++i)
+                    {
+                        i->initInst(g);
+                    }
+                }
+
                 virtual void add(ConstraintVarCond* add)
                 {
                     cond_->push_back(add);

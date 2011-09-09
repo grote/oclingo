@@ -50,9 +50,15 @@ private:
         const std::string message_;
 };
 	class ClingconPropagator;
+        class SCCIRSRA;
+        class Approx1IRSRA;
 
 	class CSPSolver
 	{
+
+            friend class SCCIRSRA;
+            friend class Approx1IRSRA;
+
                 public:
                         typedef Interval<int> Domain;
                         CSPSolver();
@@ -68,7 +74,7 @@ private:
                         //virtual void addDomain(const std::string& var, int lower, int upper);
                         virtual unsigned int getVariable(const std::string& s);
                         //virtual void combineWithDefaultDomain();
-                        virtual const std::vector<std::string>&  getVariables();
+                        virtual const std::vector<std::string>&  getVariables() const;
                         //virtual bool hasDomain(const std::string& s) const;
                         //virtual const RangeVec& getDomain(const std::string& s) const;
                         virtual const Domain& getDomain() const;
@@ -103,12 +109,11 @@ private:
 		protected:
 
                         std::vector<std::string> variables_;
+                        std::map<std::string,unsigned int> variableMap_;
                         //boost::unordered_map<Val,unsigned int> variables_;
 			Clasp::Solver* s_;
 			ClingconPropagator* clingconPropagator_;
 
-#pragma message "DEBUG: make it protected or friend or accessor method"
-        public:
                         std::map<int, Constraint*> constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
         protected:

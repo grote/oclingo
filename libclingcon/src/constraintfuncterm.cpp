@@ -54,9 +54,8 @@ namespace Clingcon
 		}
 	}
 
-	ConstraintAbsTerm::Ref* ConstraintFuncTerm::abstract(ConstraintSubstitution& subst) const
+        ConstraintAbsTerm::Ref* ConstraintFuncTerm::abstract(ConstraintSubstitution& ) const
 	{
-            #pragma message "Ask Roland how to handle this"
             assert(false);
             return 0;
                 //ConstraintAbsTerm::Children children;

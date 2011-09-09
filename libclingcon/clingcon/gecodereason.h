@@ -112,6 +112,26 @@ namespace Clingcon
         GecodeSolver* g_;
     };
 
+    class FwdLinear2IRSRA : public ReasonAnalyzer
+    {
+    public:
+        FwdLinear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        ~FwdLinear2IRSRA()
+        {
+            std::cout << props_ << " propagataions in fwdlinear2 reasons in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+        }
+        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
+
+    private:
+        GecodeSolver* g_;
+        unsigned int  props_;
+        Timer         t_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
+    };
+
 
     class SCCIRSRA : public ReasonAnalyzer
     {
@@ -176,27 +196,6 @@ namespace Clingcon
     };
 
 
-    class TestIRSRA : public ReasonAnalyzer
-    {
-    public:
-        TestIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
-        ~TestIRSRA()
-        {
-            std::cout << props_ << " propagataions in test reasons in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-        }
-        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
-
-    private:
-        GecodeSolver* g_;
-        unsigned int  props_;
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
-    };
-
-
     class Approx1IRSRA : public ReasonAnalyzer
     {
     public:
@@ -237,6 +236,74 @@ namespace Clingcon
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
     private:
+        GecodeSolver* g_;
+        unsigned int  props_;
+        Timer         t_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
+    };
+
+
+    /*
+      liefert andere ergebnisse als linear, da
+      1. die Reihenfolge nach range verkehrt ist
+      2. linear in bezug auf "alle anderen" literale testet, diese sind bei range aber kleiner -> weniger wissen -> anderer reason
+      */
+    class RangeLinearIRSRA : public ReasonAnalyzer
+    {
+    public:
+        RangeLinearIRSRA(GecodeSolver* g) : g_(g), range_(g), linear_(g){}
+        ~RangeLinearIRSRA()
+        {
+        }
+        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
+    private:
+        GecodeSolver* g_;
+        RangeIRSRA range_;
+        LinearIRSRA linear_;
+    };
+
+
+    class Linear2IRSRA : public ReasonAnalyzer
+    {
+    public:
+        Linear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        ~Linear2IRSRA()
+        {
+            std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+        }
+        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
+
+    private:
+
+        size_t getIndexBelowDL(uint32 level);
+
+        GecodeSolver* g_;
+        unsigned int  props_;
+        Timer         t_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
+    };
+
+
+    class Linear2GroupedIRSRA : public ReasonAnalyzer
+    {
+    public:
+        Linear2GroupedIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        ~Linear2GroupedIRSRA()
+        {
+            std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+        }
+        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
+
+    private:
+
+        size_t getIndexBelowDL(uint32 level);
+
         GecodeSolver* g_;
         unsigned int  props_;
         Timer         t_;

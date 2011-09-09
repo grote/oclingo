@@ -22,6 +22,7 @@
 
 //#include <clasp/include/util/misc_types.h>
 #include <gringo/gringo.h>
+#include <clingcon/exception.h>
 
 
 namespace Clingcon {
@@ -122,7 +123,6 @@ namespace Clingcon {
                         return;
                     }
 
-#pragma message "avoid dividing by zero"
                     if (a_ && a_->isInteger() && b_ && b_->isInteger())
                     {
                         switch (op_)
@@ -134,7 +134,11 @@ namespace Clingcon {
                         case TIMES:
                             value_ = a_->getInteger() * b_->getInteger(); break;
                         case DIVIDE:
+                        {
+                            if (b_->getInteger() == 0)
+                                throw CSPException("Error: division by zero detected in CSP term");
                             value_ = a_->getInteger() / b_->getInteger(); break;
+                        }
                         }
                         op_=INTEGER;
                         delete a_;

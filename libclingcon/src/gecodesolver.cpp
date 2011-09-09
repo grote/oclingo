@@ -266,6 +266,7 @@ unsigned int GecodeSolver::assLength(unsigned int index) const
 
 bool GecodeSolver::initialize()
 {
+    std::cout << "initialize" << std::endl;
     dfsSearchEngine_ = 0;
     babSearchEngine_ = 0;
     enumerator_ = 0;
@@ -295,10 +296,20 @@ bool GecodeSolver::initialize()
     // Convert uids to solver literal ids
     // Guess initial domains of level0 constraints        //if (tester->failed() || tester->status()==Gecode::SS_FAILED)
     std::map<int, Constraint*> newConstraints;
+    AtomIndex::const_iterator begin = s_->strategies().symTab->begin();
     for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
     {
-        int newVar = s_->strategies().symTab->find(i->first)->lit.var();
-        // convert uids to solver literal ids
+        //int newVar = s_->strategies().symTab->find(i->first)->lit.var();
+        //begin = std::lower_bound(begin, s_->strategies().symTab->end(),i->first);
+        begin = s_->strategies().symTab->lower_bound(begin, i->first);
+
+        int newVar = begin->second.lit.var();
+
+
+        // convert uids to solver literal ids 
+   //     std::cout << num2name(newVar) << std::endl;
+
+
         newConstraints.insert(std::make_pair(newVar, i->second));
         i->second->registerAllVariables(this);
 
@@ -317,6 +328,7 @@ bool GecodeSolver::initialize()
             s_->addWatch(posLit(newVar), clingconPropagator_,0);
             s_->addWatch(negLit(newVar), clingconPropagator_,0);
         }
+
     }
     constraints_ = newConstraints;
 
@@ -345,7 +357,7 @@ bool GecodeSolver::initialize()
     conflictAnalyzer_ = new SimpleCA();
 
     //conflictAnalyzer_ = new RangeCA(this);
-
+    //conflictAnalyzer_ = new RangeLinearCA(this);
 
     //reasonAnalyzer_ = new Union2IRSRA(this);//faster
     //reasonAnalyzer_ = new UnionIRSRA(this);
@@ -355,9 +367,21 @@ bool GecodeSolver::initialize()
     //reasonAnalyzer_ = new LinearIRSRA(this);
     reasonAnalyzer_ = new SimpleRA();
 
-    //reasonAnalyzer_ = new TestIRSRA(this);
     //reasonAnalyzer_ = new Approx1IRSRA(this);
+
     //reasonAnalyzer_ = new RangeIRSRA(this);
+    //reasonAnalyzer_ = new RangeLinearIRSRA(this);
+    //reasonAnalyzer_ = new Linear2IRSRA(this);
+    //reasonAnalyzer_ = new Linear2GroupedIRSRA(this);
+
+    //reasonAnalyzer_ = new FwdLinear2IRSRA(this);
+
+
+
+
+
+    bool initialLookAhead=false;
+
 
 
 
@@ -367,14 +391,18 @@ bool GecodeSolver::initialize()
     constraints_.clear();
     globalConstraints_.clear();
 
+    //std::cout << "status" << std::endl;
     if(!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
     {
-#pragma message "Check with benni the return value, i do waste it here"
+        // std::cout << "done" << std::endl;
         if (!propagateNewLiteralsToClasp())
+        {
+            propQueue_.push_back(negLit(0));
             return false;
+        }
         else
         {
-            if (false)
+            if (initialLookAhead)
             {
                 //initial lookahead
 
@@ -392,7 +420,10 @@ bool GecodeSolver::initialize()
                         if (tester->failed() || tester->status()==SS_FAILED)
                         {
                             if (!s_->force(~test,Antecedent()))
+                            {
+                                propQueue_.push_back(negLit(0));
                                 return false;
+                            }
                             currentSpace_->propagate(~test);
                         }
                         else
@@ -405,7 +436,9 @@ bool GecodeSolver::initialize()
                                 gc.add(*j);
                                 if(!gc.end())
                                 {
-                                    derivedLits_.clear();
+                                    assert(false); // should not happen as both literals are free before
+                                    //erivedLits_.clear();
+                                    //propQueue_.push_back(negLit(0));
                                     return false;
                                 }
 
@@ -447,11 +480,19 @@ bool GecodeSolver::initialize()
                     }
                 }
             }
+            //std::cout << "initialized" << std::endl;
+            variableMap_.clear();
+            //currentSpace_->print(getVariables());
             return true;
         }
     }
     else
+    {
+        std::cout << "initialized" << std::endl;
+        variableMap_.clear();
+        propQueue_.push_back(negLit(0));
         return false;
+    }
 }
 
 
@@ -471,6 +512,7 @@ void GecodeSolver::newlyDerived(int index)
 }
 
 
+void addToDomain(GecodeSolver::DomainMap& domain,  const GecodeSolver::DomainMap& add);
 GecodeSolver::DomainMap intersect(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
 GecodeSolver::DomainMap unite(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
 GecodeSolver::DomainMap xorit(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
@@ -483,7 +525,7 @@ void GecodeSolver::guessDomains(const Constraint* c, bool val)
         for (DomainMap::iterator i = dom.begin(); i != dom.end(); ++i)
             i->second.complement(Interval<int>(Int::Limits::min, Int::Limits::max+1));
 
-    domains_ = intersect(dom, domains_);
+    addToDomain(domains_, dom);
 }
 
 GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
@@ -558,6 +600,7 @@ GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
             var = getVariable(b->getString());
             value = a->getInteger();
         }
+        std::cout << var << value << comp << std::endl;
         m[var] = getSet(var, comp, value);
         return m;
     }
@@ -567,6 +610,7 @@ GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
 GecodeSolver::Domain GecodeSolver::getSet(unsigned int var, CSPLit::Type t, int x) const
 {
     Domain ret;
+
     switch(t)
     {
     case CSPLit::GREATER: ret.unite(Interval<int>(x+1,Int::Limits::max+1));  break;
@@ -579,11 +623,64 @@ GecodeSolver::Domain GecodeSolver::getSet(unsigned int var, CSPLit::Type t, int 
     return ret;
 }
 
+void addToDomain(GecodeSolver::DomainMap& domain,  const GecodeSolver::DomainMap& add)
+{
+    GecodeSolver::DomainMap::iterator found = domain.begin();
+    GecodeSolver::DomainMap::iterator last = found; // last valid position
+    for (GecodeSolver::DomainMap::const_iterator i = add.begin(); i != add.end(); ++i)
+    {
+
+        found = domain.lower_bound(i->first);
+
+        //if not found
+        if (found == domain.end())
+        {
+            domain.insert(last, std::make_pair(i->first,i->second));
+
+        }
+        else // still not found
+        if (found->first != i->first)
+        {
+            --found;
+            // add it to the domain
+            domain.insert(found, std::make_pair(i->first,i->second));
+            last = found;
+            //ret[i->first] = i->second;
+        }
+        else // found
+        {
+            found->second.intersect(i->second);
+            //
+            //domain.second =
+            //GecodeSolver::Domain inter = i->second;
+            //inter.intersect(found->second);
+            //ret[i->first]=inter;
+            last = found;
+        }
+    }
+
+    /*
+    // can optimize this
+    // all variables that we have only in b but not in a
+    for (GecodeSolver::DomainMap::const_iterator i = b.begin(); i != b.end(); ++i)
+    {
+        GecodeSolver::DomainMap::const_iterator found = a.find(i->first);
+
+        if (found == a.end())
+        {
+            ret[i->first] = i->second;
+        }
+    }
+    return ret;
+    */
+}
+
 GecodeSolver::DomainMap intersect(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b)
 {
     GecodeSolver::DomainMap ret;
     for (GecodeSolver::DomainMap::const_iterator i = a.begin(); i != a.end(); ++i)
     {
+#pragma message "lineare suche draus machen !"
         GecodeSolver::DomainMap::const_iterator found = b.find(i->first);
 
         if (found == b.end())
@@ -876,11 +973,11 @@ bool GecodeSolver::propagate()
         for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
         {
             //assert(s_->isTrue(*i));
-            if (!s_->isTrue(*i))
-            {
+            //if (!s_->isTrue(*i))
+            //{
                 //this literal was once propagated but then backtracked without any notice of me, so we ignore it
-                continue;
-            }
+            //    continue;
+            //}
             // add if free
             // conflict if contradicting
             GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
@@ -1148,7 +1245,9 @@ Clasp::ConstraintType GecodeSolver::CSPDummy::reason(const Literal& l, Clasp::Li
     return Clasp::Constraint_t::learnt_other;
 }
 
+GecodeSolver* GecodeSolver::SearchSpace::csps_ = 0;
 
+IntVarArgs GecodeSolver::SearchSpace::iva_;
 
 
 GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
@@ -1156,9 +1255,9 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
                                        std::map<unsigned int, unsigned int>* litToVar) : Space(),
     x_(*this, numVar),
     //b_(*this, constraints.size(), 0, 1),
-    b_(),
-    csps_(csps)
+    b_()
 {
+    csps_ = csps;
 
     //initialize all variables with their domain
     for(size_t i = 0; i < csps_->getVariables().size(); ++i)
@@ -1260,7 +1359,7 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     iva_ = IntVarArgs();
 }
 
-GecodeSolver::SearchSpace::SearchSpace(bool share, SearchSpace& sp) : Space(share, sp), csps_(sp.csps_)
+GecodeSolver::SearchSpace::SearchSpace(bool share, SearchSpace& sp) : Space(share, sp)
 {
     x_.update(*this, share, sp.x_);
     b_.update(*this, share, sp.b_);

@@ -345,6 +345,7 @@ void UnionIISCA::shrink(Clasp::LitVec& conflict)
 
 void RangeCA::shrink(Clasp::LitVec& conflict)
 {
+    //std::cout << "Enter " << numCalls_ << std::endl;
     ++numCalls_;
     t_.start();
     if (conflict.size()==0)
@@ -353,6 +354,8 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         return;
     }
 
+
+    /*
     std::cout << "Conflicting with: " << std::endl;
     for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
     {
@@ -360,6 +363,7 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         else std::cout << "t ";
         std::cout << g_->num2name(i->var()) << std::endl;
     }
+*/
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
     original = g_->getRootSpace();
@@ -377,37 +381,29 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
     //std::cout << "Reduced from " << conflict.size() << " to ";
     while(it>=conflict.begin())
     {
+
+        /*
         std::cout << "Testing with ";
         if (it->sign()) std::cout << "f ";
         else std::cout << "t ";
         std::cout << g_->num2name(it->var()) << std::endl;
+*/
         if(original->getValueOfConstraint((it)->var())!=GecodeSolver::SearchSpace::BFREE)
         {
-            std::cout << "non free -> ";
-            GecodeSolver::SearchSpace::Value val(original->getValueOfConstraint((conflict.end()-1)->var()));
+            //std::cout << "non free -> ";
+            GecodeSolver::SearchSpace::Value val(original->getValueOfConstraint((it)->var()));
             if (((it)->sign() && val==GecodeSolver::SearchSpace::BFALSE) || ((!(it->sign())) && val==GecodeSolver::SearchSpace::BTRUE))
             {
-                std::cout << "same sign, skip" << std::endl;
+                //std::cout << "same sign, skip" << std::endl;
                 --it;
                 continue;
             }
             else
             {
-                std::cout << "different sign, finished" << std::endl;
+                //std::cout << "different sign, finished" << std::endl;
                 newConflict.insert(newConflict.end(), *it);
-                delete original;
-                g_->setRecording(true);
-                conflict.swap(newConflict);
-                t_.stop();
-                sumLength_+=conflict.size();
-                std::cout << "Results in: " << std::endl;
-                for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
-                {
-                    if (i->sign()) std::cout << "f ";
-                    else std::cout << "t ";
-                    std::cout << g_->num2name(i->var()) << std::endl;
-                }
-                return;
+                //std::cout << "Shortcut" << std::endl;
+                break;
             }
         }
 
@@ -416,23 +412,27 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         newConflict.insert(newConflict.end(), *it);
         if (original->failed() || original->status()==Gecode::SS_FAILED)
         {
-            std::cout << "Failed" << std::endl;
+            //std::cout << "Failed" << std::endl;
             break;
         }
         --it;
     }
+    //if (!original->failed())
+    //    std::cout << "PROBLEM" << std::endl;//muss nicht failed sein, kann auch different sign sein und wäre danach failed !
     delete original;
     conflict.swap(newConflict);
     g_->setRecording(true);
     t_.stop();
     sumLength_+=conflict.size();
+
+    /*
     std::cout << "Results in: " << std::endl;
     for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
     {
         if (i->sign()) std::cout << "f ";
         else std::cout << "t ";
         std::cout << g_->num2name(i->var()) << std::endl;
-    }
+    }*/
 }
 
 

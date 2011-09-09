@@ -217,7 +217,11 @@ void CSPFromGringo<M>::getAssumptions(Clasp::LitVec& a)
 	if(M == ICLINGCON && app.clingo.mode == ICLINGCON)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-		a.push_back(i.find(out->getIncAtom())->lit);
+
+                foreach(uint32_t atom, out->getIncUids()) {
+                    if(atom) a.push_back(i.find(atom)->lit);
+                }
+
 	}
 }
 
@@ -376,7 +380,6 @@ int ClingconApp<M>::doRun()
             Streams  inputStreams(generic.input, constStream());
             if(gringo.groundInput)
             {
-    #pragma message "reimplement me!!!"
                     /*
                     Storage   s(o.get());
                     Converter c(o.get(), inputStreams);

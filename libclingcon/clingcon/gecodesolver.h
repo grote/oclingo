@@ -39,6 +39,9 @@ namespace Clingcon {
 
     class ConflictAnalyzer;
     class ReasonAnalyzer;
+    class Linear2IRSRA;
+    class Linear2GroupedIRSRA;
+
 
     class GecodeSolver : public CSPSolver
     {
@@ -47,6 +50,11 @@ namespace Clingcon {
 
     public:
         friend class SearchSpace;
+        //debug
+        friend class Linear2IRSRA;
+        friend class Linear2GroupedIRSRA;
+
+
         static std::vector<int> optValues;
 
         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
@@ -245,8 +253,9 @@ namespace Clingcon {
             IntVarArray x_;
             BoolVarArray b_;
 
-            IntVarArgs iva_; // for collecting temporary variables
-            GecodeSolver* csps_;
+            //i do it static to now to blow up the space
+            static IntVarArgs iva_; // for collecting temporary variables
+            static GecodeSolver* csps_;
         public:
             IntVarArray opts_; // optimization variables
             //std::vector<IntVar> tempVars_;

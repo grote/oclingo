@@ -177,6 +177,7 @@ namespace Clingcon
 
 	public:
 		ConstraintTerm(const Loc &loc) : Locateable(loc) { }
+                virtual void initInst(Grounder *g) {}
 		virtual Val val(Grounder *grounder) const = 0;
 		virtual Split split() { return Split(0, 0); }
                 virtual void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify) = 0;

@@ -37,17 +37,29 @@ bool CSPSolver::hasOptimizeStm() const
 
 unsigned int CSPSolver::getVariable(const std::string& v)
 {
-    for(unsigned int i = 0; i != variables_.size(); ++i)
+    std::map<std::string,unsigned int>::iterator f = variableMap_.find(v);
+    if (f != variableMap_.end())
+        return f->second;
+    else
+    {
+        variables_.push_back(v);
+        variableMap_[v]=variables_.size()-1;
+        return variables_.size()-1;
+
+    }
+ /*   for(unsigned int i = 0; i != variables_.size(); ++i)
     {
             if (variables_[i] == v)
                     return i;
     }
+
     variables_.push_back(v);
     return variables_.size()-1;
+    */
 
 }
 
-const std::vector<std::string>&  CSPSolver::getVariables()
+const std::vector<std::string>&  CSPSolver::getVariables() const
 {
     return variables_;
 }

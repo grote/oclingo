@@ -18,6 +18,7 @@
 #pragma once
 
 #include <gringo/gringo.h>
+#include <gringo/formula.h>
 #include <clingcon/clingcon.h>
 #include <gringo/lit.h>
 #include <gringo/printer.h>

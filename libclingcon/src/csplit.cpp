@@ -130,8 +130,22 @@ namespace Clingcon
         return isFact_;
     }
 
-    Index* CSPLit::index(Grounder *, Formula *, VarSet &)
+    Index* CSPLit::index(Grounder *g, Formula *f, VarSet &v)
     {
+
+        if (lhs_.get())
+        {
+            lhs_->index(g,f,v);
+            rhs_->index(g,f,v);
+        }
+        else
+        {
+            if (a_.get())
+                a_->initInst(g);
+            if (b_.get())
+                b_->initInst(g);
+
+        }
         return new MatchIndex(this);
     }
 

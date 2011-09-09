@@ -69,7 +69,7 @@ public:
 	void parseError();
 	void parse();
 	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
-        void incremental(iPart part, uint32_t index = 0);
+        void incremental(iPart part, uint32_t index = 0, uint32_t vol_window = 1);
 	void add(Statement *s);
         Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
 	Clingcon::WrapperTerm *term(Val::Type t, const Loc &loc, uint32_t index);
@@ -78,7 +78,7 @@ public:
 	void constTerm(uint32_t index, Clingcon::WrapperTerm *term);
 	void domainStm(const Loc &loc, uint32_t id, const VarSigVec &vars);
 	DomStmRng domainStm(uint32_t var);
-        void show(uint32_t idx);
+        void show(uint32_t idx, bool show);
         void show(Term *term);
 	~CSPParser();
 
@@ -110,6 +110,8 @@ private:
 	bool            inc_;
 	uint32_t        iId_;
 	uint32_t        iVar_;
+        // parsing the volatile part
+        uint32_t        volWindow_;
 	// parsing const directives
 	ConstMap        constMap_;
 	// parsing domain statements

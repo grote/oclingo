@@ -30,8 +30,9 @@ class CSPOutput : public Clingcon::CSPOutputInterface
 public:
         CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver);
 	virtual void initialize();
+        virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
-	const SymbolMap &symbolMap(uint32_t domId) const;
+        SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
         ~CSPOutput();
 protected:
@@ -43,7 +44,9 @@ protected:
 	void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
         void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-	void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+        void printExternalTableEntry(const Symbol &symbol);
+        using LparseConverter::symbol;
+
 	uint32_t symbol();
         uint32_t symbol(const std::string& name, bool freeze);
 	virtual void doFinalize();
@@ -60,7 +63,11 @@ public:
         iCSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver);
         ~iCSPOutput();
 	void initialize();
-	int getIncAtom();
+        uint32_t getNewIncUid();
+        int getIncAtom(uint32_t vol_window = 1);
+        std::deque<uint32_t> getIncUids();
 private:
-	int incUid_;
+        bool initialized;
+        std::deque<uint32_t> incUids_;
+
 };

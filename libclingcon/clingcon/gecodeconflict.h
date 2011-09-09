@@ -134,5 +134,29 @@ namespace Clingcon
         unsigned int sumLength_;
     };
 
+
+    class RangeLinearCA : public ConflictAnalyzer
+    {
+    public:
+        RangeLinearCA(GecodeSolver* g) : g_(g), range_(g), linear_(g) {}
+        ~RangeLinearCA()
+        {
+        }
+
+        virtual void shrink(Clasp::LitVec& conflict)
+        {
+            Clasp::LitVec temp = conflict;
+            range_.shrink(conflict);
+            std::reverse(conflict.begin(), conflict.end());
+            linear_.shrink(temp);
+            std::swap(temp,conflict);
+        }
+
+    private:
+        GecodeSolver* g_;
+        RangeCA range_;
+        LinearIISCA linear_;
+    };
+
 }
 #endif

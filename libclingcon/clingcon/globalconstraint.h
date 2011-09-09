@@ -50,8 +50,10 @@ namespace Clingcon
         }
 
         virtual void print(Storage *sto, std::ostream &out) const;
-        virtual ::Index *index(Grounder *, Formula *, VarSet &)
+        virtual ::Index *index(Grounder *g, Formula *, VarSet &)
         {
+            for(ConstraintVarCondPtrVec::iterator i = vec_.begin(); i != vec_.end(); ++i)
+                i->initInst(g);
             return new MatchIndex(this);
 
         }
@@ -270,7 +272,6 @@ namespace Clingcon
                         t=GlobalConstraintHeadLit::Set;
                     if (i==1)
                         t=GlobalConstraintHeadLit::Index;
-                    #pragma message("I think this switch has to be fixed, test it")
                     break;
                 }
                 case MAXIMIZE_SET:

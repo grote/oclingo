@@ -298,7 +298,9 @@ start ::= program.
 program ::= .
 program ::= program line DOT.
 program ::= program weak(w).      { pCSPParser->add(w); }
-program ::= program SHOWDOT(tok). { pCSPParser->show(tok.index); }
+program ::= program SHOWDOT(tok). { pCSPParser->show(tok.index, true); }
+program ::= program HIDEDOT(tok). { pCSPParser->show(tok.index, false); }
+
 
 
 line ::= INCLUDE STRING(file).                         { pCSPParser->include(file.index); }
@@ -308,6 +310,7 @@ line ::= EXTERNAL(tok) predicate(pred) cond(list).     { pCSPParser->add(new Ext
 line ::= EXTERNAL signed(id) SLASH NUMBER(num).        { GRD->externalStm(id.index, num.number); }
 line ::= CUMULATIVE IDENTIFIER(id).                    { pCSPParser->incremental(CSPParser::IPART_CUMULATIVE, id.index); }
 line ::= VOLATILE IDENTIFIER(id).                      { pCSPParser->incremental(CSPParser::IPART_VOLATILE, id.index); }
+line ::= VOLATILE IDENTIFIER(id) COLON NUMBER(num).    { pCSPParser->incremental(CSPParser::IPART_VOLATILE, id.index, num.number); }
 line ::= BASE.                                         { pCSPParser->incremental(CSPParser::IPART_BASE); }
 line ::= optimize.
 line ::= compute.
@@ -407,14 +410,15 @@ condat(res) ::= term(t) weightcond(cond).                                      {
 
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
-meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list, Display::SHOWTERM)); delete term; }
-meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list, Display::SHOWPRED)); delete term; }
-meta ::= SHOW(tok) term(term) ncond(list) COLON.     { pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::SHOWTERM)); delete list; delete term; }
-meta ::= SHOW(tok) term(term) ncond(list).           { pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::SHOWPRED)); delete list; delete term; }
-meta ::= HIDE(tok) func(f) cond(list).               { pCSPParser->add(new Display(tok.loc(), f->toTerm(), *list, Display::HIDEPRED)); delete list; delete f; }
-meta ::= HIDE(tok) MINUS(m) func(f) cond(list).      { pCSPParser->add(new Display(tok.loc(), new MathTerm(m.loc(), MathTerm::UMINUS, f->toTerm()), *list, Display::HIDEPRED)); delete list; delete f; }
-meta ::= HIDE      signed(id) SLASH NUMBER(num).     { OTP->show(id.index, num.number, false); }
-meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pCSPParser->constTerm(id.index, term); }
+meta ::= SHOW(tok) term(term) COLON.                 { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list,  Display::Type(true, true)));                delete term; }
+meta ::= SHOW(tok) term(term).                       { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(), list,  Display::Type(true, false)));               delete term; }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.     {                 pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::Type(true, true)));  delete list;  delete term; }
+meta ::= SHOW(tok) term(term) ncond(list).           {                 pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::Type(true, false))); delete list;  delete term; }
+meta ::= HIDE(tok) term(term) COLON.                 { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(),  list, Display::Type(false, true)));               delete term; }
+meta ::= HIDE(tok) term(term).                       { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term->toTerm(),  list, Display::Type(false, false)));              delete term; }
+meta ::= HIDE(tok) term(term) ncond(list) COLON.     {                 pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::Type(false, true)));  delete list; delete term; }
+meta ::= HIDE(tok) term(term) ncond(list).           {                 pCSPParser->add(new Display(tok.loc(), term->toTerm(), *list, Display::Type(false, false))); delete list; delete term; }
+meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). {                 pCSPParser->constTerm(id.index, term); }
 
 
 signed(res) ::= IDENTIFIER(id).              { res = id; }
