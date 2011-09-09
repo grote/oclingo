@@ -157,15 +157,20 @@ std::string GecodeSolver::num2name( unsigned int var)
 
 
 std::vector<int> GecodeSolver::optValues;
+bool             GecodeSolver::optAll = false;
 
 GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                            std::string ICLString, std::string branchVarString,
-                           std::string branchValString) :
+                           std::string branchValString, std::vector<int> optValueVec, bool optAllPar) :
     currentSpace_(0), lazyLearn_(lazyLearn),
     useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true)
-
 {
+    optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
+    if (optValues.size()>0) ++optValues.back(); // last element must also be found
+
+    optAll=optAllPar;
+
     if(ICLString == "bound") ICL = ICL_BND;
     if(ICLString == "domain") ICL = ICL_DOM;
     if(ICLString == "default") ICL = ICL_DEF;
@@ -266,7 +271,6 @@ unsigned int GecodeSolver::assLength(unsigned int index) const
 
 bool GecodeSolver::initialize()
 {
-    std::cout << "initialize" << std::endl;
     dfsSearchEngine_ = 0;
     babSearchEngine_ = 0;
     enumerator_ = 0;
@@ -330,7 +334,7 @@ bool GecodeSolver::initialize()
         }
 
     }
-    constraints_ = newConstraints;
+    constraints_.swap(newConstraints);
 
     for (LParseGlobalConstraintPrinter::GCvec::iterator i = globalConstraints_.begin(); i != globalConstraints_.end(); ++i)
         for (boost::ptr_vector<IndexedGroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
@@ -345,7 +349,7 @@ bool GecodeSolver::initialize()
 
 
     // propagate empty constraint set, maybe some trivial constraints can be fullfilled
-    currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_, &varToIndex_);
+    currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_);
     spaces_.push_back(currentSpace_);
     dl_.push_back(0);
 
@@ -392,7 +396,7 @@ bool GecodeSolver::initialize()
     globalConstraints_.clear();
 
     //std::cout << "status" << std::endl;
-    if(!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+    if(!currentSpace_->failed() && currentSpace_->updateOptValues() && !currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
     {
         // std::cout << "done" << std::endl;
         if (!propagateNewLiteralsToClasp())
@@ -600,7 +604,6 @@ GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
             var = getVariable(b->getString());
             value = a->getInteger();
         }
-        std::cout << var << value << comp << std::endl;
         m[var] = getSet(var, comp, value);
         return m;
     }
@@ -680,7 +683,6 @@ GecodeSolver::DomainMap intersect(const GecodeSolver::DomainMap& a,  const Gecod
     GecodeSolver::DomainMap ret;
     for (GecodeSolver::DomainMap::const_iterator i = a.begin(); i != a.end(); ++i)
     {
-#pragma message "lineare suche draus machen !"
         GecodeSolver::DomainMap::const_iterator found = b.find(i->first);
 
         if (found == b.end())
@@ -1251,8 +1253,7 @@ IntVarArgs GecodeSolver::SearchSpace::iva_;
 
 
 GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
-                                       LParseGlobalConstraintPrinter::GCvec& gcvec,
-                                       std::map<unsigned int, unsigned int>* litToVar) : Space(),
+                                       LParseGlobalConstraintPrinter::GCvec& gcvec) : Space(),
     x_(*this, numVar),
     //b_(*this, constraints.size(), 0, 1),
     b_()
@@ -1334,6 +1335,9 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
         }
     }
 
+    //if (GecodeSolver::optValues.size()>optimize.size())
+    GecodeSolver::optValues.resize(optimize.size(),Int::Limits::max-1);
+    ++optValues.back();
     opts_ = IntVarArray(*this, optimize.size(), Int::Limits::min, Int::Limits::max);
 
 
@@ -1377,29 +1381,42 @@ void GecodeSolver::SearchSpace::constrain(const Space& _b)
     updateOptValues();
 }
 
-void GecodeSolver::SearchSpace::updateOptValues()
+bool GecodeSolver::SearchSpace::updateOptValues()
 {
-    if (opts_.size()>1)
+    if (GecodeSolver::optValues.size()==0)
+        return true;
+    assert(opts_.size() <= GecodeSolver::optValues.size());
+    if (GecodeSolver::optValues.size()>1)
     {
         rel(*this, opts_[0] <= GecodeSolver::optValues[0], ICL);
     }
 
+    BoolVarArray lhs(*this,opts_.size()-1, 0,1);
     for (int i = 0; i < opts_.size()-1; ++i)
     {
-        BoolVar lhs(*this,0,1);
+        rel(*this, opts_[i], IRT_EQ, GecodeSolver::optValues[i], lhs[i], ICL);
+
         BoolVar rhs(*this,0,1);
-        rel(*this, opts_[i], IRT_EQ, GecodeSolver::optValues[i], lhs, ICL);
+
         if (i+1==opts_.size()-1)
-            rel(*this, opts_[i+1], IRT_LE, GecodeSolver::optValues[i+1], rhs, ICL);
+        {
+            if (GecodeSolver::optAll)
+                rel(*this, opts_[i+1], IRT_LQ, GecodeSolver::optValues[i+1], rhs, ICL);
+            else
+                rel(*this, opts_[i+1], IRT_LE, GecodeSolver::optValues[i+1], rhs, ICL);
+        }
         else
             rel(*this, opts_[i+1], IRT_LQ, GecodeSolver::optValues[i+1], rhs, ICL);
-        rel(*this, lhs, BOT_IMP, rhs, 1, ICL);
+        BoolVar allBefore(*this,0,1);
+        rel(*this, BOT_AND, lhs.slice(0,1,i+1), allBefore, ICL);
+        rel(*this, allBefore, BOT_IMP, rhs, 1, ICL);
     }
 
     if (opts_.size()==1)
     {
         rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
     }
+    return !failed();
 
 }
 

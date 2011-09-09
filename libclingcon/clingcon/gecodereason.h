@@ -40,25 +40,25 @@ namespace Clingcon
     class SimpleRA : public ReasonAnalyzer
     {
     public:
-        SimpleRA() : numCalls_(0), sumLength_(0){}
+        SimpleRA() /*: numCalls_(0), sumLength_(0)*/{}
         ~SimpleRA()
         {
-            std::cout << 0 << " propagataions in simple reasons in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            //std::cout << 0 << " propagataions in simple reasons in " << t_.total() << std::endl;
+            //std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
 
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& , const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
         {
-            t_.start();
-            ++numCalls_;
+            //t_.start();
+            //++numCalls_;
             reason.insert(reason.end(), begin, end);
-            sumLength_+=reason.size();
-            t_.stop();
+            //sumLength_+=reason.size();
+            //t_.stop();
         }
     private:
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
+        //Timer         t_;
+        //unsigned int numCalls_;
+        //unsigned int sumLength_;
     };
 
     //irreducible reason set

@@ -330,7 +330,7 @@ void ClingconApp<M>::configureInOut(Streams& s)
 	{
 
 		s.open(generic.input, constStream());
-                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal);
+                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal, clingo.optValues,clingo.optAll);
                 in_.reset(new CSPFromGringo<M>(*this, s,cspsolver_));
 
                                                                            /*clingcon_.cspLazyLearn,

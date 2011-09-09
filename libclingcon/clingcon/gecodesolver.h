@@ -56,9 +56,10 @@ namespace Clingcon {
 
 
         static std::vector<int> optValues;
+        static bool             optAll;
 
         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
-                     std::string ICLString, std::string BranchVar, std::string BranchVal);
+                     std::string ICLString, std::string BranchVar, std::string BranchVal, std::vector<int> optValueVec, bool optAllPar);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -222,8 +223,7 @@ namespace Clingcon {
 
             //TODo, find a better way for litToVar, static, or smart
             SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
-                        LParseGlobalConstraintPrinter::GCvec& gcvec,
-                        std::map<unsigned int, unsigned int>* litToVar);
+                        LParseGlobalConstraintPrinter::GCvec& gcvec);
             SearchSpace(bool share, SearchSpace& sp);
             virtual SearchSpace* copy(bool share);
             virtual void constrain(const Space& b);
@@ -234,7 +234,7 @@ namespace Clingcon {
             void print(const std::vector<std::string>& variables) const;
             //Clasp::LitVec getAssignment(const Clasp::LitVec& as);
             Value getValueOfConstraint(const Clasp::Var& i);
-            void updateOptValues(); // update opt values with static data from GecodeSolver
+            bool updateOptValues(); // update opt values with static data from GecodeSolver
 
             // delete litToVar and all shared memory between the spaces
             void cleanAll();

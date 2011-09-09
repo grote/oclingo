@@ -38,22 +38,22 @@ namespace Clingcon
     class SimpleCA : public ConflictAnalyzer
     {
     public:
-        SimpleCA() : numCalls_(0), sumLength_(0){}
+        SimpleCA() /*: numCalls_(0), sumLength_(0)*/{}
         ~SimpleCA()
         {
-            std::cout << 0 << " propagations in simple Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            //std::cout << 0 << " propagations in simple Conflict in " << t_.total() << std::endl;
+            //std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
-        virtual void shrink(Clasp::LitVec& conf)
+        virtual void shrink(Clasp::LitVec& /*conf*/)
         {
-            ++numCalls_;
-            t_.start();
-            sumLength_+=conf.size();
-            t_.stop();
+            //++numCalls_;
+            //t_.start();
+            //sumLength_+=conf.size();
+            //t_.stop();
         }
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
+        //Timer         t_;
+        //unsigned int numCalls_;
+        //unsigned int sumLength_;
     };
 
     class LinearIISCA : public ConflictAnalyzer

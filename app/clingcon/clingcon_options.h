@@ -65,6 +65,8 @@ struct ClingconOptions
         std::string      cspBranchVar;     // Default: "SIZE_MIN"
         std::string      cspBranchVal;     // Default: "SPLIT_MIN"
         bool             cspLazyLearn;     // Default: true
+        std::vector<int> optValues;        // Default: empty
+        bool             optAll;           // Default: false
 
 	CSPMode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
@@ -146,7 +148,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                         "      bound  : Bounds propagation or consistency\n"
                         "      domain : Domain propagation or consistency\n"
                         "      default: The default consistency for a constraint\n");
-        csp.addOptions()("csp-branch-var", storeTo(cspBranchVar),
+        csp.addOptions()("csp-branch-var", storeTo(cspBranchVar)->defaultValue("SIZE_MIN"),
                          "Sets the integer branch variable\n"
                          "      NONE           : first unassigned\n"
                                  "      RND            : randomly\n"
@@ -158,7 +160,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                  "      MIN_MAX        : largest minimum value\n"
                                  "      MAX_MIN        : smallest maximum value\n"
                                  "      MAX_MAX        : largest maximum value\n"
-                                 "      SIZE_MIN       : smallest domain size\n"
+                                 "      SIZE_MIN       : smallest domain size(default)\n"
                                  "      SIZE_MAX       : largest domain size\n"
                                  "      SIZE_DEGREE_MIN: smallest domain size divided by degree\n"
                                  "      SIZE_DEGREE_MAX: largest domain size divided by degree\n"
@@ -169,8 +171,8 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                  "      REGRET_MAX_MIN : smallest maximum-regret\n"
                                  "      REGRET_MAX_MAX : largest maximum-regret\n"
                         )
-                        ("csp-branch-val", storeTo(cspBranchVal), "Sets the integer branch value\n"
-                                 "      MIN          : smallest value\n"
+                        ("csp-branch-val", storeTo(cspBranchVal)->defaultValue("MIN"), "Sets the integer branch value\n"
+                                 "      MIN          : smallest value(default)\n"
                                  "      MED          : greatest value not greater than the median\n"
                                  "      MAX          : largest value\n"
                                  "      RND          : random value\n"
@@ -184,7 +186,11 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                  "                     and largest value\n"
                                  "      VALUES_MIN   : all values starting from smallest\n"
                                  "      VALUES_MAX   : all values starting from largest\n"
-                        );
+                        )
+                        ("csp-opt-value"  , ProgramOptions::value<std::vector<int> >(),
+                                "Initialize csp objective function(s)\n"
+                                "      Valid:   <n1[,n2,n3,...]>\n")
+                        ("csp-opt-all"    , bool_switch(&optAll)->defaultValue(false), "Compute all optimal models");
 
 
         root.addOptions(csp,true);
@@ -207,6 +213,10 @@ bool ClingconOptions<M>::validateOptions(ProgramOptions::OptionValues& values, G
 	if(claspMode)       mode = CSPCLASP;
 	else if(clingconMode) mode = CLINGCON;
 	else                mode = ICLINGCON;
+        if (values.count("csp-opt-value") != 0) {
+                const std::vector<int>& vals = ProgramOptions::value_cast<std::vector<int> >(values["csp-opt-value"]);
+                optValues.assign(vals.begin(), vals.end());
+        }
 	return true;
 }
 

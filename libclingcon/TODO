@@ -11,6 +11,7 @@ DONE
 - getAssignment() function optimized via callbacks DONE
 - reduced csp-assignment to literals propagated from clasp, results in smaller reasons/conflicts
 - disabled lookahead and --no-lookback
+- support for  csp-opt-val and csp-opt-all
 
 
 TODO
