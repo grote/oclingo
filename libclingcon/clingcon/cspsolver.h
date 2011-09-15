@@ -68,7 +68,7 @@ private:
 			 *
 			 **/
                         virtual void setDomain(int lower, int upper);
-                        virtual void addConstraint(Constraint c, int uid);
+                        virtual void addConstraint(Constraint& c, int uid);
                         virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
                         virtual bool hasOptimizeStm() const;
                         //virtual void addDomain(const std::string& var, int lower, int upper);

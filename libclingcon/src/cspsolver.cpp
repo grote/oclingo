@@ -64,9 +64,10 @@ const std::vector<std::string>&  CSPSolver::getVariables() const
     return variables_;
 }
 
-void CSPSolver::addConstraint(Constraint c, int uid)
+void CSPSolver::addConstraint(Constraint& c, int uid)
 {
-        constraints_[uid] = new Clingcon::Constraint(c);
+    constraints_[uid] = new Clingcon::Constraint(c);
+
 }
 
 void CSPSolver::addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec)

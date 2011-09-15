@@ -58,8 +58,21 @@ namespace Clingcon {
         static std::vector<int> optValues;
         static bool             optAll;
 
+        enum Mode
+        {
+            SIMPLE,
+            LINEAR,
+            LINEAR_FWD,
+            LINEAR_GROUPED,
+            SCC,
+            LOG,
+            RANGE
+
+        };
+
         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
-                     std::string ICLString, std::string BranchVar, std::string BranchVal, std::vector<int> optValueVec, bool optAllPar);
+                     const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
+                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -180,6 +193,9 @@ namespace Clingcon {
         ConflictAnalyzer* conflictAnalyzer_;
         ReasonAnalyzer*   reasonAnalyzer_;
         bool              recording_;  // internal state if i should record propagations of gecode
+        bool              initialLookahead_;
+        Mode              reduceReason_;
+        Mode              reduceConflict_;
 
         class CSPDummy : public Clasp::Constraint
         {
@@ -214,6 +230,7 @@ namespace Clingcon {
         {
         public:
             friend class GecodeSolver;
+            friend class Linear2IRSRA;
             enum Value
             {
                 BFREE,
@@ -225,6 +242,7 @@ namespace Clingcon {
             SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
                         LParseGlobalConstraintPrinter::GCvec& gcvec);
             SearchSpace(bool share, SearchSpace& sp);
+            virtual ~SearchSpace(){}
             virtual SearchSpace* copy(bool share);
             virtual void constrain(const Space& b);
             void propagate(const Clasp::LitVec::const_iterator& lvstart, const Clasp::LitVec::const_iterator& lvend);

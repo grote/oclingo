@@ -38,22 +38,31 @@ namespace Clingcon
     class SimpleCA : public ConflictAnalyzer
     {
     public:
-        SimpleCA() /*: numCalls_(0), sumLength_(0)*/{}
+        SimpleCA() : numCalls_(0), sumLength_(0){}
         ~SimpleCA()
         {
-            //std::cout << 0 << " propagations in simple Conflict in " << t_.total() << std::endl;
-            //std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << 0 << " propagations in simple Conflict in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
-        virtual void shrink(Clasp::LitVec& /*conf*/)
+        virtual void shrink(Clasp::LitVec& conf)
         {
-            //++numCalls_;
-            //t_.start();
-            //sumLength_+=conf.size();
-            //t_.stop();
+            /*
+            std::cout << "Conflicting with: " << std::endl;
+            for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
+            {
+                if (i->sign()) std::cout << "f ";
+                else std::cout << "t ";
+                std::cout << g_->num2name(i->var()) << std::endl;
+            }
+        */
+            ++numCalls_;
+            t_.start();
+            sumLength_+=conf.size();
+            t_.stop();
         }
-        //Timer         t_;
-        //unsigned int numCalls_;
-        //unsigned int sumLength_;
+        Timer         t_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
     };
 
     class LinearIISCA : public ConflictAnalyzer
@@ -63,7 +72,7 @@ namespace Clingcon
         ~LinearIISCA()
         {
             std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);
@@ -78,21 +87,41 @@ namespace Clingcon
     class ExpIISCA : public ConflictAnalyzer
     {
     public:
-        ExpIISCA(GecodeSolver* g) : g_(g){}
+        ExpIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0)
+        {}
+        ~ExpIISCA()
+        {
+            std::cout << props_ << " propagations in exp Conflict in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+        }
         virtual void shrink(Clasp::LitVec& conflict);
 
     private:
         GecodeSolver* g_;
+        Timer         t_;
+        unsigned int  props_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
+
     };
 
     class FwdLinearIISCA : public ConflictAnalyzer
     {
     public:
-        FwdLinearIISCA(GecodeSolver* g) : g_(g){}
+        FwdLinearIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0){}
+        ~FwdLinearIISCA()
+        {
+            std::cout << props_ << " propagations in fwdlin Conflict in " << t_.total() << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+        }
         virtual void shrink(Clasp::LitVec& conflict);
 
     private:
         GecodeSolver* g_;
+        Timer         t_;
+        unsigned int  props_;
+        unsigned int numCalls_;
+        unsigned int sumLength_;
     };
 
     class UnionIISCA : public ConflictAnalyzer
@@ -102,7 +131,7 @@ namespace Clingcon
         ~UnionIISCA()
         {
             std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);
@@ -122,7 +151,7 @@ namespace Clingcon
         ~RangeCA()
         {
             std::cout << props_ << " propagations in range Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);

@@ -32,6 +32,99 @@
 namespace Clingcon
 {
 
+
+
+class ReifWait2 : public Propagator {
+public:
+    typedef void (Space::* MemFun)(void);
+protected:
+  /// View to wait for becoming assigned
+  Int::BoolView x;
+  /// Continuation to execute
+
+  MemFun c;
+  //void (*c)(Space&);
+  /// Constructor for creation
+  ReifWait2(Space& home, Int::BoolView x, MemFun c0);
+  /// Constructor for cloning \a p
+  ReifWait2(Space& home, bool shared, ReifWait2& p);
+
+  static Space* solver;
+  // index to the boolvar array, index > 0 means boolvar is true,
+  // index < 0 means boolvar is false
+  // if true, index-1 is index
+  // if false, index+1 is index
+public:
+  /// Perform copying during cloning
+  virtual Actor* copy(Space& home, bool share);
+  /// Const function (defined as low unary)
+  virtual PropCost cost(const Space& home, const ModEventDelta& med) const;
+  /// Perform propagation
+  virtual ExecStatus propagate(Space& home, const ModEventDelta& med);
+  /// Post propagator that waits until \a x becomes assigned and then executes \a c
+  static ExecStatus post(Space& home, Int::BoolView x, MemFun c);
+  /// Delete propagator and return its size
+  virtual size_t dispose(Space& home);
+};
+
+Space* ReifWait2::solver = 0;
+
+void reifwait2(Space& home, BoolVar x, ReifWait2::MemFun c) {
+    if (home.failed()) return;
+    GECODE_ES_FAIL(ReifWait2::post(home, x,c));
+}
+
+
+ReifWait2::ReifWait2(Space& home, Int::BoolView x0, MemFun c0)
+    : Propagator(home), x(x0), c(c0) {
+    x.subscribe(home,*this,PC_GEN_ASSIGNED);
+}
+
+ReifWait2::ReifWait2(Space& home, bool shared, ReifWait2& p)
+    : Propagator(home,shared,p), c(p.c){
+    x.update(home,shared,p.x);
+}
+
+Actor*
+ReifWait2::copy(Space& home, bool share) {
+    return new (home) ReifWait2(home,share,*this);
+}
+PropCost
+ReifWait2::cost(const Space&, const ModEventDelta&) const {
+    return PropCost::unary(PropCost::LO);
+}
+
+ExecStatus
+ReifWait2::propagate(Space& home, const ModEventDelta&) {
+    assert(x.assigned());
+    if (x.status() == Int::BoolVarImp::ONE)
+        (solver->*c)();
+    else
+        (solver->*c)();
+    return home.failed() ? ES_FAILED : home.ES_SUBSUMED(*this);
+}
+ExecStatus
+ReifWait2::post(Space& home, Int::BoolView x, MemFun c) {
+    solver = &home;
+    if (x.assigned()) {
+        if (x.status() == Int::BoolVarImp::ONE)
+            (solver->*c)();
+        else
+            (solver->*c)();
+        return home.failed() ? ES_FAILED : ES_OK;
+    } else {
+        (void) new (home) ReifWait2(home,x,c);
+        return ES_OK;
+    }
+}
+
+size_t
+ReifWait2::dispose(Space& home) {
+    x.cancel(home,*this,PC_GEN_ASSIGNED);
+    (void) Propagator::dispose(home);
+    return sizeof(*this);
+}
+
 void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
     ++numCalls_;
@@ -134,6 +227,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
 void ExpIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
     t_.start();
+    ++numCalls_;
     Clasp::LitVec::const_iterator end = ends;
     if (end-begin==0)
     {
@@ -248,14 +342,12 @@ void ExpIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
                 //this is enough, but we have to propagate "original", to get a fresh clone out of it
                 if (end-begin>1 && original->status() && original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
                 {
-                    props_++;
                     assert(!original->failed());
                     delete tester;
                     tester=0;
                     //we already checked that we can derive the literal, this is enough, save the rest of the work
                     break;
                 }
-                props_++;
                 --end;
                 upperBound=end-begin;
                 num=1;
@@ -276,16 +368,20 @@ void ExpIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     delete original;
     g_->setRecording(true);
     t_.stop();
+    sumLength_+=reason.size();
 }
 
 
 
 void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begins, const Clasp::LitVec::const_iterator& ends)
 {
+    t_.start();
+    ++numCalls_;
     Clasp::LitVec::const_iterator begin = begins;
     Clasp::LitVec::const_iterator end = ends;
     if (end-begin==0)
     {
+        t_.stop();
         return;
     }
 
@@ -295,6 +391,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
     original = g_->getRootSpace();
     if (!original)
     {
+        t_.stop();
         return;
     }
 
@@ -312,6 +409,8 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
             {
                 delete original;
                 g_->setRecording(true);
+                t_.stop();
+                sumLength_+=reason.size();
                 return;
             }
         }
@@ -320,6 +419,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
         tester->propagate(begin+1, end);
 
         tester->status();
+        ++props_;
 
         assert(!tester->failed());
         // if reason still derives l we can remove the last one
@@ -346,6 +446,8 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
 
     delete original;
     g_->setRecording(true);
+    t_.stop();
+    sumLength_+=reason.size();
 }
 
 
@@ -1193,7 +1295,6 @@ size_t Linear2IRSRA::getIndexBelowDL(uint32 level)
 }
 
 
-
 void Linear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
     t_.start();
@@ -1206,6 +1307,8 @@ void Linear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, cons
         t_.stop();
         return;
     }
+
+
 
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
@@ -1248,20 +1351,17 @@ void Linear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, cons
     {
         while(end>start)
         {
-            //if (end==ends && end-start==1)//first time and only one variable on highest level, this one must be be inside
-            //    goto Found;
-
             tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-
-
+            reifwait2(*tester,tester->b_[g_->varToIndex(l.var())],&Space::fail);
             tester->propagate(start,end-1);
             tester->propagate(reason.begin(),reason.end());
 
-
             tester->status();
+
             props_++;
-            assert(!tester->failed());
-            if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+            //assert(!tester->failed());
+           // if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+            if (tester->failed())
             {
                 // still reason, throw it away, it did not contribute to the reason
                 //std::cout << "no reason" << std::endl;
@@ -1270,6 +1370,7 @@ void Linear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, cons
             else
             {
                 Found:
+
                 original->propagate(*(end-1));
                 reason.push_back(*(end-1));
                 //std::cout << "reason" << std::endl;

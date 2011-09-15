@@ -16,7 +16,10 @@ DONE
 
 TODO
 
+- lexical ordering constraint for minimization ?
+- check if opt-all returns all solutions via BAB!!! or if i need to start another search!
 - remove warnings
+- remove memory leaks
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
 - write Makefile
@@ -43,6 +46,7 @@ TODO
 - do initial lookahead of gecode constraints
 - order constraints to the number of variables to speed up initial propagation
 - force statt setconflict benutzen, spart Codepath!?
+- look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation"
 
 
 BUGS

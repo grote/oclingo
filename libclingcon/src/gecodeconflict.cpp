@@ -116,7 +116,6 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
             original->propagate(*(conflict.end()-1));
             newConflict.insert(newConflict.end(), conflict.end()-1, conflict.end());
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            ++props_;
             if (conflict.size()>1 && (original->failed() || original->status()==Gecode::SS_FAILED))
             {
                 delete original;
@@ -139,9 +138,12 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
 
 void ExpIISCA::shrink(Clasp::LitVec& conflict)
 {
+    ++numCalls_;
+    t_.start();
 
     if (conflict.size()==0)
     {
+        t_.stop();
         return;
     }
     // copy the very first searchspace
@@ -151,6 +153,7 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
     if (!original)// geht nicht, da gerrade kopiert wurde ist er stable
     {
         conflict.clear();
+        t_.stop();
         return;
     }
 
@@ -186,6 +189,7 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
         tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
         tester->propagate(conflict.begin(), conflict.end()-num);
 
+        ++props_;
         if (tester->failed() || tester->status()==Gecode::SS_FAILED)
         {
             // still failing, throw it away, it did not contribute to the conflict
@@ -227,13 +231,18 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
     delete original;
     conflict.swap(newConflict);
     g_->setRecording(true);
+    t_.stop();
+    sumLength_+=conflict.size();
 }
 
 
 void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 {
+    ++numCalls_;
+    t_.start();
     if (conflict.size()==0)
     {
+        t_.stop();
         return;
     }
     // copy the very first searchspace
@@ -243,6 +252,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
     if (!original)// geht nicht, da gerrade kopiert wurde ist er stable
     {
         conflict.clear();
+        t_.stop();
         return;
     }
 
@@ -255,6 +265,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
         tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
         tester->propagate(conflict.begin()+1, conflict.end());
 
+        ++props_;
         if (tester->failed() || tester->status()==Gecode::SS_FAILED)
         {
             // still failing, throw it away, it did not contribute to the conflict
@@ -279,6 +290,8 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
     delete original;
     conflict.swap(newConflict);
     g_->setRecording(true);
+    t_.stop();
+    sumLength_+=conflict.size();
 }
 
 

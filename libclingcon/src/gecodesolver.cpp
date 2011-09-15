@@ -33,104 +33,13 @@
 #include <gecode/kernel/wait.hh>
 #include <clingcon/gecodeconflict.h>
 #include <clingcon/gecodereason.h>
+#include <clingcon/gecodereifwait.h>
 
 //#define DEBUGTEXT
 
 using namespace Gecode;
 using namespace Clasp;
 namespace Clingcon {
-
-  class ReifWait : public Propagator {
-  public:
-      typedef void (GecodeSolver::* MemFun)(int);
-  protected:
-    /// View to wait for becoming assigned
-    Int::BoolView x;
-    /// Continuation to execute
-
-    MemFun c;
-    //void (*c)(Space&);
-    /// Constructor for creation
-    ReifWait(Space& home, Int::BoolView x, MemFun c0, int index);
-    /// Constructor for cloning \a p
-    ReifWait(Space& home, bool shared, ReifWait& p);
-
-    static GecodeSolver* solver;
-    // index to the boolvar array, index > 0 means boolvar is true,
-    // index < 0 means boolvar is false
-    // if true, index-1 is index
-    // if false, index+1 is index
-    int index_;
-  public:
-    /// Perform copying during cloning
-    virtual Actor* copy(Space& home, bool share);
-    /// Const function (defined as low unary)
-    virtual PropCost cost(const Space& home, const ModEventDelta& med) const;
-    /// Perform propagation
-    virtual ExecStatus propagate(Space& home, const ModEventDelta& med);
-    /// Post propagator that waits until \a x becomes assigned and then executes \a c
-    static ExecStatus post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index);
-    /// Delete propagator and return its size
-    virtual size_t dispose(Space& home);
-  };
-
-  GecodeSolver* ReifWait::solver = 0;
-
-  void reifwait(Home home, GecodeSolver* csps, BoolVar x, ReifWait::MemFun c,
-         int index, IntConLevel) {
-      if (home.failed()) return;
-      GECODE_ES_FAIL(ReifWait::post(home,csps, x,c, index));
-    }
-
-    forceinline
-    ReifWait::ReifWait(Space& home, Int::BoolView x0, MemFun c0, int index)
-        : Propagator(home), x(x0), c(c0), index_(index) {
-      x.subscribe(home,*this,PC_GEN_ASSIGNED);
-    }
-    forceinline
-    ReifWait::ReifWait(Space& home, bool shared, ReifWait& p)
-    : Propagator(home,shared,p), c(p.c), index_(p.index_) {
-      x.update(home,shared,p.x);
-    }
-
-    Actor*
-    ReifWait::copy(Space& home, bool share) {
-      return new (home) ReifWait(home,share,*this);
-    }
-    PropCost
-    ReifWait::cost(const Space&, const ModEventDelta&) const {
-      return PropCost::unary(PropCost::LO);
-    }
-    ExecStatus
-    ReifWait::propagate(Space& home, const ModEventDelta&) {
-      assert(x.assigned());
-      if (x.status() == Int::BoolVarImp::ONE)
-        (solver->*c)(index_+1);
-      else
-        (solver->*c)(-index_-1);
-      return home.failed() ? ES_FAILED : home.ES_SUBSUMED(*this);
-    }
-    ExecStatus
-    ReifWait::post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index) {
-        solver = csps;
-      if (x.assigned()) {
-          if (x.status() == Int::BoolVarImp::ONE)
-            (solver->*c)(index+1);
-          else
-            (solver->*c)(-index-1);
-        return home.failed() ? ES_FAILED : ES_OK;
-      } else {
-        (void) new (home) ReifWait(home,x,c,index);
-        return ES_OK;
-      }
-    }
-
-    size_t
-    ReifWait::dispose(Space& home) {
-      x.cancel(home,*this,PC_GEN_ASSIGNED);
-      (void) Propagator::dispose(home);
-      return sizeof(*this);
-    }
 
 
 Gecode::IntConLevel ICL;
@@ -160,11 +69,13 @@ std::vector<int> GecodeSolver::optValues;
 bool             GecodeSolver::optAll = false;
 
 GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
-                           std::string ICLString, std::string branchVarString,
-                           std::string branchValString, std::vector<int> optValueVec, bool optAllPar) :
+                           const std::string& ICLString, const std::string& branchVarString,
+                           const std::string& branchValString, std::vector<int> optValueVec,
+                           bool optAllPar, bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict) :
     currentSpace_(0), lazyLearn_(lazyLearn),
     useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), dfsSearchEngine_(0), babSearchEngine_(0),
-    dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true)
+    dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
+    initialLookahead_(initialLookahead)
 {
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
     if (optValues.size()>0) ++optValues.back(); // last element must also be found
@@ -176,37 +87,53 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if(ICLString == "default") ICL = ICL_DEF;
     if(ICLString == "value") ICL = ICL_VAL;
 
-    if(branchVarString == "NONE") branchVar = INT_VAR_NONE;
-    if(branchVarString == "RND") branchVar = INT_VAR_RND;
-    if(branchVarString == "DEGREE_MIN") branchVar = INT_VAR_DEGREE_MIN;
-    if(branchVarString == "DEGREE_MAX") branchVar = INT_VAR_DEGREE_MAX;
-    if(branchVarString == "AFC_MIN") branchVar = INT_VAR_AFC_MIN;
-    if(branchVarString == "AFC_MAX") branchVar = INT_VAR_AFC_MAX;
-    if(branchVarString == "MIN_MIN") branchVar = INT_VAR_MIN_MIN;
-    if(branchVarString == "MIN_MAX") branchVar = INT_VAR_MIN_MAX;
-    if(branchVarString == "MAX_MIN") branchVar = INT_VAR_MAX_MIN;
-    if(branchVarString == "MAX_MAX") branchVar = INT_VAR_MAX_MAX;
-    if(branchVarString == "SIZE_MIN") branchVar = INT_VAR_SIZE_MIN;
-    if(branchVarString == "SIZE_MAX") branchVar = INT_VAR_SIZE_MAX;
-    if(branchVarString == "DEGREE_MIN") branchVar = INT_VAR_SIZE_DEGREE_MIN;
-    if(branchVarString == "DEGREE_MAX") branchVar = INT_VAR_SIZE_DEGREE_MAX;
-    if(branchVarString == "SIZE_AFC_MIN") branchVar = INT_VAR_SIZE_AFC_MIN;
-    if(branchVarString == "SIZE_AFC_MAX") branchVar = INT_VAR_SIZE_AFC_MAX;
-    if(branchVarString == "REGRET_MIN_MIN") branchVar = INT_VAR_REGRET_MIN_MIN;
-    if(branchVarString == "REGRET_MIN_MAX") branchVar = INT_VAR_REGRET_MIN_MAX;
-    if(branchVarString == "REGRET_MAX_MIN") branchVar = INT_VAR_REGRET_MAX_MIN;
-    if(branchVarString == "REGRET_MAX_MAX") branchVar = INT_VAR_REGRET_MAX_MAX;
+    if(branchVarString == "none") branchVar = INT_VAR_NONE;
+    if(branchVarString == "rnd") branchVar = INT_VAR_RND;
+    if(branchVarString == "degree-min") branchVar = INT_VAR_DEGREE_MIN;
+    if(branchVarString == "degreee-max") branchVar = INT_VAR_DEGREE_MAX;
+    if(branchVarString == "afc-min") branchVar = INT_VAR_AFC_MIN;
+    if(branchVarString == "afc-max") branchVar = INT_VAR_AFC_MAX;
+    if(branchVarString == "min-min") branchVar = INT_VAR_MIN_MIN;
+    if(branchVarString == "min-max") branchVar = INT_VAR_MIN_MAX;
+    if(branchVarString == "max-min") branchVar = INT_VAR_MAX_MIN;
+    if(branchVarString == "max-max") branchVar = INT_VAR_MAX_MAX;
+    if(branchVarString == "size-min") branchVar = INT_VAR_SIZE_MIN;
+    if(branchVarString == "size-max") branchVar = INT_VAR_SIZE_MAX;
+    if(branchVarString == "size-degree-min") branchVar = INT_VAR_SIZE_DEGREE_MIN;
+    if(branchVarString == "size-degree-max") branchVar = INT_VAR_SIZE_DEGREE_MAX;
+    if(branchVarString == "size-afc-min") branchVar = INT_VAR_SIZE_AFC_MIN;
+    if(branchVarString == "size-afc-max") branchVar = INT_VAR_SIZE_AFC_MAX;
+    if(branchVarString == "regret-min-min") branchVar = INT_VAR_REGRET_MIN_MIN;
+    if(branchVarString == "regret-min-max") branchVar = INT_VAR_REGRET_MIN_MAX;
+    if(branchVarString == "regret-max-min") branchVar = INT_VAR_REGRET_MAX_MIN;
+    if(branchVarString == "regret-max-max") branchVar = INT_VAR_REGRET_MAX_MAX;
 
-    if(branchValString == "MIN") branchVal = INT_VAL_MIN;
-    if(branchValString == "MED") branchVal = INT_VAL_MED;
-    if(branchValString == "MAX") branchVal = INT_VAL_MAX;
-    if(branchValString == "RND") branchVal = INT_VAL_RND;
-    if(branchValString == "SPLIT_MIN") branchVal = INT_VAL_SPLIT_MIN;
-    if(branchValString == "SPLIT_MAX") branchVal = INT_VAL_SPLIT_MAX;
-    if(branchValString == "RANGE_MIN") branchVal = INT_VAL_RANGE_MIN;
-    if(branchValString == "RANGE_MAX") branchVal = INT_VAL_RANGE_MAX;
-    if(branchValString == "VALUES_MIN") branchVal = INT_VALUES_MIN;
-    if(branchValString == "VALUES_MAX") branchVal = INT_VALUES_MAX;
+    if(branchValString == "min") branchVal = INT_VAL_MIN;
+    if(branchValString == "med") branchVal = INT_VAL_MED;
+    if(branchValString == "max") branchVal = INT_VAL_MAX;
+    if(branchValString == "rnd") branchVal = INT_VAL_RND;
+    if(branchValString == "split-min") branchVal = INT_VAL_SPLIT_MIN;
+    if(branchValString == "split-max") branchVal = INT_VAL_SPLIT_MAX;
+    if(branchValString == "range-min") branchVal = INT_VAL_RANGE_MIN;
+    if(branchValString == "range-max") branchVal = INT_VAL_RANGE_MAX;
+    if(branchValString == "values-min") branchVal = INT_VALUES_MIN;
+    if(branchValString == "values-max") branchVal = INT_VALUES_MAX;
+
+    if (reduceReason == "simple")         reduceReason_ = SIMPLE;
+    if (reduceReason == "linear")         reduceReason_ = LINEAR;
+    if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
+    if (reduceReason == "linear-grouped") reduceReason_ = LINEAR_GROUPED;
+    if (reduceReason == "scc")            reduceReason_ = SCC;
+    if (reduceReason == "log")            reduceReason_ = LOG;
+    if (reduceReason == "range")          reduceReason_ = RANGE;
+
+
+    if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
+    if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
+    if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "log")            reduceConflict_ = LOG;
+    if (reduceConflict == "range")          reduceConflict_ = RANGE;
+
 }
 
 GecodeSolver::~GecodeSolver()
@@ -225,6 +152,7 @@ GecodeSolver::~GecodeSolver()
     delete reasonAnalyzer_;
     delete dfsSearchEngine_;
     delete babSearchEngine_;
+    delete enumerator_;
 }
 
 
@@ -334,6 +262,7 @@ bool GecodeSolver::initialize()
         }
 
     }
+    constraints_.clear();
     constraints_.swap(newConstraints);
 
     for (LParseGlobalConstraintPrinter::GCvec::iterator i = globalConstraints_.begin(); i != globalConstraints_.end(); ++i)
@@ -354,6 +283,31 @@ bool GecodeSolver::initialize()
     dl_.push_back(0);
 
 
+
+    switch(reduceConflict_)
+    {
+        case SIMPLE:         conflictAnalyzer_ = new SimpleCA(this); break;
+        case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
+        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
+        case LINEAR_GROUPED: assert(false); break;
+        case SCC:            assert(false); break;
+        case LOG:            conflictAnalyzer_ = new ExpIISCA(this); break;
+        case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
+        default: assert(false);
+    };
+
+    switch(reduceReason_)
+    {
+        case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
+        case LINEAR:         reasonAnalyzer_ = new Linear2IRSRA(this); break;
+        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
+        case LINEAR_GROUPED: reasonAnalyzer_ = new Linear2GroupedIRSRA(this); break;
+        case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
+        case LOG:            reasonAnalyzer_ = new ExpIRSRA(this); break;
+        case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
+        default: assert(false);
+    };
+/*
     //conflictAnalyzer_ = new UnionIISCA(this);
     //conflictAnalyzer_ = new FwdLinearIISCA(this);
     //conflictAnalyzer_ = new ExpIISCA(this);
@@ -379,15 +333,7 @@ bool GecodeSolver::initialize()
     //reasonAnalyzer_ = new Linear2GroupedIRSRA(this);
 
     //reasonAnalyzer_ = new FwdLinear2IRSRA(this);
-
-
-
-
-
-    bool initialLookAhead=false;
-
-
-
+*/
 
     //TODO: 1. check if already failed through initialitation
     for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
@@ -406,7 +352,7 @@ bool GecodeSolver::initialize()
         }
         else
         {
-            if (initialLookAhead)
+            if (initialLookahead_)
             {
                 //initial lookahead
 
@@ -852,7 +798,6 @@ bool GecodeSolver::nextAnswer()
             GecodeSolver::optValues.push_back(enumerator_->opts_[i].val());
 
     }
-//#pragma message "This does only work with restart on model if we do minimization, because otherwise we would have to overwrite the enumerator and backtrack in case of a model to a level where the minimize statement is not violated anymore"
     return (enumerator_ != NULL);
 }
 
@@ -1337,7 +1282,8 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
 
     //if (GecodeSolver::optValues.size()>optimize.size())
     GecodeSolver::optValues.resize(optimize.size(),Int::Limits::max-1);
-    ++optValues.back();
+    if (optValues.size()>0)
+        ++optValues.back();
     opts_ = IntVarArray(*this, optimize.size(), Int::Limits::min, Int::Limits::max);
 
 
