@@ -286,7 +286,7 @@ bool GecodeSolver::initialize()
 
     switch(reduceConflict_)
     {
-        case SIMPLE:         conflictAnalyzer_ = new SimpleCA(this); break;
+        case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
         case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
         case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
         case LINEAR_GROUPED: assert(false); break;
