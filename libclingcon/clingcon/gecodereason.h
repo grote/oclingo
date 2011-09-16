@@ -40,15 +40,17 @@ namespace Clingcon
     class SimpleRA : public ReasonAnalyzer
     {
     public:
-        SimpleRA() : numCalls_(0), sumLength_(0){}
+        SimpleRA() : numCalls_(0), sumLength_(0), oldLength_(0){}
         ~SimpleRA()
         {
             std::cout << 0 << " propagataions in simple reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
 
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& , const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
         {
+            oldLength_+=end-begin;
             t_.start();
             ++numCalls_;
             reason.insert(reason.end(), begin, end);
@@ -59,6 +61,7 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     //irreducible reason set
@@ -69,12 +72,13 @@ namespace Clingcon
     class LinearIRSRA : public ReasonAnalyzer
     {
     public:
-        LinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        LinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearIRSRA()
         {
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -84,17 +88,19 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     class ExpIRSRA : public ReasonAnalyzer
     {
     public:
-        ExpIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        ExpIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~ExpIRSRA()
         {
             std::cout << props_ << " propagataions in exp reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -104,17 +110,19 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     class FwdLinearIRSRA : public ReasonAnalyzer
     {
     public:
-        FwdLinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        FwdLinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~FwdLinearIRSRA()
         {
             std::cout << props_ << " propagataions in fwd reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -124,17 +132,19 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     class FwdLinear2IRSRA : public ReasonAnalyzer
     {
     public:
-        FwdLinear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        FwdLinear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~FwdLinear2IRSRA()
         {
             std::cout << props_ << " propagataions in fwdlinear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -144,6 +154,7 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
 
@@ -156,6 +167,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in scc reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -167,17 +179,19 @@ namespace Clingcon
         std::map<unsigned int,VarSet> varSets_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     class UnionIRSRA : public ReasonAnalyzer
     {
     public:
-        UnionIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        UnionIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~UnionIRSRA()
         {
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -187,17 +201,19 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
     class Union2IRSRA : public ReasonAnalyzer
     {
     public:
-        Union2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        Union2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~Union2IRSRA()
         {
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -207,6 +223,7 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
 
@@ -220,6 +237,7 @@ namespace Clingcon
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << full_ << " complete reasons" << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
 
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
@@ -233,6 +251,7 @@ namespace Clingcon
         unsigned int numCalls_;
         unsigned int sumLength_;
         unsigned int full_;
+        unsigned int oldLength_;
     };
 
 
@@ -240,12 +259,13 @@ namespace Clingcon
     class RangeIRSRA : public ReasonAnalyzer
     {
     public:
-        RangeIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        RangeIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~RangeIRSRA()
         {
             std::cout << props_ << " propagataions in range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -255,6 +275,7 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
 
@@ -281,12 +302,13 @@ namespace Clingcon
     class Linear2IRSRA : public ReasonAnalyzer
     {
     public:
-        Linear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        Linear2IRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~Linear2IRSRA()
         {
             std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/sumLength_ << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -299,18 +321,20 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
 
     class Linear2GroupedIRSRA : public ReasonAnalyzer
     {
     public:
-        Linear2GroupedIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0){}
+        Linear2GroupedIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~Linear2GroupedIRSRA()
         {
             std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
+            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -323,6 +347,7 @@ namespace Clingcon
         Timer         t_;
         unsigned int numCalls_;
         unsigned int sumLength_;
+        unsigned int oldLength_;
     };
 
 

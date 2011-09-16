@@ -359,18 +359,19 @@ bool GecodeSolver::initialize()
                 for (std::map<unsigned int, unsigned int>::const_iterator i = varToIndex_.begin(); i != varToIndex_.end(); ++i)
                 {
                     Clasp::Literal test(i->first,false);
+
                     for (unsigned int both = 0; both < 2; ++both)
                     {
                         derivedLits_.clear();
                         SearchSpace* tester = getRootSpace();
-                        Clasp::LitVec vec;
 
-                        vec.push_back(test);
-                        tester->propagate(vec.begin(), vec.end());
+                        tester->propagate(test);
                         if (tester->failed() || tester->status()==SS_FAILED)
                         {
+
                             if (!s_->force(~test,Antecedent()))
                             {
+
                                 propQueue_.push_back(negLit(0));
                                 return false;
                             }
@@ -381,6 +382,9 @@ bool GecodeSolver::initialize()
                             ClauseCreator gc(s_);
                             for (Clasp::LitVec::const_iterator j = derivedLits_.begin(); j != derivedLits_.end();++j)
                             {
+                                if (*j==test)
+                                    continue;
+
                                 gc.start();
                                 gc.add(~test);
                                 gc.add(*j);

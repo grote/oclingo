@@ -127,6 +127,7 @@ ReifWait2::dispose(Space& home) {
 
 void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     ++numCalls_;
     t_.start();
     Clasp::LitVec::const_iterator end = ends;
@@ -226,6 +227,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
 
 void ExpIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
     Clasp::LitVec::const_iterator end = ends;
@@ -375,6 +377,7 @@ void ExpIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
 
 void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begins, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begins;
     t_.start();
     ++numCalls_;
     Clasp::LitVec::const_iterator begin = begins;
@@ -454,6 +457,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
 
 void FwdLinear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begins, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begins;
     ++numCalls_;
     t_.start();
     Clasp::LitVec::const_iterator begin = begins;
@@ -582,7 +586,7 @@ void FwdLinear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, c
 
 
 
-SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0)
+SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
     for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
@@ -601,6 +605,7 @@ SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_
 
 void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
     if (ends-begin==0)
@@ -824,6 +829,7 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
 
 void UnionIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     ++numCalls_;
     t_.start();
     Clasp::LitVec::const_iterator end = ends;
@@ -933,6 +939,7 @@ void UnionIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
 
 void Union2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     ++numCalls_;
     t_.start();
     Clasp::LitVec::const_iterator end = ends;
@@ -1062,6 +1069,7 @@ Approx1IRSRA::Approx1IRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), su
 
 void Approx1IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
     if (ends-begin==0)
@@ -1194,6 +1202,7 @@ void Approx1IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, cons
 
 void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     ++numCalls_;
     t_.start();
     Clasp::LitVec::const_iterator end = ends;
@@ -1297,6 +1306,7 @@ size_t Linear2IRSRA::getIndexBelowDL(uint32 level)
 
 void Linear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     t_.start();
     assert(reason.size()==0);
     ++numCalls_;
@@ -1417,6 +1427,7 @@ size_t Linear2GroupedIRSRA::getIndexBelowDL(uint32 level)
 
 void Linear2GroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    oldLength_+=ends-begin;
     t_.start();
     assert(reason.size()==0);
     ++numCalls_;

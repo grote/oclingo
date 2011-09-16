@@ -30,6 +30,7 @@ namespace Clingcon
 
 void LinearIISCA::shrink(Clasp::LitVec& conflict)
 {
+    oldLength_+=conflict.size();
     ++numCalls_;
     t_.start();
     if (conflict.size()==0)
@@ -138,6 +139,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
 
 void ExpIISCA::shrink(Clasp::LitVec& conflict)
 {
+    oldLength_+=conflict.size();
     ++numCalls_;
     t_.start();
 
@@ -238,6 +240,7 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
 
 void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 {
+    oldLength_+=conflict.size();
     ++numCalls_;
     t_.start();
     if (conflict.size()==0)
@@ -297,6 +300,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 
 void UnionIISCA::shrink(Clasp::LitVec& conflict)
 {
+    oldLength_+=conflict.size();
     ++numCalls_;
     t_.start();
     if (conflict.size()==0)
@@ -358,6 +362,7 @@ void UnionIISCA::shrink(Clasp::LitVec& conflict)
 
 void RangeCA::shrink(Clasp::LitVec& conflict)
 {
+    oldLength_+=conflict.size();
     //std::cout << "Enter " << numCalls_ << std::endl;
     ++numCalls_;
     t_.start();
