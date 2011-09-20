@@ -55,14 +55,15 @@ struct JunctionIndex : public StaticIndex
 		ValVec global;
 		foreach (uint32_t var, global_) { global.push_back(grounder->val(var)); }
 		Done::iterator it = done_.find(global);
-		status_ = &(it != done_.end() ? it : done_.insert(Done::value_type(global, Status(lit_.head()))).first)->second;
+		if (it == done_.end()) { it = done_.insert(Done::value_type(global, Status(lit_.head()))).first; }
+		status_ = &it->second;
 		if (status_->generation == 0) { return false; }
 		if (status_->generation == 1) { status_->uid = uids_++; }
 		if (status_->generation < generation_)
 		{
 			if (!lit_.ground(grounder))
 			{
-				status_->generation = 1;
+				stop();
 				return false;
 			}
 			status_->generation = generation_;
@@ -99,7 +100,7 @@ struct JunctionIndex : public StaticIndex
 
 	void fact(bool fact)
 	{
-		status_->fact       = fact;
+		status_->fact = fact;
 	}
 
 	uint32_t uid()
@@ -110,6 +111,11 @@ struct JunctionIndex : public StaticIndex
 	void setDirty()
 	{
 		dirty_ = true;
+	}
+
+	bool newGeneration()
+	{
+		return status_ && status_->generation == 1;
 	}
 
 	bool hasNew() const
@@ -129,6 +135,31 @@ public:
 	IndexPtrVec  headIndices;
 };
 
+struct JunctionCondIndex : public StaticIndex
+{
+	JunctionCondIndex(JunctionIndex &index)
+		: index(index)
+	{
+	}
+
+	Match firstMatch(Grounder *, int)
+	{
+		return Match(true, hasNew());
+	}
+
+	bool first(Grounder *, int)
+	{
+		return true;
+	}
+
+	bool hasNew() const
+	{
+		return index.newGeneration();
+	}
+
+	JunctionIndex &index;
+};
+
 ///////////////////////////// JunctionCond /////////////////////////////
 
 JunctionCond::JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body)
@@ -145,7 +176,7 @@ void JunctionCond::finish()
 	inst_->finish();
 }
 
-void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index)
+void JunctionCond::normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent)
 {
 	parent_ = parent;
 	head_->normalize(g, headExp);
@@ -162,7 +193,7 @@ void JunctionCond::enqueue(Grounder *g)
 
 void JunctionCond::addIndex(Grounder *g, VarSet &bound, Lit *lit)
 {
-	inst_->append(lit->index(g, this, bound));
+	if (lit != head_.get()) { inst_->append(lit->index(g, this, bound)); }
 }
 
 bool JunctionCond::complete() const
@@ -192,8 +223,14 @@ bool JunctionCond::grounded(Grounder *g, Index &head, JunctionIndex &index)
 			index.stop();
 			return false;
 		}
-		else if (match.first && head_->fact()) { return true; }
-		else { index.fact(false); }
+		else if (match.first && head_->fact())
+		{
+			return true;
+		}
+		else
+		{
+			index.fact(false);
+		}
 		// TODO: if the body is fact and the head does not match
 		//       then the junctionlit need not match yet
 		//       this requires that the literal is enqueued if the head changes
@@ -237,6 +274,7 @@ void JunctionCond::init(Grounder *g, JunctionIndex &parent)
 		inst_.reset(new Instantiator(vars(), 0));
 		VarSet bound;
 		GlobalsCollector::collect(*this, bound, level() - 1);
+		inst_->append(new JunctionCondIndex(parent));
 		if(litDep_.get())
 		{
 			litDep_->order(g, boost::bind(&JunctionCond::addIndex, this, g, boost::ref(bound), _1), bound);
@@ -258,7 +296,6 @@ bool JunctionCond::ground(Grounder *g)
 
 void JunctionCond::visit(PrgVisitor *visitor)
 {
-
 	visitor->visit(head_.get(), false);
 	foreach(Lit &lit, body_) { visitor->visit(&lit, false); }
 }
@@ -266,10 +303,13 @@ void JunctionCond::visit(PrgVisitor *visitor)
 void JunctionCond::print(Storage *sto, std::ostream &out) const
 {
 	head_->print(sto, out);
-	foreach(const Lit &lit, body_)
+	std::vector<const Lit*> body;
+	foreach(const Lit &lit, body_) { body.push_back(&lit); }
+	std::sort(body.begin(), body.end(), Lit::cmpPos);
+	foreach(const Lit *lit, body)
 	{
 		out << ":";
-		lit.print(sto, out);
+		lit->print(sto, out);
 	}
 }
 
@@ -346,7 +386,7 @@ void JunctionLit::normalize(Grounder *g, const Expander &e)
 	{
 		Expander headExp = boost::bind(&JunctionLit::expandHead, this, boost::ref(e), boost::ref(conds_[i]), _1, _2);
 		Expander bodyExp = boost::bind(static_cast<void (LitPtrVec::*)(Lit *)>(&LitPtrVec::push_back), &conds_[i].body_, _1);
-		conds_[i].normalize(g, headExp, bodyExp, this, i);
+		conds_[i].normalize(g, headExp, bodyExp, this);
 	}
 	uid_ = g->aggrUid();
 }
@@ -368,7 +408,7 @@ void JunctionLit::setState(bool fact, uint32_t substUid)
 
 bool JunctionLit::fact() const
 {
-	if (head() || complete()) { return fact_; }
+	return (head() || complete()) && fact_;
 }
 
 void JunctionLit::print(Storage *sto, std::ostream &out) const

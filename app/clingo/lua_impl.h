@@ -46,7 +46,7 @@ namespace lua_impl_h
 			, started(false)
 		{ }
 
-		Domain *dom(lua_State *L)
+		Domain *dom(lua_State *)
 		{
 			return grounder->domain(start->repr.first);
 		}

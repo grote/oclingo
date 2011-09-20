@@ -30,7 +30,7 @@ class JunctionCond : public Formula
 	friend class JunctionLit;
 public:
 	JunctionCond(const Loc &loc, Lit *head, LitPtrVec &body);
-	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent, uint32_t index);
+	void normalize(Grounder *g, const Lit::Expander &headExp, const Lit::Expander &bodyExp, JunctionLit *parent);
 
 	bool complete() const;
 	bool grounded(Grounder *g, Index &head, JunctionIndex &index);

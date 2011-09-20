@@ -75,12 +75,11 @@ void Instantiator::append(Index *i)
 		indices_.push_back(i);
 		new_.push_back(false);
 	}
-
 }
 
 bool Instantiator::ground(Grounder *g)
 {
-	bool ret = true;
+	bool ret    = true;
 	int lastNew = -1;
 	int numNew  = 0;
 	
@@ -89,9 +88,8 @@ bool Instantiator::ground(Grounder *g)
 		if(indices_[i].hasNew()) { lastNew = i; }
 	}
 	
-	int l                         = -1;
+	int l            = -1;
 	BoolPair matched = std::make_pair(true, false);
-	
 	for(;;)
 	{
 		if(!matched.first || (!numNew && l == lastNew))
