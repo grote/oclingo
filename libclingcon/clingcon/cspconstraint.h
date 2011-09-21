@@ -17,10 +17,10 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#ifndef CLINGCON_CONSTRAINT_H_INCLUDED
-#define CLINGCON_CONSTRAINT_H_INCLUDED
+#pragma once
 
 //#include <clasp/include/util/misc_types.h>
+#include <gringo/litdep.h>
 #include <clingcon/csplit.h>
 #include <vector>
 #include <set>
@@ -72,4 +72,4 @@ class GroundConstraint;
     typedef std::vector<std::pair<unsigned int, Constraint*> > ConstraintVec;
 
 }
-#endif
+

@@ -44,11 +44,13 @@ struct Tester : public Clasp::Enumerator::Report
 			g.ground(*mc);
 			g.ground(*mv);
 			o.finalize();
-			pb.endProgram(s, true);
-			Clasp::SolveParams csp;
-			csp.setEnumerator(new Clasp::RecordEnumerator(this));
-			csp.enumerator()->init(s, 0);
-			Clasp::solve(s, csp);
+			if (pb.endProgram(s, true))
+			{
+				Clasp::SolveParams csp;
+				csp.setEnumerator(new Clasp::RecordEnumerator(this));
+				csp.enumerator()->init(s, 0);
+				Clasp::solve(s, csp);
+			}
 		}
 		// check
 		{
@@ -474,6 +476,55 @@ BOOST_AUTO_TEST_CASE( show_hide_test6 )
 		"a", "c", NULL,
 		"d", "b", NULL,
 		"d", "c", NULL,
+		NULL
+	);
+}
+
+BOOST_AUTO_TEST_CASE( junction_bug_3408575 )
+{
+	Tester
+	(
+		"literalIntegerEqualLogical(a,b,c)."
+		"wordLength(9)."
+		"variable(bi_const_255,bitInteger,constant)."
+		"bitValue(bi_const_255,6,1)."
+		"bitValue(bi_const_255,7,1)."
+		"bitValue(bi_const_255,8,0)."
+		"variable(bi_const_2,bitInteger,constant)."
+		"variable(bi_div_s(bi_const_255,bi_const_2),bitInteger,expression)."
+		"computation(bi_div_s(bi_const_255,bi_const_2),bi_div_s,bi_const_255,bi_const_2)."
+		"bit(0..WL-1):-wordLength(WL)."
+		"modelError(literal_integer_has_multiple_values(N)):-2{literalValue(N,V)},variable(N,literalInteger,R)."
+		"modelContainsError:-1{modelError(S)}."
+		"bitIntegerIsnegLogical(OUT,IN):-computation(OUT,bi_isneg_l,IN),variable(OUT,boolean,expression),variable(IN,bitInteger,R)."
+		"booleanValue(OUT,false):-bitIntegerIsnegLogical(OUT,IN),bitValue(IN,WL-1,0),wordLength(WL)."
+		"bitIntegerITE(OUT,IN1,IN2,IN3):-computation(OUT,bi_ite_bw,IN1,IN2,IN3),variable(OUT,bitInteger,expression),variable(IN1,boolean,R1),variable(IN2,bitInteger,R2),variable(IN3,bitInteger,R3)."
+		"bitValue(OUT,B,V):-bitIntegerITE(OUT,IN1,IN2,IN3),booleanValue(IN1,false),bitValue(IN3,B,V)."
+		"bitIntegerAbsUnsigned(OUT,IN):-computation(OUT,bi_abs_u,IN),variable(OUT,bitInteger,expression),variable(IN,bitInteger,R)."
+		"auxillaryVariablesBitIntegerAbsUnsigned(IN):-bitIntegerAbsUnsigned(OUT,IN)."
+		"variable(bi_neg_m(IN),bitInteger,expression):-auxillaryVariablesBitIntegerAbsUnsigned(IN)."
+		"variable(bi_ite_bw(bi_isneg_l(IN),bi_neg_m(IN),IN),bitInteger,expression):-auxillaryVariablesBitIntegerAbsUnsigned(IN)."
+		"computation(bi_ite_bw(bi_isneg_l(IN),bi_neg_m(IN),IN),bi_ite_bw,bi_isneg_l(IN),bi_neg_m(IN),IN):-auxillaryVariablesBitIntegerAbsUnsigned(IN)."
+		"bitValue(OUT,B,V):-bitIntegerAbsUnsigned(OUT,IN),bitValue(bi_ite_bw(bi_isneg_l(IN),bi_neg_m(IN),IN),B,V)."
+		"bitIntegerLLog2Bitwise(OUT,IN):-computation(OUT,bi_llog2_bw,IN),variable(OUT,literalInteger,expression),variable(IN,bitInteger,R)."
+		"literalValue(OUT,L):-bitIntegerLLog2Bitwise(OUT,IN),bitValue(IN,L,1),0<=L,L<WL,wordLength(WL),bitValue(IN,B,0):L<B:B<WL:bit(B)."
+		"bitIntegerDivUnsigned(OUT,IN1,IN2):-computation(OUT,bi_div_u,IN1,IN2),variable(OUT,bitInteger,expression),variable(IN1,bitInteger,R1),variable(IN2,bitInteger,R2)."
+		"auxillaryVariablesIntegerDivRemUnsigned(IN1,IN2):-bitIntegerDivUnsigned(OUT,IN1,IN2)."
+		"variable(bi_llog2_bw(IN1),literalInteger,expression):-auxillaryVariablesIntegerDivRemUnsigned(IN1,IN2)."
+		"computation(bi_llog2_bw(IN1),bi_llog2_bw,IN1):-auxillaryVariablesIntegerDivRemUnsigned(IN1,IN2)."
+		"bitIntegerDivideSigned(OUT,IN1,IN2):-computation(OUT,bi_div_s,IN1,IN2),variable(OUT,bitInteger,expression),variable(IN1,bitInteger,R1),variable(IN2,bitInteger,R2)."
+		"auxillaryVariablesBitIntegerDivideSigned(IN1,IN2):-bitIntegerDivideSigned(OUT,IN1,IN2)."
+		"variable(bi_abs_u(IN1),bitInteger,expression):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"computation(bi_abs_u(IN1),bi_abs_u,IN1):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"variable(bi_abs_u(IN2),bitInteger,expression):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"variable(bi_div_u(bi_abs_u(IN1),bi_abs_u(IN2)),bitInteger,expression):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"computation(bi_div_u(bi_abs_u(IN1),bi_abs_u(IN2)),bi_div_u,bi_abs_u(IN1),bi_abs_u(IN2)):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"variable(bi_isneg_l(IN1),boolean,expression):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"computation(bi_isneg_l(IN1),bi_isneg_l,IN1):-auxillaryVariablesBitIntegerDivideSigned(IN1,IN2)."
+		"booleanValue(OUT,true):-literalIntegerEqualLogical(OUT,IN1,IN2),V1==V2,literalValue(IN1,V1),literalValue(IN2,V2)."
+		"isCounterExample:-modelContainsError."
+		":-not isCounterExample.",
+
 		NULL
 	);
 }

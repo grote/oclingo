@@ -46,7 +46,6 @@ namespace Clingcon
 
         bool ConstraintSumTerm::unify(Grounder *grounder, const Val &v, int binder) const
 	{
-                #pragma message("ask ROLAND")
 		return false;
 	}
 
@@ -104,6 +103,7 @@ namespace Clingcon
             for (size_t i = 0; i < cond_->size(); ++i)
             {
                 (*cond_)[i].normalize(g);
+
 //		if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
 //		if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
 //		if((!a_.get() || a_->constant()) && (!b_.get() || b_->constant()))

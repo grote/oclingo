@@ -50,9 +50,15 @@ private:
         const std::string message_;
 };
 	class ClingconPropagator;
+        class SCCIRSRA;
+        class Approx1IRSRA;
 
 	class CSPSolver
 	{
+
+            friend class SCCIRSRA;
+            friend class Approx1IRSRA;
+
                 public:
                         typedef Interval<int> Domain;
                         CSPSolver();
@@ -62,13 +68,13 @@ private:
 			 *
 			 **/
                         virtual void setDomain(int lower, int upper);
-                        virtual void addConstraint(Constraint c, int uid);
+                        virtual void addConstraint(Constraint& c, int uid);
                         virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
                         virtual bool hasOptimizeStm() const;
                         //virtual void addDomain(const std::string& var, int lower, int upper);
                         virtual unsigned int getVariable(const std::string& s);
                         //virtual void combineWithDefaultDomain();
-                        virtual const std::vector<std::string>&  getVariables();
+                        virtual const std::vector<std::string>&  getVariables() const;
                         //virtual bool hasDomain(const std::string& s) const;
                         //virtual const RangeVec& getDomain(const std::string& s) const;
                         virtual const Domain& getDomain() const;
@@ -77,9 +83,11 @@ private:
 			virtual void setClingconPropagator(Clingcon::ClingconPropagator* cp);
                         virtual bool initialize() = 0;
 			virtual bool propagate() = 0;
+                        //propagate after model was found
+                        virtual bool propagateMinimize() = 0;
 			virtual void reset() = 0;
 			virtual void propagateLiteral(const Clasp::Literal& l, int date) = 0;
-			virtual void undoUntil(unsigned int level) = 0;
+                        virtual void undo(unsigned int level) = 0;
 			/*
 			 * pre: complete assignment
 			 * return true if a valid solution for the asp vars exists
@@ -101,12 +109,14 @@ private:
 		protected:
 
                         std::vector<std::string> variables_;
+                        std::map<std::string,unsigned int> variableMap_;
                         //boost::unordered_map<Val,unsigned int> variables_;
 			Clasp::Solver* s_;
 			ClingconPropagator* clingconPropagator_;
 
                         std::map<int, Constraint*> constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
+        protected:
 
                         //Domains domains_;
                         Domain domain_; // the global domain of all variables(and all intermediate variables, this could be a problem)

@@ -40,8 +40,6 @@ namespace Clingcon
                 ConstraintFuncTerm *clone() const;
 		FuncTerm* toTerm() const
 		{
-
-                        #pragma message "can safe a copy here if FuncTerm would take const argument"
                         TermPtrVec vec = args_;
                         //for(TermPtrVec::const_iterator i = args_.begin(); i != args_.end(); ++i)
                         //	vec.push_back(i->toTerm());

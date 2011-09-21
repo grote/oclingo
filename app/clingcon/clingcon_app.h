@@ -37,6 +37,7 @@
 #include <clingcon/propagator.h>
 //#include "clingcon/lua_impl.h"
 #include <iomanip>
+#include <clasp/model_enumerators.h>
 
 // (i)Clingcon application, i.e. gringo+clasp+gecode
 template <CSPMode M>
@@ -216,7 +217,11 @@ void CSPFromGringo<M>::getAssumptions(Clasp::LitVec& a)
 	if(M == ICLINGCON && app.clingo.mode == ICLINGCON)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-		a.push_back(i.find(out->getIncAtom())->lit);
+
+                foreach(uint32_t atom, out->getIncUids()) {
+                    if(atom) a.push_back(i.find(atom)->lit);
+                }
+
 	}
 }
 
@@ -252,12 +257,6 @@ bool CSPFromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 	}
 
 	out->finalize();
-        //if (api->hasMinimize())
-        //  throw std::runtime_error("Can not optimize on ASP and CSP at the same time");
-        //if (api->hasMinimize())
-        //    std::cout << "Funzt" << std::endl;
-        //if (cspsolver_->hasOptimizeStm())
-         //   std::cout << "Funzt2" << std::endl;
 	release();
 	return true;
 }
@@ -331,7 +330,8 @@ void ClingconApp<M>::configureInOut(Streams& s)
 	{
 
 		s.open(generic.input, constStream());
-                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal);
+                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal, clingo.optValues,clingo.optAll,
+                                                        clingo.initialLookahead, clingo.cspReason, clingo.cspConflict);
                 in_.reset(new CSPFromGringo<M>(*this, s,cspsolver_));
 
                                                                            /*clingcon_.cspLazyLearn,
@@ -381,7 +381,6 @@ int ClingconApp<M>::doRun()
             Streams  inputStreams(generic.input, constStream());
             if(gringo.groundInput)
             {
-    #pragma message "reimplement me!!!"
                     /*
                     Storage   s(o.get());
                     Converter c(o.get(), inputStreams);
@@ -537,18 +536,26 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 		}
                 else
                 {
-                    //if(f.state() == ClaspFacade::state_preprocess)
+
+                    cspsolver_->setSolver(&solver_);
+                    cp_ = new Clingcon::ClingconPropagator(cspsolver_);
+                    solver_.addPost(cp_);
+                    //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
+                    //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
+                    //initialize cspsolver
+                    cspsolver_->initialize();
+                    if (f.api()->hasMinimize() && cspsolver_->hasOptimizeStm())
+                        throw std::runtime_error("Can not optimize asp and csp at the same time!");
+                    // set restart on model if we minimize in csp, otherwise i would have to implement an enumerator
+                   /* if (cspsolver_->hasOptimizeStm())
                     {
-                        cspsolver_->setSolver(&solver_);
-                        cp_ = new Clingcon::ClingconPropagator(cspsolver_);
-                        solver_.addPost(cp_);
-                        //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
-                        //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);
-                        //initialize cspsolver
-                        cspsolver_->initialize();
-                        if (f.api()->hasMinimize() && cspsolver_->hasOptimizeStm())
-                            throw std::runtime_error("Can not optimize asp and csp at the same time!");
-                    }
+                        RecordEnumerator* re = new RecordEnumerator();
+                        re->setReport(&f);
+                        re->setRestartOnModel(true);
+                        if (config_.enumerate.limits.get())
+                            re->setSearchLimit(config_.enumerate.limits->first, config_.enumerate.limits->second);
+                        config_.solve.setEnumerator(re);
+                    }*/
                     //in_.release();
                     out_->initSolve(solver_, f.api(), f.config()->solve.enumerator());
                 }

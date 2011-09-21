@@ -110,17 +110,18 @@ void CSPOutput::printComputeRule(int models, const AtomVec &pos, const AtomVec &
 	foreach(AtomVec::value_type atom, pos) { b_->setCompute(atom, true); }
 }
 
+
+
 void CSPOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name)
 {
        b_->setAtomName(symbol, name.c_str());
        atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
-void CSPOutput::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name)
+
+void CSPOutput::printExternalTableEntry(const Symbol &)
 {
-	(void)atom;
-	(void)arity;
-	(void)name;
+
 }
 
 uint32_t CSPOutput::symbol()
@@ -176,15 +177,21 @@ void CSPOutput::doFinalize()
 
 }
 
+/*
 const LparseConverter::SymbolMap &CSPOutput::symbolMap(uint32_t domId) const
 {
 	return symTab_[domId];
 }
+*/
 
+
+/*
 ValRng CSPOutput::vals(Domain *dom, uint32_t offset) const
 {
 	return ValRng(vals_.begin() + offset, vals_.begin() + offset + dom->arity());
-}
+}*/
+
+
 
 CSPOutput::~CSPOutput()
 {
@@ -192,22 +199,48 @@ CSPOutput::~CSPOutput()
 
 iCSPOutput::iCSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
         : CSPOutput(shiftDisj,cspsolver)
-	, incUid_(0)
+        , initialized(false)//, incUid_(0)
 {
 }
 
 void iCSPOutput::initialize()
 {
-        if(!incUid_) { CSPOutput::initialize(); }
-	else { b_->unfreeze(incUid_); }
-	// create a new uid
-	incUid_ = symbol();
-	b_->freeze(incUid_);
+        if(!initialized) {
+            initialized=true;
+            CSPOutput::initialize();
+        }
+        else if(incUids_.size()) {
+            if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
+            incUids_.pop_front();
+        }
 }
 
-int iCSPOutput::getIncAtom()
+uint32_t iCSPOutput::getNewIncUid()
 {
-	return incUid_;
+       // create a new uid
+       int uid = symbol();
+       b_->freeze(uid);
+
+       return uid;
+}
+
+int iCSPOutput::getIncAtom(uint32_t vol_window)
+{
+       if(incUids_.size() < vol_window) {
+               incUids_.resize(vol_window, 0);
+       }
+       if(incUids_.at(vol_window-1) == 0) {
+               incUids_.at(vol_window-1) = getNewIncUid();
+       }
+
+       return incUids_.at(vol_window-1);
+}
+
+
+std::deque<uint32_t> iCSPOutput::getIncUids()
+//int iCSPOutput::getIncAtom()
+{
+        return incUids_;
 }
 
 

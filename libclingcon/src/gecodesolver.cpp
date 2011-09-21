@@ -21,7 +21,6 @@
 #include <iostream>
 #include <clingcon/gecodesolver.h>
 #include <clasp/program_builder.h>
-#include <clasp/clause.h>
 #include <clasp/solver.h>
 #include <clingcon/propagator.h>
 #include <gecode/search.hh>
@@ -32,104 +31,15 @@
 #include <clingcon/cspconstraint.h>
 #include <gringo/litdep.h>
 #include <gecode/kernel/wait.hh>
+#include <clingcon/gecodeconflict.h>
+#include <clingcon/gecodereason.h>
+#include <clingcon/gecodereifwait.h>
 
 //#define DEBUGTEXT
 
 using namespace Gecode;
 using namespace Clasp;
 namespace Clingcon {
-
-  class ReifWait : public Propagator {
-  public:
-      typedef void (GecodeSolver::* MemFun)(int);
-  protected:
-    /// View to wait for becoming assigned
-    Int::BoolView x;
-    /// Continuation to execute
-
-    MemFun c;
-    //void (*c)(Space&);
-    /// Constructor for creation
-    ReifWait(Space& home, Int::BoolView x, MemFun c0, int index);
-    /// Constructor for cloning \a p
-    ReifWait(Space& home, bool shared, ReifWait& p);
-
-    static GecodeSolver* solver;
-    // index to the boolvar array, index > 0 means boolvar is true,
-    // index < 0 means boolvar is false
-    // if true, index-1 is index
-    // if false, index+1 is index
-    int index_;
-  public:
-    /// Perform copying during cloning
-    virtual Actor* copy(Space& home, bool share);
-    /// Const function (defined as low unary)
-    virtual PropCost cost(const Space& home, const ModEventDelta& med) const;
-    /// Perform propagation
-    virtual ExecStatus propagate(Space& home, const ModEventDelta& med);
-    /// Post propagator that waits until \a x becomes assigned and then executes \a c
-    static ExecStatus post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index);
-    /// Delete propagator and return its size
-    virtual size_t dispose(Space& home);
-  };
-
-  GecodeSolver* ReifWait::solver = 0;
-
-  void reifwait(Home home, GecodeSolver* csps, BoolVar x, ReifWait::MemFun c,
-         int index, IntConLevel) {
-      if (home.failed()) return;
-      GECODE_ES_FAIL(ReifWait::post(home,csps, x,c, index));
-    }
-
-    forceinline
-    ReifWait::ReifWait(Space& home, Int::BoolView x0, MemFun c0, int index)
-        : Propagator(home), x(x0), c(c0), index_(index) {
-      x.subscribe(home,*this,PC_GEN_ASSIGNED);
-    }
-    forceinline
-    ReifWait::ReifWait(Space& home, bool shared, ReifWait& p)
-    : Propagator(home,shared,p), c(p.c), index_(p.index_) {
-      x.update(home,shared,p.x);
-    }
-
-    Actor*
-    ReifWait::copy(Space& home, bool share) {
-      return new (home) ReifWait(home,share,*this);
-    }
-    PropCost
-    ReifWait::cost(const Space&, const ModEventDelta&) const {
-      return PropCost::unary(PropCost::LO);
-    }
-    ExecStatus
-    ReifWait::propagate(Space& home, const ModEventDelta&) {
-      assert(x.assigned());
-      if (x.status() == Int::BoolVarImp::ONE)
-        (solver->*c)(index_+1);
-      else
-        (solver->*c)(-index_-1);
-      return home.failed() ? ES_FAILED : home.ES_SUBSUMED(*this);
-    }
-    ExecStatus
-    ReifWait::post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index) {
-        solver = csps;
-      if (x.assigned()) {
-          if (x.status() == Int::BoolVarImp::ONE)
-            (solver->*c)(index+1);
-          else
-            (solver->*c)(-index-1);
-        return home.failed() ? ES_FAILED : ES_OK;
-      } else {
-        (void) new (home) ReifWait(home,x,c,index);
-        return ES_OK;
-      }
-    }
-
-    size_t
-    ReifWait::dispose(Space& home) {
-      x.cancel(home,*this,PC_GEN_ASSIGNED);
-      (void) Propagator::dispose(home);
-      return sizeof(*this);
-    }
 
 
 Gecode::IntConLevel ICL;
@@ -156,76 +66,109 @@ std::string GecodeSolver::num2name( unsigned int var)
 
 
 std::vector<int> GecodeSolver::optValues;
+bool             GecodeSolver::optAll = false;
 
 GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
-                           std::string ICLString, std::string branchVarString,
-                           std::string branchValString) :
+                           const std::string& ICLString, const std::string& branchVarString,
+                           const std::string& branchValString, std::vector<int> optValueVec,
+                           bool optAllPar, bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict) :
     currentSpace_(0), lazyLearn_(lazyLearn),
-    useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS),
-    dummyReason_(this), updateOpt_(false)
-
+    useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), dfsSearchEngine_(0), babSearchEngine_(0),
+    dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
+    initialLookahead_(initialLookahead)
 {
+    optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
+    if (optValues.size()>0) ++optValues.back(); // last element must also be found
+
+    optAll=optAllPar;
+
     if(ICLString == "bound") ICL = ICL_BND;
     if(ICLString == "domain") ICL = ICL_DOM;
     if(ICLString == "default") ICL = ICL_DEF;
     if(ICLString == "value") ICL = ICL_VAL;
 
-    if(branchVarString == "NONE") branchVar = INT_VAR_NONE;
-    if(branchVarString == "RND") branchVar = INT_VAR_RND;
-    if(branchVarString == "DEGREE_MIN") branchVar = INT_VAR_DEGREE_MIN;
-    if(branchVarString == "DEGREE_MAX") branchVar = INT_VAR_DEGREE_MAX;
-    if(branchVarString == "AFC_MIN") branchVar = INT_VAR_AFC_MIN;
-    if(branchVarString == "AFC_MAX") branchVar = INT_VAR_AFC_MAX;
-    if(branchVarString == "MIN_MIN") branchVar = INT_VAR_MIN_MIN;
-    if(branchVarString == "MIN_MAX") branchVar = INT_VAR_MIN_MAX;
-    if(branchVarString == "MAX_MIN") branchVar = INT_VAR_MAX_MIN;
-    if(branchVarString == "MAX_MAX") branchVar = INT_VAR_MAX_MAX;
-    if(branchVarString == "SIZE_MIN") branchVar = INT_VAR_SIZE_MIN;
-    if(branchVarString == "SIZE_MAX") branchVar = INT_VAR_SIZE_MAX;
-    if(branchVarString == "DEGREE_MIN") branchVar = INT_VAR_SIZE_DEGREE_MIN;
-    if(branchVarString == "DEGREE_MAX") branchVar = INT_VAR_SIZE_DEGREE_MAX;
-    if(branchVarString == "SIZE_AFC_MIN") branchVar = INT_VAR_SIZE_AFC_MIN;
-    if(branchVarString == "SIZE_AFC_MAX") branchVar = INT_VAR_SIZE_AFC_MAX;
-    if(branchVarString == "REGRET_MIN_MIN") branchVar = INT_VAR_REGRET_MIN_MIN;
-    if(branchVarString == "REGRET_MIN_MAX") branchVar = INT_VAR_REGRET_MIN_MAX;
-    if(branchVarString == "REGRET_MAX_MIN") branchVar = INT_VAR_REGRET_MAX_MIN;
-    if(branchVarString == "REGRET_MAX_MAX") branchVar = INT_VAR_REGRET_MAX_MAX;
+    if(branchVarString == "none") branchVar = INT_VAR_NONE;
+    if(branchVarString == "rnd") branchVar = INT_VAR_RND;
+    if(branchVarString == "degree-min") branchVar = INT_VAR_DEGREE_MIN;
+    if(branchVarString == "degreee-max") branchVar = INT_VAR_DEGREE_MAX;
+    if(branchVarString == "afc-min") branchVar = INT_VAR_AFC_MIN;
+    if(branchVarString == "afc-max") branchVar = INT_VAR_AFC_MAX;
+    if(branchVarString == "min-min") branchVar = INT_VAR_MIN_MIN;
+    if(branchVarString == "min-max") branchVar = INT_VAR_MIN_MAX;
+    if(branchVarString == "max-min") branchVar = INT_VAR_MAX_MIN;
+    if(branchVarString == "max-max") branchVar = INT_VAR_MAX_MAX;
+    if(branchVarString == "size-min") branchVar = INT_VAR_SIZE_MIN;
+    if(branchVarString == "size-max") branchVar = INT_VAR_SIZE_MAX;
+    if(branchVarString == "size-degree-min") branchVar = INT_VAR_SIZE_DEGREE_MIN;
+    if(branchVarString == "size-degree-max") branchVar = INT_VAR_SIZE_DEGREE_MAX;
+    if(branchVarString == "size-afc-min") branchVar = INT_VAR_SIZE_AFC_MIN;
+    if(branchVarString == "size-afc-max") branchVar = INT_VAR_SIZE_AFC_MAX;
+    if(branchVarString == "regret-min-min") branchVar = INT_VAR_REGRET_MIN_MIN;
+    if(branchVarString == "regret-min-max") branchVar = INT_VAR_REGRET_MIN_MAX;
+    if(branchVarString == "regret-max-min") branchVar = INT_VAR_REGRET_MAX_MIN;
+    if(branchVarString == "regret-max-max") branchVar = INT_VAR_REGRET_MAX_MAX;
 
-    if(branchValString == "MIN") branchVal = INT_VAL_MIN;
-    if(branchValString == "MED") branchVal = INT_VAL_MED;
-    if(branchValString == "MAX") branchVal = INT_VAL_MAX;
-    if(branchValString == "RND") branchVal = INT_VAL_RND;
-    if(branchValString == "SPLIT_MIN") branchVal = INT_VAL_SPLIT_MIN;
-    if(branchValString == "SPLIT_MAX") branchVal = INT_VAL_SPLIT_MAX;
-    if(branchValString == "RANGE_MIN") branchVal = INT_VAL_RANGE_MIN;
-    if(branchValString == "RANGE_MAX") branchVal = INT_VAL_RANGE_MAX;
-    if(branchValString == "VALUES_MIN") branchVal = INT_VALUES_MIN;
-    if(branchValString == "VALUES_MAX") branchVal = INT_VALUES_MAX;
+    if(branchValString == "min") branchVal = INT_VAL_MIN;
+    if(branchValString == "med") branchVal = INT_VAL_MED;
+    if(branchValString == "max") branchVal = INT_VAL_MAX;
+    if(branchValString == "rnd") branchVal = INT_VAL_RND;
+    if(branchValString == "split-min") branchVal = INT_VAL_SPLIT_MIN;
+    if(branchValString == "split-max") branchVal = INT_VAL_SPLIT_MAX;
+    if(branchValString == "range-min") branchVal = INT_VAL_RANGE_MIN;
+    if(branchValString == "range-max") branchVal = INT_VAL_RANGE_MAX;
+    if(branchValString == "values-min") branchVal = INT_VALUES_MIN;
+    if(branchValString == "values-max") branchVal = INT_VALUES_MAX;
+
+    if (reduceReason == "simple")         reduceReason_ = SIMPLE;
+    if (reduceReason == "linear")         reduceReason_ = LINEAR;
+    if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
+    if (reduceReason == "linear-grouped") reduceReason_ = LINEAR_GROUPED;
+    if (reduceReason == "scc")            reduceReason_ = SCC;
+    if (reduceReason == "log")            reduceReason_ = LOG;
+    if (reduceReason == "range")          reduceReason_ = RANGE;
+
+
+    if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
+    if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
+    if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "log")            reduceConflict_ = LOG;
+    if (reduceConflict == "range")          reduceConflict_ = RANGE;
 
 }
 
 GecodeSolver::~GecodeSolver()
 {
 
-#pragma message "check if current is on stack"
-    if (currentSpace_)
-    {
-        for (std::vector<SearchSpace*>::iterator i = spaces_.begin(); i != spaces_.end(); ++i)
-            delete *i;
-    }
+    for (std::vector<SearchSpace*>::iterator i = spaces_.begin(); i != spaces_.end(); ++i)
+        delete *i;
 
     // if we have not done initialization
     for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
         delete i->second;
     constraints_.clear();
     globalConstraints_.clear();
+
+    delete conflictAnalyzer_;
+    delete reasonAnalyzer_;
+    delete dfsSearchEngine_;
+    delete babSearchEngine_;
+    delete enumerator_;
 }
 
 
 void GecodeSolver::propagateLiteral(const Clasp::Literal& l, int)
 {
 
+/*
+    if (l.sign())
+        std::cout << "F ";
+    else
+        std::cout << "T ";
+    std::cout << num2name(l.var()) << std::endl;
+*/
+
     propQueue_.push_back(l);
+    //propQueue_.back().clearWatch();
 
 }
 
@@ -240,10 +183,22 @@ void GecodeSolver::addVarToIndex(unsigned int var, unsigned int index)
     indexToVar_[index] = var;
 }
 
+unsigned int GecodeSolver::currentDL() const
+{
+    assert(dl_.size());
+    return dl_.back();
+}
+
+unsigned int GecodeSolver::assLength(unsigned int index) const
+{
+    if (index < assLength_.size())
+        return assLength_[index];
+    else
+        return assignment_.size();
+}
+
 bool GecodeSolver::initialize()
 {
-
-    currentDL_ = 0;
     dfsSearchEngine_ = 0;
     babSearchEngine_ = 0;
     enumerator_ = 0;
@@ -271,12 +226,22 @@ bool GecodeSolver::initialize()
     /////////
     // Register all variables in the Constraints
     // Convert uids to solver literal ids
-    // Guess initial domains of level0 constraints
+    // Guess initial domains of level0 constraints        //if (tester->failed() || tester->status()==Gecode::SS_FAILED)
     std::map<int, Constraint*> newConstraints;
+    AtomIndex::const_iterator begin = s_->strategies().symTab->begin();
     for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
     {
-        int newVar = s_->strategies().symTab->find(i->first)->lit.var();
-        // convert uids to solver literal ids
+        //int newVar = s_->strategies().symTab->find(i->first)->lit.var();
+        //begin = std::lower_bound(begin, s_->strategies().symTab->end(),i->first);
+        begin = s_->strategies().symTab->lower_bound(begin, i->first);
+
+        int newVar = begin->second.lit.var();
+
+
+        // convert uids to solver literal ids 
+   //     std::cout << num2name(newVar) << std::endl;
+
+
         newConstraints.insert(std::make_pair(newVar, i->second));
         i->second->registerAllVariables(this);
 
@@ -295,8 +260,10 @@ bool GecodeSolver::initialize()
             s_->addWatch(posLit(newVar), clingconPropagator_,0);
             s_->addWatch(negLit(newVar), clingconPropagator_,0);
         }
+
     }
-    constraints_ = newConstraints;
+    constraints_.clear();
+    constraints_.swap(newConstraints);
 
     for (LParseGlobalConstraintPrinter::GCvec::iterator i = globalConstraints_.begin(); i != globalConstraints_.end(); ++i)
         for (boost::ptr_vector<IndexedGroundConstraintVec>::iterator j = i->heads_.begin(); j != i->heads_.end(); ++j)
@@ -311,7 +278,62 @@ bool GecodeSolver::initialize()
 
 
     // propagate empty constraint set, maybe some trivial constraints can be fullfilled
-    currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_, &varToIndex_);
+    currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_);
+    spaces_.push_back(currentSpace_);
+    dl_.push_back(0);
+
+
+
+    switch(reduceConflict_)
+    {
+        case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
+        case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
+        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
+        case LINEAR_GROUPED: assert(false); break;
+        case SCC:            assert(false); break;
+        case LOG:            conflictAnalyzer_ = new ExpIISCA(this); break;
+        case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
+        default: assert(false);
+    };
+
+    switch(reduceReason_)
+    {
+        case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
+        case LINEAR:         reasonAnalyzer_ = new Linear2IRSRA(this); break;
+        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
+        case LINEAR_GROUPED: reasonAnalyzer_ = new Linear2GroupedIRSRA(this); break;
+        case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
+        case LOG:            reasonAnalyzer_ = new ExpIRSRA(this); break;
+        case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
+        default: assert(false);
+    };
+/*
+    //conflictAnalyzer_ = new UnionIISCA(this);
+    //conflictAnalyzer_ = new FwdLinearIISCA(this);
+    //conflictAnalyzer_ = new ExpIISCA(this);
+    //conflictAnalyzer_ = new LinearIISCA(this);
+    conflictAnalyzer_ = new SimpleCA();
+
+    //conflictAnalyzer_ = new RangeCA(this);
+    //conflictAnalyzer_ = new RangeLinearCA(this);
+
+    //reasonAnalyzer_ = new Union2IRSRA(this);//faster
+    //reasonAnalyzer_ = new UnionIRSRA(this);
+    //reasonAnalyzer_ = new SCCIRSRA(this);
+    //reasonAnalyzer_ = new FwdLinearIRSRA(this);
+    //reasonAnalyzer_ = new ExpIRSRA(this);
+    //reasonAnalyzer_ = new LinearIRSRA(this);
+    reasonAnalyzer_ = new SimpleRA();
+
+    //reasonAnalyzer_ = new Approx1IRSRA(this);
+
+    //reasonAnalyzer_ = new RangeIRSRA(this);
+    //reasonAnalyzer_ = new RangeLinearIRSRA(this);
+    //reasonAnalyzer_ = new Linear2IRSRA(this);
+    //reasonAnalyzer_ = new Linear2GroupedIRSRA(this);
+
+    //reasonAnalyzer_ = new FwdLinear2IRSRA(this);
+*/
 
     //TODO: 1. check if already failed through initialitation
     for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
@@ -319,30 +341,132 @@ bool GecodeSolver::initialize()
     constraints_.clear();
     globalConstraints_.clear();
 
-    if(!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+    //std::cout << "status" << std::endl;
+    if(!currentSpace_->failed() && currentSpace_->updateOptValues() && !currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
     {
-        //Clasp::LitVec lv(currentSpace_->getAssignment(Clasp::LitVec()));
-#pragma message "Check with benni the return value, i do waste it here"
-        return propagateNewLiteralsToClasp();
+        // std::cout << "done" << std::endl;
+        if (!propagateNewLiteralsToClasp())
+        {
+            propQueue_.push_back(negLit(0));
+            return false;
+        }
+        else
+        {
+            if (initialLookahead_)
+            {
+                //initial lookahead
+
+                for (std::map<unsigned int, unsigned int>::const_iterator i = varToIndex_.begin(); i != varToIndex_.end(); ++i)
+                {
+                    Clasp::Literal test(i->first,false);
+
+                    for (unsigned int both = 0; both < 2; ++both)
+                    {
+                        derivedLits_.clear();
+                        SearchSpace* tester = getRootSpace();
+
+                        tester->propagate(test);
+                        if (tester->failed() || tester->status()==SS_FAILED)
+                        {
+
+                            if (!s_->force(~test,Antecedent()))
+                            {
+
+                                propQueue_.push_back(negLit(0));
+                                return false;
+                            }
+                            currentSpace_->propagate(~test);
+                        }
+                        else
+                        {
+                            ClauseCreator gc(s_);
+                            for (Clasp::LitVec::const_iterator j = derivedLits_.begin(); j != derivedLits_.end();++j)
+                            {
+                                if (*j==test)
+                                    continue;
+
+                                gc.start();
+                                gc.add(~test);
+                                gc.add(*j);
+                                if(!gc.end())
+                                {
+                                    assert(false); // should not happen as both literals are free before
+                                    //erivedLits_.clear();
+                                    //propQueue_.push_back(negLit(0));
+                                    return false;
+                                }
+
+                                //-x \/ y
+                                /*
+                                Gecode::BoolVarArg x;
+                                if (test.sign()) //negative -> x
+                                    x = !(currentSpace_->b_[varToIndex(test.var())]);
+                                else
+                                    x = currentSpace_->b_[varToIndex(test.var())];
+
+                                Gecode::BoolExpr y;
+                                if(j->sign()) //negative -> -y
+                                    y = !(currentSpace_->b_[varToIndex(j->var())]);
+                                else
+                                    y = currentSpace_->b_[varToIndex(j->var())];
+
+                                rel(*currentSpace_, !x || y, ICL);
+
+                                */
+
+                                /*
+                                if (test.sign()) //negative -> x
+                                    if(j->sign()) //negative -> -y
+                                        rel(*currentSpace_, (currentSpace_->b_[varToIndex(test.var())]) || !(currentSpace_->b_[varToIndex(j->var())]), ICL);
+                                    else
+                                        rel(*currentSpace_, (currentSpace_->b_[varToIndex(test.var())]) || (currentSpace_->b_[varToIndex(j->var())]), ICL);
+                                else
+                                    if(j->sign())
+                                        rel(*currentSpace_, !(currentSpace_->b_[varToIndex(test.var())]) || !(currentSpace_->b_[varToIndex(j->var())]), ICL);
+                                    else
+                                        rel(*currentSpace_, !(currentSpace_->b_[varToIndex(test.var())]) || (currentSpace_->b_[varToIndex(j->var())]), ICL);
+                                */
+
+                             }
+                         }
+                        delete tester;
+                        test=Literal(i->first,true);
+                    }
+                }
+            }
+            //std::cout << "initialized" << std::endl;
+            variableMap_.clear();
+            //currentSpace_->print(getVariables());
+            return true;
+        }
     }
     else
+    {
+        std::cout << "initialized" << std::endl;
+        variableMap_.clear();
+        propQueue_.push_back(negLit(0));
         return false;
+    }
 }
 
 
 void GecodeSolver::newlyDerived(int index)
 {
-    if (index>0)
+    if (recording_)
     {
-        derivedLits_.push_back(Literal(indexToVar(index-1),false));
-    }
-    else
-    {
-        derivedLits_.push_back(Literal(indexToVar(-(index+1)),true));
+        if (index>0)
+        {
+            derivedLits_.push_back(Literal(indexToVar(index-1),false));
+        }
+        else
+        {
+            derivedLits_.push_back(Literal(indexToVar(-(index+1)),true));
+        }
     }
 }
 
 
+void addToDomain(GecodeSolver::DomainMap& domain,  const GecodeSolver::DomainMap& add);
 GecodeSolver::DomainMap intersect(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
 GecodeSolver::DomainMap unite(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
 GecodeSolver::DomainMap xorit(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b);
@@ -355,7 +479,7 @@ void GecodeSolver::guessDomains(const Constraint* c, bool val)
         for (DomainMap::iterator i = dom.begin(); i != dom.end(); ++i)
             i->second.complement(Interval<int>(Int::Limits::min, Int::Limits::max+1));
 
-    domains_ = intersect(dom, domains_);
+    addToDomain(domains_, dom);
 }
 
 GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
@@ -439,6 +563,7 @@ GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
 GecodeSolver::Domain GecodeSolver::getSet(unsigned int var, CSPLit::Type t, int x) const
 {
     Domain ret;
+
     switch(t)
     {
     case CSPLit::GREATER: ret.unite(Interval<int>(x+1,Int::Limits::max+1));  break;
@@ -449,6 +574,58 @@ GecodeSolver::Domain GecodeSolver::getSet(unsigned int var, CSPLit::Type t, int 
     case CSPLit::INEQUAL: ret.unite(Interval<int>(x,x+1)); ret.complement(Interval<int>(Int::Limits::min, Int::Limits::max+1)); break;
     }
     return ret;
+}
+
+void addToDomain(GecodeSolver::DomainMap& domain,  const GecodeSolver::DomainMap& add)
+{
+    GecodeSolver::DomainMap::iterator found = domain.begin();
+    GecodeSolver::DomainMap::iterator last = found; // last valid position
+    for (GecodeSolver::DomainMap::const_iterator i = add.begin(); i != add.end(); ++i)
+    {
+
+        found = domain.lower_bound(i->first);
+
+        //if not found
+        if (found == domain.end())
+        {
+            domain.insert(last, std::make_pair(i->first,i->second));
+
+        }
+        else // still not found
+        if (found->first != i->first)
+        {
+            --found;
+            // add it to the domain
+            domain.insert(found, std::make_pair(i->first,i->second));
+            last = found;
+            //ret[i->first] = i->second;
+        }
+        else // found
+        {
+            found->second.intersect(i->second);
+            //
+            //domain.second =
+            //GecodeSolver::Domain inter = i->second;
+            //inter.intersect(found->second);
+            //ret[i->first]=inter;
+            last = found;
+        }
+    }
+
+    /*
+    // can optimize this
+    // all variables that we have only in b but not in a
+    for (GecodeSolver::DomainMap::const_iterator i = b.begin(); i != b.end(); ++i)
+    {
+        GecodeSolver::DomainMap::const_iterator found = a.find(i->first);
+
+        if (found == a.end())
+        {
+            ret[i->first] = i->second;
+        }
+    }
+    return ret;
+    */
 }
 
 GecodeSolver::DomainMap intersect(const GecodeSolver::DomainMap& a,  const GecodeSolver::DomainMap& b)
@@ -628,9 +805,24 @@ bool GecodeSolver::nextAnswer()
     return (enumerator_ != NULL);
 }
 
+GecodeSolver::SearchSpace* GecodeSolver::getRootSpace() const
+{
+    assert(spaces_.size());
+    //if (spaces_.size())
+        return (spaces_[0]->failed() ? 0 : static_cast<GecodeSolver::SearchSpace*>(spaces_[0]->clone()));
+    //else
+     //   return (currentSpace_->failed() ? 0 : static_cast<GecodeSolver::SearchSpace*>(currentSpace_->clone()));
+}
+
+void GecodeSolver::setRecording(bool r)
+{
+    recording_ = r;
+}
 
 void GecodeSolver::setConflict(Clasp::LitVec conflict)
 {
+    conflictAnalyzer_->shrink(conflict);
+
     unsigned int maxDL = 0;
     for (Clasp::LitVec::const_iterator j = conflict.begin(); j != conflict.end(); ++j)
         maxDL = std::max(s_->level(j->var()), maxDL);
@@ -641,59 +833,11 @@ void GecodeSolver::setConflict(Clasp::LitVec conflict)
         conflict.push_back(posLit(0));
     s_->setConflict(conflict);
     return;
-
-    /* test new stuff IIS (Irreducible Infeasible Set)
-
-    if (conflict.size()==0)
-    {
-        conflict.push_back(posLit(0));
-        s_->setConflict(conflict);
-        return;
-    }
-
-    // copy the very first searchspace
-    SearchSpace* tester;
-
-    std::cout << "Reduced from " << conflict.size() << " to ";
-    unsigned int counter = 1;
-    while(conflict.size()>counter)
-    {
-        if (spaces_.size())
-            tester = static_cast<GecodeSolver::SearchSpace*>(spaces_[0]->clone());
-        else
-            tester = static_cast<GecodeSolver::SearchSpace*>(currentSpace_->clone());
-
-        tester->propagate(conflict.begin(), conflict.end()-counter);
-
-        if (tester->failed() || tester->status()==SS_FAILED)
-        {
-            // still failing, throw it away, it did not contribute to the conflict
-            conflict.erase(conflict.end()-counter);
-        }
-        else
-        {
-            counter++;
-        }
-        delete tester;
-    }
-    std::cout << conflict.size() << std::endl;
-    unsigned int maxDL = 0;
-    for (Clasp::LitVec::const_iterator j = conflict.begin(); j != conflict.end(); ++j)
-        maxDL = std::max(s_->level(j->var()), maxDL);
-    s_->setBacktrackLevel(std::min(maxDL,s_->backtrackLevel()));
-    if (maxDL < s_->decisionLevel())
-        s_->undoUntil(maxDL);
-    if (conflict.size()==0) // if root level conflict due to global constraints
-        conflict.push_back(posLit(0));
-    s_->setConflict(conflict);
-    */
 }
 
 
 unsigned int GecodeSolver::varToIndex(unsigned int var)
 {
-    //if (varToIndex_.find(var) == varToIndex_.end())
-    //    int error=5;
     return varToIndex_[var];
 }
 
@@ -718,7 +862,24 @@ void GecodeSolver::printAnswer()
 bool GecodeSolver::propagate()
 {
 
+    if (updateOpt_)
+    {
+        return propagateMinimize();
+    }
 
+
+    /*
+    std::cout << "Assignment:@" << currentDL() << std::endl;
+    for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
+    {
+        if (i->sign())
+            std::cout << "neg ";
+        else
+            std::cout << "pos ";
+        std::cout << num2name(i->var()) << " ";
+    }
+    std::cout << std::endl;
+*/
     // if already failed, create conflict, this may be on a lower level
     if (currentSpace_->failed())
     {
@@ -727,6 +888,7 @@ bool GecodeSolver::propagate()
     }
     else // everything is fine
     {
+        /*
         // if we need to update the minimize function, do this
         if (updateOpt_ && GecodeSolver::optValues.size()>0)
         { 
@@ -751,10 +913,9 @@ bool GecodeSolver::propagate()
             else
             {
                 setConflict(assignment_);
-                Clasp::LitVec clits(assignment_);
                 return false;
             }
-        }
+        }*/
 
         // no updateOpt or no problem with this
 
@@ -763,11 +924,11 @@ bool GecodeSolver::propagate()
         for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
         {
             //assert(s_->isTrue(*i));
-            if (!s_->isTrue(*i))
-            {
+            //if (!s_->isTrue(*i))
+            //{
                 //this literal was once propagated but then backtracked without any notice of me, so we ignore it
-                continue;
-            }
+            //    continue;
+            //}
             // add if free
             // conflict if contradicting
             GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
@@ -787,8 +948,8 @@ bool GecodeSolver::propagate()
         // we have something to propagate
         if (clits.size())
         {
-            // if we have a new decision level, create a new space and stack the old one
-            if (s_->decisionLevel() > currentDL_)
+            // if we have a new decision level, create a new space
+            if (s_->decisionLevel() > currentDL())
             {
                 //register in solver for undo event
                 assert(s_->decisionLevel()!=0);
@@ -796,19 +957,24 @@ bool GecodeSolver::propagate()
 
                 //std::cout << "store a new space" << std::endl;
                 // store old space
-                if (dl_.size() && currentDL_ == dl_.back())
+                /*if (dl_.size() && currentDL_ == dl_.back())
                 {
                     delete spaces_.back();
                     spaces_.back() = static_cast<SearchSpace*>(currentSpace_->clone());
                     assLength_.back() = assignment_.size();
+                    propsPerLevel_.back() = propsPerLevelCounter_;
                 }
-                else
-                {
-                    spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
-                    dl_.push_back(currentDL_);
-                    assLength_.push_back(assignment_.size());
-                }
-                currentDL_ = s_->decisionLevel();
+                else*/
+                //{
+                // this will be the new space and dl
+                spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
+                dl_.push_back(s_->decisionLevel());
+                currentSpace_ = spaces_.back();
+
+                //this is for the old one
+                assLength_.push_back(assignment_.size());
+                //}
+
             }
 
             derivedLits_.clear();
@@ -827,7 +993,9 @@ bool GecodeSolver::propagate()
             {
                 // could save a bit of conflict size if conflict resultet from propagate function, which does singular propagation
 
-                clits.insert(clits.end(), assignment_.begin(), assignment_.end());
+//#pragma message "This is not so good, conflicting literals will be in front, change and test"
+                clits.insert(clits.begin(), assignment_.begin(), assignment_.end());
+                //clits.insert(clits.end(), assignment_.begin(), assignment_.end());
                 setConflict(clits);
                 return false;
             }
@@ -838,108 +1006,121 @@ bool GecodeSolver::propagate()
 }
 
 
+ bool GecodeSolver::propagateMinimize()
+ {
+     //Clasp::LitVec oldDerivedLits;
+     //oldDerivedLits.swap(derivedLits_); // maybe something was already propagated
+     updateOpt_ = false;
+     //TODO: what if i have no space
+     size_t i = 0;
+     assert(spaces_.size());
+     SearchSpace* current = spaces_[0];
+     while (true)
+     {
+         derivedLits_.clear();
+         current->updateOptValues();
+
+         //PROBLEM, arbeite direkt auf dem space, dieser kann fehlschlagen!
+         if (current->failed() || current->status()==SS_FAILED)
+         {
+             Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+assLength(i));
+             propQueue_.clear();
+             setConflict(conflict);
+             return false;
+         }
+         else
+         {
+             //monotone
+             /*if (current == currentSpace_)
+             {
+                 if (derivedLits_.size()>0)
+                 {
+                     unsigned int dl = currentDL();
+                     s_->setBacktrackLevel(std::min(dl,s_->backtrackLevel()));
+                     if (dl < s_->decisionLevel())
+                         s_->undoUntil(dl);
+                     if (!propagateNewLiteralsToClasp())
+                         return false;
+                     break;
+                 }
+             }
+             else*/
+             if (derivedLits_.size()>0)
+             {
+                 unsigned int dl = dl_[i];
+                 s_->setBacktrackLevel(std::min(dl,s_->backtrackLevel()));
+                 if (dl < s_->decisionLevel())
+                     s_->undoUntil(dl);
+                 if (!propagateNewLiteralsToClasp())
+                     return false;
+                 break;
+             }
+         }
+         if (current == currentSpace_)
+             break;// nothing found
+         else
+             if (++i < spaces_.size())
+                 current = spaces_[i];
+  //           else
+ //                current = currentSpace_;
+     }
+     //derivedLits_.swap(oldDerivedLits);
+     return propagate();
+     // for each decisionLevel check if new propagation takes place ?
+
+ }
+
+
 /* backjump to decision level: unsigned int level
    for undoLevel one has to call with: undoUntil(s_-decisionLevel() - 1)
+   remove level
 */
-void GecodeSolver::undoUntil(unsigned int level)
+void GecodeSolver::undo(unsigned int level)
 {
-#ifdef DEBUGTEXT
-    std::cout << "Backjump to level(+1?) " << level << " from level solver: " << s_->decisionLevel() << " and intern: " << currentDL_ << std::endl;
-    currentSpace_->print(variables_);std::cout << std::endl;
-#endif
-    level++;
-#ifdef DEBUGTEXT
-    std::cout << "the following dl levels are stored" << std::endl;
-    for (unsigned int i = 0; i < dl_.size(); ++i)
-        std::cout << dl_[i] << " ";
-    std::cout << std::endl;
-#endif
-    if (level > currentDL_)
-    {
-        assert(false);
-#ifdef DEBUGTEXT
-        std::cout << "broken backjump, nothing to do" << std::endl;
-#endif
-        return;
-    }
-//    std::cout << "backtrack over level" << level << std::endl;
+    assert(level!=0);
+    //assert(level <= currentDL());
+    assert(level==currentDL());
 
+    //std::cout << "undo level" << level << "/" << currentDL() << std::endl;
+
+    /*
     unsigned int index;
-    //bool found = false;
-    for (index = 0; index < dl_.size(); ++index)
-    {
-        if (dl_[index]>=level)
-        {
-            //found = true;
-            break;
-        }
-    }
+    std::vector<unsigned int>::iterator ind = std::lower_bound(dl_.begin(), dl_.end(),level);
+    assert(ind != dl_.end());
+    --ind;
+    index = ind-dl_.begin();
+    */
+    //std::cout << "backtrack to index " << index << std::endl;
 
-    // if not found, go one less
-    //	if (!found) // only if not 0
-    if (index)
-        --index;
 
-    if (currentSpace_)
-        delete currentSpace_;
-    currentSpace_ = static_cast<GecodeSolver::SearchSpace*>(spaces_[index]->clone());
+
+    delete spaces_.back();
+    spaces_.pop_back();
+    currentSpace_ = spaces_.back();
+
+    //currentSpace_ = spaces_[index];//static_cast<GecodeSolver::SearchSpace*>(spaces_[index]->clone());
     propQueue_.clear();
-    if (optimize_ && GecodeSolver::optValues.size()>0)
-        updateOpt_=true;
 
     //erase all spaces above
-    ++index;
+   /* ++index;
     for (unsigned int j = index; j != spaces_.size(); ++j)
     {
         delete spaces_[j];
     }
-    spaces_.resize(index);
-    dl_.resize(index);
-    assLength_.resize(index);
-
+    spaces_.resize(index);*/
+    //dl_.resize(index);
+    dl_.pop_back();
+    //assignment_.resize(assLength_[index-1]);
     assignment_.resize(assLength_.back());
+    //assLength_.resize(index-1);
+    assLength_.pop_back();
+
+
 
     //currentDL_ = level-1;
-    currentDL_ = dl_[index-1];
-#ifdef DEBUGTEXT
-    std::cout << "The decision level after backjump is " << currentDL_ << std::endl;
-    std::cout << "the following dl levels are stored" << std::endl;
-    for (unsigned int i = 0; i < dl_.size(); ++i)
-        std::cout << dl_[i] << " ";
-    std::cout << std::endl;
-
-    std::cout << "Assignment after undo: " << std::endl;
-    for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
-        std::cout << (i->sign() ? "not " : "") << num2name(i->var()) << ", ";
-    std::cout << std::endl;
-    currentSpace_->print(variables_);std::cout << std::endl;
-#endif
-
+    //currentDL_ = dl_[index-1];
     return;
 }
-
-/*
-void GecodeSolver::generateReason(Clasp::LitVec& lits, unsigned int upToAssPos)
-{
-    // add only atoms from solver assignment
-    // go only over atoms that are assigned in the gecode assignment
-    // TODO: test if switching the presettings is the solution (go only over assigned gecode, even new, add only old assigned plus new derived lits from clasp== assignment_)
-    // TODO: Do get the new learnt literals immediatly true ? If so, ignoring them could lead to smaller clauses
-    {
-
-        lits.insert(lits.end(), assignment_.begin(), assignment_.begin() + upToAssPos);
-    }
-
-}
-*/
-/*
-void GecodeSolver::generateConflict(Clasp::LitVec& lits, unsigned int upToAssPos)
-{
-    // very naive appraoch, all assigned constraints so far
-    generateReason(lits, upToAssPos);
-}*/
-
-
 
 bool GecodeSolver::propagateNewLiteralsToClasp()
 {
@@ -955,9 +1136,7 @@ bool GecodeSolver::propagateNewLiteralsToClasp()
             if (!s_->isTrue(*i))  // if the literal is not already true (undecided or false)          
             {
                 litToAssPosition_[(*i).var()] = size;
-                assignment_.push_back(*i);
-
-    #pragma message "Ask Benni if i register for -a will i get calls for a?"
+                //assignment_.push_back(*i);
                 if (!s_->force(*i, &dummyReason_))
                 {
 
@@ -972,68 +1151,20 @@ bool GecodeSolver::propagateNewLiteralsToClasp()
     }
     else
     {
-#pragma message "Could optimize here as a big part of the reason is the same, first create this part, maybe this can be done with the ClauseCreator"
-
-        //std::cout << "Propagate to clasp" << std::endl;
         ClauseCreator gc(s_);
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
-
-            /*
-            Clasp::LitVec reason;
-            reason.push_back(*i);
-            generateReason(reason, size);
-            gc.startAsserting(Constraint_t::learnt_conflict, *reason.begin());
-            for (Clasp::LitVec::const_iterator j = reason.begin() + 1; j != reason.end(); ++j)
-            {
-                gc.add(~(*j));
-            }
-            if(!gc.end())
-                return false;
-            */
-            //if (s_->value(i->var())==Clasp::value_free)
-
             if (!s_->isTrue(*i))
             {
-                /*
-                   std::cout << "reason for: ";
-                   if (s_->isFalse(*i)) std::cout << "f!!!!!!!!!!!!!!!!!!!!!!!!!";
-                   else
-                   if (s_->isTrue(*i)) std::cout << "t!!!!!!!!!!!!!!!!!!!!!!!!";
-                   else
-                       std::cout << "u";
-                   if (i->sign())
-                        std::cout << "neg ";
-                    else
-                        std::cout << "pos ";
-                    std::cout << num2name(i->var());
-                    if (s_->isFalse(*i))
-                        std::cout << "WAS FALSE!!!!!!!!!!!!!!!!!!!!" << std::endl;
-                    std::cout << std::endl;
-                    */
-
                 uint32 dl = s_->decisionLevel();
-                assignment_.push_back(*i);
+                //assignment_.push_back(*i);
                 gc.startAsserting(Constraint_t::learnt_conflict, *i);
-                for (Clasp::LitVec::const_iterator j = assignment_.begin(); j != assignment_.begin()+size; ++j)
+                Clasp::LitVec reason;
+                createReason(reason,*i,assignment_.begin(), assignment_.begin()+size);
+
+                for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
                 {
-                    /*
-                    if (s_->isFalse(*j)) std::cout << "f!!!!!!!!!!!!!!!!!!!!!!";
-                    else
-                    if (s_->isTrue(*j)) std::cout << "t";
-                    else
-                        std::cout << "UNKNOWN !!!!!!!!!!!!!!!!!!!!!";
-
-                    if (j->sign())
-                         std::cout << "neg ";
-                     else
-                         std::cout << "pos";
-                     std::cout << num2name(j->var());
-                     std::cout << " on level " << s_->level(j->var());
-
-                     std::cout << std::endl;
-                     */
-                    gc.add(~(*j));
+                    gc.add(~(*r));
                 }
                 if(!gc.end())
                 {
@@ -1045,53 +1176,38 @@ bool GecodeSolver::propagateNewLiteralsToClasp()
             }
             else
             {
-                /*
-                std::cout << "Skip: ";
-                   if (i->sign())
-                        std::cout << "neg ";
-                    else
-                        std::cout << "pos";
-                    std::cout << num2name(i->var());
-                    */
 
             }
-           // std::cout << std::endl;
         }
-
         derivedLits_.clear();
         return true;
     }
     assert(false);
 }
 
+void GecodeSolver::createReason(Clasp::LitVec& reason, const Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
+{
+    reasonAnalyzer_->generate(reason, l, begin, end);
+}
+
 Clasp::ConstraintType GecodeSolver::CSPDummy::reason(const Literal& l, Clasp::LitVec& reason)
 {
-    reason.insert(reason.end(), gecode_->assignment_.begin(), gecode_->assignment_.begin()+gecode_->litToAssPosition_[l.var()]);
-   // for (Clasp::LitVec::const_iterator i = gecode_->assignment_.begin(); i != gecode_->assignment_.begin()+; ++i)
-    {
-
-    }
-
-    //Clasp::LitVec temp;
-    //temp.push_back(l);
-   // gecode_->generateReason(reason, gecode_->litToAssPosition_[l.var()]);
-    //remove first literal from reason
-    //reason[0] = reason.back();
-    //reason.pop_back();
+    gecode_->createReason(reason, l, gecode_->assignment_.begin(), gecode_->assignment_.begin()+gecode_->litToAssPosition_[l.var()]);
     return Clasp::Constraint_t::learnt_other;
 }
 
+GecodeSolver* GecodeSolver::SearchSpace::csps_ = 0;
 
+IntVarArgs GecodeSolver::SearchSpace::iva_;
 
 
 GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
-                                       LParseGlobalConstraintPrinter::GCvec& gcvec,
-                                       std::map<unsigned int, unsigned int>* litToVar) : Space(),
+                                       LParseGlobalConstraintPrinter::GCvec& gcvec) : Space(),
     x_(*this, numVar),
     //b_(*this, constraints.size(), 0, 1),
-    b_(),
-    csps_(csps)
+    b_()
 {
+    csps_ = csps;
 
     //initialize all variables with their domain
     for(size_t i = 0; i < csps_->getVariables().size(); ++i)
@@ -1140,12 +1256,9 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     {
          if (csps_->getSolver()->value(i->first) == value_free)
          {
-             //std::cout << "add to map " << i->first << " with " << counter << std::endl;
              csps_->addVarToIndex(i->first, counter);
-             //std::cout << csps_->num2name(i->first) << " will be generated" << std::endl;
              generateConstraint(i->second, counter);
              reifwait(*this,csps_,b_[counter],&GecodeSolver::newlyDerived, counter, ICL);
-             //Gecode::wait(*this, b_[counter],boost::bind(&(GecodeSolver::newlyDerived),csps_,counter,_1),ICL);
              ++counter;
          }
     }
@@ -1171,6 +1284,10 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
         }
     }
 
+    //if (GecodeSolver::optValues.size()>optimize.size())
+    GecodeSolver::optValues.resize(optimize.size(),Int::Limits::max-1);
+    if (optValues.size()>0)
+        ++optValues.back();
     opts_ = IntVarArray(*this, optimize.size(), Int::Limits::min, Int::Limits::max);
 
 
@@ -1178,9 +1295,6 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     for (std::map<unsigned int,std::vector<std::pair<GroundConstraint*,bool> > >::iterator i = optimize.begin(); i != optimize.end(); ++i)
     {
         LinExpr expr(generateSum(i->second));
-        //    if (i->second.second)
-        //        rel(*this, LinRel(opts_[index],IRT_EQ,-expr), ICL); // maximize == minimize the opposite
-        //    else
         rel(*this, LinRel(opts_[index],IRT_EQ,expr), ICL);
 
         ++index;
@@ -1199,7 +1313,7 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     iva_ = IntVarArgs();
 }
 
-GecodeSolver::SearchSpace::SearchSpace(bool share, SearchSpace& sp) : Space(share, sp), csps_(sp.csps_)
+GecodeSolver::SearchSpace::SearchSpace(bool share, SearchSpace& sp) : Space(share, sp)
 {
     x_.update(*this, share, sp.x_);
     b_.update(*this, share, sp.b_);
@@ -1217,35 +1331,48 @@ void GecodeSolver::SearchSpace::constrain(const Space& _b)
     updateOptValues();
 }
 
-void GecodeSolver::SearchSpace::updateOptValues()
+bool GecodeSolver::SearchSpace::updateOptValues()
 {
-    if (opts_.size()>1)
+    if (GecodeSolver::optValues.size()==0)
+        return true;
+    assert(opts_.size() <= GecodeSolver::optValues.size());
+    if (GecodeSolver::optValues.size()>1)
     {
         rel(*this, opts_[0] <= GecodeSolver::optValues[0], ICL);
     }
 
+    BoolVarArray lhs(*this,opts_.size()-1, 0,1);
     for (int i = 0; i < opts_.size()-1; ++i)
     {
-        BoolVar lhs(*this,0,1);
+        rel(*this, opts_[i], IRT_EQ, GecodeSolver::optValues[i], lhs[i], ICL);
+
         BoolVar rhs(*this,0,1);
-        rel(*this, opts_[i], IRT_EQ, GecodeSolver::optValues[i], lhs, ICL);
+
         if (i+1==opts_.size()-1)
-            rel(*this, opts_[i+1], IRT_LE, GecodeSolver::optValues[i+1], rhs, ICL);
+        {
+            if (GecodeSolver::optAll)
+                rel(*this, opts_[i+1], IRT_LQ, GecodeSolver::optValues[i+1], rhs, ICL);
+            else
+                rel(*this, opts_[i+1], IRT_LE, GecodeSolver::optValues[i+1], rhs, ICL);
+        }
         else
             rel(*this, opts_[i+1], IRT_LQ, GecodeSolver::optValues[i+1], rhs, ICL);
-        rel(*this, lhs, BOT_IMP, rhs, 1, ICL);
+        BoolVar allBefore(*this,0,1);
+        rel(*this, BOT_AND, lhs.slice(0,1,i+1), allBefore, ICL);
+        rel(*this, allBefore, BOT_IMP, rhs, 1, ICL);
     }
 
     if (opts_.size()==1)
     {
         rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
     }
+    return !failed();
 
 }
 
 void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec::const_iterator& lvstart, const Clasp::LitVec::const_iterator& lvend)
 {
-    for (Clasp::LitVec::const_iterator i = lvstart; i != lvend; ++i)
+    for (Clasp::LitVec::const_iterator i = lvstart; i < lvend; ++i)
     {
         Int::BoolView bv(b_[csps_->varToIndex(i->var())]);
         if (!i->sign())
@@ -1267,33 +1394,26 @@ void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec::const_iterator& l
     }
 }
 
-/*
-Clasp::LitVec GecodeSolver::SearchSpace::getAssignment(const Clasp::LitVec& as)
+void GecodeSolver::SearchSpace::propagate(const Clasp::Literal& i)
 {
-    // only add new literals that are not in the as vector (some kind of assignment)
-    Clasp::LitVec ret(as);
-    for (std::map<unsigned int, unsigned int>::iterator i = litToVar_->begin(); i != litToVar_->end(); ++i)
+    Int::BoolView bv(b_[csps_->varToIndex(i.var())]);
+    if (!i.sign())
     {
-        Int::BoolView bv(b_[i->second]);
-        if (bv.assigned())
+        if(Gecode::Int::ME_BOOL_FAILED == bv.one(*this))
         {
-            if (bv.zero())
-            {
-                if (std::find(as.begin(), as.end(), Literal(i->first, true)) == as.end())
-                    ret.push_back(Literal(i->first, true));
-            }
-            else
-            {
-                if (std::find(as.begin(), as.end(), Literal(i->first, false)) == as.end())
-                    ret.push_back(Literal(i->first, false));
-            }
+            fail();
         }
     }
-    return ret;
-}*/
+    else
+    {
+        if(Gecode::Int::ME_BOOL_FAILED == bv.zero(*this))
+        {
+            fail();
+        }
+    }
+}
 
-
-void GecodeSolver::SearchSpace::print(std::vector<std::string>& variables) const
+void GecodeSolver::SearchSpace::print(const std::vector<std::string>& variables) const
 {
     // i use ::operator due to gecode namespace bug
     for (int i = 0; i < x_.size(); ++i)
@@ -1302,18 +1422,30 @@ void GecodeSolver::SearchSpace::print(std::vector<std::string>& variables) const
         Int::IntView v(x_[i]);
         std::cout << variables[i] << "=";
         std::cout << v;
-        //::operator<<(std::cout, v);
         std::cout << " ";
-        //for (IntVarRanges i(x); i(); ++i)
-        // std::cout << i.min() << ".." << i.max() << ’ ’;
-
     }
 }
 
 GecodeSolver::SearchSpace::Value GecodeSolver::SearchSpace::getValueOfConstraint(const Clasp::Var& i)
 {
+/*
+    std::cout << "Asking for " << csps_->num2name(i) << std::endl;
+    for (std::map<unsigned int, unsigned int>::const_iterator j = csps_->indexToVar_.begin(); j != csps_->indexToVar_.end(); ++j)
+    {
+        std::cout << csps_->num2name(j->second) << "=";
+        Int::BoolView bv(b_[j->first]);
+        if (bv.status()== Int::BoolVarImp::NONE)
+            std::cout << "free  ";
+        if (bv.status()== Int::BoolVarImp::ONE)
+            std::cout << "true  ";
+        if (bv.status()== Int::BoolVarImp::ZERO)
+            std::cout << "false ";
+
+    }
+    std::cout << std::endl;
+*/
+
     Int::BoolView bv(b_[csps_->varToIndex(i)]);
-    //Int::BoolView bv(b_[(*litToVar_)[i.var()]]);
     if (bv.status() == Int::BoolVarImp::NONE)
         return BFREE;
     else

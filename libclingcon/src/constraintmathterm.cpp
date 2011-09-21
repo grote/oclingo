@@ -61,7 +61,7 @@ namespace Clingcon
                 else if(f_ == MathTerm::ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
             }
 
-#pragma message "Warning: throw exception if division by zero"
+
             if((a_.get() && a_->constant() && a_->val(g).type==Val::NUM) && (b_.get() && b_->constant() && b_->val(g).type==Val::NUM))
             {
                 Val va = a_->val(g);
@@ -71,8 +71,8 @@ namespace Clingcon
                 case MathTerm::PLUS:  { return Val::number(va.num + vb.num); }
                 case MathTerm::MINUS: { return Val::number(va.num - vb.num); }
                 case MathTerm::MULT:  { return Val::number(va.num * vb.num); }
-                case MathTerm::DIV:   { return vb.num == 0 ? Val::undef() : Val::number(va.num / vb.num); }
-                case MathTerm::MOD:   { return vb.num == 0 ? Val::undef() : Val::number(va.num % vb.num); }
+                case MathTerm::DIV:   { if (vb.num == 0) { std::cerr << "Warning: Division by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); } else return Val::number(va.num / vb.num); }
+                case MathTerm::MOD:   { if (vb.num == 0) { std::cerr << "Warning: Modulo by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); }   else return Val::number(va.num % vb.num); }
                 case MathTerm::POW:   { return Val::number(ipow(va.num, vb.num)); }
                 case MathTerm::AND:   { return Val::number(va.num & vb.num); }
                 case MathTerm::XOR:   { return Val::number(va.num ^ vb.num); }
