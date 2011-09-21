@@ -43,7 +43,7 @@ namespace Clingcon
         {
             std::cout << 0 << " propagations in simple Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void shrink(Clasp::LitVec& conf)
         {
@@ -76,7 +76,7 @@ namespace Clingcon
         {
             std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);
@@ -98,7 +98,7 @@ namespace Clingcon
         {
             std::cout << props_ << " propagations in exp Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void shrink(Clasp::LitVec& conflict);
 
@@ -120,7 +120,7 @@ namespace Clingcon
         {
             std::cout << props_ << " propagations in fwdlin Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void shrink(Clasp::LitVec& conflict);
 
@@ -141,7 +141,7 @@ namespace Clingcon
         {
             std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);
@@ -163,7 +163,7 @@ namespace Clingcon
         {
             std::cout << props_ << " propagations in range Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedC " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
         virtual void shrink(Clasp::LitVec& conflict);

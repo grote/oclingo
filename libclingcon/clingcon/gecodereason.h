@@ -45,7 +45,7 @@ namespace Clingcon
         {
             std::cout << 0 << " propagataions in simple reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& , const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
@@ -78,7 +78,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -100,7 +100,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in exp reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -122,7 +122,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in fwd reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -144,7 +144,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in fwdlinear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -167,7 +167,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in scc reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -191,7 +191,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -213,7 +213,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -237,7 +237,7 @@ namespace Clingcon
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << full_ << " complete reasons" << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
 
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
@@ -265,7 +265,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -308,7 +308,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/sumLength_ << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 
@@ -334,7 +334,7 @@ namespace Clingcon
             std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " props per call" << std::endl;
-            std::cout << "AnalyzedR " << float(oldLength_)/float(sumLength_) << " %" << std::endl;
+            std::cout << "AnalyzedR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
         }
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
 

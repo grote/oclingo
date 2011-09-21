@@ -12,6 +12,7 @@ DONE
 - reduced csp-assignment to literals propagated from clasp, results in smaller reasons/conflicts
 - disabled lookahead and --no-lookback
 - support for  csp-opt-val and csp-opt-all
+- optional initial lookahead of gecode constraints
 
 
 TODO
@@ -43,10 +44,9 @@ TODO
 			reason für -b
         - grouped via DL
 	
-- do initial lookahead of gecode constraints
 - order constraints to the number of variables to speed up initial propagation
 - force statt setconflict benutzen, spart Codepath!?
-- look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation"
+- look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation", SMT-Lib
 
 
 BUGS
@@ -56,6 +56,14 @@ BUGS
 
 
 COMMENTS
+
+Idee für neuen Ansatz: (Gecode Massiv verändern)
+Jedes Constraint bekommt eindeutige Nummer und vererbt diese auch weiter.
+Jedes Constraint Liste seiner Variablen.
+Jede Variable hat Trail mit Constraints und DL, welche diese Variable verändert haben.
+Der Reason ist die union der Trails der Variablen und davon die Transitive Hülle.
+Vermutung: Ungenau und langsam
+
 
 
 export WITH_CLINGCON=1
