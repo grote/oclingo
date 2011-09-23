@@ -42,7 +42,8 @@ struct JunctionIndex : public StaticIndex
 	typedef boost::unordered_map<ValVec, Status> Done;
 
 	JunctionIndex(JunctionLit &lit, VarSet &global)
-		: lit_(lit)
+		: status_(0)
+		, lit_(lit)
 		, global_(global.begin(), global.end())
 		, generation_(2)
 		, uids_(0)
