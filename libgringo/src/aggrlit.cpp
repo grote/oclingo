@@ -73,6 +73,7 @@ namespace
 		void reset();
 		void finish();
 		bool hasNew() const;
+		bool init(Grounder* g);
 		AggrState *current() const;
 		~AggrIndex();
 	private:
@@ -152,7 +153,7 @@ int64_t BoundAggrState::Val64::num() const
 
 uint32_t BoundAggrState::Val64::type() const
 {
-	return isNum_ ? Val::NUM : val_.type;
+	return isNum_ ? uint32_t(Val::NUM) : val_.type;
 }
 
 int BoundAggrState::Val64::compare(const Val64 &v, Storage *s) const
@@ -827,6 +828,12 @@ void AggrIndex::finish()
 bool AggrIndex::hasNew() const
 {
 	return !finished_ || lit_.domain().hasNew();
+}
+
+bool AggrIndex::init(Grounder *g)
+{
+	foreach(AggrCond &cond, lit_.conds()) { cond.initInst(g); }
+	return hasNew();
 }
 
 AggrIndex::~AggrIndex()
