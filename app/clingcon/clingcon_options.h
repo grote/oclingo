@@ -130,6 +130,7 @@ struct ClingconOptions
             else if (temp == "scc")               { out = temp; return true; }
             else if (temp == "log")               { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
+            else if (temp == "sccrange")          { out = temp; return true; }
             return false;
 
         }
@@ -140,8 +141,11 @@ struct ClingconOptions
             if      (temp == "simple")            { out = temp; return true; }
             else if (temp == "linear")            { out = temp; return true; }
             else if (temp == "linear-fwd")        { out = temp; return true; }
+            else if (temp == "linear-grouped")    { out = temp; return true; }
+            else if (temp == "scc")               { out = temp; return true; }
             else if (temp == "log")               { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
+            else if (temp == "sccrange")          { out = temp; return true; }
             return false;
 
         }
@@ -296,6 +300,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      scc            : Do an IRS check using the variable dependency tree\n"
                          "      log            : Do a logarithmic IRS check backward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
+                         "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
                 )
                 ("csp-reduce-conflict", storeTo(cspConflict)->defaultValue("simple")->parser(ClingconOptions::checkReduceConflict), "Determine the method to reduce the conflicts.\n"
                          "      simple         : Do nothin (default)\n"
@@ -303,6 +308,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      linear-fwd     : Do a linear IIS check forward\n"
                          "      log            : Do a logarithmic IIS check backward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
+                         "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
                 );
 
 }

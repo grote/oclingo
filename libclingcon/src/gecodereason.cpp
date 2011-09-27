@@ -525,6 +525,9 @@ void FwdLinear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, c
             }
             //--end;
              ++props_;
+            //VIELLEICHT HIER AUFHÖREN UND ENDE NEU SETZEN ???
+            delete tester;
+            break;
         }
         delete tester;
     }
@@ -1535,6 +1538,381 @@ void Linear2GroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& 
     delete original;
     g_->setRecording(true);
     t_.stop();
+}
+
+
+size_t FirstUIPRA::getIndexBelowDL(uint32 level)
+{
+    std::vector<unsigned int>::iterator ind = std::lower_bound(g_->dl_.begin(), g_->dl_.end(),level);
+    assert(ind != g_->dl_.end());
+    --ind;
+    return ind-g_->dl_.begin();
+}
+
+
+void FirstUIPRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
+{
+    oldLength_+=ends-begin;
+    t_.start();
+    assert(reason.size()==0);
+    ++numCalls_;
+    //t_.start();
+    Clasp::LitVec::const_iterator end = ends;
+    if (end-begin==0)
+    {
+        t_.stop();
+        return;
+    }
+
+
+
+    // copy the very first searchspace
+    GecodeSolver::SearchSpace* original;
+    GecodeSolver::SearchSpace* tester = 0;
+    original = g_->getRootSpace();
+    /*if (!original)
+    {
+        t_.stop();
+        return;
+    }*/
+
+
+/*
+
+    std::cout << "Reason for ";
+    if (l.sign()) std::cout << "f ";
+    else std::cout << "t ";
+    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
+
+    std::cout << "Out of ";
+    for (Clasp::LitVec::const_iterator i = begin; i != ends; ++i)
+    {
+        if (i->sign()) std::cout << "f ";
+        else std::cout << "t ";
+        std::cout << g_->num2name(i->var()) << std::endl;
+    }
+*/
+    g_->setRecording(false);
+
+    assert(end>=begin);
+    uint32 highestLevel = g_->getSolver()->level((end-1)->var());
+    Clasp::LitVec::const_iterator i = end-1;
+    while (i>=begin && g_->getSolver()->level(i->var())==highestLevel)
+        --i;
+    Clasp::LitVec::const_iterator start = i+1;
+    // start sollte auf niedrigstem literal stehen auf höchstem dl, und end hinter letztem
+    size_t index = getIndexBelowDL(highestLevel);
+
+    do
+    {
+        while(end>start)
+        {
+            tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
+            reifwait2(*tester,tester->b_[g_->varToIndex(l.var())],&Space::fail);
+            tester->propagate(start,end-1);
+            tester->propagate(reason.begin(),reason.end());
+
+            tester->status();
+
+            props_++;
+            //assert(!tester->failed());
+           // if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+            if (tester->failed())
+            {
+                // still reason, throw it away, it did not contribute to the reason
+                //std::cout << "no reason" << std::endl;
+                --end;
+            }
+            else
+            {
+                Found:
+
+                original->propagate(*(end-1));
+                reason.push_back(*(end-1));
+                //std::cout << "reason" << std::endl;
+                //this is enough, but we have to propagate "original", to get a fresh clone out of it
+                if (end-begin>1 && original->status() != SS_FAILED && original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+                {
+                    props_++;
+                    delete tester;
+                    tester=0;
+                    end=begin; // stop everything
+                    break;
+                }
+                props_++;
+                --end;
+            }
+            delete tester;
+        }
+        /*--index;
+        highestLevel = g_->getSolver()->level((end-1)->var());
+        Clasp::LitVec::const_iterator i = end-1;
+        while (i>=begin && g_->getSolver()->level(i->var())==highestLevel)
+            --i;
+        start = i+1;*/
+    }
+    //while(end>begin);
+    while(false);
+    ///
+    reason.insert(reason.end(),begin,start);
+    sumLength_+=reason.size();
+    //std::cout << sumLength_ << std::endl;
+    delete original;
+    g_->setRecording(true);
+    t_.stop();
+}
+
+
+
+SCCRangeRA::SCCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+{
+    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    {
+        varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
+        std::vector<unsigned int> vec;
+        i->second->getAllVariables(vec,g);
+        for (std::vector<unsigned int>::const_iterator v = vec.begin(); v != vec.end(); ++v)
+            varSets_[i->first].set(*v);
+        /*
+        std::cout << "Var " << g_->num2name(i->first) << "(" << i->first << ")" << std::endl;
+        for(size_t x = 0; x < varSets_[i->first].size(); ++x)
+            std::cout << x << "\t:" << varSets_[i->first][x] << std::endl;
+            */
+    }
+}
+
+void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
+{
+    oldLength_+=ends-begin;
+    t_.start();
+    ++numCalls_;
+    if (ends-begin==0)
+    {
+        t_.stop();
+        return;
+    }
+    int it = (ends-begin)-1;
+
+    assert(reason.size()==0);
+
+
+    // copy the very first searchspace
+    GecodeSolver::SearchSpace* original;
+    //GecodeSolver::SearchSpace* tester;
+    original = g_->getRootSpace();
+    if (!original)
+    {
+        t_.stop();
+        return;
+    }
+
+    //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+    //    std::cout << "INITIALLY SATISFIED" << std::endl;
+
+    VarSet checker(varSets_[l.var()]);
+    unsigned int checkCount = checker.count();
+
+/*
+    std::cout << "Reason for ";
+    if (l.sign()) std::cout << "f ";
+    else std::cout << "t ";
+    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
+
+    for(size_t i = 0; i < checker.size(); ++i)
+        std::cout << i << "\t:" << checker[i] << std::endl;
+
+    std::cout << "Out of ";
+    for (Clasp::LitVec::const_iterator i = begin; i != begin+it+1; ++i)
+    {
+        if (i->sign()) std::cout << "f ";
+        else std::cout << "t ";
+        std::cout << g_->num2name(i->var()) << std::endl;
+    }
+*/
+    g_->setRecording(false);
+
+    VarSet done(it+1);
+
+    while(true)
+    {
+        //should not happen, otherwise i would have found a reason before and exit
+        assert(done.count()!=ends-begin);
+
+        // if one round passed
+        if(it<0)
+        {
+            // check if knew knowledge was derived, if yes, repeat from beginning, else leave loop
+            if (checkCount<checker.count())
+            {
+                checkCount=checker.count();
+                it = (ends-begin)-1;
+                continue;
+            }
+            break;
+        }
+
+        // already visited this literal
+        if (done.test(it))
+        {
+            //std::cout << "Skip watched " << g_->num2name((begin+it)->var()) << std::endl;
+            --it;
+            continue;
+        }
+
+        // if the last literal is already derived, we do not need to add it to the reason
+        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+        {
+            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
+            checker|=varSets_[(begin+it)->var()];
+            done.set(it);
+
+            //RESTART
+            if (checkCount<checker.count())
+            {
+                checkCount=checker.count();
+                it = (ends-begin)-1;
+                continue;
+            }
+            else//end
+            --it;
+            continue;
+        }
+
+        if (checker.intersects(varSets_[(begin+it)->var()]))
+        {
+            /*tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
+
+            tester->propagate(begin, begin+it);
+            //std::cout << "Testing " << g_->num2name((begin+it)->var());
+
+            tester->status();
+            props_++;
+            done.set(it);
+
+            assert(!tester->failed());
+            // if reason still derives l we can remove the last one
+            if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+            {
+                // still reason, throw it away, it did not contribute to the reason
+                //std::cout << " no" << std::endl;
+                --it;
+            }
+            else
+            */
+            {
+                original->propagate(*(begin+it));
+                reason.push_back(*(begin+it));
+                //this is enough, but we have to propagate "original", to get a fresh clone out of it
+                original->status();
+                assert(!original->failed());
+                if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+                {
+                     //std::cout << " yes and found" << std::endl;
+                     props_++;
+                     //delete tester;
+
+                     sumLength_+=reason.size();
+                     //std::cout << sumLength_ << std::endl;
+                     //std::cout << "Ende" << std::endl;
+                     delete original;
+                     g_->setRecording(true);
+                     t_.stop();
+                     return;
+                }
+                checker|=varSets_[(begin+it)->var()];
+                props_++;
+                //std::cout << " yes" << std::endl;
+                //RESTART
+                if (checkCount<checker.count())
+                {
+                    //delete tester;
+                    checkCount=checker.count();
+                    it = (ends-begin)-1;
+                    continue;
+                }
+                else//end
+                --it;
+            }
+            //delete tester;
+        }
+        else
+            --it;
+    }
+
+/*
+    reason=Clasp::LitVec(begin,ends);
+    sumLength_+=reason.size();
+    //std::cout << sumLength_ << std::endl;
+    //std::cout << "Ende" << std::endl;
+    g_->setRecording(true);
+    delete original;
+    t_.stop();
+    return;
+  */
+
+    for (it = (ends-begin)-1; it != 0; --it)
+    {
+        if (done.test(it))
+        {
+            //std::cout << "Skip watched " << g_->num2name((begin+it)->var()) << std::endl;
+            continue;
+        }
+
+        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+        {
+            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
+            continue;
+        }
+
+        /*tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
+
+        tester->propagate(begin, begin+it);
+        //std::cout << "Testing " << g_->num2name((begin+it)->var());
+
+        tester->status();
+        props_++;
+
+        assert(!tester->failed());
+        // if reason still derives l we can remove the last one
+        if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+        {
+            // still reason, throw it away, it did not contribute to the reason
+            //std::cout << " no" << std::endl;
+        }
+        else*/
+        {
+            original->propagate(*(begin+it));
+            reason.push_back(*(begin+it));
+            //this is enough, but we have to propagate "original", to get a fresh clone out of it
+            original->status();
+            props_++;
+            assert(!original->failed());
+            if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+            {
+                //std::cout << " yes and found" << std::endl;
+
+                //delete tester;
+                sumLength_+=reason.size();
+                //std::cout << sumLength_ << std::endl;
+                //std::cout << "Ende" << std::endl;
+                delete original;
+                g_->setRecording(true);
+                t_.stop();
+                return;
+            }
+            //std::cout << " yes" << std::endl;
+        }
+        //delete tester;
+    }
+
+    reason.push_back(*(begin+it));
+    sumLength_+=reason.size();
+    //std::cout << sumLength_ << std::endl;
+    //std::cout << "Ende" << std::endl;
+    g_->setRecording(true);
+    delete original;
+    t_.stop();
+    return;
 }
 
 

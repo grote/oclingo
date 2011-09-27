@@ -41,6 +41,9 @@ namespace Clingcon {
     class ReasonAnalyzer;
     class Linear2IRSRA;
     class Linear2GroupedIRSRA;
+    class FirstUIPRA;
+    class Linear2IISCA;
+    class Linear2GroupedIISCA;
 
 
     class GecodeSolver : public CSPSolver
@@ -53,6 +56,9 @@ namespace Clingcon {
         //debug
         friend class Linear2IRSRA;
         friend class Linear2GroupedIRSRA;
+        friend class FirstUIPRA;
+        friend class Linear2IISCA;
+        friend class Linear2GroupedIISCA;
 
 
         static std::vector<int> optValues;
@@ -66,7 +72,8 @@ namespace Clingcon {
             LINEAR_GROUPED,
             SCC,
             LOG,
-            RANGE
+            RANGE,
+            SCCRANGE
 
         };
 
@@ -231,6 +238,8 @@ namespace Clingcon {
         public:
             friend class GecodeSolver;
             friend class Linear2IRSRA;
+            friend class FirstUIPRA;
+            friend class Linear2IISCA;
             enum Value
             {
                 BFREE,

@@ -126,13 +126,17 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if (reduceReason == "scc")            reduceReason_ = SCC;
     if (reduceReason == "log")            reduceReason_ = LOG;
     if (reduceReason == "range")          reduceReason_ = RANGE;
+    if (reduceReason == "sccrange")       reduceReason_ = SCCRANGE;
 
 
     if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
     if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
     if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "linear-grouped") reduceConflict_ = LINEAR_GROUPED;
     if (reduceConflict == "log")            reduceConflict_ = LOG;
+    if (reduceConflict == "scc")            reduceConflict_ = SCC;
     if (reduceConflict == "range")          reduceConflict_ = RANGE;
+    if (reduceConflict == "sccrange")       reduceConflict_ = SCCRANGE;
 
 }
 
@@ -287,12 +291,13 @@ bool GecodeSolver::initialize()
     switch(reduceConflict_)
     {
         case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
-        case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
-        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
-        case LINEAR_GROUPED: assert(false); break;
-        case SCC:            assert(false); break;
+        case LINEAR:         conflictAnalyzer_ = new Linear2IISCA(this); break;
+        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinear2IISCA(this); break;
+        case LINEAR_GROUPED: conflictAnalyzer_ = new Linear2GroupedIISCA(this); break;
+        case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
         case LOG:            conflictAnalyzer_ = new ExpIISCA(this); break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
+        case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
         default: assert(false);
     };
 
@@ -300,13 +305,15 @@ bool GecodeSolver::initialize()
     {
         case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
         case LINEAR:         reasonAnalyzer_ = new Linear2IRSRA(this); break;
-        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
+        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinear2IRSRA(this); break;
         case LINEAR_GROUPED: reasonAnalyzer_ = new Linear2GroupedIRSRA(this); break;
         case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
         case LOG:            reasonAnalyzer_ = new ExpIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
+        case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
         default: assert(false);
     };
+
 /*
     //conflictAnalyzer_ = new UnionIISCA(this);
     //conflictAnalyzer_ = new FwdLinearIISCA(this);

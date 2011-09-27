@@ -81,7 +81,7 @@ namespace Clingcon
         }
         else
         {
-            return (a_.get() && a_->constant() && b_.get() && b_->constant());
+            return (a_.get() && a_->constant() && a_->val(g).type==Val::NUM && b_.get() && b_->constant() && b_->val(g).type==Val::NUM );
         }
     }
 
