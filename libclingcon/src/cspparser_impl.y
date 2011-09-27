@@ -390,7 +390,7 @@ ncondequallist(res) ::= ncondequallist(list) COMMA condequal(var).             {
 condequallist(res)  ::= .                                                      { res = new ConstraintVarCondPtrVec(); }
 condequallist(res)  ::= ncondequallist(list).                                  { res = list; }
 
-condequal(res) ::= term(t) EQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+condequal(res) ::= term(t) EQUAL term(index) weightcond(cond).                 { res = new Clingcon::ConstraintVarCond(t->loc(), index->toTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; delete t; }
 
 
 ncondcspequallist(res) ::= condcspequal(var).                                  { res = vec1(var); }
@@ -398,15 +398,15 @@ ncondcspequallist(res) ::= ncondcspequallist(list) COMMA condcspequal(var).    {
 //condcspequallist(res)  ::= .                                                   { res = new ConstraintVarCondPtrVec(); }
 condcspequallist(res)  ::= ncondcspequallist(list).                            { res = list; }
 
-condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).             { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; }
+condcspequal(res) ::= term(t) CEQUAL term(index) weightcond(cond).             { res = new Clingcon::ConstraintVarCond(t->loc(), index->toConstraintTerm(), t->toConstraintTerm(), *cond); delete index; delete cond; delete t; }
 
 ncondatlist(res) ::= condat(var).                                              { res = vec1(var); }
 ncondatlist(res) ::= ncondatlist(list) COMMA condat(var).                      { res = list; res->push_back(var); }
 condatlist(res)  ::= .                                                         { res = new ConstraintVarCondPtrVec(); }
 condatlist(res)  ::= ncondatlist(list).                                        { res = list; }
 
-condat(res) ::= term(t) AT term(level) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), level->toTerm(), t->toConstraintTerm(), *cond); delete level; delete cond; }
-condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::number(cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; }
+condat(res) ::= term(t) AT term(level) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), level->toTerm(), t->toConstraintTerm(), *cond); delete level; delete cond; delete t; }
+condat(res) ::= term(t) weightcond(cond).                                      { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::number(cspminimizecounter)), t->toConstraintTerm(), *cond); delete cond; delete t; }
 
 
 meta ::= HIDE.                                       { OTP->hideAll(); }
