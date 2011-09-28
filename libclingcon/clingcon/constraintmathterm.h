@@ -38,6 +38,11 @@ namespace Clingcon
                 virtual bool match(Grounder* );
 		void print(Storage *sto, std::ostream &out) const;
                 ConstraintMathTerm *clone() const;
+                virtual void initInst(Grounder *g)
+                {
+                    if(a_.get())a_->initInst(g);
+                    if(b_.get())b_->initInst(g);
+                }
 
 		virtual void visitVarTerm(PrgVisitor* v)
 		{
