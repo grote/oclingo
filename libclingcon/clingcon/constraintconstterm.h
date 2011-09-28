@@ -30,7 +30,10 @@ namespace Clingcon
                 ConstraintConstTerm(const Loc &loc, Term* t);
                 ~ConstraintConstTerm();
 		Val val(Grounder *grounder) const;
-                void normalize(Lit *parent, const Ref &ref, Grounder *grounder, const Lit::Expander& expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
+                void normalize(Lit *parent, const Ref &, Grounder *grounder, const Lit::Expander& expander, bool unify)
+                {
+                    t_->normalize(parent,Term::PtrRef(t_),grounder,expander,unify);
+                }
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
 		void vars(VarSet &vars) const;
 		void visit(PrgVisitor *visitor, bool bind);
