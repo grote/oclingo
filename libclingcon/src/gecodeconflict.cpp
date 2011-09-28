@@ -151,7 +151,7 @@ void Linear2IISCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
     t_.start();
-    assert(reason.size()==0);
+    assert(conflict.size()==0);
     ++numCalls_;
     //t_.start();
     Clasp::LitVec::const_iterator end = conflict.end();
@@ -698,7 +698,7 @@ void Linear2GroupedIISCA::shrink(Clasp::LitVec& conflict)
 
 SCCIISCA::SCCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
-    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
         varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
@@ -1117,7 +1117,7 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
 
 SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
-    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
         varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;

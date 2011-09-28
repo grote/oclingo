@@ -147,8 +147,8 @@ GecodeSolver::~GecodeSolver()
         delete *i;
 
     // if we have not done initialization
-    for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
-        delete i->second;
+    //for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+    //    delete i->second;
     constraints_.clear();
     globalConstraints_.clear();
 
@@ -231,10 +231,13 @@ bool GecodeSolver::initialize()
     // Register all variables in the Constraints
     // Convert uids to solver literal ids
     // Guess initial domains of level0 constraints        //if (tester->failed() || tester->status()==Gecode::SS_FAILED)
-    std::map<int, Constraint*> newConstraints;
+    GecodeSolver::ConstraintMap newConstraints;
     AtomIndex::const_iterator begin = s_->strategies().symTab->begin();
-    for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+    //for (GecodeSolver::ConstraintMap::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+    GecodeSolver::ConstraintMap::iterator i = constraints_.begin();
+    while(i != constraints_.end())
     {
+        //std::cout << i->first << std::endl;
         //int newVar = s_->strategies().symTab->find(i->first)->lit.var();
         //begin = std::lower_bound(begin, s_->strategies().symTab->end(),i->first);
         begin = s_->strategies().symTab->lower_bound(begin, i->first);
@@ -243,10 +246,10 @@ bool GecodeSolver::initialize()
 
 
         // convert uids to solver literal ids 
-   //     std::cout << num2name(newVar) << std::endl;
+        //std::cout << num2name(newVar) << std::endl;
 
 
-        newConstraints.insert(std::make_pair(newVar, i->second));
+
         i->second->registerAllVariables(this);
 
         //guess domains of already decided constraints
@@ -264,6 +267,10 @@ bool GecodeSolver::initialize()
             s_->addWatch(posLit(newVar), clingconPropagator_,0);
             s_->addWatch(negLit(newVar), clingconPropagator_,0);
         }
+
+        //newConstraints.insert(std::make_pair(newVar, i->second));
+        newConstraints.insert(newVar, constraints_.release(i).release());
+        i = constraints_.begin();
 
     }
     constraints_.clear();
@@ -343,8 +350,8 @@ bool GecodeSolver::initialize()
 */
 
     //TODO: 1. check if already failed through initialitation
-    for (std::map<int, Constraint*>::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
-        delete i->second;
+    //for (GecodeSolver::ConstraintMap::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+    //    delete i->second;
     constraints_.clear();
     globalConstraints_.clear();
 
@@ -1208,7 +1215,7 @@ GecodeSolver* GecodeSolver::SearchSpace::csps_ = 0;
 IntVarArgs GecodeSolver::SearchSpace::iva_;
 
 
-GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
+GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, GecodeSolver::ConstraintMap& constraints,
                                        LParseGlobalConstraintPrinter::GCvec& gcvec) : Space(),
     x_(*this, numVar),
     //b_(*this, constraints.size(), 0, 1),
@@ -1246,7 +1253,7 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
 
     // set static constraints
     int numReified = 0;
-    for(std::map<int, Constraint*>::iterator i = constraints.begin(); i != constraints.end(); ++i)
+    for(GecodeSolver::ConstraintMap::iterator i = constraints.begin(); i != constraints.end(); ++i)
     {
         if (csps_->getSolver()->value(i->first) == value_free)
             ++numReified;
@@ -1257,9 +1264,10 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
         }
     }
 
+    //TODO: I think the BoolVarArray is now of dynamic size, so i could use this feature to save a loop
     b_ = BoolVarArray(*this,numReified,0,1);
     unsigned int counter = 0;
-    for(std::map<int, Constraint*>::iterator i = constraints.begin(); i != constraints.end(); ++i)
+    for(GecodeSolver::ConstraintMap::iterator i = constraints.begin(); i != constraints.end(); ++i)
     {
          if (csps_->getSolver()->value(i->first) == value_free)
          {
@@ -1462,7 +1470,7 @@ GecodeSolver::SearchSpace::Value GecodeSolver::SearchSpace::getValueOfConstraint
             return BFALSE;
 }
 
-void GecodeSolver::SearchSpace::generateConstraint(Constraint* c, bool val)
+void GecodeSolver::SearchSpace::generateConstraint(const Constraint* c, bool val)
 {
     if (c->isSimple())
     {
@@ -1474,7 +1482,7 @@ void GecodeSolver::SearchSpace::generateConstraint(Constraint* c, bool val)
     }
 }
 
-void GecodeSolver::SearchSpace::generateConstraint(Constraint* c, unsigned int boolvar)
+void GecodeSolver::SearchSpace::generateConstraint(const Constraint* c, unsigned int boolvar)
 {
     if (c->isSimple())
     {

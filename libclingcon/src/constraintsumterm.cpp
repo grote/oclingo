@@ -17,7 +17,6 @@
 
 #include <clingcon/constraintsumterm.h>
 #include <clingcon/constraintconstterm.h>
-#include <clingcon/constraintvarterm.h>
 #include <clingcon/globalconstraint.h>
 #include <clingcon/exception.h>
 #include <gringo/grounder.h>
@@ -73,7 +72,7 @@ namespace Clingcon
 		//if(b_.get()) visitor->visit(b_.get(), false);
 	}
 
-        bool ConstraintSumTerm::constant() const
+        bool ConstraintSumTerm::isNumber(Grounder* ) const
 	{
             return false;
                 //return a_->constant() && (!b_.get() || b_->constant());
@@ -118,10 +117,6 @@ namespace Clingcon
                 }
 	}
 
-        ConstraintAbsTerm::Ref* ConstraintSumTerm::abstract(ConstraintSubstitution& subst) const
-	{
-		return subst.anyVar();
-	}
 
         ConstraintSumTerm *ConstraintSumTerm::clone() const
 	{

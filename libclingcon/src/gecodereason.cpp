@@ -591,7 +591,7 @@ void FwdLinear2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, c
 
 SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
-    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
         varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
@@ -1055,7 +1055,7 @@ void Union2IRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
 
 Approx1IRSRA::Approx1IRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), full_(0)
 {
-    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
         varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
@@ -1666,7 +1666,7 @@ void FirstUIPRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
 
 SCCRangeRA::SCCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
-    for (std::map<int, Constraint*>::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
+    for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
         varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;

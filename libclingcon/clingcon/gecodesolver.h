@@ -248,7 +248,7 @@ namespace Clingcon {
             };
 
             //TODo, find a better way for litToVar, static, or smart
-            SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
+            SearchSpace(GecodeSolver* csps, unsigned int numVar, GecodeSolver::ConstraintMap& constraints,
                         LParseGlobalConstraintPrinter::GCvec& gcvec);
             SearchSpace(bool share, SearchSpace& sp);
             virtual ~SearchSpace(){}
@@ -266,8 +266,8 @@ namespace Clingcon {
             // delete litToVar and all shared memory between the spaces
             void cleanAll();
         private:
-            void generateConstraint(Constraint* c, unsigned int boolvar);
-            void generateConstraint(Constraint* c, bool val);
+            void generateConstraint(const Constraint* c, unsigned int boolvar);
+            void generateConstraint(const Constraint* c, bool val);
             Gecode::LinRel generateLinearRelation(const Constraint* c) const;
             Gecode::BoolExpr generateBooleanExpression(const Constraint* c);
             //void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);

@@ -17,7 +17,6 @@
 
 #include <clingcon/constraintmathterm.h>
 #include <clingcon/constraintconstterm.h>
-#include <clingcon/constraintvarterm.h>
 #include <clingcon/exception.h>
 #include <gringo/grounder.h>
 #include <gringo/varterm.h>
@@ -54,7 +53,7 @@ namespace Clingcon
 
         Val ConstraintMathTerm::val(Grounder *g) const
 	{
-            if((a_.get() && a_->constant()) && a_->val(g).type==Val::NUM)
+            if((a_.get() && a_->isNumber(g)))
             {
                 Val va = a_->val(g);
                 if(f_ == MathTerm::UMINUS)   { return va.invert(g); }
@@ -62,7 +61,7 @@ namespace Clingcon
             }
 
 
-            if((a_.get() && a_->constant() && a_->val(g).type==Val::NUM) && (b_.get() && b_->constant() && b_->val(g).type==Val::NUM))
+            if((a_.get() && a_->isNumber(g)) && (b_.get() && b_->isNumber(g)))
             {
                 Val va = a_->val(g);
                 Val vb = b_->val(g);
@@ -87,7 +86,7 @@ namespace Clingcon
 	bool ConstraintMathTerm::unify(Grounder *grounder, const Val &v, int binder) const
 	{
 		(void)binder;
-		if(constant()) return v == val(grounder);
+                if(isNumber(grounder)) return v == val(grounder);
 		assert(false);
 		return false;
 	}
@@ -115,9 +114,9 @@ namespace Clingcon
                 b_->match(g);
         }
 
-	bool ConstraintMathTerm::constant() const
+        bool ConstraintMathTerm::isNumber(Grounder* g) const
 	{
-		return a_->constant() && (!b_.get() || b_->constant());
+                return a_->isNumber(g) && (!b_.get() || b_->isNumber(g));
 	}
 
 	void ConstraintMathTerm::print(Storage *sto, std::ostream &out) const
@@ -150,16 +149,8 @@ namespace Clingcon
 	{
             if(a_.get()) a_->normalize(parent, PtrRef(a_), g, expander, false);
             if(b_.get()) b_->normalize(parent, PtrRef(b_), g, expander, false);
-            if((a_.get() && a_->constant() && a_->val(g).type==Val::NUM) && (!b_.get() || b_->constant()  && b_->val(g).type==Val::NUM))
-            {
-                ref.reset(new ConstraintConstTerm(loc(), val(g)));
-            }
 	}
 
-	ConstraintAbsTerm::Ref* ConstraintMathTerm::abstract(ConstraintSubstitution& subst) const
-	{
-		return subst.anyVar();
-	}
 
         ConstraintMathTerm *ConstraintMathTerm::clone() const
 	{
@@ -179,7 +170,7 @@ namespace Clingcon
                         case MathTerm::ABS:      o=GroundConstraint::ABS; break;
                         case MathTerm::UMINUS:
                         {
-                            ret = new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(a_->loc(), Val::number(0)).toGroundConstraint(g), a_->toGroundConstraint(g));
+                            ret = new GroundConstraint(g,GroundConstraint::MINUS, ConstraintConstTerm(a_->loc(), new ConstTerm(loc(),Val::number(0))).toGroundConstraint(g), a_->toGroundConstraint(g));
                             ret->simplify();
                             return ret;
                         }
