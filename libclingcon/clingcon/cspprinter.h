@@ -119,7 +119,7 @@ namespace Clingcon
 
                     if (a->op_ == GroundConstraint::ABS)
                     {
-                        ss << "#abs(";
+                        ss << "$abs(";
                         printGroundConstraint(ss, a->a_);
                         ss << ")";
                         return;
@@ -129,10 +129,10 @@ namespace Clingcon
                     printGroundConstraint(ss, a->a_);
                     switch (a->op_)
                     {
-                        case GroundConstraint::DIVIDE: ss << "/"; break;
-                        case GroundConstraint::PLUS:   ss << "+"; break;
-                        case GroundConstraint::MINUS:  ss << "-"; break;
-                        case GroundConstraint::TIMES:  ss << "*"; break;
+                        case GroundConstraint::DIVIDE: ss << "$/"; break;
+                        case GroundConstraint::PLUS:   ss << "$+"; break;
+                        case GroundConstraint::MINUS:  ss << "$-"; break;
+                        case GroundConstraint::TIMES:  ss << "$*"; break;
                         case GroundConstraint::VARIABLE:
                         case GroundConstraint::INTEGER:
                         case GroundConstraint::ABS:
@@ -321,7 +321,7 @@ namespace Clingcon
             typedef Interval<int> Domain;
 
 
-            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min()-2, std::numeric_limits<int>::max()-1)
+            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min()+2, std::numeric_limits<int>::max()-1)
             {
             }
             ~LParseCSPDomainPrinter()

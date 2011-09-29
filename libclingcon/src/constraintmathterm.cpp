@@ -124,24 +124,24 @@ namespace Clingcon
                 if(b_.get()){ out << "("; a_->print(sto, out);}
 		switch(f_)
 		{
-                        case MathTerm::PLUS:   out << "+"; break;
-                        case MathTerm::MINUS:  out << "-"; break;
-                        case MathTerm::MULT:   out << "*"; break;
-                        case MathTerm::DIV:    out << "/"; break;
-                        case MathTerm::MOD:    out << "\\"; break;
-                        case MathTerm::POW:    out << "**"; break;
-                        case MathTerm::AND:    out << "&"; break;
-                        case MathTerm::XOR:    out << "^"; break;
-                        case MathTerm::OR:     out << "?"; break;
+                        case MathTerm::PLUS:   out << "$+"; break;
+                        case MathTerm::MINUS:  out << "$-"; break;
+                        case MathTerm::MULT:   out << "$*"; break;
+                        case MathTerm::DIV:    out << "$/"; break;
+                        case MathTerm::MOD:    out << "$\\"; break;
+                        case MathTerm::POW:    out << "$**"; break;
+                        case MathTerm::AND:    out << "$and"; break;
+                        case MathTerm::XOR:    out << "$xor"; break;
+                        case MathTerm::OR:     out << "$or"; break;
                         case MathTerm::UMINUS: out << "0-"; break;
                         case MathTerm::ABS:    break;
 		}
                 if(b_.get()) {b_->print(sto, out);out << ")";}
 		else
 		{
-			out << "|";
+                        out << "$|";
 			a_->print(sto, out);
-			out << "|";
+                        out << "$|";
 		}
 	}
 

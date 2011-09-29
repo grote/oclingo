@@ -165,6 +165,10 @@ static unsigned int cspminimizecounter = 1;
 %type constraintterm { Clingcon::ConstraintTerm* }
 %destructor constraintterm { del($$); }
 
+%type cspnonterm { Clingcon::ConstraintTerm* }
+%destructor cspnonterm { del($$); }
+
+
 %type func { FuncTerm* }
 %destructor func { del($$); }
 
@@ -563,24 +567,32 @@ term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new MathTer
 func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    {  res = new FuncTerm(id.loc(), id.index, *args); delete args; }
 
 
-constraintterm(res) ::= term(t).                                                       { res = new Clingcon::ConstraintConstTerm(t->loc(), t); }
-constraintterm(res) ::= constraintterm(a) CSPPLUS  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::PLUS,   a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMINUS constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MINUS,  a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMULT  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MULT,   a, b); }
-constraintterm(res) ::= constraintterm(a) CSPSLASH constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPDIV   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPDIV  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMOD   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPMOD  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPOW   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPPOW  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= CSPPABS LBRAC constraintterm(a) RBRAC.                         { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
-constraintterm(res) ::= CSPVBAR constraintterm(a) CSPVBAR.                             { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
-constraintterm(res) ::= CSPPPOW LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= CSPPMOD LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= CSPPDIV LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= CSPMINUS(m)   constraintterm(a). [UMINUS]                      { res = new Clingcon::ConstraintMathTerm(m.loc(),  MathTerm::UMINUS, a); }
-constraintterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintSumTerm(tok.loc(), list); }
+
+
+
+
+constraintterm(res) ::= term(t).                                                   { res = new Clingcon::ConstraintConstTerm(t->loc(), t); }
+constraintterm(res) ::= cspnonterm(t).                                             { res = t; }
+
+cspnonterm(res) ::= LBRAC cspnonterm(term) RBRAC.                                  { res = term; }
+
+cspnonterm(res) ::= constraintterm(a) CSPPLUS  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::PLUS,   a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMINUS constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MINUS,  a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMULT  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MULT,   a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPSLASH constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPDIV   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPDIV  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMOD   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPMOD  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPOW   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPPOW  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
+cspnonterm(res) ::= CSPPABS LBRAC constraintterm(a) RBRAC.                         { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
+cspnonterm(res) ::= CSPVBAR constraintterm(a) CSPVBAR.                             { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
+cspnonterm(res) ::= CSPPPOW LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
+cspnonterm(res) ::= CSPPMOD LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
+cspnonterm(res) ::= CSPPDIV LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
+cspnonterm(res) ::= CSPMINUS(m)   constraintterm(a). [UMINUS]                      { res = new Clingcon::ConstraintMathTerm(m.loc(),  MathTerm::UMINUS, a); }
+cspnonterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintSumTerm(tok.loc(), list); }
 
 
 nsetterm(res) ::= term(term).                      { res = vec1(term); }
@@ -687,6 +699,7 @@ predicate(res) ::= MINUS(sign) IDENTIFIER(id).                             { Ter
 predicate(res) ::= IDENTIFIER(id).                                         { TermPtrVec terms; res = pCSPParser->predLit(id.loc(), id.index, terms, false); }
 
 termlist(res) ::= term(term).                                { res = vec1(term); }
+//termlist(res) ::= term(t1) COMMA term(t2).                   { res = vec1(t1); res->push_back(t2); }
 termlist(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
 termlist(res) ::= termlist(list) DSEM(dsem) termlist(terms). { res = list; list->push_back(new ArgTerm(dsem.loc(), res->pop_back().release(), *terms)); delete terms; }
 

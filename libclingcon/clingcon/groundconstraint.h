@@ -279,7 +279,7 @@ namespace Clingcon {
                     else
                     if (op_==ABS)
                     {
-                        return "#abs("+a_->getString()+")";
+                        return "$abs("+a_->getString()+")";
 
                     }
                     else
@@ -289,13 +289,13 @@ namespace Clingcon {
                         switch (op_)
                         {
                             case PLUS:
-                                ret += "+"; break;
+                                ret += "$+"; break;
                             case MINUS:
-                                ret += "-"; break;
+                                ret += "$-"; break;
                             case TIMES:
-                                ret += "*"; break;
+                                ret += "$*"; break;
                             case DIVIDE:
-                                ret += "/"; break;
+                                ret += "$/"; break;
                             case VARIABLE:
                             case INTEGER:
                             case ABS:
@@ -334,85 +334,8 @@ namespace Clingcon {
            return a.clone();
         }
 
-//        class IndexedGroundConstraint : public GroundConstraint
-//        {
-//        public:
-//            IndexedGroundConstraint(Storage* s, const Val& a, const Val& weight) : GroundConstraint(s,a)
-//            {
-//                std::stringstream ss;
-//                weight.print(s,ss);
-//                weightname_ = ss.str();
-//            }
-
-//           // IndexedGroundConstraint(Storage* s, Operator op, GroundConstraint* a, GroundConstraint* b, const) : GroundConstraint(s, op, a, b)
-
-//            std::string getWeight(){return weightname_;}
-
-//        private:
-
-//            std::string weightname_;
-
-//        };
-
         typedef boost::ptr_vector<GroundConstraint> GroundConstraintVec;
         typedef boost::ptr_vector<IndexedGroundConstraint> IndexedGroundConstraintVec;
-/*
-		public:
-			enum Type
-			{
-				VARIABLE,
-				INTEGER,
-				OPERATOR,
-				RELATION,
-				UNDEF
 
-			};
-
-			enum Relation
-			{
-				EQ,
-				NE,
-				LE,
-				LT,
-				GE,
-				GT
-			};
-
-			CSPConstraint();
-			CSPConstraint(const CSPConstraint& cc);
-			const CSPConstraint operator=(const CSPConstraint& cc);
-			~CSPConstraint();
-			void setVariable(unsigned int var);
-			void setInteger(int i);
-			void setOperator(Operator op, CSPConstraint* a, CSPConstraint* b);
-			void setRelation(Relation op, CSPConstraint* a, CSPConstraint* b);
-
-			unsigned int getLinearSize() const;
-
-
-			Type getType() const;
-			unsigned int getVar() const;
-			int getInteger() const;
-			Operator getOperator(CSPConstraint*& a, CSPConstraint*& b) const;
-			Relation getRelation(CSPConstraint*& a, CSPConstraint*& b) const;
-
-			std::vector<unsigned int> getAllVariables();
-
-		private:
-			void clear();
-			Type type_;
-			union
-			{
-				unsigned int var_;
-				int integer_;
-				Operator op_;
-				Relation rel_;
-			};
-			CSPConstraint* a_;
-			CSPConstraint* b_;
-			unsigned int lin_; // lenght of the linear component, 1 if not linear (constant, variable, mult)
-
-	};
-	*/
 }
 #endif
