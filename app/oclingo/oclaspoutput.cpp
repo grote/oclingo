@@ -71,6 +71,10 @@ uint32_t oClaspOutput::unnamedSymbol() {
 	return atom;
 }
 
+void oClaspOutput::freezeAtom(uint32_t symbol) {
+	b_->freeze(symbol);
+}
+
 void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 	b_->unfreeze(symbol);
 }
@@ -170,16 +174,6 @@ void oClaspOutput::unfreezeOldVolAtoms() {
 
 void oClaspOutput::doFinalize() {
 	printExternalTable();
-
-	// add premature knowledge here, so externals are already defined
-	ext_->addPrematureKnowledge();
-
-	// freeze externals that were not defined with premature knowledge
-	VarVec* externals = ext_->getFreezers();
-	foreach(uint32_t symbol, *externals) {
-		b_->freeze(symbol);
-	}
-	externals->clear();
 
 	ClaspOutput::doFinalize();
 }

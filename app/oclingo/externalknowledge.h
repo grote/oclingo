@@ -41,7 +41,6 @@ public:
 	void addPostPropagator();
 	void removePostPropagator();
 	void addExternal(uint32_t symbol);
-	VarVec* getFreezers();
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -55,7 +54,7 @@ public:
 	int getVolatileWindow();
 	bool checkHead(LparseConverter::Symbol const &sym);
 	void addHead(uint32_t symbol);
-	void addPrematureKnowledge();
+	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
 	bool needsNewStep();

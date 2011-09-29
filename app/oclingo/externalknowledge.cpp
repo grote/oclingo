@@ -72,10 +72,6 @@ void ExternalKnowledge::addExternal(uint32_t symbol) {
 	externals_per_step_.at(step_).push_back(symbol);
 }
 
-VarVec* ExternalKnowledge::getFreezers() {
-	return &to_freeze_; // pointer so it can be cleared right away
-}
-
 void ExternalKnowledge::startSocket(int port) {
 	using boost::asio::ip::tcp;
 
@@ -243,19 +239,31 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 	}
 }
 
-void ExternalKnowledge::addPrematureKnowledge() {
+bool ExternalKnowledge::addPrematureKnowledge() {
+	bool added = false;
 	// check for knowledge from previous steps and add it if found
 	if(controller_step_ == step_ && stacks_.size() > 0) {
+		added = true;
+
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
 		}
 	}
+
 	// forget externals if necessary
 	if(forget_) {
 		forgetExternals(forget_);
 	}
+
+	// freeze externals that were not defined with premature knowledge
+	foreach(uint32_t symbol, to_freeze_) {
+		output_->freezeAtom(symbol);
+	}
+	to_freeze_.clear();
+
+	return added;
 }
 
 void ExternalKnowledge::setControllerStep(int step) {

@@ -103,13 +103,15 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 		else if(app.clingo.mode == OCLINGO) {
 			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
 
+			// TODO rewrite process logic in a more sane way (might break things)
 			if(solver->hasConflict()) {
 				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else {
 				// add new facts and check for termination condition
-				if(!ext.addInput())
+				if(!ext.addInput()) {
 					return false; // exit if received #stop.
+				}
 
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
@@ -118,12 +120,17 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 					out->finalize();
+					if(ext.addPrematureKnowledge()) {
+						// call finalize again if there was premature knowlegde added
+						out->finalize();
+					}
 					config.incStep++;
 				} else {
 					ext.endIteration();
+					out->finalize();
 				}
 			}
-			// get new external input
+			// get/receive new external input
 			ext.get();
 		} else {
 			out->initialize();
