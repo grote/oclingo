@@ -456,7 +456,7 @@ bool GecodeSolver::initialize()
     }
     else
     {
-        std::cout << "initialized" << std::endl;
+        //std::cout << "initialized" << std::endl;
         variableMap_.clear();
         propQueue_.push_back(negLit(0));
         return false;
@@ -1236,6 +1236,7 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
             csps_->domains_[i].intersect(def);
         //std::cout << csps_->domains_[i] << " " << std::endl;
 
+        //std::cout << csps_->domains_[i].size() << " " << std::endl;
         typedef int Range[2];
         Range* array = new Range[csps_->domains_[i].size()];
         unsigned int count=0;
@@ -1245,11 +1246,20 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
             array[count++][1]=j->right-1;
         }
 
+        // if we have  an empty domain
+        if (csps_->domains_[i].size()==0)
+        {
+            fail();
+            return;
+        }
+
         IntSet is(array, csps_->domains_[i].size());
         delete[] array;
+        //std::cout << is << " " << std::endl;
 
         x_[i] = IntVar(*this, is);
     }
+
 
     // set static constraints
     int numReified = 0;

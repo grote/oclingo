@@ -195,6 +195,7 @@ start:
                 "$**"            { return CSPPARSER_CSPPOW; }
                 "$\\"            { return CSPPARSER_CSPMOD; }
                 "$*"             { return CSPPARSER_CSPMULT; }
+                "$/"             { return CSPPARSER_CSPSLASH; }
                 "$|"             { return CSPPARSER_CSPVBAR; }
 		ANY              { syntaxError(); goto start; }
 	*/

@@ -321,8 +321,9 @@ namespace Clingcon
             typedef Interval<int> Domain;
 
 
-            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min(), std::numeric_limits<int>::max()-1)
-            {}
+            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min()-2, std::numeric_limits<int>::max()-1)
+            {
+            }
             ~LParseCSPDomainPrinter()
             {
                 // for (ConstraintVec::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
