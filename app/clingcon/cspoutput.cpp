@@ -155,7 +155,7 @@ void CSPOutput::doFinalize()
 
         for (Clingcon::ConstraintVec::iterator i = constraints->begin(); i != constraints->end(); ++i)
         {
-            cspsolver_->addConstraint(*i->second,i->first);
+            cspsolver_->addConstraint(i->second,i->first);
         }
 
         //Clingcon::LParseCSPDomainPrinter::Domains* domains = static_cast<Clingcon::LParseCSPDomainPrinter*>(storage()->output()->printer<Clingcon::CSPDomainLiteral::Printer>())->getDomains();

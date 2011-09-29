@@ -21,7 +21,6 @@
 #include <clingcon/csplexer_impl.h>
 #include <gringo/locateable.h>
 #include <gringo/optimize.h>
-#include <clingcon/wrapperterm.h>
 
 class CSPParser : public CSPLexerImpl
 {
@@ -36,7 +35,7 @@ private:
 	};
 	typedef std::pair<Loc,std::string> ErrorTok;
 	typedef std::vector<ErrorTok> ErrorVec;
-	typedef boost::ptr_map<uint32_t, Clingcon::WrapperTerm> ConstMap;
+        typedef boost::ptr_map<uint32_t, Term> ConstMap;
 	typedef std::list<DomStm> DomStmList;
 	typedef std::auto_ptr<Statement> StatementPtr;
 
@@ -72,10 +71,10 @@ public:
         void incremental(iPart part, uint32_t index = 0, uint32_t vol_window = 1);
 	void add(Statement *s);
         Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
-	Clingcon::WrapperTerm *term(Val::Type t, const Loc &loc, uint32_t index);
+        Term *term(Val::Type t, const Loc &loc, uint32_t index);
 	Grounder *grounder() { return g_; }
 	PredLit *predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign);
-	void constTerm(uint32_t index, Clingcon::WrapperTerm *term);
+        void constTerm(uint32_t index, Term *term);
 	void domainStm(const Loc &loc, uint32_t id, const VarSigVec &vars);
 	DomStmRng domainStm(uint32_t var);
         void show(uint32_t idx, bool show);

@@ -41,6 +41,9 @@ namespace Clingcon {
     class ReasonAnalyzer;
     class Linear2IRSRA;
     class Linear2GroupedIRSRA;
+    class FirstUIPRA;
+    class Linear2IISCA;
+    class Linear2GroupedIISCA;
 
 
     class GecodeSolver : public CSPSolver
@@ -53,6 +56,9 @@ namespace Clingcon {
         //debug
         friend class Linear2IRSRA;
         friend class Linear2GroupedIRSRA;
+        friend class FirstUIPRA;
+        friend class Linear2IISCA;
+        friend class Linear2GroupedIISCA;
 
 
         static std::vector<int> optValues;
@@ -66,7 +72,8 @@ namespace Clingcon {
             LINEAR_GROUPED,
             SCC,
             LOG,
-            RANGE
+            RANGE,
+            SCCRANGE
 
         };
 
@@ -231,6 +238,8 @@ namespace Clingcon {
         public:
             friend class GecodeSolver;
             friend class Linear2IRSRA;
+            friend class FirstUIPRA;
+            friend class Linear2IISCA;
             enum Value
             {
                 BFREE,
@@ -239,7 +248,7 @@ namespace Clingcon {
             };
 
             //TODo, find a better way for litToVar, static, or smart
-            SearchSpace(GecodeSolver* csps, unsigned int numVar, std::map<int, Constraint*>& constraints,
+            SearchSpace(GecodeSolver* csps, unsigned int numVar, GecodeSolver::ConstraintMap& constraints,
                         LParseGlobalConstraintPrinter::GCvec& gcvec);
             SearchSpace(bool share, SearchSpace& sp);
             virtual ~SearchSpace(){}
@@ -257,8 +266,8 @@ namespace Clingcon {
             // delete litToVar and all shared memory between the spaces
             void cleanAll();
         private:
-            void generateConstraint(Constraint* c, unsigned int boolvar);
-            void generateConstraint(Constraint* c, bool val);
+            void generateConstraint(const Constraint* c, unsigned int boolvar);
+            void generateConstraint(const Constraint* c, bool val);
             Gecode::LinRel generateLinearRelation(const Constraint* c) const;
             Gecode::BoolExpr generateBooleanExpression(const Constraint* c);
             //void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);

@@ -52,12 +52,18 @@ private:
 	class ClingconPropagator;
         class SCCIRSRA;
         class Approx1IRSRA;
+        class SCCRangeRA;
+        class SCCRangeCA;
+        class SCCIISCA;
 
 	class CSPSolver
 	{
 
             friend class SCCIRSRA;
             friend class Approx1IRSRA;
+            friend class SCCRangeRA;
+            friend class SCCRangeCA;
+            friend class SCCIISCA;
 
                 public:
                         typedef Interval<int> Domain;
@@ -68,7 +74,7 @@ private:
 			 *
 			 **/
                         virtual void setDomain(int lower, int upper);
-                        virtual void addConstraint(Constraint& c, int uid);
+                        virtual void addConstraint(Constraint* c, int uid);
                         virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
                         virtual bool hasOptimizeStm() const;
                         //virtual void addDomain(const std::string& var, int lower, int upper);
@@ -114,7 +120,8 @@ private:
 			Clasp::Solver* s_;
 			ClingconPropagator* clingconPropagator_;
 
-                        std::map<int, Constraint*> constraints_;
+                        typedef boost::ptr_map<int, Constraint> ConstraintMap;
+                        ConstraintMap constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
         protected:
 

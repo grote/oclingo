@@ -21,8 +21,8 @@
 
 namespace Clingcon
 {
-	ConstraintConstTerm::ConstraintConstTerm(const Loc &loc, const Val &v) :
-		ConstraintTerm(loc), val_(v)
+        ConstraintConstTerm::ConstraintConstTerm(const Loc &loc, Term* t) :
+                ConstraintTerm(loc), t_(t)
 	{
 	}
 
@@ -30,45 +30,38 @@ namespace Clingcon
 
 	Val ConstraintConstTerm::val(Grounder *grounder) const
 	{
-		(void)grounder;
-		return val_;
+            return t_->val(grounder);
 	}
 
 	bool ConstraintConstTerm::unify(Grounder *grounder, const Val &v, int binder) const
 	{
-		(void)grounder;
-		(void)binder;
-		return val_ == v;
+            return t_->unify(grounder,v,binder);
+            //return t_->val(grounder) == v;
 	}
 
 	void ConstraintConstTerm::vars(VarSet &vars) const
 	{
-		(void)vars;
+            t_->vars(vars);
 	}
 
 	void ConstraintConstTerm::visit(PrgVisitor *v, bool bind)
 	{
-		(void)v;
-		(void)bind;
+            t_->visit(v,bind);
 	}
 
 	void ConstraintConstTerm::print(Storage *sto, std::ostream &out) const
 	{
-		val_.print(sto, out);
+                t_->print(sto, out);
 	}
 
 	ConstraintConstTerm *ConstraintConstTerm::clone() const
 	{
-		return new ConstraintConstTerm(*this);
-	}
-
-	ConstraintAbsTerm::Ref* ConstraintConstTerm::abstract(ConstraintSubstitution& subst) const
-	{
-		return subst.addTerm(new ConstraintAbsTerm(val_));
+            //return new ConstraintConstTerm(*this);
+            return new ConstraintConstTerm(loc(),t_->clone());
 	}
 
         GroundConstraint* ConstraintConstTerm::toGroundConstraint(Grounder* g)
 	{
-                return new GroundConstraint(g,val_);
+            return new GroundConstraint(g,t_->val(g));
 	}
 }

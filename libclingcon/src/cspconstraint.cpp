@@ -24,6 +24,7 @@
 
 namespace Clingcon {
 
+        static int counter = 0;
         Constraint::Constraint()
         {
         }
@@ -59,25 +60,6 @@ namespace Clingcon {
                 return true;
             return false;
         }
-
-
-       /* Constraint Constraint::operator=(Constraint& cc)
-	{
-            type_ = cc.type_;
-            a_ = cc.a_;
-            b_ = cc.b_;
-	}
-*/
-
- //       Constraint::Constraint(const Constraint& cc) :
- //                                                              a_(cc.a_ ? new GroundConstraint(*cc.a_) : 0),
-//                                                                b_(cc.b_ ? new GroundConstraint(*cc.b_) : 0),
-//																			  lin_(cc.lin_)
-//	{
-//            assert(false && "Warning, who deletes this stuff");
-
-//	}
-
 
 
         CSPLit::Type Constraint::getType() const

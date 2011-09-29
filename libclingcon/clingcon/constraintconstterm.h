@@ -20,30 +20,32 @@
 #include <clingcon/clingcon.h>
 #include <clingcon/constraintterm.h>
 #include <gringo/constterm.h>
+#include <gringo/grounder.h>
 
 namespace Clingcon
 {
 	class ConstraintConstTerm : public ConstraintTerm
 	{
 	public:
-		ConstraintConstTerm(const Loc &loc, const Val &v);
+                ConstraintConstTerm(const Loc &loc, Term* t);
                 ~ConstraintConstTerm();
 		Val val(Grounder *grounder) const;
-                void normalize(Lit *parent, const Ref &ref, Grounder *grounder, const Lit::Expander& expander, bool unify) { (void)parent; (void)ref; (void)grounder; (void)expander; (void)unify; }
+                void normalize(Lit *parent, const Ref &, Grounder *grounder, const Lit::Expander& expander, bool unify)
+                {
+                    t_->normalize(parent,Term::PtrRef(t_),grounder,expander,unify);
+                }
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
 		void vars(VarSet &vars) const;
 		void visit(PrgVisitor *visitor, bool bind);
-                virtual bool match(Grounder* ){ return true; }
+                virtual bool match(Grounder* g){ return true; }
 		void print(Storage *sto, std::ostream &out) const;
-		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
-                bool constant() const { return val_.type==Val::NUM; }
+                bool isNumber(Grounder* g) const { return t_->val(g).type==Val::NUM; }
 		ConstraintConstTerm *clone() const;
-		ConstTerm* toTerm() const {return new ConstTerm(loc(),val_);};
+                //ConstTerm* toTerm() const {return new ConstTerm(loc(),val_);};
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
-		virtual void visitVarTerm(PrgVisitor*)
-		{}
+                virtual void visitVarTerm(PrgVisitor* v) { t_->visit(v,false); }
 	private:
-		Val val_;
+                clone_ptr<Term> t_;
 	};
 
         inline ConstraintConstTerm* new_clone(const ConstraintConstTerm& a);

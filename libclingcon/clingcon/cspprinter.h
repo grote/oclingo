@@ -157,8 +157,8 @@ namespace Clingcon
             LParseCSPLitPrinter(LparseConverter *output) : output_(output) { }
             ~LParseCSPLitPrinter()
             {
-                for (ConstraintVec::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
-                    delete i->second;
+                //for (ConstraintVec::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
+                //    delete i->second;
             }
 
             void start()
@@ -169,7 +169,6 @@ namespace Clingcon
             {
                 Constraint* c = new Constraint(t,a,b);
                 stack_.push_back(c);
-
 
                 std::stringstream ss;
                 ss << a->getString();

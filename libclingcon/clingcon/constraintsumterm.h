@@ -29,11 +29,10 @@ namespace Clingcon
                 ConstraintSumTerm(const Loc &loc, Clingcon::ConstraintVarCondPtrVec* cond);
 		Val val(Grounder *grounder) const;
                 void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
-		ConstraintAbsTerm::Ref* abstract(ConstraintSubstitution& subst) const;
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
 		void vars(VarSet &v) const;
 		void visit(PrgVisitor *visitor, bool bind);
-		bool constant() const;
+                bool isNumber(Grounder* ) const;
 		void print(Storage *sto, std::ostream &out) const;
                 ConstraintSumTerm *clone() const;
                 virtual bool match(Grounder* );
@@ -50,11 +49,6 @@ namespace Clingcon
                     cond_->push_back(add);
                 }
 
-                Term* toTerm() const
-		{
-                    assert(false);
-                    return 0;
-		}
 
 		virtual void visitVarTerm(PrgVisitor* v)
 		{

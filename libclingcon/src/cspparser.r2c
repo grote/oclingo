@@ -17,13 +17,9 @@
 
 #include <clingcon/cspparser.h>
 #include <gringo/varterm.h>
-#include <clingcon/wrappervarterm.h>
 #include <gringo/inclit.h>
 #include <gringo/varterm.h>
 #include <gringo/constterm.h>
-#include <clingcon/wrapperconstterm.h>
-//#include <clingcon/wrappervarterm.h>                                                                                                 
-//#include <clingcon/wrapperconstterm.h> 
 #include <gringo/prgvisitor.h>
 #include <gringo/predlit.h>
 #include <gringo/rule.h>
@@ -37,6 +33,7 @@
 #include <gringo/domain.h>
 #include "cspparser_impl.h"
 #include <gringo/litdep.h>
+#include <clingcon/clingcon.h>
 
 void *cspparserAlloc(void *(*mallocProc)(size_t));
 void cspparserFree(void *p, void (*freeProc)(void*));
@@ -189,6 +186,16 @@ start:
                 "$or"            { return CSPPARSER_CSPOR; }
                 "$xor"           { return CSPPARSER_CSPXOR; }
                 "$eq"            { return CSPPARSER_CSPEQ; }
+                "$mod"           { return CSPPARSER_CSPPMOD; }
+                "$div"           { return CSPPARSER_CSPPDIV; }
+                "$pow"           { return CSPPARSER_CSPPPOW; }
+                "$abs"           { return CSPPARSER_CSPPABS; }
+                "$+"             { return CSPPARSER_CSPPLUS; }
+                "$-"             { return CSPPARSER_CSPMINUS; }
+                "$**"            { return CSPPARSER_CSPPOW; }
+                "$\\"            { return CSPPARSER_CSPMOD; }
+                "$*"             { return CSPPARSER_CSPMULT; }
+                "$|"             { return CSPPARSER_CSPVBAR; }
 		ANY              { syntaxError(); goto start; }
 	*/
 lua:
@@ -443,29 +450,29 @@ void CSPParser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
-WrapperTerm *CSPParser::term(Val::Type t, const Loc &loc, uint32_t index)
+Term *CSPParser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
 	if(t == Val::ID)
 	{
 		if(current_ != base_ && index == iId_)
 		{
-			return new WrapperVarTerm(loc, iVar_);
+                        return new VarTerm(loc, iVar_);
 		}
 		else
 		{
 			ConstMap::const_iterator res = constMap_.find(index);
 			if(res != constMap_.end()) { return res->second->clone(); }
-			else                       { return new WrapperConstTerm(loc, Val::id(index)); }
+                        else                       { return new ConstTerm(loc, Val::id(index)); }
 		}
 	}
 	else
 	{
 		assert(t == Val::STRING);
-		return new WrapperConstTerm(loc, Val::string(index));
+                return new ConstTerm(loc, Val::string(index));
 	}
 }
 
-void CSPParser::constTerm(uint32_t index, WrapperTerm *term)
+void CSPParser::constTerm(uint32_t index, Term *term)
 {
 	constMap_.insert(index, term);
 }

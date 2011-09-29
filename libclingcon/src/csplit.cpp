@@ -81,7 +81,7 @@ namespace Clingcon
         }
         else
         {
-            return (a_.get() && a_->constant() && b_.get() && b_->constant());
+            return (a_.get() && a_->isNumber(g) && b_.get() && b_->isNumber(g) );
         }
     }
 
@@ -103,11 +103,8 @@ namespace Clingcon
         }
         else
         {
-            if (a_.get() && a_->constant() && b_.get() && b_->constant())
+            if (a_.get() && a_->isNumber(g) && b_.get() && b_->isNumber(g))
             {
-                assert(a_->val(g).type==Val::NUM);
-                assert(b_->val(g).type==Val::NUM);
-
                 switch(t_)
                 {
                 case CSPLit::GREATER: return a_->val(g).number() > b_->val(g).number();
