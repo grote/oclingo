@@ -66,7 +66,7 @@ void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 		std::cerr << "% grounding cumulative " << cfg.incStep << " ..." << std::endl;
 	}
 	g.ground(*cumulative_);
-	if(goal <= step)
+	if(goal <= step + cfg.maxVolStep-1)
 	{
 		if(generic.verbose > 2)
 		{
