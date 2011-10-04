@@ -46,7 +46,7 @@ namespace
 }
 namespace Clingcon
 {
-	ConstraintMathTerm::ConstraintMathTerm(const Loc &loc, const MathTerm::Func &f, ConstraintTerm *a, ConstraintTerm *b) :
+        ConstraintMathTerm::ConstraintMathTerm(const Loc &loc, const Func &f, ConstraintTerm *a, ConstraintTerm *b) :
 		ConstraintTerm(loc), f_(f), a_(a), b_(b)
 	{
 	}
@@ -56,8 +56,8 @@ namespace Clingcon
             if((a_.get() && a_->isNumber(g)))
             {
                 Val va = a_->val(g);
-                if(f_ == MathTerm::UMINUS)   { return va.invert(g); }
-                else if(f_ == MathTerm::ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
+                if(f_ == UMINUS)   { return va.invert(g); }
+                else if(f_ == ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
             }
 
 
@@ -67,15 +67,15 @@ namespace Clingcon
                 Val vb = b_->val(g);
                 switch(f_)
                 {
-                case MathTerm::PLUS:  { return Val::number(va.num + vb.num); }
-                case MathTerm::MINUS: { return Val::number(va.num - vb.num); }
-                case MathTerm::MULT:  { return Val::number(va.num * vb.num); }
-                case MathTerm::DIV:   { if (vb.num == 0) { std::cerr << "Warning: Division by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); } else return Val::number(va.num / vb.num); }
-                case MathTerm::MOD:   { if (vb.num == 0) { std::cerr << "Warning: Modulo by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); }   else return Val::number(va.num % vb.num); }
-                case MathTerm::POW:   { return Val::number(ipow(va.num, vb.num)); }
-                case MathTerm::AND:   { return Val::number(va.num & vb.num); }
-                case MathTerm::XOR:   { return Val::number(va.num ^ vb.num); }
-                case MathTerm::OR:    { return Val::number(va.num | vb.num); }
+                case PLUS:  { return Val::number(va.num + vb.num); }
+                case MINUS: { return Val::number(va.num - vb.num); }
+                case MULT:  { return Val::number(va.num * vb.num); }
+                case DIV:   { if (vb.num == 0) { std::cerr << "Warning: Division by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); } else return Val::number(va.num / vb.num); }
+                case MOD:   { if (vb.num == 0) { std::cerr << "Warning: Modulo by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); }   else return Val::number(va.num % vb.num); }
+                case POW:   { return Val::number(ipow(va.num, vb.num)); }
+                case AND:   { return Val::number(va.num & vb.num); }
+                case XOR:   { return Val::number(va.num ^ vb.num); }
+                case OR:    { return Val::number(va.num | vb.num); }
                 default:    { assert(false); return Val::fail(); }
                 }
             }

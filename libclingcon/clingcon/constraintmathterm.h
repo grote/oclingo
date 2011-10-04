@@ -27,8 +27,9 @@ namespace Clingcon
 	class ConstraintMathTerm : public ConstraintTerm
 	{
 	public:
+            enum Func { PLUS, MINUS, MULT, DIV, MOD, POW, AND, XOR, OR, ABS, UMINUS };
 	public:
-		ConstraintMathTerm(const Loc &loc, const MathTerm::Func &f, ConstraintTerm *a, ConstraintTerm *b = 0);
+                ConstraintMathTerm(const Loc &loc, const Func &f, ConstraintTerm *a, ConstraintTerm *b = 0);
 		Val val(Grounder *grounder) const;
                 void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
@@ -52,7 +53,7 @@ namespace Clingcon
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
 		~ConstraintMathTerm();
 	private:
-		MathTerm::Func            f_;
+                Func                      f_;
 		clone_ptr<ConstraintTerm> a_;
 		clone_ptr<ConstraintTerm> b_;
 	};

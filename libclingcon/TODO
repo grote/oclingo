@@ -49,6 +49,8 @@ TODO
 - order constraints to the number of variables to speed up initial propagation
 - force statt setconflict benutzen, spart Codepath!?
 - look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation", SMT-Lib
+- :- n(P) $!= X : number(X), position(P). is not yet supported ?
+
 
 
 BUGS
