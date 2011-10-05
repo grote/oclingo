@@ -181,7 +181,15 @@ ClingconOptions<M>::ClingconOptions()
 	, clingconMode(M == CLINGCON)
 	, mode(M)
         , iStats(false)
+        , numAS(std::make_pair(0,true))
+        , cspICL("default")
+        , cspBranchVar("size_min")
+        , cspBranchVal("split_min")
+        , cspReason("simple")
+        , cspConflict("simple")
         , cspLazyLearn(true)
+        , optAll(false)
+        , initialLookahead(false)
 { }
 
 template <CSPMode M>
@@ -230,20 +238,20 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
         if(M == ICLINGCON || M == OCLINGCON)
 		basic.addOptions()("clingcon",    bool_switch(&clingconMode),  "Run in Clingcon mode");
 	root.addOptions(basic,true);
-        OptionGroup csp("CSP Options");
+  /*      OptionGroup csp("CSP Options");
         csp.addOptions()("csp-num-as",    storeTo(numAS)->parser(mapNumAS)->defaultValue(std::make_pair(0,true)),
                         "Set number of constraint answers\n"
                         "      weak   : Compute weak answer sets\n"
                         "      0      : Compute all constraint answer sets\n"
-                        "      <x>    : Compute at most x constraint solutions for each standard answer set\n");
-        csp.addOptions()("csp-lazy-learn", bool_switch(&cspLazyLearn), "Enable lazy learning for csp reasons\n");
-        csp.addOptions()("csp-icl", storeTo(cspICL)->defaultValue("default")->parser(ClingconOptions::checkICL),
+                        "      <x>    : Compute at most x constraint solutions for each standard answer set\n")
+        ("csp-lazy-learn", bool_switch(&cspLazyLearn), "Enable lazy learning for csp reasons\n")
+        ("csp-icl", storeTo(cspICL)->defaultValue("default")->parser(ClingconOptions::checkICL),
                         "Set propagator by consistency level\n"
                         "      value  : Value propagation or consistency (naive)\n"
                         "      bound  : Bounds propagation or consistency\n"
                         "      domain : Domain propagation or consistency\n"
-                        "      default: The default consistency for a constraint\n");
-        csp.addOptions()("csp-branch-var", storeTo(cspBranchVar)->defaultValue("size-min")->parser(ClingconOptions::checkBranchVar),
+                        "      default: The default consistency for a constraint\n")
+        ("csp-branch-var", storeTo(cspBranchVar)->defaultValue("size-min")->parser(ClingconOptions::checkBranchVar),
                          "Sets the integer branch variable\n"
                                  "      NONE           : first unassigned\n"
                                  "      RND            : randomly\n"
@@ -309,7 +317,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      log            : Do a logarithmic IIS check backward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
                          "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
-                );
+                );*/
 
 }
 

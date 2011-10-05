@@ -21,7 +21,8 @@ namespace Clingcon
 
     struct GroundedConstraintVarLit
     {
-
+        GroundedConstraintVarLit() : vt_(0), vweight_(Val::number(0))
+        {}
        // GroundedConstraintVarLit(GroundConstraint* vt, const Val& vweight) : vt_(vt), vweight_(vweight)
        // {}
 

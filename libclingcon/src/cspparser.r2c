@@ -49,7 +49,8 @@ CSPParser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigV
 }
 
 CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
-	: g_(g)
+        : cspminimizecounter(0)
+        , g_(g)
 	, current_(base)
 	, base_(base)
 	, cumulative_(cum)
