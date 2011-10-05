@@ -45,6 +45,13 @@ Parser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigVec 
 {
 }
 
+Parser::ErrorTok::ErrorTok(const Loc &loc, const std::string &token, Type type=PARSING)
+	: loc(loc)
+	, token(token)
+	, type(type)
+{
+}
+
 Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
 	: g_(g)
 	, current_(base)
@@ -364,10 +371,27 @@ void Parser::parse()
 		parse(streams_.currentStream());
 		if(error_)
 		{
-			ParseException ex;
+			ParseException pex;
+			bool found = false;
 			foreach(ErrorTok &tok, errors_)
-				ex.add(StrLoc(g_, tok.first), tok.second);
-			throw ex;
+			{
+				if(tok.type == ErrorTok::PARSING)
+				{
+					found = true;
+					pex.add(StrLoc(g_, tok.loc), tok.token);
+				}
+			}
+			if(found) { throw pex; }
+
+			TermException tex;
+			foreach(ErrorTok &tok, errors_)
+			{
+				if(tok.type == ErrorTok::NONCONSTTERM)
+				{
+					tex.add(StrLoc(g_, tok.loc), tok.token);
+					throw tex;
+				}
+			}
 		}
 	}
 	while(streams_.next());
@@ -425,11 +449,11 @@ void Parser::incremental(iPart part, uint32_t index, int vol_window)
 
 bool Parser::checkVolTerm(Term *term)
 {
-	if(not term->constant())
+	if(!term->constant() || term->val(grounder()).type != Val::NUM)
 	{
 		std::ostringstream ss;
 		term->print(g_, ss);
-		errors_.push_back(ErrorTok(term->loc(), ss.str()));
+		errors_.push_back(ErrorTok(term->loc(), ss.str(), ErrorTok::NONCONSTTERM));
 		error_ = true;
 
 		return false;

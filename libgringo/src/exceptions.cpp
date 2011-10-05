@@ -87,6 +87,16 @@ void ParseException::add(const StrLoc &loc, const std::string &tok)
 	errors_.push_back(ErrorTok(loc, tok));
 }
 
+const char *TermException::what() const throw()
+{
+	std::ostringstream oss;
+	oss << "parsing failed:\n";
+	foreach(const ErrorTok &tok, errors_)
+		oss << "\t" << tok.first << ": term does not evaluate to integer: " << tok.second << "\n";
+	msg_ = oss.str();
+	return msg_.c_str();
+}
+
 FileException::FileException(const std::string &file)
 	: file_(file)
 {

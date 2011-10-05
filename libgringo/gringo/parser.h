@@ -33,7 +33,16 @@ private:
 		uint32_t  id;
 		VarSigVec vars;
 	};
-	typedef std::pair<Loc,std::string> ErrorTok;
+	struct ErrorTok
+	{
+		enum Type	{PARSING, NONCONSTTERM};
+
+		ErrorTok(const Loc &loc, const std::string &token, Type type);
+		Loc			loc;
+		std::string	token;
+		Type		type;
+	};
+
 	typedef std::vector<ErrorTok> ErrorVec;
 	typedef boost::ptr_map<uint32_t, Term> ConstMap;
 	typedef std::list<DomStm> DomStmList;
