@@ -33,9 +33,9 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	, new_input_(false)
 	, my_post_(true)
 	, solver_stopped_(false)
-	, step_(0)
+	, step_(1)
 	, controller_step_(1)
-	, model_(false)
+	, model_(true)
 	, debug_(false)
 {
 	externals_per_step_.push_back(VarVec());
@@ -136,9 +136,15 @@ void ExternalKnowledge::get() {
 		if(!reading_) {
 			if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
+			if(not socket_) {
+				std::cerr << "Waiting for connection on port " << port_ << " from controller..." << std::endl;
+			} else{
+				std::cerr << "Reading from socket..." << std::endl;
+			}
+			std::cerr.flush();
+
 			sendToClient("Input:\n");
 
-			std::cerr << "Reading from socket..." << std::endl;
 			reading_ = true;
 			boost::asio::async_read_until(*socket_, b_, char(0), boost::bind(&ExternalKnowledge::readUntilHandler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
@@ -276,7 +282,6 @@ int ExternalKnowledge::getControllerStep() {
 
 bool ExternalKnowledge::needsNewStep() {
 	return
-			step_ == 0 ||				// is first iteration
 			controller_step_ > step_ ||	// controller wants to progress step count
 			stacks_.size() > 0;			// rule stack not empty
 }

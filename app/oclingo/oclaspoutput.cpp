@@ -59,7 +59,6 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 			return;
 		}
 	}
-	// TODO find out why undefined external heads are not really added
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
@@ -174,7 +173,6 @@ void oClaspOutput::unfreezeOldVolAtoms() {
 
 void oClaspOutput::doFinalize() {
 	printExternalTable();
-
 	ClaspOutput::doFinalize();
 }
 
