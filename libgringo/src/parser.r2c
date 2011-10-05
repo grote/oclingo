@@ -396,7 +396,7 @@ void Parser::parse()
 	}
 }
 
-void Parser::incremental(iPart part, uint32_t index, uint32_t vol_window)
+void Parser::incremental(iPart part, uint32_t index, int vol_window)
 {
 	switch(part)
 	{
@@ -421,6 +421,20 @@ void Parser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 	if(vol_window > config_.maxVolStep) config_.maxVolStep = vol_window;
 
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
+}
+
+bool Parser::checkVolTerm(Term *term)
+{
+	if(not term->constant())
+	{
+		std::ostringstream ss;
+		term->print(g_, ss);
+		errors_.push_back(ErrorTok(term->loc(), ss.str()));
+		error_ = true;
+
+		return false;
+	}
+	return true;
 }
 
 Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
