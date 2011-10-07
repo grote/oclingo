@@ -39,7 +39,7 @@ void RulePrinter::endHead()
 
 void RulePrinter::end()
 {
-	if(choice_) { head_.size() > 0 && (output_->printChoiceRule(head_, pos_, neg_), true); }
+	if(choice_)               { if (!head_.empty()) { output_->printChoiceRule(head_, pos_, neg_); } }
 	else if(head_.size() > 1) { output_->printDisjunctiveRule(head_, pos_, neg_); }
 	else if(head_.empty())    { output_->printBasicRule(1, pos_, neg_); }
 	else                      { output_->printBasicRule(head_[0], pos_, neg_); }

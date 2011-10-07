@@ -108,13 +108,13 @@ class Statement;
 class Storage;
 class Streams;
 class Term;
-class TermExpansion;
 class VarTerm;
 class WeightLit;
 class Groundable;
+class Loc;
 
 struct IncConfig;
-struct Loc;
+struct TermExpansion;
 struct VarDomains;
 
 namespace LitDep

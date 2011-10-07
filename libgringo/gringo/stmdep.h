@@ -56,7 +56,7 @@ namespace StmDep
 		uint32_t component_;
 	};
 	
-	class Todo;
+	struct Todo;
 	class StmNode;
 	class PredNode : public Node
 	{
@@ -126,6 +126,7 @@ namespace StmDep
 		typedef std::vector<PredNodeVec>    PredNodeMap;
 		typedef std::vector<Todo>           TodoVec;
 	public:
+		using PrgVisitor::visit;
 		Builder(Grounder *g);
 		void visit(PredLit *pred);
 		void visit(Lit *lit, bool domain);

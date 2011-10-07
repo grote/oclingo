@@ -36,6 +36,7 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
+		using ::Printer::print;
 		virtual void print(uint32_t vol_window) { (void) vol_window; }
 		virtual ~Printer() { }
 	};
