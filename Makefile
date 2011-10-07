@@ -12,6 +12,15 @@ debug:
 		${cmake_options} && \
 	$(MAKE) $(target)
 
+debug_non_pedantic:
+	mkdir -p build/debug
+	cd build/debug && \
+		cmake ../.. \
+		-DCMAKE_CXX_FLAGS="-W -Wall " \
+		-DCMAKE_BUILD_TYPE=debug \
+		${cmake_options} && \
+	$(MAKE) $(target)
+
 release:
 	mkdir -p build/release
 	cd build/release && \
