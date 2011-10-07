@@ -105,6 +105,7 @@ namespace reifiedoutput_impl
 		output_->popDep(false);
 	}
 
+	/*
 	void SumAggrLitPrinter::begin(AggrState *state, bool head, bool sign, bool complete)
 	{
 		head_       = head;
@@ -171,6 +172,7 @@ namespace reifiedoutput_impl
 			else { output_->popDep(false, 2); }
 		}
 	}
+	*/
 
 	/*
 	void AvgAggrLitPrinter::begin(bool head, bool sign)
@@ -369,8 +371,6 @@ namespace reifiedoutput_impl
 			else { output_->popSet(); }
 		}
 	}
-	
-	*/
 
 	void OptimizePrinter::begin(bool maximize, bool set)
 	{
@@ -386,6 +386,7 @@ namespace reifiedoutput_impl
 	void OptimizePrinter::end()
 	{
 	}
+ */
 
 	void ComputePrinter::print(PredLitRep *l)
 	{
