@@ -306,7 +306,7 @@ bool MinMaxAggrLitPrinter<Type>::simplify(const Val &)
 template <uint32_t Type>
 void MinMaxAggrLitPrinter<Type>::func()
 {
-	this->template out() << (Type == MinMaxAggrLit::MAXIMUM ? "#max" : "#min");
+	this->out() << (Type == MinMaxAggrLit::MAXIMUM ? "#max" : "#min");
 }
 
 //////////////////////////////////////// JunctionLitPrinter ////////////////////////////////////////
