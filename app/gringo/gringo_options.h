@@ -21,6 +21,7 @@
 #include <string>
 #include <program_opts/app_options.h>
 #include <gringo/gringo.h>
+#include <gringo/predlit.h>
 
 namespace ProgramOptions
 {
