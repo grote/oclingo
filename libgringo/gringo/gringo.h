@@ -87,7 +87,6 @@ class Instantiator;
 class JunctionCond;
 class Lexer;
 class Lit;
-class Loc;
 class LuaLit;
 class LuaTerm;
 class LparseConverter;
@@ -111,8 +110,8 @@ class Term;
 class VarTerm;
 class WeightLit;
 class Groundable;
-class Loc;
 
+struct Loc;
 struct IncConfig;
 struct TermExpansion;
 struct VarDomains;
