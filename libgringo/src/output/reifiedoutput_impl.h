@@ -75,6 +75,7 @@ namespace reifiedoutput_impl
 	class SumAggrLitPrinter : public AggrLit::Printer<SumAggrLit>
 	{
 	public:
+		using AggrLit::Printer<SumAggrLit>::Printer::print;
 		SumAggrLitPrinter(ReifiedOutput *output) : output_(output) { }
 		void begin(AggrState *state, bool head, bool sign, bool complete);
 		void weight(const Val &v);
