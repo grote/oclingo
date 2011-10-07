@@ -31,7 +31,7 @@ set(WITH_CLINGCON "${WITH_CLINGCON}" CACHE BOOL "Enable clingcon support")
 
 include(cmake/re2c.cmake)
 include(cmake/lemon.cmake)
-#include(cmake/PCHSupport.cmake)
+include(cmake/PCHSupport.cmake)
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake CACHE INTERNAL "" FORCE)
