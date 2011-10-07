@@ -407,4 +407,4 @@ GRINGO_REGISTER_PRINTER(reifiedoutput_impl::JunctionAggrLitPrinter, JunctionAggr
 */
 //GRINGO_REGISTER_PRINTER(reifiedoutput_impl::OptimizePrinter, Optimize::Printer, ReifiedOutput)
 GRINGO_REGISTER_PRINTER(reifiedoutput_impl::ComputePrinter, Compute::Printer, ReifiedOutput)
-GRINGO_REGISTER_PRINTER(reifiedoutput_impl::IncPrinter, IncLit::Printer, ReifiedOutput)
+//GRINGO_REGISTER_PRINTER(reifiedoutput_impl::IncPrinter, IncLit::Printer, ReifiedOutput)

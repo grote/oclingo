@@ -215,6 +215,7 @@ namespace reifiedoutput_impl
 		ReifiedOutput *output_;
 	};
 
+	/*
 	class IncPrinter : public IncLit::Printer
 	{
 	public:
@@ -224,5 +225,6 @@ namespace reifiedoutput_impl
 	private:
 		ReifiedOutput *output_;
 	};
+	*/
 
 }
