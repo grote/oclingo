@@ -85,5 +85,6 @@ private:
 	bool terminated_;
 	bool got_step_;
 	bool volatile_;
+	int volatile_window_;
 };
 
