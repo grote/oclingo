@@ -23,10 +23,17 @@
 
 namespace Clingcon
 {
-        class ConstraintSumTerm : public ConstraintTerm, public Container
+        class ConstraintAggrTerm : public ConstraintTerm, public Container
 	{
+        public:
+            enum Type
+            {
+                SUM,
+                MIN,
+                MAX
+            };
 	public:
-                ConstraintSumTerm(const Loc &loc, Clingcon::ConstraintVarCondPtrVec* cond);
+                ConstraintAggrTerm(const Loc &loc, Type t, Clingcon::ConstraintVarCondPtrVec* cond);
 		Val val(Grounder *grounder) const;
                 void normalize(Lit *parent, const Ref &ref, Grounder *g, const Lit::Expander& expander, bool unify);
 		bool unify(Grounder *grounder, const Val &v, int binder) const;
@@ -34,7 +41,7 @@ namespace Clingcon
 		void visit(PrgVisitor *visitor, bool bind);
                 bool isNumber(Grounder* ) const;
 		void print(Storage *sto, std::ostream &out) const;
-                ConstraintSumTerm *clone() const;
+                ConstraintAggrTerm *clone() const;
                 virtual bool match(Grounder* );
                 virtual void initInst(Grounder *g)
                 {
@@ -62,14 +69,15 @@ namespace Clingcon
 		}
                 virtual GroundConstraint* toGroundConstraint(Grounder* );
 
-                ~ConstraintSumTerm();
+                ~ConstraintAggrTerm();
 	private:
                 GroundConstraint* toGroundConstraint(Grounder* g, GroundedConstraintVarLitVec& vec, int i);
                 clone_ptr<Clingcon::ConstraintVarCondPtrVec> cond_;
+                Type t_;
 
 	};
 
-        inline ConstraintSumTerm* new_clone(const ConstraintSumTerm& a)
+        inline ConstraintAggrTerm* new_clone(const ConstraintAggrTerm& a)
         {
                 return a.clone();
         }

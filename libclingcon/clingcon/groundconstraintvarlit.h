@@ -5,7 +5,6 @@
 
 namespace Clingcon
 {
-
     enum GCType
     {
         DISTINCT,

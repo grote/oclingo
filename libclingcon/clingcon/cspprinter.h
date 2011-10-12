@@ -120,13 +120,29 @@ namespace Clingcon
                     if (a->op_ == GroundConstraint::ABS)
                     {
                         ss << "$abs(";
-                        printGroundConstraint(ss, a->a_);
+                        printGroundConstraint(ss, &(a->a_[0]));
+                        ss << ")";
+                        return;
+                    }
+
+                    if (a->op_ == GroundConstraint::MIN || a->op_ == GroundConstraint::MAX)
+                    {
+                        if (a->op_ == GroundConstraint::MIN)
+                            ss << "$min{";
+                        if (a->op_ == GroundConstraint::MAX)
+                            ss << "$max{";
+                        for (size_t i = 0; i < a->a_.size(); ++i)
+                        {
+                            printGroundConstraint(ss, &(a->a_[i] ));
+                            if (i+1 < a->a_.size())
+                                ss << ",";
+                        }
                         ss << ")";
                         return;
                     }
 
                     ss << "(";
-                    printGroundConstraint(ss, a->a_);
+                    printGroundConstraint(ss, &(a->a_[0]));
                     switch (a->op_)
                     {
                         case GroundConstraint::DIVIDE: ss << "$/"; break;
@@ -138,7 +154,7 @@ namespace Clingcon
                         case GroundConstraint::ABS:
                         default: assert(false);
                     }
-                    printGroundConstraint(ss, a->b_);
+                    printGroundConstraint(ss, &(a->a_[1]));
                     ss << ")";
                 }
 

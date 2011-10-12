@@ -48,8 +48,7 @@ namespace Clingcon
 {
         ConstraintMathTerm::ConstraintMathTerm(const Loc &loc, const Func &f, ConstraintTerm *a, ConstraintTerm *b) :
 		ConstraintTerm(loc), f_(f), a_(a), b_(b)
-	{
-	}
+        {}
 
         Val ConstraintMathTerm::val(Grounder *g) const
 	{

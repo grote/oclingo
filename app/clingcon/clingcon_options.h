@@ -238,7 +238,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
         if(M == ICLINGCON || M == OCLINGCON)
 		basic.addOptions()("clingcon",    bool_switch(&clingconMode),  "Run in Clingcon mode");
 	root.addOptions(basic,true);
-  /*      OptionGroup csp("CSP Options");
+        OptionGroup csp("CSP Options");
         csp.addOptions()("csp-num-as",    storeTo(numAS)->parser(mapNumAS)->defaultValue(std::make_pair(0,true)),
                         "Set number of constraint answers\n"
                         "      weak   : Compute weak answer sets\n"
@@ -317,7 +317,7 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      log            : Do a logarithmic IIS check backward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
                          "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
-                );*/
+                );
 
 }
 

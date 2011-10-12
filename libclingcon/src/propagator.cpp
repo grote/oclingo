@@ -13,7 +13,6 @@ namespace Clingcon {
 			cspSolver_->setClingconPropagator(this);
 		}
 		ClingconPropagator::~ClingconPropagator() {
-                    delete cspSolver_;
 		}
                 bool ClingconPropagator::propagate(Clasp::Solver& ) {
                         return cspSolver_->propagate();

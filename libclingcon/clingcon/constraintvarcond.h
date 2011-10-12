@@ -102,7 +102,7 @@ namespace Clingcon
     class ConstraintVarCond : public Formula
     {
             friend class GlobalConstraintHeadLit;
-            friend class ConstraintSumTerm;
+            friend class ConstraintAggrTerm;
     public:
             /*
             class Printer : public ::Printer

@@ -73,7 +73,7 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                            const std::string& branchValString, std::vector<int> optValueVec,
                            bool optAllPar, bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict) :
     currentSpace_(0), lazyLearn_(lazyLearn),
-    useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), dfsSearchEngine_(0), babSearchEngine_(0),
+    useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
     initialLookahead_(initialLookahead)
 {
@@ -536,14 +536,15 @@ GecodeSolver::DomainMap GecodeSolver::guessDomainsImpl(const Constraint* c)
     }
 
     //else
-    std::vector<unsigned int> vec;
-    c->getAllVariables(vec, this);
+    //std::vector<unsigned int> vec;
+    //c->getAllVariables(vec, this);
     //unary constraint
-    if (vec.size()==1)
+    //if (vec.size()==1 )
+    const GroundConstraint* a(0);
+    const GroundConstraint* b(0);
+    CSPLit::Type comp = c->getRelations(a,b);
+    if ((a->isVariable() && b->isInteger()) || (b->isVariable() && a->isInteger()))
     {
-        const GroundConstraint* a(0);
-        const GroundConstraint* b(0);
-        CSPLit::Type comp = c->getRelations(a,b);
         unsigned int var = -1;
         int value = 0;
         if (a->isVariable())
@@ -1384,7 +1385,7 @@ bool GecodeSolver::SearchSpace::updateOptValues()
             rel(*this, opts_[i+1], IRT_LQ, GecodeSolver::optValues[i+1], rhs, ICL);
         BoolVar allBefore(*this,0,1);
         rel(*this, BOT_AND, lhs.slice(0,1,i+1), allBefore, ICL);
-        rel(*this, allBefore, BOT_IMP, rhs, 1, ICL);
+        rel(*this, allBefore, BOT_IMP, rhs, 1, ICL);// changes to: "rel(home, BOT_IMP, x, y) where x is an array of Boolean variable now assumes implication to be right associative. See MPG for explanation. (minor)" in new version
     }
 
     if (opts_.size()==1)
@@ -1504,7 +1505,7 @@ void GecodeSolver::SearchSpace::generateConstraint(const Constraint* c, unsigned
     }
 }
 
-Gecode::LinRel GecodeSolver::SearchSpace::generateLinearRelation(const Constraint* c) const
+Gecode::LinRel GecodeSolver::SearchSpace::generateLinearRelation(const Constraint* c)
 {
     assert(c);
     assert(c->isSimple());
@@ -1567,12 +1568,12 @@ Gecode::BoolExpr GecodeSolver::SearchSpace::generateBooleanExpression(const Cons
 }
 
 
-Gecode::LinExpr GecodeSolver::SearchSpace::generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec) const
+Gecode::LinExpr GecodeSolver::SearchSpace::generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec)
 {
     return generateSum(vec,0);
 }
 
-Gecode::LinExpr GecodeSolver::SearchSpace::generateSum( std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i) const
+Gecode::LinExpr GecodeSolver::SearchSpace::generateSum( std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i)
 {
     if (i==vec.size()-1)
     {
@@ -1590,7 +1591,7 @@ Gecode::LinExpr GecodeSolver::SearchSpace::generateSum( std::vector<std::pair<Gr
 
 }
 
-Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(const GroundConstraint* c) const
+Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(const GroundConstraint* c)
 {
     if (c->isInteger())
     {
@@ -1602,22 +1603,34 @@ Gecode::LinExpr GecodeSolver::SearchSpace::generateLinearExpr(const GroundConstr
             return LinExpr(x_[csps_->getVariable(c->getString())]);
         }
 
-    const GroundConstraint* a = c->a_;
-    const GroundConstraint* b = c->b_;
     GroundConstraint::Operator op = c->getOperator();
 
     switch(op)
     {
     case GroundConstraint::TIMES:
-        return generateLinearExpr(a)*generateLinearExpr(b);
+        return generateLinearExpr(&(c->a_[0]))*generateLinearExpr(&(c->a_[1]));
     case GroundConstraint::MINUS:
-        return generateLinearExpr(a)-generateLinearExpr(b);
+        return generateLinearExpr(&(c->a_[0]))-generateLinearExpr(&(c->a_[1]));
     case GroundConstraint::PLUS:
-        return generateLinearExpr(a)+generateLinearExpr(b);
+        return generateLinearExpr(&(c->a_[0]))+generateLinearExpr(&(c->a_[1]));
     case GroundConstraint::DIVIDE:
-        return generateLinearExpr(a)/generateLinearExpr(b);
+        return generateLinearExpr(&(c->a_[0]))/generateLinearExpr(&(c->a_[1]));
     case GroundConstraint::ABS:
-        return Gecode::abs(generateLinearExpr(a));
+        return Gecode::abs(generateLinearExpr(&(c->a_[0])));
+    case GroundConstraint::MIN:
+    {
+        IntVarArgs args(c->a_.size());
+        for (size_t i = 0; i != c->a_.size();++i)
+            args[i] = expr(*this,generateLinearExpr(&(c->a_[i])), ICL);
+        return min(args);
+    }
+    case GroundConstraint::MAX:
+    {
+        IntVarArgs args(c->a_.size());
+        for (size_t i = 0; i != c->a_.size();++i)
+            args[i] = expr(*this,generateLinearExpr(&(c->a_[i])), ICL);
+        return max(args);
+    }
     }
     assert(false);
 

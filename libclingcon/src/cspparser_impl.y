@@ -56,7 +56,7 @@
 #include <gringo/litdep.h>
 
 #include "clingcon/constraintmathterm.h"
-#include "clingcon/constraintsumterm.h"
+#include "clingcon/constraintaggrterm.h"
 #include "clingcon/constraintconstterm.h"
 
 
@@ -488,6 +488,11 @@ csplit(res) ::= csplit(a) CSPOR  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::
 csplit(res) ::= csplit(a) CSPXOR csplit(b).  { res=new CSPLit(a->loc(), CSPLit::XOR, a, b); }
 csplit(res) ::= csplit(a) CSPEQ  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::EQ,  a, b); }
 
+
+//does not work yet
+//conjunction(res) ::= csplit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
+
+
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b); }
 
@@ -577,7 +582,9 @@ cspnonterm(res) ::= CSPPPOW LBRAC constraintterm(a) COMMA constraintterm(b) RBRA
 cspnonterm(res) ::= CSPPMOD LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MOD,    a, b); }
 cspnonterm(res) ::= CSPPDIV LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::DIV,    a, b); }
 cspnonterm(res) ::= CSPMINUS(m)   constraintterm(a). [CSPUMINUS]                   { res = new Clingcon::ConstraintMathTerm(m.loc(),  ConstraintMathTerm::UMINUS, a); }
-cspnonterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintSumTerm(tok.loc(), list); }
+cspnonterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::SUM, list); }
+cspnonterm(res) ::= CSPMIN(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::MIN, list); }
+cspnonterm(res) ::= CSPMAX(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::MAX, list); }
 
 
 nsetterm(res) ::= term(term).                      { res = vec1(term); }
@@ -646,6 +653,7 @@ aggr_ass(res) ::=            LCBRAC(tok)      condlist(list) RCBRAC. { res = new
 
 
 conjunction(res) ::= lit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
+
 
 disjlist(res) ::= VBAR predicate(lit) cond(cond).                { res = vec1<JunctionCond>(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
 disjlist(res) ::= disjlist(list) VBAR predicate(lit) cond(cond). { res = list; list->push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
