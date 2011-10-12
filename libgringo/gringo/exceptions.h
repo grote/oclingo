@@ -61,21 +61,29 @@ private:
 
 class ParseException : public std::exception
 {
-protected:
+private:
 	typedef std::pair<StrLoc, std::string> ErrorTok;
 	typedef std::vector<ErrorTok> ErrorVec;
 public:
 	const char *what() const throw();
 	void add(const StrLoc &loc, const std::string &tok);
 	~ParseException() throw() { }
-protected:
+private:
 	ErrorVec            errors_;
 	mutable std::string msg_;
 };
 
-class TermException : public ParseException {
+class TermException : public std::exception
+{
+private:
+	typedef std::pair<StrLoc, std::string> ErrorTok;
 public:
 	const char *what() const throw();
+	void add(const StrLoc &loc, const std::string &tok);
+	~TermException() throw() { }
+private:
+	ErrorTok error_;
+	mutable std::string msg_;
 };
 
 class FileException : public std::exception
