@@ -45,10 +45,10 @@ exit = False
 have_answer_set = False
 data_old = ''
 online_input = [[]]
-FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
+FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.(\s*%.*)?$")
 FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")
-INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
-RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
+INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")
+RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")
 IN_PARSER = {
 	'step'			: re.compile("#step (\d+)\."),
 	'endstep'		: re.compile("#endstep\."),
@@ -146,7 +146,7 @@ def prepareInput():
 				# error: neither fact nor step
 				else:
 					i += 1
-					raise RuntimeError("Invalid ground fact '%s' after step %d in file '%s'." % (line, i, file))
+					raise RuntimeError("Invalid rule '%s' after step %d in file '%s'." % (line, i, file))
 		else:
 			raise RuntimeError("Could not find file '%s'." % file)
 	elif len(args) > 1:
