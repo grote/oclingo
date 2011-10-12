@@ -1,7 +1,0 @@
-CMakeLists.txt.user*
-build
-libclasp/clasp
-libclasp/src
-libprogram_opts/program_opts
-libprogram_opts/src
-qtcreator-build
