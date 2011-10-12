@@ -119,26 +119,42 @@ namespace Clingcon
 
                     if (a->op_ == GroundConstraint::ABS)
                     {
-                        ss << "#abs(";
-                        printGroundConstraint(ss, a->a_);
+                        ss << "$abs(";
+                        printGroundConstraint(ss, &(a->a_[0]));
+                        ss << ")";
+                        return;
+                    }
+
+                    if (a->op_ == GroundConstraint::MIN || a->op_ == GroundConstraint::MAX)
+                    {
+                        if (a->op_ == GroundConstraint::MIN)
+                            ss << "$min{";
+                        if (a->op_ == GroundConstraint::MAX)
+                            ss << "$max{";
+                        for (size_t i = 0; i < a->a_.size(); ++i)
+                        {
+                            printGroundConstraint(ss, &(a->a_[i] ));
+                            if (i+1 < a->a_.size())
+                                ss << ",";
+                        }
                         ss << ")";
                         return;
                     }
 
                     ss << "(";
-                    printGroundConstraint(ss, a->a_);
+                    printGroundConstraint(ss, &(a->a_[0]));
                     switch (a->op_)
                     {
-                        case GroundConstraint::DIVIDE: ss << "/"; break;
-                        case GroundConstraint::PLUS:   ss << "+"; break;
-                        case GroundConstraint::MINUS:  ss << "-"; break;
-                        case GroundConstraint::TIMES:  ss << "*"; break;
+                        case GroundConstraint::DIVIDE: ss << "$/"; break;
+                        case GroundConstraint::PLUS:   ss << "$+"; break;
+                        case GroundConstraint::MINUS:  ss << "$-"; break;
+                        case GroundConstraint::TIMES:  ss << "$*"; break;
                         case GroundConstraint::VARIABLE:
                         case GroundConstraint::INTEGER:
                         case GroundConstraint::ABS:
                         default: assert(false);
                     }
-                    printGroundConstraint(ss, a->b_);
+                    printGroundConstraint(ss, &(a->a_[1]));
                     ss << ")";
                 }
 
@@ -321,8 +337,9 @@ namespace Clingcon
             typedef Interval<int> Domain;
 
 
-            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min(), std::numeric_limits<int>::max()-1)
-            {}
+            LParseCSPDomainPrinter(LparseConverter *output) : output_(output), default_(std::numeric_limits<int>::min()+2, std::numeric_limits<int>::max()-1)
+            {
+            }
             ~LParseCSPDomainPrinter()
             {
                 // for (ConstraintVec::iterator i = constraints_.begin(); i != constraints_.end(); ++i)

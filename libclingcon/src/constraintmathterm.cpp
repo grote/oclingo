@@ -46,18 +46,17 @@ namespace
 }
 namespace Clingcon
 {
-	ConstraintMathTerm::ConstraintMathTerm(const Loc &loc, const MathTerm::Func &f, ConstraintTerm *a, ConstraintTerm *b) :
+        ConstraintMathTerm::ConstraintMathTerm(const Loc &loc, const Func &f, ConstraintTerm *a, ConstraintTerm *b) :
 		ConstraintTerm(loc), f_(f), a_(a), b_(b)
-	{
-	}
+        {}
 
         Val ConstraintMathTerm::val(Grounder *g) const
 	{
             if((a_.get() && a_->isNumber(g)))
             {
                 Val va = a_->val(g);
-                if(f_ == MathTerm::UMINUS)   { return va.invert(g); }
-                else if(f_ == MathTerm::ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
+                if(f_ == UMINUS)   { return va.invert(g); }
+                else if(f_ == ABS) { assert(va.type == Val::NUM); return Val::number(std::abs(va.num)); }
             }
 
 
@@ -67,15 +66,15 @@ namespace Clingcon
                 Val vb = b_->val(g);
                 switch(f_)
                 {
-                case MathTerm::PLUS:  { return Val::number(va.num + vb.num); }
-                case MathTerm::MINUS: { return Val::number(va.num - vb.num); }
-                case MathTerm::MULT:  { return Val::number(va.num * vb.num); }
-                case MathTerm::DIV:   { if (vb.num == 0) { std::cerr << "Warning: Division by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); } else return Val::number(va.num / vb.num); }
-                case MathTerm::MOD:   { if (vb.num == 0) { std::cerr << "Warning: Modulo by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); }   else return Val::number(va.num % vb.num); }
-                case MathTerm::POW:   { return Val::number(ipow(va.num, vb.num)); }
-                case MathTerm::AND:   { return Val::number(va.num & vb.num); }
-                case MathTerm::XOR:   { return Val::number(va.num ^ vb.num); }
-                case MathTerm::OR:    { return Val::number(va.num | vb.num); }
+                case PLUS:  { return Val::number(va.num + vb.num); }
+                case MINUS: { return Val::number(va.num - vb.num); }
+                case MULT:  { return Val::number(va.num * vb.num); }
+                case DIV:   { if (vb.num == 0) { std::cerr << "Warning: Division by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); } else return Val::number(va.num / vb.num); }
+                case MOD:   { if (vb.num == 0) { std::cerr << "Warning: Modulo by 0 detected, using #undef in csp constraint." << std::endl; return Val::undef(); }   else return Val::number(va.num % vb.num); }
+                case POW:   { return Val::number(ipow(va.num, vb.num)); }
+                case AND:   { return Val::number(va.num & vb.num); }
+                case XOR:   { return Val::number(va.num ^ vb.num); }
+                case OR:    { return Val::number(va.num | vb.num); }
                 default:    { assert(false); return Val::fail(); }
                 }
             }
@@ -124,24 +123,24 @@ namespace Clingcon
                 if(b_.get()){ out << "("; a_->print(sto, out);}
 		switch(f_)
 		{
-                        case MathTerm::PLUS:   out << "+"; break;
-                        case MathTerm::MINUS:  out << "-"; break;
-                        case MathTerm::MULT:   out << "*"; break;
-                        case MathTerm::DIV:    out << "/"; break;
-                        case MathTerm::MOD:    out << "\\"; break;
-                        case MathTerm::POW:    out << "**"; break;
-                        case MathTerm::AND:    out << "&"; break;
-                        case MathTerm::XOR:    out << "^"; break;
-                        case MathTerm::OR:     out << "?"; break;
+                        case MathTerm::PLUS:   out << "$+"; break;
+                        case MathTerm::MINUS:  out << "$-"; break;
+                        case MathTerm::MULT:   out << "$*"; break;
+                        case MathTerm::DIV:    out << "$/"; break;
+                        case MathTerm::MOD:    out << "$\\"; break;
+                        case MathTerm::POW:    out << "$**"; break;
+                        case MathTerm::AND:    out << "$and"; break;
+                        case MathTerm::XOR:    out << "$xor"; break;
+                        case MathTerm::OR:     out << "$or"; break;
                         case MathTerm::UMINUS: out << "0-"; break;
                         case MathTerm::ABS:    break;
 		}
                 if(b_.get()) {b_->print(sto, out);out << ")";}
 		else
 		{
-			out << "|";
+                        out << "$|";
 			a_->print(sto, out);
-			out << "|";
+                        out << "$|";
 		}
 	}
 

@@ -120,7 +120,7 @@ protected:
 	ClaspOutPtr            out_;              // printer for printing result of search
 	ClaspInPtr             in_;               // input for clasp
 	Clasp::ClaspFacade*    facade_;           // interface to clasp lib
-        Clingcon::CSPSolver*   cspsolver_;
+        clone_ptr<Clingcon::CSPSolver>   cspsolver_;
 public:
 	ClingconOptions<M> clingo;                  // (i)clingo options   - from command-line
 //	oClingoOptions<M> oclingo;                 // oclingo options     - from command-line
@@ -330,9 +330,9 @@ void ClingconApp<M>::configureInOut(Streams& s)
 	{
 
 		s.open(generic.input, constStream());
-                cspsolver_ = new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal, clingo.optValues,clingo.optAll,
-                                                        clingo.initialLookahead, clingo.cspReason, clingo.cspConflict);
-                in_.reset(new CSPFromGringo<M>(*this, s,cspsolver_));
+                cspsolver_.reset(new Clingcon::GecodeSolver(clingo.cspLazyLearn,false,clingo.numAS.second,clingo.numAS.first,clingo.cspICL,clingo.cspBranchVar,clingo.cspBranchVal, clingo.optValues,clingo.optAll,
+                                                        clingo.initialLookahead, clingo.cspReason, clingo.cspConflict));
+                in_.reset(new CSPFromGringo<M>(*this, s,cspsolver_.get()));
 
                                                                            /*clingcon_.cspLazyLearn,
                                                                            clingcon_.cspCDG,
@@ -352,8 +352,8 @@ void ClingconApp<M>::configureInOut(Streams& s)
 	}
 	if(in_->format() == Input::SMODELS)
 	{
-                out_.reset(new Clingcon::ClingconOutput(cmdOpts_.basic.asp09,cspsolver_));
-		if(cmdOpts_.basic.asp09) { generic.verbose = 0; }
+            out_.reset(new Clingcon::ClingconOutput(cmdOpts_.basic.asp09,cspsolver_.get()));
+            if(cmdOpts_.basic.asp09) { generic.verbose = 0; }
 	}
 	else if(in_->format() == Input::DIMACS) { out_.reset(new SatOutput()); }
 	else if(in_->format() == Input::OPB)    { out_.reset(new PbOutput(generic.verbose > 1));  }
@@ -538,7 +538,7 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
                 {
 
                     cspsolver_->setSolver(&solver_);
-                    cp_ = new Clingcon::ClingconPropagator(cspsolver_);
+                    cp_ = new Clingcon::ClingconPropagator(cspsolver_.get());
                     solver_.addPost(cp_);
                     //cspsolver_->setDomain((dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().first,
                     //                         (dynamic_cast<FromGringo*>(in_.get()))->grounder->getCSPDomain().second);

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <clingcon/constraintsumterm.h>
+#include <clingcon/constraintaggrterm.h>
 #include <clingcon/constraintconstterm.h>
 #include <clingcon/globalconstraint.h>
 #include <clingcon/exception.h>
@@ -30,25 +30,25 @@
 
 namespace Clingcon
 {
-        ConstraintSumTerm::ConstraintSumTerm(const Loc &loc,Clingcon::ConstraintVarCondPtrVec* cond) :
-            ConstraintTerm(loc), cond_(cond)
+        ConstraintAggrTerm::ConstraintAggrTerm(const Loc &loc, Type t, Clingcon::ConstraintVarCondPtrVec* cond) :
+            ConstraintTerm(loc), cond_(cond), t_(t)
 	{
             for(ConstraintVarCondPtrVec::iterator i = cond_->begin(); i != cond_->end(); ++i)
                 i->parent_ = this;
 	}
 
-        Val ConstraintSumTerm::val(Grounder *) const
+        Val ConstraintAggrTerm::val(Grounder *) const
 	{
 		assert(false);
                 return Val::fail();
 	}
 
-        bool ConstraintSumTerm::unify(Grounder *grounder, const Val &v, int binder) const
+        bool ConstraintAggrTerm::unify(Grounder *grounder, const Val &v, int binder) const
 	{
 		return false;
 	}
 
-        void ConstraintSumTerm::vars(VarSet &v) const
+        void ConstraintAggrTerm::vars(VarSet &v) const
 	{
             for (ConstraintVarCondPtrVec::const_iterator i = cond_->begin(); i != cond_->end(); ++i)
             {
@@ -58,7 +58,7 @@ namespace Clingcon
             }
 	}
 
-        void ConstraintSumTerm::visit(PrgVisitor *visitor, bool bind)
+        void ConstraintAggrTerm::visit(PrgVisitor *visitor, bool bind)
 	{
             for (ConstraintVarCondPtrVec::iterator i = cond_->begin(); i != cond_->end(); ++i)
             {
@@ -72,13 +72,13 @@ namespace Clingcon
 		//if(b_.get()) visitor->visit(b_.get(), false);
 	}
 
-        bool ConstraintSumTerm::isNumber(Grounder* ) const
+        bool ConstraintAggrTerm::isNumber(Grounder* ) const
 	{
             return false;
                 //return a_->constant() && (!b_.get() || b_->constant());
 	}
 
-        void ConstraintSumTerm::print(Storage *sto, std::ostream &out) const
+        void ConstraintAggrTerm::print(Storage *sto, std::ostream &out) const
 	{
             out << "$sum{";
             for (size_t i = 0; i < cond_->size(); ++i)
@@ -90,14 +90,14 @@ namespace Clingcon
              out << "}";
 	}
 
-        bool ConstraintSumTerm::match(Grounder* g)
+        bool ConstraintAggrTerm::match(Grounder* g)
         {
             for(ConstraintVarCondPtrVec::iterator i = cond_->begin(); i != cond_->end(); ++i)
                 i->ground(g);
             return true;
         }
 
-        void ConstraintSumTerm::normalize(Lit *, const Ref &, Grounder* g, const Lit::Expander& , bool )
+        void ConstraintAggrTerm::normalize(Lit *, const Ref &, Grounder* g, const Lit::Expander& , bool )
 	{
             for (size_t i = 0; i < cond_->size(); ++i)
             {
@@ -118,28 +118,44 @@ namespace Clingcon
 	}
 
 
-        ConstraintSumTerm *ConstraintSumTerm::clone() const
+        ConstraintAggrTerm *ConstraintAggrTerm::clone() const
 	{
-                return new ConstraintSumTerm(*this);
+                return new ConstraintAggrTerm(*this);
 	}
 
-        GroundConstraint* ConstraintSumTerm::toGroundConstraint(Grounder* g, GroundedConstraintVarLitVec& vec, int i)
+        GroundConstraint* ConstraintAggrTerm::toGroundConstraint(Grounder* g, GroundedConstraintVarLitVec& vec, int i)
         {
+            if (t_==SUM)
+            {
             if (i+1 < vec.size())
             {
                 return new GroundConstraint(g,GroundConstraint::PLUS, vec[i].vt_.release(), toGroundConstraint(g,vec,i+1));
-
-//                return new GroundConstraint(g,GroundConstraint::PLUS, (*(*cond_)[i].head())->toGroundConstraint(g), toGroundConstraint(g,i+1));
             }
             else
                 return vec[i].vt_.release();
-//                return (*(*cond_)[i].head())->toGroundConstraint(g);
+            }
+            else
+            {
+                GroundConstraintVec gcv;
+                if (t_==MIN || t_==MAX)
+                {
 
+                    for (GroundedConstraintVarLitVec::iterator i = vec.begin(); i != vec.end(); ++i)
+                    {
+                        gcv.push_back(i->vt_.release());
+                    }
 
+                }
+                if (t_==MIN)
+                    return new GroundConstraint(g,GroundConstraint::MIN,gcv);
+                else
+                if (t_ == MAX)
+                    return new GroundConstraint(g,GroundConstraint::MIN,gcv);
+            }
         }
 
 
-        GroundConstraint* ConstraintSumTerm::toGroundConstraint(Grounder* g)
+        GroundConstraint* ConstraintAggrTerm::toGroundConstraint(Grounder* g)
 	{
             GroundedConstraintVarLitVec vec;
 
@@ -148,10 +164,15 @@ namespace Clingcon
             if (vec.size())
                 return toGroundConstraint(g,vec,0);
             else
-                return new GroundConstraint(g,Val::number(0));
+            {
+                if (t_==SUM)
+                    return new GroundConstraint(g,Val::number(0));
+                else
+                    throw CSPException("Error: Minimum of empty set is not defined");
+            }
 	}
 
-        ConstraintSumTerm::~ConstraintSumTerm()
+        ConstraintAggrTerm::~ConstraintAggrTerm()
 	{
 	}
 }

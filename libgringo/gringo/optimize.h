@@ -56,6 +56,7 @@ public:
 	class Printer : public ::Printer
 	{
 	public:
+		using ::Printer::print;
 		virtual void begin(Optimize::Type type, bool maximize) = 0;
 		virtual void print(const ValVec &set) = 0;
 		virtual void end() = 0;

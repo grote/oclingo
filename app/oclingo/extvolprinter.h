@@ -25,6 +25,7 @@
 class ExtBasePrinter : public Printer
 {
 public:
+	using ::Printer::print;
 	virtual void print() { }
 	virtual void printWindow(int window) { (void) window;}
 	virtual ~ExtBasePrinter() { }

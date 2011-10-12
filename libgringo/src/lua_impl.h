@@ -422,7 +422,10 @@ Grounder::LuaImpl::LuaImpl(Grounder *g)
 
 int Grounder::LuaImpl::index(const Loc &loc, const char *name)
 {
-	// TODO: Create an own exception???
+	if(!lua_checkstack(luaState_, LUA_MINSTACK + 1))
+	{
+		throw std::runtime_error("lua: stack overflow");
+	}
 	lua_getglobal(luaState_, name);
 	int index = lua_gettop(luaState_);
 	if(!lua_isfunction(luaState_, index))
@@ -439,6 +442,10 @@ void Grounder::LuaImpl::call(const LuaLit *lit, const ValVec &args, ValVec &vals
 {
 	LuaTop top(luaState_); (void)top;
 	lua_pushvalue(luaState_, lit->index());
+	if(!lua_checkstack(luaState_, LUA_MINSTACK + args.size()))
+	{
+		throw std::runtime_error("lua: stack overflow");
+	}
 	foreach(const Val &val, args) { ::pushVal(luaState_, val); }
 	lua_call(luaState_, args.size(), 1);
 	if(lua_type(luaState_, -1) == LUA_TTABLE)

@@ -17,8 +17,7 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#ifndef CLASP_GROUNDCONSTRAINT_H_INCLUDED
-#define CLASP_GROUNDCONSTRAINT_H_INCLUDED
+#pragma once
 
 //#include <clasp/include/util/misc_types.h>
 #include <gringo/gringo.h>
@@ -54,23 +53,26 @@ namespace Clingcon {
 			PLUS,
 			MINUS,
 			TIMES,
-			DIVIDE
+                        DIVIDE,
+                        MIN,
+                        MAX
 		};
 
 
 	public:	
-                GroundConstraint() : a_(0), b_(0)
+                GroundConstraint() //: a_(0), b_(0)
                 {}
 
                 ~GroundConstraint()
                 {
-                    delete a_;
-                    delete b_;
+                    //delete a_;
+                    //delete b_;
                 }
 
                 GroundConstraint(const GroundConstraint& copy) : op_(copy.op_),
-                                                                 a_(copy.a_ ? new GroundConstraint(*copy.a_) : 0),
-                                                                 b_(copy.b_ ? new GroundConstraint(*copy.b_) : 0),
+                                                                 //a_(copy.a_ ? new GroundConstraint(*copy.a_) : 0),
+                                                                 //b_(copy.b_ ? new GroundConstraint(*copy.b_) : 0),
+                                                                 a_(copy.a_.clone()), // check if necessary
                                                                  value_(copy.value_),
                                                                  name_(copy.name_)
                 {
@@ -96,11 +98,16 @@ namespace Clingcon {
                         a.print(s,ss);
                         name_ = ss.str();
                     }
-                    a_ = 0;
-                    b_ = 0;
+                    //a_ = 0;
+                    //b_ = 0;
                 }
-                GroundConstraint(Storage* , Operator op, GroundConstraint* a, GroundConstraint* b) : op_(op), a_(a), b_(b)
-		{}
+                GroundConstraint(Storage* , Operator op, GroundConstraint* a, GroundConstraint* b) : op_(op)//, a_(a), b_(b)
+                {
+                    a_.push_back(a); if (b) a_.push_back(b);
+                }
+
+                GroundConstraint(Storage* , Operator op, boost::ptr_vector<GroundConstraint>& vec) : op_(op), a_(vec)
+                {}
 
                 void print(Storage* s, std::ostream& out)
                 {
@@ -109,42 +116,79 @@ namespace Clingcon {
 
                 void simplify()
                 {
-                    if (a_)
+                    for (boost::ptr_vector<GroundConstraint>::iterator i = a_.begin(); i != a_.end(); ++i)
+                        i->simplify();
+                    /*if (a_)
                         a_->simplify();
                     if (b_)
                         b_->simplify();
+                        */
 
-                    if (op_==ABS && a_->isInteger())
+                    if (op_==ABS && a_[0].isInteger())
                     {
                         op_=INTEGER;
-                        value_ = a_->getInteger();
-                        delete a_;
-                        a_ = 0;
+                        value_ = a_[0].getInteger();
+                        //delete a_;
+                        a_.pop_back();
+                        //a_ = 0;
                         return;
                     }
 
-                    if (a_ && a_->isInteger() && b_ && b_->isInteger())
+                    bool allInts=a_.size();
+                    for (boost::ptr_vector<GroundConstraint>::iterator i = a_.begin(); i != a_.end(); ++i)
+                        if (!i->isInteger())
+                        {
+                            allInts=false;
+                            break;
+                        }
+
+
+                    //if (a_.size()>1 && a_[0].isInteger() && b_[1].isInteger())
+                    if (allInts)
                     {
                         switch (op_)
                         {
                         case PLUS:
-                            value_ = a_->getInteger() + b_->getInteger(); break;
+                            value_ = a_[0].getInteger() + a_[1].getInteger(); break;
                         case MINUS:
-                            value_ = a_->getInteger() - b_->getInteger(); break;
+                            value_ = a_[0].getInteger() - a_[1].getInteger(); break;
                         case TIMES:
-                            value_ = a_->getInteger() * b_->getInteger(); break;
+                            value_ = a_[0].getInteger() * a_[1].getInteger(); break;
                         case DIVIDE:
                         {
-                            if (b_->getInteger() == 0)
+                            if (a_[1].getInteger() == 0)
                                 throw CSPException("Error: division by zero detected in CSP term");
-                            value_ = a_->getInteger() / b_->getInteger(); break;
+                            value_ = a_[0].getInteger() / a_[1].getInteger(); break;
+                        }
+                        case MIN:
+                        {
+                            int min = std::numeric_limits<int>::max();
+                            for (boost::ptr_vector<GroundConstraint>::iterator i = a_.begin(); i != a_.end(); ++i)
+                            {
+                                if (i->getInteger() < min)
+                                    min = i->getInteger();
+                            }
+                            value_ = min;
+                            break;
+                        }
+                        case MAX:
+                        {
+                            int max = std::numeric_limits<int>::min();
+                            for (boost::ptr_vector<GroundConstraint>::iterator i = a_.begin(); i != a_.end(); ++i)
+                            {
+                                if (i->getInteger() > max)
+                                    max = i->getInteger();
+                            }
+                            value_ = max;
+                            break;
                         }
                         }
                         op_=INTEGER;
-                        delete a_;
-                        delete b_;
-                        a_ = 0;
-                        b_ = 0;
+                        a_.release();
+                        //delete a_;
+                        //delete b_;
+                        //a_ = 0;
+                        //b_ = 0;
                     }
 
                 }
@@ -155,8 +199,19 @@ namespace Clingcon {
                     {
                         if (op_ != cmp.op_)
                             return -1;
-                        int res = a_->compare(*(cmp.a_),s);
-                        return (res != 0 ? b_->compare(*(cmp.b_),s) : res);
+
+                        if (a_.size() != cmp.a_.size())
+                            return -1;
+                        for (unsigned int i = 0; i != a_.size(); ++i)
+                        {
+
+                            int res = a_[i].compare((cmp.a_[i]),s);
+                            if (res==0) return 0;
+#pragma message "This is strange, please test this"
+                        }
+                        // this is the way it was before but it does not make sense
+                        //int res = a_->compare(*(cmp.a_),s);
+                        //return (res != 0 ? b_->compare(*(cmp.b_),s) : res);
                     }
                     if (isInteger() && cmp.isInteger())
                     {
@@ -175,7 +230,14 @@ namespace Clingcon {
                     {
                         if (op_ != cmp.op_)
                             return false;
-                        return *a_ == *(cmp.a_) && *b_ == *(cmp.b_);
+                        bool ret = false;
+                        for (unsigned int i = 0; i != a_.size(); ++i)
+                        {
+                            if (!(a_[i] == cmp.a_[i]))
+                                return false;
+                        }
+                        return true;
+                        //return *a_ == *(cmp.a_) && *b_ == *(cmp.b_);
                     }
                     if (isInteger() && cmp.isInteger())
                     {
@@ -207,6 +269,8 @@ namespace Clingcon {
                     case MINUS:
                     case TIMES:
                     case DIVIDE:
+                    case MIN:
+                    case MAX:
                         return true;
                     case VARIABLE:
                     case INTEGER:
@@ -233,23 +297,26 @@ namespace Clingcon {
                     case INTEGER:
                     case ABS:   return 1;
                     case PLUS:
-                    case MINUS: return a_->getLinearSize() + b_->getLinearSize();
+                    case MINUS: return a_[0].getLinearSize() + a_[1].getLinearSize();
                     case TIMES:
                     case DIVIDE:
                     {
-                        if (a_->op_==INTEGER)
+                        if (a_[0].op_==INTEGER)
                         {
-                           return b_->getLinearSize();
+                           return a_[1].getLinearSize();
                         }
                         else
-                        if (b_->op_==INTEGER)
+                        if (a_[1].op_==INTEGER)
                         {
-                           return a_->getLinearSize();
+                           return a_[0].getLinearSize();
                         }
                         else
                             return 1;
 
                     }
+                    case MIN:
+                    case MAX:
+                        return 1; // test this
                     default: assert(false);
                     }
                     assert(false);
@@ -279,29 +346,46 @@ namespace Clingcon {
                     else
                     if (op_==ABS)
                     {
-                        return "#abs("+a_->getString()+")";
+                        return "$abs("+a_[0].getString()+")";
 
+                    }
+                    else
+                    if (op_==MIN || op_==MAX)
+                    {
+                        std::string ret;
+                        if (op_==MIN)
+                            ret+="$min{";
+                        if (op_==MAX)
+                            ret+="$max{";
+                        for (unsigned int i = 0; i != a_.size(); ++i)
+                        {
+                            ret+=a_[i].getString();
+                            if (i<a_.size()-1)
+                                ret+=",";
+                        }
+                        ret+="}";
+                        return ret;
                     }
                     else
                     {
                         std::string ret;
-                        ret = "("+a_->getString();
+                        ret = "("+a_[0].getString();
                         switch (op_)
                         {
                             case PLUS:
-                                ret += "+"; break;
+                                ret += "$+"; break;
                             case MINUS:
-                                ret += "-"; break;
+                                ret += "$-"; break;
                             case TIMES:
-                                ret += "*"; break;
+                                ret += "$*"; break;
                             case DIVIDE:
-                                ret += "/"; break;
+                                ret += "$/"; break;
                             case VARIABLE:
                             case INTEGER:
                             case ABS:
                             default: assert(false);
                         }
-                        ret += b_->getString()+")";
+                        ret += a_[1].getString()+")";
                         return ret;
                     }
 
@@ -309,8 +393,8 @@ namespace Clingcon {
 
         public:
 	Operator op_;
-        GroundConstraint* a_;
-        GroundConstraint* b_;
+        boost::ptr_vector<GroundConstraint> a_;
+        //GroundConstraint* b_;
         //Val val_;
         int value_;
         std::string name_;
@@ -334,85 +418,8 @@ namespace Clingcon {
            return a.clone();
         }
 
-//        class IndexedGroundConstraint : public GroundConstraint
-//        {
-//        public:
-//            IndexedGroundConstraint(Storage* s, const Val& a, const Val& weight) : GroundConstraint(s,a)
-//            {
-//                std::stringstream ss;
-//                weight.print(s,ss);
-//                weightname_ = ss.str();
-//            }
-
-//           // IndexedGroundConstraint(Storage* s, Operator op, GroundConstraint* a, GroundConstraint* b, const) : GroundConstraint(s, op, a, b)
-
-//            std::string getWeight(){return weightname_;}
-
-//        private:
-
-//            std::string weightname_;
-
-//        };
-
         typedef boost::ptr_vector<GroundConstraint> GroundConstraintVec;
         typedef boost::ptr_vector<IndexedGroundConstraint> IndexedGroundConstraintVec;
-/*
-		public:
-			enum Type
-			{
-				VARIABLE,
-				INTEGER,
-				OPERATOR,
-				RELATION,
-				UNDEF
 
-			};
-
-			enum Relation
-			{
-				EQ,
-				NE,
-				LE,
-				LT,
-				GE,
-				GT
-			};
-
-			CSPConstraint();
-			CSPConstraint(const CSPConstraint& cc);
-			const CSPConstraint operator=(const CSPConstraint& cc);
-			~CSPConstraint();
-			void setVariable(unsigned int var);
-			void setInteger(int i);
-			void setOperator(Operator op, CSPConstraint* a, CSPConstraint* b);
-			void setRelation(Relation op, CSPConstraint* a, CSPConstraint* b);
-
-			unsigned int getLinearSize() const;
-
-
-			Type getType() const;
-			unsigned int getVar() const;
-			int getInteger() const;
-			Operator getOperator(CSPConstraint*& a, CSPConstraint*& b) const;
-			Relation getRelation(CSPConstraint*& a, CSPConstraint*& b) const;
-
-			std::vector<unsigned int> getAllVariables();
-
-		private:
-			void clear();
-			Type type_;
-			union
-			{
-				unsigned int var_;
-				int integer_;
-				Operator op_;
-				Relation rel_;
-			};
-			CSPConstraint* a_;
-			CSPConstraint* b_;
-			unsigned int lin_; // lenght of the linear component, 1 if not linear (constant, variable, mult)
-
-	};
-	*/
 }
-#endif
+

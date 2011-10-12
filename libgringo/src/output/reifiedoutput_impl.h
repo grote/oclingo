@@ -72,14 +72,15 @@ namespace reifiedoutput_impl
 		bool           printed_;
 	};
 
+	/*
 	class SumAggrLitPrinter : public AggrLit::Printer<SumAggrLit>
 	{
 	public:
 		SumAggrLitPrinter(ReifiedOutput *output) : output_(output) { }
-		void begin(AggrState *state, bool head, bool sign, bool complete);
+		void begin(State state, bool head, bool sign, bool complete, bool set);
 		void weight(const Val &v);
-		void lower(int32_t l);
-		void upper(int32_t u);
+		void lower(int32_t l, bool leq);
+		void upper(int32_t u, bool leq);
 		void print(PredLitRep *l);
 		void end();
 		Output *output() const { return output_; }
@@ -98,6 +99,7 @@ namespace reifiedoutput_impl
 		bool               hasLower_;
 		bool               hasNeg_;
 	};
+	*/
 
 	/*
 	class AvgAggrLitPrinter : public AvgAggrLit::Printer
@@ -186,8 +188,6 @@ namespace reifiedoutput_impl
 		bool              head_;
 
 	};
-	
-	*/
 
 	class OptimizePrinter : public Optimize::Printer
 	{
@@ -202,6 +202,7 @@ namespace reifiedoutput_impl
 		ReifiedOutput *output_;
 		bool        maximize_;
 	};
+*/
 
 	class ComputePrinter : public Compute::Printer
 	{
@@ -214,6 +215,7 @@ namespace reifiedoutput_impl
 		ReifiedOutput *output_;
 	};
 
+	/*
 	class IncPrinter : public IncLit::Printer
 	{
 	public:
@@ -223,5 +225,6 @@ namespace reifiedoutput_impl
 	private:
 		ReifiedOutput *output_;
 	};
+	*/
 
 }

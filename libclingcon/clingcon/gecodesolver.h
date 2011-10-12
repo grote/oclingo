@@ -247,7 +247,7 @@ namespace Clingcon {
                 BFALSE
             };
 
-            //TODo, find a better way for litToVar, static, or smart
+            //TODO, find a better way for litToVar, static, or smart
             SearchSpace(GecodeSolver* csps, unsigned int numVar, GecodeSolver::ConstraintMap& constraints,
                         LParseGlobalConstraintPrinter::GCvec& gcvec);
             SearchSpace(bool share, SearchSpace& sp);
@@ -268,13 +268,13 @@ namespace Clingcon {
         private:
             void generateConstraint(const Constraint* c, unsigned int boolvar);
             void generateConstraint(const Constraint* c, bool val);
-            Gecode::LinRel generateLinearRelation(const Constraint* c) const;
+            Gecode::LinRel generateLinearRelation(const Constraint* c);
             Gecode::BoolExpr generateBooleanExpression(const Constraint* c);
             //void generateLinearConstraint(CSPSolver* csps, const GroundConstraint* c, IntArgs& args, IntVarArgs& array, unsigned int num);
             void generateGlobalConstraint(LParseGlobalConstraintPrinter::GC& gc);
-            Gecode::LinExpr generateLinearExpr(const GroundConstraint* c) const;
-            Gecode::LinExpr generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec) const;
-            Gecode::LinExpr generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i) const;
+            Gecode::LinExpr generateLinearExpr(const GroundConstraint* c);
+            Gecode::LinExpr generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec);
+            Gecode::LinExpr generateSum(std::vector<std::pair<GroundConstraint*,bool> >& vec, size_t i);
             //IntVar generateVariable(Constraint c);
 
             IntVarArray x_;

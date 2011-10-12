@@ -1145,9 +1145,6 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
 
     int it = conflict.size()-1;//(ends-begin)-1;
 
-    assert(conflict.size()==0);
-
-
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
     //GecodeSolver::SearchSpace* tester;

@@ -14,6 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
+
 %include {
 #include "cspparser_impl.h"
 #include "gringo/gringo.h"
@@ -55,12 +56,12 @@
 #include <gringo/litdep.h>
 
 #include "clingcon/constraintmathterm.h"
-#include "clingcon/constraintsumterm.h"
+#include "clingcon/constraintaggrterm.h"
 #include "clingcon/constraintconstterm.h"
 
 
-#define GRD pCSPParser->grounder()
-#define OTP pCSPParser->grounder()->output()
+#define GRD pParser->grounder()
+#define OTP pParser->grounder()->output()
 #define ONE(loc) new ConstTerm(loc, Val::number(1))
 #define CSPONE(loc) new ConstraintConstTerm(loc, Val::number(1))
 #define ZERO(loc) new ConstTerm(loc, Val::number(0))
@@ -73,31 +74,28 @@ using namespace Clingcon;
 template <class T>
 void del(T x)
 {
-        delete x;
+	delete x;
 }
 
 template <class T>
 boost::ptr_vector<T> *vec1(T *x)
 {
-        boost::ptr_vector<T> *v = new boost::ptr_vector<T>();
-        v->push_back(x);
-        return v;
+	boost::ptr_vector<T> *v = new boost::ptr_vector<T>();
+	v->push_back(x);
+	return v;
 }
 
-static unsigned int cspminimizecounter = 1;
-
 }
-
 
 %name cspparser
 %stack_size 0
 
-%parse_failure { pCSPParser->parseError(); }
-%syntax_error  { pCSPParser->syntaxError(); }
+%parse_failure { pParser->parseError(); }
+%syntax_error  { pParser->syntaxError(); }
 
-%extra_argument { CSPParser *pCSPParser }
+%extra_argument { CSPParser *pParser }
 %token_type { CSPParser::Token }
-%token_destructor { pCSPParser = pCSPParser; }
+%token_destructor { pParser = pParser; }
 %token_prefix CSPPARSER_
 
 %start_symbol start
@@ -122,7 +120,6 @@ static unsigned int cspminimizecounter = 1;
 
 %type computelit { Compute* }
 %destructor computelit { del($$); }
-
 
 %type head         { Lit* }
 %type lit          { Lit* }
@@ -164,6 +161,10 @@ static unsigned int cspminimizecounter = 1;
 
 %type constraintterm { Clingcon::ConstraintTerm* }
 %destructor constraintterm { del($$); }
+
+%type cspnonterm { Clingcon::ConstraintTerm* }
+%destructor cspnonterm { del($$); }
+
 
 %type func { FuncTerm* }
 %destructor func { del($$); }
@@ -309,36 +310,34 @@ start ::= program.
 
 program ::= .
 program ::= program line DOT.
-program ::= program weak(w).      { pCSPParser->add(w); }
-program ::= program SHOWDOT(tok). { pCSPParser->show(tok.index,true); }
-program ::= program HIDEDOT(tok). { pCSPParser->show(tok.index,false); }
+program ::= program weak(w).      { pParser->add(w); }
+program ::= program SHOWDOT(tok). { pParser->show(tok.index, true); }
+program ::= program HIDEDOT(tok). { pParser->show(tok.index, false); }
 
-
-
-line ::= INCLUDE STRING(file).                         { pCSPParser->include(file.index); }
-line ::= rule(r).                                      { pCSPParser->add(r); }
-line ::= DOMAIN signed(id) LBRAC var_list(vars) RBRAC. { pCSPParser->domainStm(id.loc(), id.index, *vars); del(vars); }
-line ::= EXTERNAL(tok) predicate(pred) cond(list).     { pCSPParser->add(new External(tok.loc(), pred, *list)); delete list; }
+line ::= INCLUDE STRING(file).                         { pParser->include(file.index); }
+line ::= rule(r).                                      { pParser->add(r); }
+line ::= DOMAIN signed(id) LBRAC var_list(vars) RBRAC. { pParser->domainStm(id.loc(), id.index, *vars); del(vars); }
+line ::= EXTERNAL(tok) predicate(pred) cond(list).     { pParser->add(new External(tok.loc(), pred, *list)); delete list; }
 line ::= EXTERNAL signed(id) SLASH NUMBER(num).        { GRD->externalStm(id.index, num.number); }
-line ::= CUMULATIVE IDENTIFIER(id).                    { pCSPParser->incremental(CSPParser::IPART_CUMULATIVE, id.index); }
-line ::= VOLATILE IDENTIFIER(id).                      { pCSPParser->incremental(CSPParser::IPART_VOLATILE, id.index); }
-line ::= VOLATILE IDENTIFIER(id) COLON NUMBER(num).    { pCSPParser->incremental(CSPParser::IPART_VOLATILE, id.index, num.number); }
-line ::= BASE.                                         { pCSPParser->incremental(CSPParser::IPART_BASE); }
+line ::= CUMULATIVE IDENTIFIER(id).                    { pParser->incremental(CSPParser::IPART_CUMULATIVE, id.index); }
+line ::= VOLATILE IDENTIFIER(id).                      { pParser->incremental(CSPParser::IPART_VOLATILE, id.index); }
+line ::= VOLATILE IDENTIFIER(id) COLON NUMBER(num).    { pParser->incremental(CSPParser::IPART_VOLATILE, id.index, num.number); }
+line ::= BASE.                                         { pParser->incremental(CSPParser::IPART_BASE); }
 line ::= optimize.
 line ::= compute.
 line ::= meta.
 
 
-line ::= cspdomain(dom) IF body(body).                                                 {pCSPParser->add(new CSPDomain(dom->loc(), dom, *body)); delete body;}
-line ::= cspdomain(dom).                                                               {pCSPParser->add(new CSPDomain(dom->loc(), dom)); }
+line ::= cspdomain(dom) IF body(body).                                                 {pParser->add(new CSPDomain(dom->loc(), dom, *body)); delete body;}
+line ::= cspdomain(dom).                                                               {pParser->add(new CSPDomain(dom->loc(), dom)); }
 
 cspdomain(res) ::= CSPDOMAIN(tok) LBRAC term(a) DOTS term(b) RBRAC.                    {res= new CSPDomainLiteral(tok.loc(), 0, a, b); }
 //cspdomain(res) ::= CSPDOMAIN(tok) LBRAC constraintterm(term) COMMA term(a) DOTS term(b) RBRAC.   {res= new CSPDomainLiteral(tok.loc(), term, a, b); }
 
-line ::= globalconstrainthead(gc) IF body(body).      {                  pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), *body));                             delete boost::tuples::get<2>(*gc); delete gc;}
-line ::= globalconstrainthead(gc).                    { LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), empty));                             delete boost::tuples::get<2>(*gc); delete gc;}
-line ::= globalconstraintcounthead(gc) IF body(body). {                  pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
-line ::= globalconstraintcounthead(gc).               { LitPtrVec empty; pCSPParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstrainthead(gc) IF body(body).      {                  pParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), *body));                             delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstrainthead(gc).                    { LitPtrVec empty; pParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), empty));                             delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstraintcounthead(gc) IF body(body). {                  pParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), *body)); delete boost::tuples::get<2>(*gc); delete gc;}
+line ::= globalconstraintcounthead(gc).               { LitPtrVec empty; pParser->add(new Clingcon::GlobalConstraint(boost::tuples::get<0>(*gc).loc(), boost::tuples::get<1>(*gc), *boost::tuples::get<2>(*gc), boost::tuples::get<3>(*gc), empty)); delete boost::tuples::get<2>(*gc); delete gc;}
 
 globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC condsetlist(list) RCBRAC.      { res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::DISTINCT,vec1(list)); }
 //globalconstrainthead(res) ::= CSPBINPACK(tok) LSBRAC condindexlist(list1) RSBRAC LSBRAC condindexlist(list2) RSBRAC LSBRAC condindexlist(list3) RSBRAC.  {
@@ -370,25 +369,25 @@ globalconstrainthead(res) ::= CSPDISTINCT(tok) LCBRAC condsetlist(list) RCBRAC. 
  globalconstrainthead(res) ::= CSPMINIMIZE(tok) LCBRAC condatlist(list1) RCBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MINIMIZE_SET,list);
-                    cspminimizecounter++;
+                    pParser->cspminimizecounter++;
                     }
 
  globalconstrainthead(res) ::= CSPMINIMIZE(tok) LSBRAC condatlist(list1) RSBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MINIMIZE,list);
-                    cspminimizecounter++;
+                    pParser->cspminimizecounter++;
                     }
 
  globalconstrainthead(res) ::= CSPMAXIMIZE(tok) LCBRAC condatlist(list1) RCBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MAXIMIZE_SET,list);
-                    cspminimizecounter++;
+                    pParser->cspminimizecounter++;
                     }
 
  globalconstrainthead(res) ::= CSPMAXIMIZE(tok) LSBRAC condatlist(list1) RSBRAC.  {
                     boost::ptr_vector<ConstraintVarCondPtrVec>* list = vec1(list1);
                     res = new boost::tuple<CSPParser::Token, Clingcon::GCType, boost::ptr_vector<ConstraintVarCondPtrVec>* >(tok, Clingcon::MAXIMIZE,list);
-                    cspminimizecounter++;
+                    pParser->cspminimizecounter++;
                     }
 
 
@@ -428,18 +427,18 @@ condatlist(res)  ::= .                                                         {
 condatlist(res)  ::= ncondatlist(list).                                        { res = list; }
 
 condat(res)      ::= constraintterm(t) AT term(level) weightcond(cond).        { res = new Clingcon::ConstraintVarCond(t->loc(), level, t, *cond); delete cond; }
-condat(res)      ::= constraintterm(t) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::number(cspminimizecounter)), t, *cond); delete cond; }
+condat(res)      ::= constraintterm(t) weightcond(cond).                       { res = new Clingcon::ConstraintVarCond(t->loc(), new ConstTerm(t->loc(), Val::number(pParser->cspminimizecounter)), t, *cond); delete cond; }
 
 meta ::= HIDE.                                        { OTP->hideAll(); }
-meta ::= SHOW(tok) term(term) COLON.                  { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term,  list, Display::Type(true,  true)));               }
-meta ::= SHOW(tok) term(term).                        { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term,  list, Display::Type(true,  false)));              }
-meta ::= SHOW(tok) term(term) ncond(list) COLON.      {                 pCSPParser->add(new Display(tok.loc(), term, *list, Display::Type(true,  true)));  delete list; }
-meta ::= SHOW(tok) term(term) ncond(list).            {                 pCSPParser->add(new Display(tok.loc(), term, *list, Display::Type(true,  false))); delete list; }
-meta ::= HIDE(tok) term(term) COLON.                  { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term,  list, Display::Type(false, true)));               }
-meta ::= HIDE(tok) term(term).                        { LitPtrVec list; pCSPParser->add(new Display(tok.loc(), term,  list, Display::Type(false, false)));              }
-meta ::= HIDE(tok) term(term) ncond(list) COLON.      {                 pCSPParser->add(new Display(tok.loc(), term, *list, Display::Type(false, true)));  delete list; }
-meta ::= HIDE(tok) term(term) ncond(list).            {                 pCSPParser->add(new Display(tok.loc(), term, *list, Display::Type(false, false))); delete list; }
-meta ::= CONST     IDENTIFIER(id) ASSIGN term(term).  {                 pCSPParser->constTerm(id.index, term); }
+meta ::= SHOW(tok) term(term) COLON.                  { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(true,  true)));               }
+meta ::= SHOW(tok) term(term).                        { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(true,  false)));              }
+meta ::= SHOW(tok) term(term) ncond(list) COLON.      {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(true,  true)));  delete list; }
+meta ::= SHOW(tok) term(term) ncond(list).            {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(true,  false))); delete list; }
+meta ::= HIDE(tok) term(term) COLON.                  { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(false, true)));               }
+meta ::= HIDE(tok) term(term).                        { LitPtrVec list; pParser->add(new Display(tok.loc(), term,  list, Display::Type(false, false)));              }
+meta ::= HIDE(tok) term(term) ncond(list) COLON.      {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(false, true)));  delete list; }
+meta ::= HIDE(tok) term(term) ncond(list).            {                 pParser->add(new Display(tok.loc(), term, *list, Display::Type(false, false))); delete list; }
+meta ::= CONST     IDENTIFIER(id) ASSIGN term(term).  {                 pParser->constTerm(id.index, term); }
 
 
 signed(res) ::= IDENTIFIER(id).                       { res = id; }
@@ -453,7 +452,6 @@ cond(res)   ::= ncond(list).                          { res = list; }
 
 var_list(res) ::= VARIABLE(var).                      { res = new VarSigVec(); res->push_back(VarSig(var.loc(), var.index)); }
 var_list(res) ::= var_list(list) COMMA VARIABLE(var). { list->push_back(VarSig(var.loc(), var.index)); res = list; }
-
 
 rule(res) ::= head(head) IF body(body). { res = new Rule(head->loc(), head, *body); del(body); }
 rule(res) ::= IF(tok) body(body).       { res = new Rule(tok.loc(), 0, *body); del(body); }
@@ -475,7 +473,6 @@ body(res) ::= nbody(body). { res = body; }
 predlit(res) ::= predicate(pred).          { res = pred; }
 predlit(res) ::= NOT(tok) predicate(pred). { res = pred; pred->sign(true); pred->loc(tok.loc()); }
 
-
 lit(res) ::= predlit(pred).            { res = pred; }
 lit(res) ::= term(a) cmp(cmp) term(b). { res = new RelLit(a->loc(), cmp, a, b); }
 lit(res) ::= TRUE(tok).                { res = new BooleanLit(tok.loc(), true); }
@@ -491,11 +488,16 @@ csplit(res) ::= csplit(a) CSPOR  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::
 csplit(res) ::= csplit(a) CSPXOR csplit(b).  { res=new CSPLit(a->loc(), CSPLit::XOR, a, b); }
 csplit(res) ::= csplit(a) CSPEQ  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::EQ,  a, b); }
 
+
+//does not work yet
+//conjunction(res) ::= csplit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
+
+
 literal(res) ::= lit(lit).                     { res = lit; }
 literal(res) ::= VARIABLE(var) ASSIGN term(b). { res = new RelLit(var.loc(), RelLit::ASSIGN, new VarTerm(var.loc(), var.index), b); }
 
 
-literal(res) ::= csplit(lit).                  { res = lit; }
+literal(res) ::= csplit(lit).                { res = lit; }
 //lit(res) ::= csplit(lit).                  { res = lit; }
 
 
@@ -507,6 +509,13 @@ body_literal(res) ::= VARIABLE(var) ASSIGN aggr_ass(lit). { res = lit; lit->assi
 body_literal(res) ::= term(a) CASSIGN aggr_ass(lit).      { res = lit; lit->assign(a); }
 body_literal(res) ::= conjunction(lit).                   { res = lit; }
 
+cmp(res) ::= GREATER. { res = RelLit::GREATER; }
+cmp(res) ::= LOWER.   { res = RelLit::LOWER; }
+cmp(res) ::= GTHAN.   { res = RelLit::GTHAN; }
+cmp(res) ::= LTHAN.   { res = RelLit::LTHAN; }
+cmp(res) ::= EQUAL.   { res = RelLit::EQUAL; }
+cmp(res) ::= INEQUAL. { res = RelLit::INEQUAL; }
+
 cspcmp(res) ::= CGREATER. { res = CSPLit::GREATER; }
 cspcmp(res) ::= CLOWER.   { res = CSPLit::LOWER; }
 cspcmp(res) ::= CGTHAN.   { res = CSPLit::GEQUAL; }
@@ -514,73 +523,68 @@ cspcmp(res) ::= CLTHAN.   { res = CSPLit::LEQUAL; }
 cspcmp(res) ::= CEQUAL.   { res = CSPLit::EQUAL; }
 cspcmp(res) ::= CINEQUAL. { res = CSPLit::INEQUAL; }
 
-
-cmp(res)    ::= GREATER. { res = RelLit::GREATER; }
-cmp(res)    ::= LOWER.   { res = RelLit::LOWER; }
-cmp(res)    ::= GTHAN.   { res = RelLit::GTHAN; }
-cmp(res)    ::= LTHAN.   { res = RelLit::LTHAN; }
-cmp(res)    ::= EQUAL.   { res = RelLit::EQUAL; }
-cmp(res)    ::= INEQUAL. { res = RelLit::INEQUAL; }
-
-
 term(res) ::= VARIABLE(var).  { res = new VarTerm(var.loc(), var.index); }
-term(res) ::= IDENTIFIER(id). { res = pCSPParser->term(Val::ID, id.loc(), id.index); }
-term(res) ::= STRING(id).     { res = pCSPParser->term(Val::STRING, id.loc(), id.index); }
+term(res) ::= IDENTIFIER(id). { res = pParser->term(Val::ID, id.loc(), id.index); }
+term(res) ::= STRING(id).     { res = pParser->term(Val::STRING, id.loc(), id.index); }
 term(res) ::= NUMBER(num).    { res = new ConstTerm(num.loc(), Val::number(num.number)); }
 term(res) ::= ANONYMOUS(var). { res = new VarTerm(var.loc()); }
 term(res) ::= INFIMUM(tok).   { res = new ConstTerm(tok.loc(), Val::inf()); }
 term(res) ::= SUPREMUM(tok).  { res = new ConstTerm(tok.loc(), Val::sup()); }
 term(res) ::= UNDEF(tok).     { res = new ConstTerm(tok.loc(), Val::undef()); }
 
-term(res) ::= term(a) DOTS term(b).                         {  res = new RangeTerm(a->loc(), a, b); }
-term(res) ::= term(a) SEM term(b).                          {  res = new PoolTerm(a->loc(), a, b); }
-term(res) ::= term(a) PLUS term(b).                         {  res = new MathTerm(a->loc(), MathTerm::PLUS, a, b); }
-term(res) ::= term(a) MINUS term(b).                        {  res = new MathTerm(a->loc(), MathTerm::MINUS, a, b); }
-term(res) ::= term(a) MULT term(b).                         {  res = new MathTerm(a->loc(), MathTerm::MULT, a, b); }
-term(res) ::= term(a) SLASH term(b).                        {  res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) DIV term(b).                          {  res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) PDIV term(b).                         {  res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= term(a) MOD term(b).                          {  res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= term(a) PMOD term(b).                         {  res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= term(a) POW term(b).                          {  res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= term(a) PPOW term(b).                         {  res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= term(a) AND term(b).                          {  res = new MathTerm(a->loc(), MathTerm::AND, a, b); }
-term(res) ::= term(a) XOR term(b).                          {  res = new MathTerm(a->loc(), MathTerm::XOR, a, b); }
-term(res) ::= term(a) QUESTION term(b).                     {  res = new MathTerm(a->loc(), MathTerm::OR, a, b); }
-term(res) ::= PABS LBRAC term(a) RBRAC.                     {  res = new MathTerm(a->loc(), MathTerm::ABS, a); }
-term(res) ::= VBAR term(a) VBAR.                            {  res = new MathTerm(a->loc(), MathTerm::ABS, a); }
-term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.       {  res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
-term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.       {  res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
-term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.       {  res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
-term(res) ::= func(f).                                      {  res = f; }
-term(res) ::= LBRAC(l) termlist(args) RBRAC.                {  res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
-term(res) ::= LBRAC(l) termlist(args) COMMA RBRAC.          {  res = new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
-term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. {  res = new LuaTerm(id.loc(), id.index, *args); delete args; }
+term(res) ::= term(a) DOTS term(b).                         { res = new RangeTerm(a->loc(), a, b); }
+term(res) ::= term(a) SEM term(b).                          { res = new PoolTerm(a->loc(), a, b); }
+term(res) ::= term(a) PLUS term(b).                         { res = new MathTerm(a->loc(), MathTerm::PLUS, a, b); }
+term(res) ::= term(a) MINUS term(b).                        { res = new MathTerm(a->loc(), MathTerm::MINUS, a, b); }
+term(res) ::= term(a) MULT term(b).                         { res = new MathTerm(a->loc(), MathTerm::MULT, a, b); }
+term(res) ::= term(a) SLASH term(b).                        { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) DIV term(b).                          { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) PDIV term(b).                         { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= term(a) MOD term(b).                          { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= term(a) PMOD term(b).                         { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= term(a) POW term(b).                          { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= term(a) PPOW term(b).                         { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= term(a) AND term(b).                          { res = new MathTerm(a->loc(), MathTerm::AND, a, b); }
+term(res) ::= term(a) XOR term(b).                          { res = new MathTerm(a->loc(), MathTerm::XOR, a, b); }
+term(res) ::= term(a) QUESTION term(b).                     { res = new MathTerm(a->loc(), MathTerm::OR, a, b); }
+term(res) ::= PABS LBRAC term(a) RBRAC.                     { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
+term(res) ::= VBAR term(a) VBAR.                            { res = new MathTerm(a->loc(), MathTerm::ABS, a); }
+term(res) ::= PPOW LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::POW, a, b); }
+term(res) ::= PMOD LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::MOD, a, b); }
+term(res) ::= PDIV LBRAC term(a) COMMA term(b) RBRAC.       { res = new MathTerm(a->loc(), MathTerm::DIV, a, b); }
+term(res) ::= func(f).                                      { res = f; }
+term(res) ::= LBRAC(l) termlist(args) RBRAC.                { res = args->size() == 1 ? args->pop_back().release() : new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
+term(res) ::= LBRAC(l) termlist(args) COMMA RBRAC.          { res = new FuncTerm(l.loc(), GRD->index(""), *args); delete args; }
+term(res) ::= AT IDENTIFIER(id) LBRAC termlist(args) RBRAC. { res = new LuaTerm(id.loc(), id.index, *args); delete args; }
 term(res) ::= AT IDENTIFIER(id) LBRAC RBRAC.                { TermPtrVec args; res = new LuaTerm(id.loc(), id.index, args); }
-term(res) ::= MINUS(m) term(a). [UMINUS]                    {  res = new MathTerm(m.loc(), MathTerm::UMINUS, a); }
+term(res) ::= MINUS(m) term(a). [UMINUS]                    { res = new MathTerm(m.loc(), MathTerm::UMINUS, a); }
+term(res) ::= BNOT(m) term(a). [UBNOT]                      { res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
+func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    { res = new FuncTerm(id.loc(), id.index, *args); delete args; }
 
-term(res) ::= BNOT(m) term(a). [UBNOT]                      {  res = new MathTerm(m.loc(), MathTerm::XOR, MINUSONE(m.loc()), a); }
-func(res) ::= IDENTIFIER(id) LBRAC termlist(args) RBRAC.    {  res = new FuncTerm(id.loc(), id.index, *args); delete args; }
+constraintterm(res) ::= term(t).                                                   { res = new Clingcon::ConstraintConstTerm(t->loc(), t); }
+constraintterm(res) ::= cspnonterm(t).                                             { res = t; }
 
+cspnonterm(res) ::= LBRAC cspnonterm(term) RBRAC.                                  { res = term; }
 
-constraintterm(res) ::= term(t).                                                       { res = new Clingcon::ConstraintConstTerm(t->loc(), t); }
-constraintterm(res) ::= constraintterm(a) CSPPLUS  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::PLUS,   a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMINUS constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MINUS,  a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMULT  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MULT,   a, b); }
-constraintterm(res) ::= constraintterm(a) CSPSLASH constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPDIV   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPDIV  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPMOD   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPMOD  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPOW   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= constraintterm(a) CSPPPOW  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= CSPPABS LBRAC constraintterm(a) RBRAC.                         { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
-constraintterm(res) ::= CSPVBAR constraintterm(a) CSPVBAR.                             { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::ABS,    a); }
-constraintterm(res) ::= CSPPPOW LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::POW,    a, b); }
-constraintterm(res) ::= CSPPMOD LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::MOD,    a, b); }
-constraintterm(res) ::= CSPPDIV LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), MathTerm::DIV,    a, b); }
-constraintterm(res) ::= CSPMINUS(m)   constraintterm(a). [UMINUS]                      { res = new Clingcon::ConstraintMathTerm(m.loc(),  MathTerm::UMINUS, a); }
-constraintterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintSumTerm(tok.loc(), list); }
+cspnonterm(res) ::= constraintterm(a) CSPPLUS  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::PLUS,   a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMINUS constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MINUS,  a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMULT  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MULT,   a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPSLASH constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPDIV   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPDIV  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::DIV,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPMOD   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MOD,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPMOD  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MOD,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPOW   constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::POW,    a, b); }
+cspnonterm(res) ::= constraintterm(a) CSPPPOW  constraintterm(b).                  { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::POW,    a, b); }
+cspnonterm(res) ::= CSPPABS LBRAC constraintterm(a) RBRAC.                         { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::ABS,    a); }
+cspnonterm(res) ::= CSPVBAR constraintterm(a) CSPVBAR.                             { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::ABS,    a); }
+cspnonterm(res) ::= CSPPPOW LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::POW,    a, b); }
+cspnonterm(res) ::= CSPPMOD LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::MOD,    a, b); }
+cspnonterm(res) ::= CSPPDIV LBRAC constraintterm(a) COMMA constraintterm(b) RBRAC. { res = new Clingcon::ConstraintMathTerm(a->loc(), ConstraintMathTerm::DIV,    a, b); }
+cspnonterm(res) ::= CSPMINUS(m)   constraintterm(a). [CSPUMINUS]                   { res = new Clingcon::ConstraintMathTerm(m.loc(),  ConstraintMathTerm::UMINUS, a); }
+cspnonterm(res) ::= CSPSUM(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::SUM, list); }
+cspnonterm(res) ::= CSPMIN(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::MIN, list); }
+cspnonterm(res) ::= CSPMAX(tok) LCBRAC condsetlist(list) RCBRAC.                   { res = new Clingcon::ConstraintAggrTerm(tok.loc(), Clingcon::ConstraintAggrTerm::MAX, list); }
 
 
 nsetterm(res) ::= term(term).                      { res = vec1(term); }
@@ -600,7 +604,6 @@ symweightlit(res) ::= lit(lit) ASSIGN term(weight) weightcond(cond).            
 symweightlit(res) ::= lit(lit) weightcond(cond).                                     { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_LPARSE); delete cond; }
 
 setweightlit(res) ::= LOWER nsetterm(terms) GREATER COLON lit(lit) weightcond(cond). { cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_DLV); delete cond; delete terms; }
-
 
 symcondlit(res) ::= lit(lit) weightcond(cond).                                    { std::auto_ptr<TermPtrVec> terms(vec1<Term>(ONE(lit->loc()))); cond->insert(cond->begin(), lit); res = new AggrCond(lit->loc(), *terms, *cond, AggrCond::STYLE_LPARSE); delete cond; }
 
@@ -651,6 +654,7 @@ aggr_ass(res) ::=            LCBRAC(tok)      condlist(list) RCBRAC. { res = new
 
 conjunction(res) ::= lit(lit) ncond(cond). { JunctionCondVec list; list.push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; res = new JunctionLit(lit->loc(), list); }
 
+
 disjlist(res) ::= VBAR predicate(lit) cond(cond).                { res = vec1<JunctionCond>(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
 disjlist(res) ::= disjlist(list) VBAR predicate(lit) cond(cond). { res = list; list->push_back(new JunctionCond(lit->loc(), lit, *cond)); delete cond; }
 
@@ -666,7 +670,6 @@ lcmp(res) ::= LOWER. { res = false; }
 gcmp(res) ::= GTHAN.   { res = true; }
 gcmp(res) ::= GREATER. { res = false; }
 
-
 aggr_atom(res) ::= term(l) lcmp(leq) aggr_num(aggr).                   { res = aggr; res->lower(l, leq); }
 aggr_atom(res) ::= aggr_num(aggr) lcmp(ueq) term(u).                   { res = aggr; res->upper(u, ueq); }
 aggr_atom(res) ::= term(u) gcmp(ueq) aggr_num(aggr).                   { res = aggr; res->upper(u, ueq); }
@@ -680,11 +683,10 @@ aggr_atom(res) ::= aggr_num(aggr) term(u).                             { res = a
 aggr_atom(res) ::= term(l) aggr_num(aggr).                             { res = aggr; res->lower(l); }
 aggr_atom(res) ::= aggr(aggr).                                         { res = aggr; }
 
-
-predicate(res) ::= MINUS(sign) IDENTIFIER(id) LBRAC termlist(terms) RBRAC. { res = pCSPParser->predLit(sign.loc(), id.index, *terms, true); delete terms; }
-predicate(res) ::= IDENTIFIER(id) LBRAC termlist(terms) RBRAC.             { res = pCSPParser->predLit(id.loc(), id.index, *terms, false); delete terms; }
-predicate(res) ::= MINUS(sign) IDENTIFIER(id).                             { TermPtrVec terms; res = pCSPParser->predLit(sign.loc(), id.index, terms, true); }
-predicate(res) ::= IDENTIFIER(id).                                         { TermPtrVec terms; res = pCSPParser->predLit(id.loc(), id.index, terms, false); }
+predicate(res) ::= MINUS(sign) IDENTIFIER(id) LBRAC termlist(terms) RBRAC. { res = pParser->predLit(sign.loc(), id.index, *terms, true); delete terms; }
+predicate(res) ::= IDENTIFIER(id) LBRAC termlist(terms) RBRAC.             { res = pParser->predLit(id.loc(), id.index, *terms, false); delete terms; }
+predicate(res) ::= MINUS(sign) IDENTIFIER(id).                             { TermPtrVec terms; res = pParser->predLit(sign.loc(), id.index, terms, true); }
+predicate(res) ::= IDENTIFIER(id).                                         { TermPtrVec terms; res = pParser->predLit(id.loc(), id.index, terms, false); }
 
 termlist(res) ::= term(term).                                { res = vec1(term); }
 termlist(res) ::= termlist(list) COMMA term(term).           { res = list; list->push_back(term); }
@@ -693,38 +695,35 @@ termlist(res) ::= termlist(list) DSEM(dsem) termlist(terms). { res = list; list-
 optimize ::= soptimize LSBRAC prio_list RSBRAC.
 optimize ::= soptimize LCBRAC prio_set  RCBRAC.
 
-soptimize ::= MINIMIZE. { pCSPParser->maximize(false); }
-soptimize ::= MAXIMIZE. { pCSPParser->maximize(true); }
+soptimize ::= MINIMIZE. { pParser->maximize(false); }
+soptimize ::= MAXIMIZE. { pParser->maximize(true); }
 
 prio_list ::= .
 prio_list ::= nprio_list.
 
-nprio_list ::= weightedpriolit(lit).                 { pCSPParser->add(lit); }
-nprio_list ::= weightedpriolit(lit) COMMA prio_list. { pCSPParser->add(lit); }
+nprio_list ::= weightedpriolit(lit).                 { pParser->add(lit); }
+nprio_list ::= weightedpriolit(lit) COMMA prio_list. { pParser->add(lit); }
 
 prio_set ::= .
 prio_set ::= nprio_set.
 
-nprio_set ::= priolit(lit).                { pCSPParser->add(lit); }
-nprio_set ::= priolit(lit) COMMA prio_set. { pCSPParser->add(lit); }
+nprio_set ::= priolit(lit).                { pParser->add(lit); }
+nprio_set ::= priolit(lit) COMMA prio_set. { pParser->add(lit); }
 
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
+weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
+weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
+weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
+weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, 0, body); }
 
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) AT term(prio) priolit_cond(body).  { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
-weightedpriolit(res) ::= predlit(head) ASSIGN term(weight) priolit_cond(body).                { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight) AT term(prio). { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, prio, body); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) ASSIGN term(weight).               { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, weight, 0, body); }
-weightedpriolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
-weightedpriolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, prio, body); }
-weightedpriolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::MULTISET, head->loc(), 0, 0, 0, body); }
-
-
-priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                              { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET,      head->loc(), 0, 0, prio, body); }
-priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                             { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET,      head->loc(), 0, 0, prio, body); }
-priolit(res) ::= predlit(head) priolit_cond(body).                                            { body->insert(body->begin(), head); res = pCSPParser->optimize(Optimize::SET,      head->loc(), 0, 0, 0, body);}
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
-priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pCSPParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, 0, body); }
-
+priolit(res) ::= predlit(head) AT term(prio) priolit_cond(body).                      { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, prio, body); }
+priolit(res) ::= predlit(head) npriolit_cond(body) AT term(prio).                     { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, prio, body); }
+priolit(res) ::= predlit(head) priolit_cond(body).                                    { body->insert(body->begin(), head); res = pParser->optimize(Optimize::SET, head->loc(), 0, 0, 0, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER AT term(prio) priolit_cond(body).  { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER npriolit_cond(body) AT term(prio). { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, prio, body); }
+priolit(res) ::= LOWER(lt) nsetterm(terms) GREATER priolit_cond(body).                { res = pParser->optimize(Optimize::SYMSET, lt.loc(), terms, 0, 0, body); }
 
 npriolit_cond(res) ::= COLON literal(lit).                     { res = vec1(lit); }
 npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; list->push_back(lit); }
@@ -732,14 +731,14 @@ npriolit_cond(res) ::= npriolit_cond(list) COLON literal(lit). { res = list; lis
 priolit_cond(res) ::= .                    { res = new LitPtrVec(); }
 priolit_cond(res) ::= npriolit_cond(list). { res = list; }
 
-constraint(res) ::= WIF(tok). { pCSPParser->maximize(false, false); res = tok; }
+constraint(res) ::= WIF(tok). { pParser->maximize(false, false); res = tok; }
 
 weightprio(res) ::= DOT(tok).                                { res = new std::pair<Term*, Term*>(ONE(tok.loc()), ONE(tok.loc())); }
 weightprio(res) ::= DOT(tok) LOWER term(w) GREATER.          { res = new std::pair<Term*, Term*>(w,              ONE(tok.loc())); }
 weightprio(res) ::= DOT(tok) LOWER COLON term(p) GREATER.    { res = new std::pair<Term*, Term*>(ONE(tok.loc()), p             ); }
 weightprio(res) ::= DOT LOWER term(w) COLON term(p) GREATER. { res = new std::pair<Term*, Term*>(w,              p             ); }
 
-weak(res) ::= constraint(tok) body(body) weightprio(wp). { res = pCSPParser->optimize(Optimize::CONSTRAINT, tok.loc(), 0, wp->first, wp->second, body); delete wp; }
+weak(res) ::= constraint(tok) body(body) weightprio(wp). { res = pParser->optimize(Optimize::CONSTRAINT, tok.loc(), 0, wp->first, wp->second, body); delete wp; }
 
 compute ::= COMPUTE LCBRAC compute_list RCBRAC.
 compute ::= COMPUTE NUMBER LCBRAC compute_list RCBRAC.
@@ -747,7 +746,7 @@ compute ::= COMPUTE NUMBER LCBRAC compute_list RCBRAC.
 compute_list ::= .
 compute_list ::= ncompute_list.
 
-ncompute_list ::= computelit(lit).                     { pCSPParser->add(lit); }
-ncompute_list ::= computelit(lit) COMMA ncompute_list. { pCSPParser->add(lit); }
+ncompute_list ::= computelit(lit).                     { pParser->add(lit); }
+ncompute_list ::= computelit(lit) COMMA ncompute_list. { pParser->add(lit); }
 
 computelit(res) ::= predlit(head) priolit_cond(body).  { res = new Compute(head->loc(), head, *body); del(body); }

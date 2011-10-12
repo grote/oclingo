@@ -87,7 +87,6 @@ class Instantiator;
 class JunctionCond;
 class Lexer;
 class Lit;
-class Loc;
 class LuaLit;
 class LuaTerm;
 class LparseConverter;
@@ -108,13 +107,13 @@ class Statement;
 class Storage;
 class Streams;
 class Term;
-class TermExpansion;
 class VarTerm;
 class WeightLit;
 class Groundable;
 
-struct IncConfig;
 struct Loc;
+struct IncConfig;
+struct TermExpansion;
 struct VarDomains;
 
 namespace LitDep

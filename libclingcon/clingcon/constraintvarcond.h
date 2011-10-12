@@ -102,7 +102,7 @@ namespace Clingcon
     class ConstraintVarCond : public Formula
     {
             friend class GlobalConstraintHeadLit;
-            friend class ConstraintSumTerm;
+            friend class ConstraintAggrTerm;
     public:
             /*
             class Printer : public ::Printer
@@ -189,8 +189,8 @@ namespace Clingcon
 
             void getVariables(GroundedConstraintVarLitVec& vec)
             {
-                vec.insert(vec.end(),values_.begin(), values_.end());
-                values_.clear();
+                while(!values_.empty())
+                    vec.push_back(values_.pop_back().release());
             }
 
             ~ConstraintVarCond();

@@ -552,7 +552,8 @@ bool MinMaxAggrLitPrinter<T>::analyze(Storage *s, const SetCond &a, Val &min, Va
 template <uint32_t T>
 void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVal &val, SetCondVec &condVec)
 {
-	LparseConverter *o = this->template output();
+	typedef AggrLitPrinter<MinMaxAggrLit,T> Base;
+	LparseConverter *o = this->output();
 	Storage *s = o->storage();
 
 	std::sort(condVec.begin(), condVec.end(), CondLess());
@@ -572,7 +573,7 @@ void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVa
 	//       2 < #min { <X>:p(X) : X=1..5 } < 5.
 	//       this holds for aggregates in general if a literal would make the aggregate false
 	//       no choices have to be generated (but the literal is still important for the check)
-	if(handleAggr(b, val, condVec, conds))
+	if(Base::handleAggr(b, val, condVec, conds))
 	{
 		uint32_t mp = 0, ap = 0;
 		if(T == MinMaxAggrLit::MINIMUM ? b.hasLower : b.hasUpper) { ap = o->symbol(); }
@@ -605,7 +606,7 @@ void MinMaxAggrLitPrinter<T>::printAggr(const AggrTodoKey &key, const AggrTodoVa
 
 			if(needsA || needsM)
 			{
-				uint32_t sym = getCondSym(cond, lit);
+				uint32_t sym = Base::getCondSym(cond, lit);
 				if(needsM) { o->printBasicRule(mp, 1, sym); }
 				if(needsA) { o->printBasicRule(ap, 1, sym); }
 			}

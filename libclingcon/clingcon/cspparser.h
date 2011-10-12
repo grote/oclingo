@@ -80,6 +80,7 @@ public:
         void show(uint32_t idx, bool show);
         void show(Term *term);
 	~CSPParser();
+        unsigned int cspminimizecounter;
 
 private:
 	void parse(std::istream &sin);

@@ -1,10 +1,13 @@
 
 #include <clingcon/groundconstraint.h>
+#include <clingcon/groundconstraintvarlit.h>
 #include <clingcon/cspsolver.h>
 #include <gringo/litdep.h>
 
 namespace Clingcon
 {
+
+
     void GroundConstraint::getAllVariables(std::vector<unsigned int>& vec, CSPSolver* csps) const
     {
         if (isVariable())
@@ -14,10 +17,13 @@ namespace Clingcon
         else
         if (isOperator())
         {
-            if (a_!= 0)
+            for (GroundConstraintVec::const_iterator i = a_.begin(); i != a_.end(); ++i)
+                i->getAllVariables(vec,csps);
+            /*if (a_!= 0)
                 a_->getAllVariables(vec,csps);
             if (b_!= 0)
                 b_->getAllVariables(vec,csps);
+                */
         }
         else
             assert(isInteger());
@@ -33,10 +39,8 @@ namespace Clingcon
         else
         if (isOperator())
         {
-            if (a_!= 0)
-                a_->registerAllVariables(csps);
-            if (b_!= 0)
-                b_->registerAllVariables(csps);
+            for (GroundConstraintVec::const_iterator i = a_.begin(); i != a_.end(); ++i)
+                i->registerAllVariables(csps);
         }
         else
             assert(isInteger());

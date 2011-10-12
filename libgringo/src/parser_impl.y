@@ -450,7 +450,7 @@ termlist(res) ::= termlist(list) COMMA term(term).           { res = list; list-
 termlist(res) ::= termlist(list) DSEM(dsem) termlist(terms). { res = list; list->push_back(new ArgTerm(dsem.loc(), res->pop_back().release(), *terms)); delete terms; }
 
 optimize ::= soptimize LSBRAC prio_list RSBRAC.
-optimize ::= soptimize LCBRAC prio_set RCBRAC.
+optimize ::= soptimize LCBRAC prio_set  RCBRAC.
 
 soptimize ::= MINIMIZE. { pParser->maximize(false); }
 soptimize ::= MAXIMIZE. { pParser->maximize(true); }
@@ -506,4 +506,4 @@ compute_list ::= ncompute_list.
 ncompute_list ::= computelit(lit).                     { pParser->add(lit); }
 ncompute_list ::= computelit(lit) COMMA ncompute_list. { pParser->add(lit); }
 
-computelit(res) ::= predlit(head) priolit_cond(body). { res = new Compute(head->loc(), head, *body); del(body); }
+computelit(res) ::= predlit(head) priolit_cond(body).  { res = new Compute(head->loc(), head, *body); del(body); }

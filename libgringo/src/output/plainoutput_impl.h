@@ -256,6 +256,7 @@ namespace plainoutput_impl
 	class IncPrinter : public IncLit::Printer
 	{
 	public:
+		using IncLit::Printer::print;
 		IncPrinter(PlainOutput *output) : output_(output) {  }
 		void print(PredLitRep *l) { (void)l; }
 		Output *output() const { return output_; }

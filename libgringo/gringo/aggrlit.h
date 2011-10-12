@@ -271,6 +271,7 @@ public:
 	public:
 		typedef AggrCond::Printer::State State;
 	public:
+		using ::Printer::print;
 		virtual void begin(State state, bool head, bool sign, bool complete, bool set) = 0;
 		virtual void lower(const Val &l, bool leq) = 0;
 		virtual void upper(const Val &u, bool leq) = 0;

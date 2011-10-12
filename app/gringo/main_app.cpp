@@ -54,11 +54,11 @@ int MainApp::run(int argc, char** argv)
 		cerr << "\nERROR: " << e.what() << endl;
 		return S_MEMORY;
 	}
-	catch(const std::exception& e)
+        catch(const std::exception& e)
 	{
 		cerr << "\nERROR: " << e.what() << endl;
 		return S_ERROR;
-	}
+        }
 }
 
 void MainApp::sigHandler(int sig)

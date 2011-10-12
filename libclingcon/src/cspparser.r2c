@@ -49,7 +49,8 @@ CSPParser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigV
 }
 
 CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
-	: g_(g)
+        : cspminimizecounter(0)
+        , g_(g)
 	, current_(base)
 	, base_(base)
 	, cumulative_(cum)
@@ -180,6 +181,8 @@ start:
                 "$distinct"      { return CSPPARSER_CSPDISTINCT; }
                 "$count"         { return CSPPARSER_CSPCOUNT; }
                 "$sum"           { return CSPPARSER_CSPSUM; }
+                "$min"           { return CSPPARSER_CSPMIN; }
+                "$sum"           { return CSPPARSER_CSPMAX; }
                 "$minimi"[sz]"e" { return CSPPARSER_CSPMINIMIZE; }
                 "$maximi"[sz]"e" { return CSPPARSER_CSPMAXIMIZE; }
                 "$and"           { return CSPPARSER_CSPAND; }
@@ -195,6 +198,7 @@ start:
                 "$**"            { return CSPPARSER_CSPPOW; }
                 "$\\"            { return CSPPARSER_CSPMOD; }
                 "$*"             { return CSPPARSER_CSPMULT; }
+                "$/"             { return CSPPARSER_CSPSLASH; }
                 "$|"             { return CSPPARSER_CSPVBAR; }
 		ANY              { syntaxError(); goto start; }
 	*/

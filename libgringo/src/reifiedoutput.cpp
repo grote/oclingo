@@ -36,7 +36,7 @@ GRINGO_EXPORT_PRINTER(JunctionAggrLitPrinter)
 */
 //GRINGO_EXPORT_PRINTER(OptimizePrinter)
 GRINGO_EXPORT_PRINTER(ComputePrinter)
-GRINGO_EXPORT_PRINTER(IncPrinter)
+//GRINGO_EXPORT_PRINTER(IncPrinter)
 
 }
 
