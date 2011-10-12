@@ -418,6 +418,8 @@ void Parser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 	}
 	iId_   = index;
 	volWindow_ = vol_window;
+	if(vol_window > config_.maxVolStep) config_.maxVolStep = vol_window;
+
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
