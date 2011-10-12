@@ -91,10 +91,14 @@ const char *TermException::what() const throw()
 {
 	std::ostringstream oss;
 	oss << "parsing failed:\n";
-	foreach(const ErrorTok &tok, errors_)
-		oss << "\t" << tok.first << ": term does not evaluate to integer: " << tok.second << "\n";
+	oss << "\t" << error_.first << ": term does not evaluate to integer: " << error_.second << "\n";
 	msg_ = oss.str();
 	return msg_.c_str();
+}
+
+void TermException::add(const StrLoc &loc, const std::string &tok)
+{
+	error_ = ErrorTok(loc, tok);
 }
 
 FileException::FileException(const std::string &file)
