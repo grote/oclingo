@@ -99,6 +99,14 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			app.luaInit(*grounder, *out);
 			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 			out->finalize();
+
+			if(app.clingo.mode == OCLINGO) {
+				ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
+				ext.addPrematureKnowledge(); // only for freezing base and 1st step externals
+
+				// get/receive new external input
+				ext.get();
+			}
 		}
 		else if(app.clingo.mode == OCLINGO) {
 			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
@@ -115,8 +123,8 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
-					// TODO explore incStep/iQuery/goal use to ground to #step
-					if(config.incStep > 1) out->initialize(); // gives new IncUid for volatiles
+					out->initialize(); // gives new IncUid for volatiles
+					config.incStep++;
 					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 					ext.endStep();
 					out->finalize();
@@ -124,7 +132,6 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 						// call finalize again if there was premature knowlegde added
 						out->finalize();
 					}
-					config.incStep++;
 				} else {
 					ext.endIteration();
 					out->finalize();
