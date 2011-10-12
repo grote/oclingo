@@ -25,7 +25,7 @@ class RangeTerm : public Term
 public:
 	RangeTerm(const Loc &loc, Term *a, Term *b);
 	Val val(Grounder *grounder) const { (void)grounder; assert(false); return Val::fail(); }
-	bool constant() const { assert(false); return false; }
+	bool constant() const { return false; }
 	bool unify(Grounder *grounder, const Val &v, int binder) const { (void)grounder; (void)v; (void)binder; assert(false); return false; }
 	void vars(VarSet &v) const { (void)v; assert(false); }
 	void visit(PrgVisitor *visitor, bool bind) { (void)visitor; (void)bind; assert(false); }
