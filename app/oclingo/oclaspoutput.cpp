@@ -52,7 +52,7 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	if(ext_input_) {
 		Symbol const &sym = symbol(head);
 		if (sym.external) { head = sym.external; }
-		if(ext_->checkHead(head)) {
+		if(ext_->checkHead(sym)) { // TODO also passing head here in case sym.external == 0 ?
 			ext_->addHead(head);
 		} else {
 			 // don't add rule since it was not defined external or already added
