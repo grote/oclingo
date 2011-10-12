@@ -24,7 +24,6 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
-	, volatile_window_(0)
 	, forget_(0)
 	, import_(import)
 	, socket_(NULL)
@@ -183,9 +182,6 @@ bool ExternalKnowledge::addInput() {
 	if(new_input_) {
 		new_input_ = false;
 
-		// clear time decay volatile setting, for new input
-		setVolatileWindow(0);
-
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		parser.parse();
@@ -202,12 +198,9 @@ void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 	stacks_.push_back(stack);
 }
 
-void ExternalKnowledge::setVolatileWindow(int window) {
-	volatile_window_ = window;
-}
-
-int ExternalKnowledge::getVolatileWindow() {
-	return volatile_window_;
+// always call with addStackPtr()
+void ExternalKnowledge::savePrematureVol(bool vol, int window=0) {
+	vol_stack_.push_back(std::make_pair(vol, window));
 }
 
 bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
@@ -246,6 +239,8 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 }
 
 bool ExternalKnowledge::addPrematureKnowledge() {
+	assert(stacks_.size() == vol_stack_.size());
+
 	bool added = false;
 	// check for knowledge from previous steps and add it if found
 	if(controller_step_ == step_ && stacks_.size() > 0) {
@@ -254,7 +249,14 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
+			// add volatile information to parser
+			if(vol_stack_.front().first) parser.setVolatile();
+			parser.setVolatileWindow(vol_stack_.front().second);
+			vol_stack_.pop_front();
+
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
+			// return to adding cummulative rules
+			parser.setCumulative();
 		}
 	}
 
@@ -293,9 +295,6 @@ VarVec& ExternalKnowledge::getExternals() {
 void ExternalKnowledge::endIteration() {
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
-
-	// freeze volatile atom
-	output_->finalizeVolAtom();
 }
 
 void ExternalKnowledge::endStep() {

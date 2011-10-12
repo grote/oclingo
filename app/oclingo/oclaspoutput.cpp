@@ -82,7 +82,6 @@ uint32_t oClaspOutput::getVolAtom() {
 	if(vol_atom_ == 0) {
 		vol_atom_ = unnamedSymbol();
 	}
-
 	return vol_atom_;
 }
 
@@ -173,6 +172,10 @@ void oClaspOutput::unfreezeOldVolAtoms() {
 
 void oClaspOutput::doFinalize() {
 	printExternalTable();
+
+	// freeze volatile atom
+	finalizeVolAtom();
+
 	ClaspOutput::doFinalize();
 }
 
