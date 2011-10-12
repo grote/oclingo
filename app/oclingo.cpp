@@ -20,7 +20,7 @@
 template <>
 void FromGringo<OCLINGO>::otherOutput()
 {
-	out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift, app.oclingo.online.port));
+	out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift, app.oclingo.online.port, app.oclingo.online.import));
 }
 
 

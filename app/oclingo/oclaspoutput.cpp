@@ -21,13 +21,13 @@
 
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
-oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port)
+oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port, bool import)
 	: iClaspOutput(shiftDisj)
 	, ext_input_(false)
 	, vol_atom_(0)
 	, vol_atom_frozen_(0)
 {
-	ext_ = new ExternalKnowledge(grounder, this, solver, port);
+	ext_ = new ExternalKnowledge(grounder, this, solver, port, import);
 }
 
 oClaspOutput::~oClaspOutput()
@@ -52,13 +52,14 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	if(ext_input_) {
 		Symbol const &sym = symbol(head);
 		if (sym.external) { head = sym.external; }
-		if(ext_->checkHead(sym)) { // TODO also passing head here in case sym.external == 0 ?
+		if(ext_->checkHead(sym)) {
 			ext_->addHead(head);
 		} else {
 			 // don't add rule since it was not defined external or already added
 			return;
 		}
 	}
+	// TODO find out why undefined external heads are not really added
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
