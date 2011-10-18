@@ -79,7 +79,7 @@ namespace Clingcon {
 
         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
-                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict);
+                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -203,6 +203,7 @@ namespace Clingcon {
         bool              initialLookahead_;
         Mode              reduceReason_;
         Mode              reduceConflict_;
+        unsigned int      cspPropDelay_;
 
         class CSPDummy : public Clasp::Constraint
         {

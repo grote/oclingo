@@ -50,13 +50,15 @@ TODO
 - force statt setconflict benutzen, spart Codepath!?
 - look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation", SMT-Lib
 - :- n(P) $!= X : number(X), position(P). is not yet supported ?
+- prop nur alle n Schritte
 
 
 
 BUGS
 
 - constraints in aggregates, triggered with test9.lpa (Roland has to change something first)
-
+%debug(B) $== $sum{lev(E) : set(B,pos(E)) : sccatom(E), -1} :- hold(conjunction(B)), litb(pos(conjunction(B))), rule(pos(A),pos(conjunction(B))), sccatom(A).
+this is a bug, junctioncond does not work
 
 
 COMMENTS

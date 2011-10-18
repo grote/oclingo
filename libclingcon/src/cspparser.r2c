@@ -182,7 +182,7 @@ start:
                 "$count"         { return CSPPARSER_CSPCOUNT; }
                 "$sum"           { return CSPPARSER_CSPSUM; }
                 "$min"           { return CSPPARSER_CSPMIN; }
-                "$sum"           { return CSPPARSER_CSPMAX; }
+                "$max"           { return CSPPARSER_CSPMAX; }
                 "$minimi"[sz]"e" { return CSPPARSER_CSPMINIMIZE; }
                 "$maximi"[sz]"e" { return CSPPARSER_CSPMAXIMIZE; }
                 "$and"           { return CSPPARSER_CSPAND; }

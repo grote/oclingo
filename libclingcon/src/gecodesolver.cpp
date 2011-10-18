@@ -71,11 +71,12 @@ bool             GecodeSolver::optAll = false;
 GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                            const std::string& ICLString, const std::string& branchVarString,
                            const std::string& branchValString, std::vector<int> optValueVec,
-                           bool optAllPar, bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict) :
+                           bool optAllPar, bool initialLookahead, const std::string& reduceReason,
+                           const std::string& reduceConflict, unsigned int cspPropDelay) :
     currentSpace_(0), lazyLearn_(lazyLearn),
     useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
-    initialLookahead_(initialLookahead)
+    initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay)
 {
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
     if (optValues.size()>0) ++optValues.back(); // last element must also be found
