@@ -150,7 +150,7 @@ namespace Clingcon
                     return new GroundConstraint(g,GroundConstraint::MIN,gcv);
                 else
                 if (t_ == MAX)
-                    return new GroundConstraint(g,GroundConstraint::MIN,gcv);
+                    return new GroundConstraint(g,GroundConstraint::MAX,gcv);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Clingcon
                 if (t_==SUM)
                     return new GroundConstraint(g,Val::number(0));
                 else
-                    throw CSPException("Error: Minimum of empty set is not defined");
+                    throw CSPException("CSP: Minimum/Maximum of empty set is not defined");
             }
 	}
 

@@ -137,7 +137,7 @@ namespace Clingcon
                             if (i+1 < a->a_.size())
                                 ss << ",";
                         }
-                        ss << ")";
+                        ss << "}";
                         return;
                     }
 

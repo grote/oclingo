@@ -1137,6 +1137,7 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
     oldLength_+=conflict.size();
     t_.start();
     ++numCalls_;
+
     if (conflict.size()==0)
     {
         t_.stop();
@@ -1155,6 +1156,16 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
         return;
     }
 
+    if (numCalls_==124)
+    {
+       /* original->propagate(conflict.begin(), conflict.end());
+        original->status();
+        if (original->failed())
+            int a = 9;
+        else*/
+            int b = 0;
+    }
+
     //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
     //    std::cout << "INITIALLY SATISFIED" << std::endl;
 
@@ -1162,16 +1173,11 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
     unsigned int checkCount = checker.count();
 
 /*
-    std::cout << "Reason for ";
-    if (l.sign()) std::cout << "f ";
-    else std::cout << "t ";
-    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
-
     for(size_t i = 0; i < checker.size(); ++i)
         std::cout << i << "\t:" << checker[i] << std::endl;
 
-    std::cout << "Out of ";
-    for (Clasp::LitVec::const_iterator i = begin; i != begin+it+1; ++i)
+    std::cout << "Conflict ";
+    for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.begin()+it+1; ++i)
     {
         if (i->sign()) std::cout << "f ";
         else std::cout << "t ";
@@ -1210,45 +1216,47 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
         }
 
         // if the last literal is already derived, we do not need to add it to the reason
-        if(original->getValueOfConstraint((conflict.begin()+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+        GecodeSolver::SearchSpace::Value val = original->getValueOfConstraint((conflict.begin()+it)->var());
+        if(val!=GecodeSolver::SearchSpace::BFREE)
         {
-            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
-            checker|=varSets_[(conflict.begin()+it)->var()];
-            done.set(it);
-
-            //RESTART
-            if (checkCount<checker.count())
+            if ((  (conflict.begin()+it)->sign() && val==GecodeSolver::SearchSpace::BFALSE) ||
+                ((!(conflict.begin()+it)->sign()) && val==GecodeSolver::SearchSpace::BTRUE) )
             {
-                checkCount=checker.count();
-                it = conflict.size()-1;
+
+                //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
+                checker|=varSets_[(conflict.begin()+it)->var()];
+                done.set(it);
+
+                //RESTART
+                if (checkCount<checker.count())
+                {
+                    checkCount=checker.count();
+                    it = conflict.size()-1;
+                    continue;
+                }
+                else//end
+                --it;
                 continue;
             }
-            else//end
-            --it;
-            continue;
+            else
+            {
+                //HIER HAT DIE VARIABLE DEN FALSCHEN WERT UND DAMIT EINEN KONFLIKT !!!
+                newConflict.push_back(*(conflict.begin()+it));
+                sumLength_+=newConflict.size();
+                conflict.swap(newConflict);
+                //std::cout << sumLength_ << std::endl;
+                //std::cout << "Ende" << std::endl;
+                delete original;
+                g_->setRecording(true);
+                t_.stop();
+                return;
+            }
+
         }
 
         if (checker.intersects(varSets_[(conflict.begin()+it)->var()]))
         {
-            /*tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
 
-            tester->propagate(begin, begin+it);
-            //std::cout << "Testing " << g_->num2name((begin+it)->var());
-
-            tester->status();
-            props_++;
-            done.set(it);
-
-            assert(!tester->failed());
-            // if reason still derives l we can remove the last one
-            if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-            {
-                // still reason, throw it away, it did not contribute to the reason
-                //std::cout << " no" << std::endl;
-                --it;
-            }
-            else
-            */
             {
                 original->propagate(*(conflict.begin()+it));
                 newConflict.push_back(*(conflict.begin()+it));
@@ -1291,16 +1299,7 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
             --it;
     }
 
-/*
-    reason=Clasp::LitVec(begin,ends);
-    sumLength_+=reason.size();
-    //std::cout << sumLength_ << std::endl;
-    //std::cout << "Ende" << std::endl;
-    g_->setRecording(true);
-    delete original;
-    t_.stop();
-    return;
-  */
+
 
     for (it = conflict.size()-1; it != 0; --it)
     {
@@ -1310,28 +1309,30 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
             continue;
         }
 
-        if(original->getValueOfConstraint((conflict.begin()+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+        GecodeSolver::SearchSpace::Value val = original->getValueOfConstraint((conflict.begin()+it)->var());
+        if(val!=GecodeSolver::SearchSpace::BFREE)
         {
-            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
-            continue;
+            if ((  (conflict.begin()+it)->sign() && val==GecodeSolver::SearchSpace::BFALSE) ||
+                ((!(conflict.begin()+it)->sign()) && val==GecodeSolver::SearchSpace::BTRUE) )
+            {
+                //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
+                continue;
+            }
+            else
+            {
+                newConflict.push_back(*(conflict.begin()+it));
+                sumLength_+=newConflict.size();
+                conflict.swap(newConflict);
+                //std::cout << sumLength_ << std::endl;
+                //std::cout << "Ende" << std::endl;
+                delete original;
+                g_->setRecording(true);
+                t_.stop();
+                return;
+            }
         }
 
-        /*tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
 
-        tester->propagate(begin, begin+it);
-        //std::cout << "Testing " << g_->num2name((begin+it)->var());
-
-        tester->status();
-        props_++;
-
-        assert(!tester->failed());
-        // if reason still derives l we can remove the last one
-        if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            // still reason, throw it away, it did not contribute to the reason
-            //std::cout << " no" << std::endl;
-        }
-        else*/
         {
             original->propagate(*(conflict.begin()+it));
             newConflict.push_back(*(conflict.begin()+it));
