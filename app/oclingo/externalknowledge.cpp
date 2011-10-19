@@ -283,6 +283,7 @@ int ExternalKnowledge::getControllerStep() {
 }
 
 bool ExternalKnowledge::needsNewStep() {
+//	std::cerr << "  new step? " << controller_step_ << " > " << step_ << std::endl;
 	return
 			controller_step_ > step_ ||	// controller wants to progress step count
 			stacks_.size() > 0;			// rule stack not empty
