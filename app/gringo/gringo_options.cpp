@@ -138,13 +138,6 @@ bool GringoOptions::validateOptions(ProgramOptions::OptionValues& values, Messag
 		smodelsOut = true;
 	}
 	else groundOnly = true;
-
-	if(iinit > ifixed)
-	{
-		m.error = "iinit can not be greater than ifixed";
-		return false;
-	}
-
 	return true;
 }
 
