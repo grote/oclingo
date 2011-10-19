@@ -60,6 +60,7 @@ GringoOptions::GringoOptions()
 	, metaOut(false)
 	, groundOnly(false)
 	, ifixed(std::numeric_limits<int>::min())
+	, iinit(1)
 	, groundInput(false)
 	, disjShift(false)
 	, compat(false)
@@ -109,6 +110,7 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("magic"     , bool_switch(&magic),             "Enable magic set rewriting")
 
 		("ifixed"    , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
+		("iinit"     , storeTo(iinit),                  "Start to ground from step <num>", "<num>")
 		("iexpand"   , storeTo(iexpand),
 			"Limits the expansion of terms\n"
 			"      Default: All\n"
@@ -136,10 +138,17 @@ bool GringoOptions::validateOptions(ProgramOptions::OptionValues& values, Messag
 		smodelsOut = true;
 	}
 	else groundOnly = true;
+
+	if(iinit > ifixed)
+	{
+		m.error = "iinit can not be greater than ifixed";
+		return false;
+	}
+
 	return true;
 }
 
 void GringoOptions::addDefaults(std::string& def)
 {
-	def += "  --lparse\n";
+	def += "  --lparse --iinit=1\n";
 }
