@@ -63,6 +63,7 @@ public:
 	/** True iff some output was requested*/
 	bool groundOnly;
 	int ifixed;
+	int iinit;
 	bool groundInput;
 	/** whether disjunctions will get shifted */
 	bool disjShift;

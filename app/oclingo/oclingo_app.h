@@ -65,9 +65,6 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 				if(atom) { // atom is not in AtomIndex if hidden with #hide
 					// assume external atom to be false
 					a.push_back(~atom->lit);
-					// create conflict to skip solving for next step
-					if(o_output->getExternalKnowledge().needsNewStep())
-						a.push_back(atom->lit);
 				}
 			} // end for
 		} // end OCLINGO only part
@@ -97,7 +94,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
-			app.groundBase(*grounder, config, 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
+			app.groundBase(*grounder, config, app.gringo.iinit, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 			out->finalize();
 
 			if(app.clingo.mode == OCLINGO) {
@@ -124,9 +121,11 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
 					out->initialize(); // gives new IncUid for volatiles
-					config.incStep++;
-					app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
-					ext.endStep();
+					for(int i = config.incStep; i < ext.getControllerStep(); i++) {
+						config.incStep++;
+						app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
+						ext.endStep();
+					}
 					out->finalize();
 					if(ext.addPrematureKnowledge()) {
 						// call finalize again if there was premature knowlegde added
