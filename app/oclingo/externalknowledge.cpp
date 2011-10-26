@@ -172,7 +172,7 @@ bool ExternalKnowledge::addInput() {
 	if(model_)
 		sendToClient("End of Step.\n");
 
-	if(!new_input_ && model_ && step_ > 0) {
+	if(!new_input_ && model_) {
 		io_service_.reset();
 		io_service_.run_one();
 	}
@@ -272,6 +272,10 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 	to_freeze_.clear();
 
 	return added;
+}
+
+int ExternalKnowledge::getStep() {
+	return step_;
 }
 
 void ExternalKnowledge::setControllerStep(int step) {

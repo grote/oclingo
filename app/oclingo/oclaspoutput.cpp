@@ -62,6 +62,17 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
+// needed because ProgramBuilder does not update frozen atoms when grounding up to ControllerStep
+uint32_t oClaspOutput::getIncAtom(int vol_window = 1) {
+	if(ext_->getStep() + vol_window < ext_->getControllerStep()) {
+		// don't add to incUids_ in order to skip freezing and unfreezing
+		return falseSymbol();
+	} else {
+		// IncAtom is really needed, so call proper function
+		return iClaspOutput::getIncAtom(vol_window);
+	}
+}
+
 uint32_t oClaspOutput::unnamedSymbol() {
 	uint32_t atom = symbol();
 	b_->setAtomName(atom, 0);
@@ -98,7 +109,7 @@ uint32_t oClaspOutput::getVolWindowAtom(int window) {
 	if(vol_window_atoms_frozen_.find(vol_atom_map_[step]) == vol_window_atoms_frozen_.end()) {
 		vol_window_atoms_frozen_.insert(vol_atom_map_[step]);
 		// needs to be frozen before assumption for this atom is retrieved
-		b_->freeze(vol_atom_map_[step]);
+		freezeAtom(vol_atom_map_[step]);
 	}
 
 	return vol_atom_map_[step];
@@ -130,7 +141,7 @@ void oClaspOutput::updateVolWindowAtoms(int step) {
 	for(std::map<int, uint32_t>::iterator it = vol_atom_map_.begin(); it != end; ++it) {
 		if(it->first <= step) {
 			// unfreeze expired atoms
-			b_->unfreeze(it->second);
+			unfreezeAtom(it->second);
 			vol_window_atoms_frozen_.erase(it->second);
 
 			// set deletion marker
@@ -148,7 +159,7 @@ void oClaspOutput::updateVolWindowAtoms(int step) {
 
 void oClaspOutput::finalizeVolAtom() {
 	if(vol_atom_ && vol_atom_ != vol_atom_frozen_) {
-		b_->freeze(vol_atom_);
+		freezeAtom(vol_atom_);
 		vol_atom_frozen_ = vol_atom_;
 	}
 }

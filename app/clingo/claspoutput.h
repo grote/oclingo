@@ -58,7 +58,7 @@ public:
 	iClaspOutput(bool shiftDisj);
 	void initialize();
 	uint32_t getNewIncUid();
-	int getIncAtom(uint32_t vol_window = 1);
+	uint32_t getIncAtom(int vol_window);
 	std::deque<uint32_t> getIncUids();
 private:
 	bool initialized;

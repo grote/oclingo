@@ -32,6 +32,7 @@ public:
 	void startExtInput();
 	void stopExtInput();
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+	uint32_t getIncAtom(int vol_window);
 	void freezeAtom(uint32_t symbol);
 	void unfreezeAtom(uint32_t symbol);
 	uint32_t getVolAtom();

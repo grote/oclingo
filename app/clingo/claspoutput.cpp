@@ -110,6 +110,7 @@ void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name
 
 void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
+	(void) symbol;
 }
 
 uint32_t ClaspOutput::symbol()
@@ -158,7 +159,7 @@ uint32_t iClaspOutput::getNewIncUid()
 	return uid;
 }
 
-int iClaspOutput::getIncAtom(uint32_t vol_window)
+uint32_t iClaspOutput::getIncAtom(int vol_window = 1)
 {
 	if(incUids_.size() < vol_window) {
 		incUids_.resize(vol_window, 0);
