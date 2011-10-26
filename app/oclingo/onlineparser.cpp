@@ -37,7 +37,7 @@ OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	, output_(output)
 	, terminated_(false)
 	, got_step_(false)
-	, volatile_(false)
+	, part_(CUMULATIVE)
 	, volatile_window_(0)
 { }
 
@@ -129,14 +129,14 @@ void OnlineParser::add(StackPtr stm) {
 
 void OnlineParser::add(Type type, uint32_t n) {
 	if(type == STM_RULE) {
-		if(volatile_) type = USER;	// set custom rule type
+		if(part_ == VOLATILE) type = USER;	// set custom rule type
 		StackPtr stack = get(type, n);
 
 		if(output_->getExternalKnowledge().needsNewStep()) {
 			// add rules in later step, so externals are declared
 			output_->getExternalKnowledge().addStackPtr(stack);
 			// remember status for volatile rules
-			output_->getExternalKnowledge().savePrematureVol(volatile_, volatile_window_);
+			output_->getExternalKnowledge().savePrematureVol(part_ == VOLATILE, volatile_window_);
 		} else {
 			// add rules right away
 			output_->startExtInput();
@@ -145,7 +145,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 		}
 	}
 	else {
-		if(type == STM_CONSTRAINT && volatile_) type = USER + 1;	// set custom rule type
+		if(type == STM_CONSTRAINT && part_ == VOLATILE) type = USER + 1;	// set custom rule type
 		GroundProgramBuilder::add(type, n);
 	}
 }
@@ -172,11 +172,11 @@ void OnlineParser::terminate() {
 }
 
 void OnlineParser::setCumulative() {
-	volatile_ = false;
+	part_ = CUMULATIVE;
 }
 
 void OnlineParser::setVolatile() {
-	volatile_ = true;
+	part_ = VOLATILE;
 }
 
 void OnlineParser::setVolatileWindow(int window) {

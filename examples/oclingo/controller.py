@@ -55,6 +55,8 @@ IN_PARSER = {
 	'cumulative'	: re.compile("#cumulative\."),
 	'volatile'		: re.compile("#volatile( : ?\d+)?\."),
 	'forget'		: re.compile("#forget (\d+)\."),
+	'assert'		: re.compile("#assert : ?.+\."),
+	'retract'		: re.compile("#retract : ?.+\."),
 	'stop'			: re.compile("#stop\."),
 }
 PARSER = [
@@ -130,6 +132,9 @@ def prepareInput():
 					online_input[i].append(line)
 				# match forget
 				elif IN_PARSER['forget'].match(line) != None:
+					online_input[i].append(line)
+				# match assert/retract
+				elif IN_PARSER['assert'].match(line) != None or IN_PARSER['retract'].match(line) != None:
 					online_input[i].append(line)
 				# match comment
 				elif re.match("^%.*\n$", line) != None or re.match("^\n$", line) != None:
@@ -299,6 +304,8 @@ def getInputFromSTDIN():
 
 		if IN_PARSER['step'].match(line) != None or\
 		   IN_PARSER['forget'].match(line) != None or\
+		   IN_PARSER['assert'].match(line) != None or\
+		   IN_PARSER['retract'].match(line) != None or\
 		   IN_PARSER['cumulative'].match(line) != None or\
 		   IN_PARSER['volatile'].match(line) != None or\
 		   FACT.match(line) != None or\

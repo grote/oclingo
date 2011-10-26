@@ -45,6 +45,7 @@ public:
 			uint32_t index;
 		};
 	};
+	enum Part { CUMULATIVE, VOLATILE, ASSERT };
 
 public:
 	OnlineParser(oClaspOutput *output, std::istream* in);
@@ -84,7 +85,7 @@ private:
 	oClaspOutput* output_;
 	bool terminated_;
 	bool got_step_;
-	bool volatile_;
+	Part part_;
 	int volatile_window_;
 };
 
