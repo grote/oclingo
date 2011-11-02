@@ -120,13 +120,14 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
-					for(int i = config.incStep; i < ext.getControllerStep(); i++) {
+					do {
 						out->initialize(); // gives new IncUid for volatiles
 						config.incStep++;
 						app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 						ext.endStep();
 						out->finalize();
-					}
+					} while(config.incStep < ext.getControllerStep());
+
 					if(ext.addPrematureKnowledge()) {
 						// call finalize again if there was premature knowlegde added
 						out->finalize();
