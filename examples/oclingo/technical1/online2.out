@@ -1,0 +1,99 @@
+Answer: 1
+  B.  a        
+  1.  step(1)  
+Answer: 2
+  B.  b        
+  1.  step(1)  
+Got input:
+#step 1.
+e(1).
+:- not b.
+#endstep.
+
+Answer: 1
+  B.  b     
+  1.  c(1)  e(1)  step(1)  
+Got input:
+#step 5.
+#forget 5.
+e(2).
+e(4).
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+Got input:
+#step 7.
+#forget 7.
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+Got input:
+#step 6.
+e(2).
+e(3).
+e(4).
+e(5).
+e(6).
+#endstep.
+
+Warning: Head e(2) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Warning: Head e(3) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Warning: Head e(4) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Warning: Head e(5) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Warning: Head e(6) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+Got input:
+#step 7.
+e(7).
+#endstep.
+
+Warning: Head e(7) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+Got input:
+#step 8.
+e(8).
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+  8.  c(8)     e(8)  step(8)  
+Got input:
+#stop.
+
