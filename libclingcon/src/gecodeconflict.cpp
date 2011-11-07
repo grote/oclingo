@@ -32,16 +32,17 @@ namespace Clingcon
 void LinearIISCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
-    ++numCalls_;
     t_.start();
+    ++numCalls_;
+
     if (conflict.size()==0)
     {
         t_.stop();
         return;
     }
+
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
     original = g_->getRootSpace();
     if (!original)
     {
@@ -50,210 +51,71 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
         return;
     }
 
-    g_->setRecording(false);
-    Clasp::LitVec newConflict;
-
-    //std::cout << "Reduced from " << conflict.size() << " to ";
-    while(conflict.size())
-    {
-        //THIS WHILE LOOP STILL CHANGES THE NUMBER OF CONFLICTS, AS there can be multiple conflicts, but should be faster this way
-
-        while(original->getValueOfConstraint((conflict.end()-1)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            GecodeSolver::SearchSpace::Value val(original->getValueOfConstraint((conflict.end()-1)->var()));
-            // if same sign
-            if (((conflict.end()-1)->sign() && val==GecodeSolver::SearchSpace::BFALSE) || (!((conflict.end()-1)->sign()) && val==GecodeSolver::SearchSpace::BTRUE))
-            {
-                conflict.erase(conflict.end()-1);
-                if (conflict.size()==0)
-                {
-                    delete original;
-                    g_->setRecording(true);
-                    conflict.swap(newConflict);
-                    t_.stop();
-                    sumLength_+=conflict.size();
-                    return;
-                }
-            }
-            else
-            {
-                //debug=true;
-                //break;
-
-                //opposite sign, this is a conflict
-                newConflict.insert(newConflict.end(), conflict.end()-1, conflict.end());
-                delete original;
-                g_->setRecording(true);
-                conflict.swap(newConflict);
-                t_.stop();
-                sumLength_+=conflict.size();
-                return;
-
-            }
-        }
-
-        /*
-        if ((conflict.end()-1)->sign())
-            std::cout << "neg ";
-        else
-            std::cout << "pos ";
-        std::cout << g_->num2name((conflict.end()-1)->var()) << std::endl;
-        */
-
-        tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-        tester->propagate(conflict.begin(), conflict.end()-1);
-
-        ++props_;
-        if (tester->failed() || tester->status()==Gecode::SS_FAILED)
-        {
-            // still failing, throw it away, it did not contribute to the conflict
-            conflict.erase(conflict.end()-1);
-            //std::cout << "skip" << std::endl;
-        }
-        else
-        {
-            //if (original->getValueOfConstraint((conflict.end()-1)->var())!=GecodeSolver::SearchSpace::BFREE)
-            //    std::cout << "WARNING" << std::endl;
-            //std::cout << "add" << std::endl;
-            original->propagate(*(conflict.end()-1));
-            newConflict.insert(newConflict.end(), conflict.end()-1, conflict.end());
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (conflict.size()>1 && (original->failed() || original->status()==Gecode::SS_FAILED))
-            {
-                delete original;
-                original=0;
-                delete tester;
-                break;
-            }
-            conflict.erase(conflict.end()-1);
-        }
-        delete tester;
-    }
-    delete original;
-    conflict.swap(newConflict);
-    g_->setRecording(true);
-    t_.stop();
-    sumLength_+=conflict.size();
-}
-
-
-
-size_t Linear2IISCA::getIndexBelowDL(uint32 level)
-{
-    std::vector<unsigned int>::iterator ind = std::lower_bound(g_->dl_.begin(), g_->dl_.end(),level);
-    assert(ind != g_->dl_.end());
-    --ind;
-    return ind-g_->dl_.begin();
-}
-
-
-void Linear2IISCA::shrink(Clasp::LitVec& conflict)
-{
-    oldLength_+=conflict.size();
-    t_.start();
-    assert(conflict.size()==0);
-    ++numCalls_;
-    //t_.start();
-    Clasp::LitVec::const_iterator end = conflict.end();
-    if (conflict.size()==0)
-    {
-        t_.stop();
-        return;
-    }
-
-
-
-    // copy the very first searchspace
-    GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
-    original = g_->getRootSpace();
-    if (!original)
-    {
-        t_.stop();
-        return;
-    }
+    Clasp::LitVec::const_iterator end = conflict.end();
 
-
-/*
-
-    std::cout << "Reason for ";
-    if (l.sign()) std::cout << "f ";
-    else std::cout << "t ";
-    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
-
-    std::cout << "Out of ";
-    for (Clasp::LitVec::const_iterator i = begin; i != ends; ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }
-*/
     g_->setRecording(false);
 
     Clasp::LitVec newConflict;
-    assert(end>=conflict.begin());
-    uint32 highestLevel = g_->getSolver()->level((end-1)->var());
-    Clasp::LitVec::const_iterator i = end-1;
-    while (i>=conflict.begin() && g_->getSolver()->level(i->var())==highestLevel)
-        --i;
-    Clasp::LitVec::const_iterator start = i+1;
-    // start sollte auf niedrigstem literal stehen auf höchstem dl, und end hinter letztem
-    size_t index = getIndexBelowDL(highestLevel);
+    size_t index = g_->spaces_.size()-1;
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
+    {
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        --end;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        {
+            goto Ende;
+        }
+    }
+
+    // we want to start one space below to save some propagation
+    if (index) --index;
+
 
     do
     {
+        Clasp::LitVec::const_iterator start = conflict.begin() + g_->assLength(index);
         while(end>start)
         {
+            assert(!g_->spaces_[index]->failed());
+
             tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-            //reifwait2(*tester,tester->b_[g_->varToIndex(l.var())],&Space::fail);
             tester->propagate(start,end-1);
             tester->propagate(newConflict.begin(),newConflict.end());
-
-            tester->status();
-
             props_++;
-            //assert(!tester->failed());
-           // if (tester->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-            if (tester->failed())
+            if (tester->failed() || tester->status()==SS_FAILED)
             {
                 // still conflict, throw it away, it did not contribute to the reason
-                //std::cout << "no reason" << std::endl;
-                --end;
             }
             else
             {
-                Found:
-
                 original->propagate(*(end-1));
                 newConflict.push_back(*(end-1));
+                //props_++;
                 //std::cout << "reason" << std::endl;
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
+                //we propagate to find the shortest reason
                 if (original->failed() || original->status() == SS_FAILED)
                 {
-                    props_++;
                     delete tester;
                     tester=0;
                     end=conflict.begin(); // stop everything
                     break;
-                }
-                props_++;
-                --end;
+                } 
             }
             delete tester;
+            --end;
         }
         --index;
-        highestLevel = g_->getSolver()->level((end-1)->var());
-        Clasp::LitVec::const_iterator i = end-1;
-        while (i>=conflict.begin() && g_->getSolver()->level(i->var())==highestLevel)
-            --i;
-        start = i+1;
     }
     while(end>conflict.begin());
-    ///
+    Ende:
+
     sumLength_+=newConflict.size();
     conflict.swap(newConflict);
-    //std::cout << sumLength_ << std::endl;
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -261,92 +123,92 @@ void Linear2IISCA::shrink(Clasp::LitVec& conflict)
 
 
 
-void ExpIISCA::shrink(Clasp::LitVec& conflict)
+void LogIISCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
-    ++numCalls_;
     t_.start();
+    ++numCalls_;
 
     if (conflict.size()==0)
     {
         t_.stop();
         return;
     }
+
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
     original = g_->getRootSpace();
-    if (!original)// geht nicht, da gerrade kopiert wurde ist er stable
+    if (!original)
     {
         conflict.clear();
         t_.stop();
         return;
     }
 
+    GecodeSolver::SearchSpace* tester = 0;
+    size_t upperBound=conflict.size();
+
     g_->setRecording(false);
-    Clasp::LitVec newConflict;
 
-    unsigned int num=1;
-    unsigned int upperBound=conflict.size();
+    size_t num=1;
+
     bool unseenConflict=false;
-    //std::cout << "Reduced from " << conflict.size() << " to ";
-    while(conflict.size())
-    {
 
-        /*THIS IS WRONG, look at Linear to make it right
-        while(original->getValueOfConstraint((conflict.end()-1)->var())!=GecodeSolver::SearchSpace::BFREE)
+    Clasp::LitVec newConflict;
+    size_t index = g_->spaces_.size()-1;
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
+    {
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        --upperBound;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
         {
-            conflict.erase(conflict.end()-1,conflict.end());
-            if (conflict.size()==0)
-            {
-                delete original;
-                g_->setRecording(true);
-                conflict.swap(newConflict);
-                return;
-            }
-            --upperBound;
-            if (num==upperBound)
-            {
-                num=1;
-                //num/=2;
-            }
-            continue;
-        }*/
-        tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-        tester->propagate(conflict.begin(), conflict.end()-num);
+            goto Ende;
+        }
+    }
+
+    // we want to start one space below to save some propagation
+    if (index) --index;
+    //std::cout << "Reduced from " << conflict.size() << " to ";
+    while(upperBound>0)
+    {
+        //recalculate the index
+        while(g_->assLength(index) > upperBound-num) --index;
+        while(g_->assLength(index+1) <= upperBound-num) ++index;
+
+        size_t start = g_->assLength(index);
+        assert(!g_->spaces_[index]->failed());
+
+        tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
+        tester->propagate(conflict.begin()+start, conflict.begin()+upperBound-num);
+        tester->propagate(newConflict.begin(),newConflict.end());
 
         ++props_;
         if (tester->failed() || tester->status()==Gecode::SS_FAILED)
         {
             // still failing, throw it away, it did not contribute to the conflict
-            conflict.erase(conflict.end()-num,conflict.end());
             upperBound-=num;
         }
         else
         {
             if (num==1)
             {
-                original->propagate(*(conflict.end()-1));
-                newConflict.push_back(*(conflict.end()-1));
+                original->propagate(*(conflict.begin()+upperBound-num));
+                newConflict.push_back(*(conflict.begin()+upperBound-num));
                 //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                if (conflict.size()>1 && (original->failed() || original->status()==Gecode::SS_FAILED))
+                if (upperBound<=1 || (original->failed() || original->status()==Gecode::SS_FAILED))
                 {
-                    delete original;
-                    original=0;
                     delete tester;
-                    break;
+                    goto Ende;
                 }
-                conflict.erase(conflict.end()-1);
                 unseenConflict=false;
-                upperBound=conflict.size();
+                upperBound-=1;
             }
             else
             {
                 unseenConflict=true;
-                upperBound=num;
-                num=1;
-                delete tester;
-                continue;
             }
         }
         delete tester;
@@ -354,8 +216,11 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
         if (unseenConflict && num==upperBound)
             num=1;
     }
-    delete original;
+    Ende:
+
     conflict.swap(newConflict);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
+    delete original;
     g_->setRecording(true);
     t_.stop();
     sumLength_+=conflict.size();
@@ -365,148 +230,44 @@ void ExpIISCA::shrink(Clasp::LitVec& conflict)
 void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
-    ++numCalls_;
     t_.start();
+    ++numCalls_;
+
     if (conflict.size()==0)
     {
         t_.stop();
         return;
     }
+
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
     original = g_->getRootSpace();
-    if (!original)// geht nicht, da gerrade kopiert wurde ist er stable
+    if (!original)
     {
         conflict.clear();
         t_.stop();
         return;
     }
 
-    g_->setRecording(false);
-    Clasp::LitVec newConflict;
-
-    //std::cout << "Reduced from " << conflict.size() << " to ";
-    while(conflict.size())
-    {
-        tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-        tester->propagate(conflict.begin()+1, conflict.end());
-
-        ++props_;
-        if (tester->failed() || tester->status()==Gecode::SS_FAILED)
-        {
-            // still failing, throw it away, it did not contribute to the conflict
-            conflict.erase(conflict.begin());
-        }
-        else
-        {
-            original->propagate(*(conflict.begin()));
-            newConflict.insert(newConflict.end(), conflict.begin(), conflict.begin()+1);
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (conflict.size()>1 && (original->failed() || original->status()==Gecode::SS_FAILED))
-            {
-                delete original;
-                original=0;
-                delete tester;
-                break;
-            }
-            conflict.erase(conflict.begin());
-        }
-        delete tester;
-    }
-    delete original;
-    conflict.swap(newConflict);
-    g_->setRecording(true);
-    t_.stop();
-    sumLength_+=conflict.size();
-}
-
-
-
-void FwdLinear2IISCA::shrink(Clasp::LitVec& conflict)
-{
-    oldLength_+=conflict.size();
-    ++numCalls_;
-    t_.start();
+    GecodeSolver::SearchSpace* tester = 0;
     Clasp::LitVec::const_iterator begin = conflict.begin();
     Clasp::LitVec::const_iterator end = conflict.end();
-    if (end-begin==0)
-    {
-        t_.stop();
-        return;
-    }
-
-    // copy the very first searchspace
-    GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
-    original = g_->getRootSpace();
-    if (!original)
-    {
-        t_.stop();
-        return;
-    }
-
 
     g_->setRecording(false);
+
     Clasp::LitVec newConflict;
-
-
-    assert(end>=begin);
-    uint32 highestLevel = g_->getSolver()->level((end-1)->var());
-    Clasp::LitVec::const_iterator i = end-1;
-    while (i>=begin && g_->getSolver()->level(i->var())==highestLevel)
-        --i;
-    Clasp::LitVec::const_iterator start = i+1;
-
-    for (; end > start; --end)
+    size_t index = g_->spaces_.size()-1;
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
     {
-        if(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        --end;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
         {
-            if ( (original->getValueOfConstraint((end-1)->var())==GecodeSolver::SearchSpace::BTRUE && (end-1)->sign()) ||
-                 (original->getValueOfConstraint((end-1)->var())==GecodeSolver::SearchSpace::BFALSE && !(end-1)->sign()) )
-            {
-                newConflict.push_back(*(end-1));
-                goto Ende;
-            }
-            //clasp propagated something that gecode would have also found out
-            continue;
+            goto Ende;
         }
-
-        tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-
-        tester->propagate(begin, end-1);
-
-        if (!tester->failed())
-        {
-            tester->status();
-            ++props_;
-        }
-
-        //assert(!tester->failed());
-
-        if (tester->failed())
-        {
-            // still reason, throw it away, it did not contribute to the reason
-            //--end;
-        }
-        else
-        {
-            original->propagate(*(end-1));
-            newConflict.push_back(*(end-1));
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (end-begin>1 && (original->failed() || original->status() == SS_FAILED))
-            {
-                delete tester;
-                 ++props_;
-                tester=0;
-                goto Ende;
-            }
-            //--end;
-             ++props_;
-            delete tester;
-            break;
-        }
-        delete tester;
     }
 
 
@@ -531,30 +292,22 @@ void FwdLinear2IISCA::shrink(Clasp::LitVec& conflict)
         tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
 
         tester->propagate(begin+1, end);
+        //we do not need to propagate newConflict here as we derive it from "original"
 
-        if (!tester->failed())
+        ++props_;
+        if (tester->failed() ||  tester->status()==SS_FAILED)
         {
-            tester->status();
-            ++props_;
-        }
-
-        //assert(!tester->failed());
-        // if reason still derives l we can remove the last one
-        if (tester->failed())
-        {
-            // still reason, throw it away, it did not contribute to the reason
             ++begin;
         }
         else
         {
             original->propagate(*(begin));
-             ++props_;
+            //++props_;
             newConflict.push_back(*(begin));
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
             if (end-begin>1 && (original->failed() || original->status()==SS_FAILED))
             {
                 delete tester;
-                tester=0;
                 break;
             }
             ++begin;
@@ -563,32 +316,23 @@ void FwdLinear2IISCA::shrink(Clasp::LitVec& conflict)
     }
 
     Ende:
-    delete original;
+
     g_->setRecording(true);
     sumLength_+=newConflict.size();
     conflict.swap(newConflict);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
+    delete original;
     t_.stop();
 }
 
 
 
-size_t Linear2GroupedIISCA::getIndexBelowDL(uint32 level)
-{
-    std::vector<unsigned int>::iterator ind = std::lower_bound(g_->dl_.begin(), g_->dl_.end(),level);
-    assert(ind != g_->dl_.end());
-    --ind;
-    return ind-g_->dl_.begin();
-}
-
-
-void Linear2GroupedIISCA::shrink(Clasp::LitVec& conflict)
+void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
     t_.start();
-    assert(conflict.size()==0);
     ++numCalls_;
-    //t_.start();
-    Clasp::LitVec::const_iterator end = conflict.end();
+
     if (conflict.size()==0)
     {
         t_.stop();
@@ -597,98 +341,73 @@ void Linear2GroupedIISCA::shrink(Clasp::LitVec& conflict)
 
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
     if (!original)
     {
+        conflict.clear();
         t_.stop();
         return;
     }
 
+    GecodeSolver::SearchSpace* tester = 0;
+    Clasp::LitVec::const_iterator end = conflict.end();
 
-/*
-
-    std::cout << "Reason for ";
-    if (l.sign()) std::cout << "f ";
-    else std::cout << "t ";
-    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
-
-    std::cout << "Out of ";
-    for (Clasp::LitVec::const_iterator i = begin; i != ends; ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }
-*/
     g_->setRecording(false);
 
-    assert(end>=conflict.begin());
-    uint32 highestLevel = g_->getSolver()->level((end-1)->var());
-    Clasp::LitVec::const_iterator i = end-1;
-    while (i>=conflict.begin() && g_->getSolver()->level(i->var())==highestLevel)
-        --i;
-    Clasp::LitVec::const_iterator start = i+1;
-    // start sollte auf niedrigstem literal stehen auf höchstem dl, und end hinter letztem
-    size_t index = getIndexBelowDL(highestLevel);
-
     Clasp::LitVec newConflict;
-    do
+    size_t index = g_->spaces_.size()-1;
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
     {
-        //while(end>start)
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        original->propagate(conflict.back());
+        --end;
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
         {
-            //if (end==ends && end-start==1)//first time and only one variable on highest level, this one must be be inside
-            //    goto Found;
-
-            tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-
-
-            //tester->propagate(start,end-1);
-            tester->propagate(newConflict.begin(),newConflict.end());
-
-
-            tester->status();
-            props_++;
-
-            if (tester->failed())
-            {
-                // still reason, throw it away, it did not contribute to the reason
-                //std::cout << "no reason" << std::endl;
-                //--end;
-                end=start;
-            }
-            else
-            {
-                Found:
-                original->propagate(start, end);
-                newConflict.insert(newConflict.end(), start, end);
-                //std::cout << "reason" << std::endl;
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                if (start > conflict.begin() && (original->failed() || original->status() == SS_FAILED))
-                {
-                    props_++;
-                    delete tester;
-                    tester=0;
-                    end=conflict.begin(); // stop everything
-                    break;
-                }
-                props_++;
-                //--end;
-                end=start;
-            }
-            delete tester;
+            goto Ende;
         }
-        --index;
-        highestLevel = g_->getSolver()->level((end-1)->var());
-        Clasp::LitVec::const_iterator i = end-1;
-        while (i>=conflict.begin() && g_->getSolver()->level(i->var())==highestLevel)
-            --i;
-        start = i+1;
     }
-    while(end>conflict.begin());
-    ///
+
+    // we want to start one space below to save some propagation
+    if (index) --index;
+
+    while(end>conflict.begin())
+    {
+        Clasp::LitVec::const_iterator start = conflict.begin() + g_->assLength(index);
+        tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
+        tester->propagate(newConflict.begin(),newConflict.end());
+
+        props_++;
+
+        if (tester->failed() || tester->status()==SS_FAILED)
+        {
+           end=start;
+        }
+        else
+        {
+            original->propagate(start, end);
+            newConflict.insert(newConflict.end(), start, end);
+            //props_++;
+            //std::cout << "reason" << std::endl;
+            //this is enough, but we have to propagate "original", to get a fresh clone out of it
+            if (start > conflict.begin() && (original->failed() || original->status() == SS_FAILED))
+            {
+
+                delete tester;
+                goto Ende;
+            }
+            end=start;
+        }
+        delete tester;
+        --index;
+    }
+    Ende:
+
     sumLength_+=newConflict.size();
     //std::cout << sumLength_ << std::endl;
+    conflict.swap(newConflict);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -718,53 +437,47 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
     oldLength_+=conflict.size();
     t_.start();
     ++numCalls_;
+
     if (conflict.size()==0)
     {
         t_.stop();
         return;
     }
-    int it = (conflict.size())-1;
-
 
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
     original = g_->getRootSpace();
     if (!original)
     {
+        conflict.clear();
         t_.stop();
         return;
     }
 
-    //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-    //    std::cout << "INITIALLY SATISFIED" << std::endl;
+    GecodeSolver::SearchSpace* tester = 0;
 
-    VarSet checker(varSets_[(conflict.end()-1)->var()]);
-    unsigned int checkCount = checker.count();
-
-/*
-    std::cout << "Reason for ";
-    if (l.sign()) std::cout << "f ";
-    else std::cout << "t ";
-    std::cout << g_->num2name(l.var()) << "(" << l.var() << ")" << std::endl;
-
-    for(size_t i = 0; i < checker.size(); ++i)
-        std::cout << i << "\t:" << checker[i] << std::endl;
-
-    std::cout << "Out of ";
-    for (Clasp::LitVec::const_iterator i = begin; i != begin+it+1; ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }
-*/
     g_->setRecording(false);
 
-    VarSet done(it+1);
-
+    int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
+    size_t index = g_->spaces_.size()-1;
+    VarSet done(it+1);
+    VarSet checker(varSets_[(conflict.end()-1)->var()]);
     Clasp::LitVec::const_iterator begin = conflict.begin();
+     unsigned int checkCount = checker.count();
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
+    {
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        done.set(it);
+        --it;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        {
+            goto Ende;
+        }
+    }
 
     while(true)
     {
@@ -843,27 +556,18 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
             {
                 original->propagate(*(begin+it));
                 newConflict.push_back(*(begin+it));
+                //props_++;
                 //this is enough, but we have to propagate "original", to get a fresh clone out of it
                 //original->status();
                 //assert(!original->failed());
                 if (original->failed() || original->status()==SS_FAILED)
                 {
                      //std::cout << " yes and found" << std::endl;
-                     props_++;
-                     delete tester;
 
-                     Ende:
-                     sumLength_+=newConflict.size();
-                     //std::cout << sumLength_ << std::endl;
-                     //std::cout << "Ende" << std::endl;
-                     delete original;
-                     g_->setRecording(true);
-                     conflict.swap(newConflict);
-                     t_.stop();
-                     return;
+                     delete tester;
+                     goto Ende;
                 }
                 checker|=varSets_[(begin+it)->var()];
-                props_++;
                 //std::cout << " yes" << std::endl;
                 //RESTART
                 if (checkCount<checker.count())
@@ -928,122 +632,47 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
             newConflict.push_back(*(begin+it));
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
             //original->status();
-            props_++;
+            //props_++;
             //assert(!original->failed());
             if (original->failed() || original->status() == SS_FAILED)
             {
                 //std::cout << " yes and found" << std::endl;
 
                 delete tester;
-                sumLength_+=newConflict.size();
-                //std::cout << sumLength_ << std::endl;
-                //std::cout << "Ende" << std::endl;
-                delete original;
-                g_->setRecording(true);
-                conflict.swap(newConflict);
-                t_.stop();
-                return;
+                goto Ende;
             }
             //std::cout << " yes" << std::endl;
         }
         delete tester;
     }
-
     newConflict.push_back(*(begin+it));
+
+
+    Ende:
     sumLength_+=newConflict.size();
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
-    g_->setRecording(true);
-    delete original;
     conflict.swap(newConflict);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
+    delete original;
+    g_->setRecording(true);
     t_.stop();
     return;
 }
-
-void UnionIISCA::shrink(Clasp::LitVec& conflict)
-{
-    oldLength_+=conflict.size();
-    ++numCalls_;
-    t_.start();
-    if (conflict.size()==0)
-    {
-        t_.stop();
-        return;
-    }
-    // copy the very first searchspace
-    GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester;
-    original = g_->getRootSpace();
-    if (!original)
-    {
-        conflict.clear();
-        t_.stop();
-        return;
-    }
-    delete original;
-
-    g_->setRecording(false);
-
-    //std::cout << "Reduced from " << conflict.size() << " to ";
-    unsigned int i = 1;
-    while(conflict.end()-i>=conflict.begin())
-    {
-        tester = g_->getRootSpace();
-        tester->propagate(conflict.begin(), conflict.end()-i);
-        tester->propagate(conflict.end()-i+1, conflict.end());
-
-
-        ++props_;
-        if (tester->failed() || tester->status()==Gecode::SS_FAILED)
-        {
-
-            std::swap(*(conflict.end()-i), *(conflict.end()-1));
-            conflict.pop_back();
-        }
-        else
-        {
-            //if (original->getValueOfConstraint((conflict.end()-1)->var())!=GecodeSolver::SearchSpace::BFREE)
-            //    std::cout << "WARNING" << std::endl;
-            //std::cout << "add" << std::endl;
-            //original->propagate(*(conflict.end()-1));
-            //newConflict.insert(newConflict.end(), conflict.end()-1, conflict.end());
-            //newConflict.push_back(*i);
-             ++i;
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-        }
-        delete tester;
-
-    }
-    //conflict.swap(newConflict);
-    g_->setRecording(true);
-    t_.stop();
-    sumLength_+=conflict.size();
-}
-
 
 
 void RangeCA::shrink(Clasp::LitVec& conflict)
 {
     oldLength_+=conflict.size();
-    //std::cout << "Enter " << numCalls_ << std::endl;
-    ++numCalls_;
     t_.start();
+    ++numCalls_;
+
     if (conflict.size()==0)
     {
         t_.stop();
         return;
     }
 
-
-    /*
-    std::cout << "Conflicting with: " << std::endl;
-    for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }
-*/
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
     original = g_->getRootSpace();
@@ -1054,20 +683,29 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         return;
     }
 
-    g_->setRecording(false);
-    Clasp::LitVec newConflict;
 
+
+    g_->setRecording(false);
+
+    Clasp::LitVec newConflict;
     Clasp::LitVec::const_iterator it=conflict.end()-1;
+    size_t index = g_->spaces_.size()-1;
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
+    {
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        --it;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        {
+            goto Ende;
+        }
+    }
+
     //std::cout << "Reduced from " << conflict.size() << " to ";
     while(it>=conflict.begin())
     {
-
-        /*
-        std::cout << "Testing with ";
-        if (it->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(it->var()) << std::endl;
-*/
         if(original->getValueOfConstraint((it)->var())!=GecodeSolver::SearchSpace::BFREE)
         {
             //std::cout << "non free -> ";
@@ -1083,36 +721,29 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
                 //std::cout << "different sign, finished" << std::endl;
                 newConflict.insert(newConflict.end(), *it);
                 //std::cout << "Shortcut" << std::endl;
-                break;
+                goto Ende;
             }
         }
 
         original->propagate(*it);
-         ++props_;
+        //++props_;
         newConflict.insert(newConflict.end(), *it);
         if (original->failed() || original->status()==Gecode::SS_FAILED)
         {
             //std::cout << "Failed" << std::endl;
+            goto Ende;
             break;
         }
         --it;
     }
-    //if (!original->failed())
-    //    std::cout << "PROBLEM" << std::endl;//muss nicht failed sein, kann auch different sign sein und wäre danach failed !
-    delete original;
+    Ende:
+
     conflict.swap(newConflict);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
+    delete original;
     g_->setRecording(true);
     t_.stop();
     sumLength_+=conflict.size();
-
-    /*
-    std::cout << "Results in: " << std::endl;
-    for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }*/
 }
 
 SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
@@ -1144,50 +775,40 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
         return;
     }
 
-    int it = conflict.size()-1;//(ends-begin)-1;
-
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
-    //GecodeSolver::SearchSpace* tester;
     original = g_->getRootSpace();
     if (!original)
     {
+        conflict.clear();
         t_.stop();
         return;
     }
 
-    if (numCalls_==124)
-    {
-       /* original->propagate(conflict.begin(), conflict.end());
-        original->status();
-        if (original->failed())
-            int a = 9;
-        else*/
-            int b = 0;
-    }
+    GecodeSolver::SearchSpace* tester = 0;
 
-    //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-    //    std::cout << "INITIALLY SATISFIED" << std::endl;
-
-    VarSet checker(varSets_[(conflict.end()-1)->var()]);
-    unsigned int checkCount = checker.count();
-
-/*
-    for(size_t i = 0; i < checker.size(); ++i)
-        std::cout << i << "\t:" << checker[i] << std::endl;
-
-    std::cout << "Conflict ";
-    for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.begin()+it+1; ++i)
-    {
-        if (i->sign()) std::cout << "f ";
-        else std::cout << "t ";
-        std::cout << g_->num2name(i->var()) << std::endl;
-    }
-*/
     g_->setRecording(false);
 
-    VarSet done(it+1);
+    int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
+    size_t index = g_->spaces_.size()-1;
+    VarSet done(it+1);
+    VarSet checker(varSets_[(conflict.end()-1)->var()]);
+    Clasp::LitVec::const_iterator begin = conflict.begin();
+     unsigned int checkCount = checker.count();
+    // special case, the last literal is surely conflicting
+    if (conflict.size()>g_->assLength(index))
+    {
+        assert(conflict.size()==g_->assLength(index)+1);
+        newConflict.push_back(conflict.back());
+        done.set(it);
+        --it;
+        original->propagate(conflict.back());
+        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        {
+            goto Ende;
+        }
+    }
 
     while(true)
     {
@@ -1242,14 +863,7 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
             {
                 //HIER HAT DIE VARIABLE DEN FALSCHEN WERT UND DAMIT EINEN KONFLIKT !!!
                 newConflict.push_back(*(conflict.begin()+it));
-                sumLength_+=newConflict.size();
-                conflict.swap(newConflict);
-                //std::cout << sumLength_ << std::endl;
-                //std::cout << "Ende" << std::endl;
-                delete original;
-                g_->setRecording(true);
-                t_.stop();
-                return;
+                goto Ende;
             }
 
         }
@@ -1257,55 +871,36 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
         if (checker.intersects(varSets_[(conflict.begin()+it)->var()]))
         {
 
-            {
-                original->propagate(*(conflict.begin()+it));
-                newConflict.push_back(*(conflict.begin()+it));
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                original->status();
-                //assert(!original->failed());
-                //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-                if (original->failed() || original->status()==SS_FAILED)
-                {
-                     //std::cout << " yes and found" << std::endl;
-                     props_++;
-                     //delete tester;
+            original->propagate(*(conflict.begin()+it));
+            newConflict.push_back(*(conflict.begin()+it));
+            //this is enough, but we have to propagate "original", to get a fresh clone out of it
 
-                     sumLength_+=newConflict.size();
-                     conflict.swap(newConflict);
-                     //std::cout << sumLength_ << std::endl;
-                     //std::cout << "Ende" << std::endl;
-                     delete original;
-                     g_->setRecording(true);
-                     t_.stop();
-                     return;
-                }
-                checker|=varSets_[(conflict.begin()+it)->var()];
-                props_++;
-                //std::cout << " yes" << std::endl;
-                //RESTART
-                if (checkCount<checker.count())
-                {
-                    //delete tester;
-                    checkCount=checker.count();
-                    it = conflict.size()-1;
-                    continue;
-                }
-                else//end
-                --it;
+            //props_++;
+            if (original->failed() || original->status()==SS_FAILED)
+            {
+                goto Ende;
             }
-            //delete tester;
+            checker|=varSets_[(conflict.begin()+it)->var()];
+            //std::cout << " yes" << std::endl;
+            //RESTART
+            if (checkCount<checker.count())
+            {
+                //delete tester;
+                checkCount=checker.count();
+                it = conflict.size()-1;
+                continue;
+            }
+            else//end
+                --it;
         }
         else
             --it;
     }
 
-
-
     for (it = conflict.size()-1; it != 0; --it)
     {
         if (done.test(it))
         {
-            //std::cout << "Skip watched " << g_->num2name((begin+it)->var()) << std::endl;
             continue;
         }
 
@@ -1321,52 +916,31 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
             else
             {
                 newConflict.push_back(*(conflict.begin()+it));
-                sumLength_+=newConflict.size();
-                conflict.swap(newConflict);
-                //std::cout << sumLength_ << std::endl;
-                //std::cout << "Ende" << std::endl;
-                delete original;
-                g_->setRecording(true);
-                t_.stop();
-                return;
+                goto Ende;
             }
         }
 
 
+        original->propagate(*(conflict.begin()+it));
+        newConflict.push_back(*(conflict.begin()+it));
+        //this is enough, but we have to propagate "original", to get a fresh clone out of it
+        //props_++;
+        // assert(!original->failed());
+        //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
+        if (original->failed() || original->status() == SS_FAILED)
         {
-            original->propagate(*(conflict.begin()+it));
-            newConflict.push_back(*(conflict.begin()+it));
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            original->status();
-            props_++;
-            // assert(!original->failed());
-            //if (original->getValueOfConstraint(l.var())!=GecodeSolver::SearchSpace::BFREE)
-            if (original->failed() || original->status() == SS_FAILED)
-            {
-                //std::cout << " yes and found" << std::endl;
-
-                //delete tester;
-                sumLength_+=newConflict.size();
-                conflict.swap(newConflict);
-                //std::cout << sumLength_ << std::endl;
-                //std::cout << "Ende" << std::endl;
-                delete original;
-                g_->setRecording(true);
-                t_.stop();
-                return;
-            }
-            //std::cout << " yes" << std::endl;
+            goto Ende;
         }
-        //delete tester;
     }
-
     newConflict.push_back(*(conflict.begin()+it));
+
+    Ende:
     sumLength_+=newConflict.size();
     conflict.swap(newConflict);
     //std::cout << sumLength_ << std::endl;
-    //std::cout << "Ende" << std::endl;
-    g_->setRecording(true);
+    assert((delete original, original = g_->getRootSpace(), original->propagate(newConflict.begin(), newConflict.end()), original->status()==SS_FAILED));
     delete original;
+    g_->setRecording(true);
     t_.stop();
     return;
 }
