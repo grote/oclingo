@@ -48,6 +48,14 @@ CSPParser::DomStm::DomStm(const Loc &l, uint32_t idx, uint32_t id, const VarSigV
 {
 }
 
+CSPParser::ErrorTok::ErrorTok(const Loc &loc, const std::string &token, Type type=PARSING)
+       : loc(loc)
+       , token(token)
+       , type(type)
+{
+}
+
+
 CSPParser::CSPParser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
         : cspminimizecounter(0)
         , g_(g)
@@ -397,10 +405,29 @@ void CSPParser::parse()
 		parse(streams_.currentStream());
 		if(error_)
 		{
-			ParseException ex;
+
+                        ParseException pex;
+                        bool found = false;
+                        foreach(ErrorTok &tok, errors_)
+                        {
+                        if(tok.type == ErrorTok::PARSING)
+                        {
+                            found = true;
+                            pex.add(StrLoc(g_, tok.loc), tok.token);
+                        }
+                        }
+                        if(found) { throw pex; }
+
+                        TermException tex;
 			foreach(ErrorTok &tok, errors_)
-				ex.add(StrLoc(g_, tok.first), tok.second);
-			throw ex;
+                        {
+                            if(tok.type == ErrorTok::NONCONSTTERM)
+                            {
+                            tex.add(StrLoc(g_, tok.loc), tok.token);
+                            throw tex;
+                            }
+                        }
+
 		}
 	}
 	while(streams_.next());
@@ -429,7 +456,7 @@ void CSPParser::parse()
 	}
 }
 
-void CSPParser::incremental(iPart part, uint32_t index, uint32_t vol_window)
+void CSPParser::incremental(iPart part, uint32_t index, int vol_window)
 {
 	switch(part)
 	{
@@ -451,7 +478,23 @@ void CSPParser::incremental(iPart part, uint32_t index, uint32_t vol_window)
 	}
 	iId_   = index;
         volWindow_ = vol_window;
+        if(vol_window > config_.maxVolStep) config_.maxVolStep = vol_window;
+
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
+}
+
+bool CSPParser::checkVolTerm(Term *term)
+{
+       if(!term->constant() || term->val(grounder()).type != Val::NUM)
+       {
+               std::ostringstream ss;
+               term->print(g_, ss);
+               errors_.push_back(ErrorTok(term->loc(), ss.str(), ErrorTok::NONCONSTTERM));
+               error_ = true;
+
+               return false;
+       }
+       return true;
 }
 
 Term *CSPParser::term(Val::Type t, const Loc &loc, uint32_t index)
