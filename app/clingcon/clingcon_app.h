@@ -23,8 +23,8 @@
 #include <gringo/inclit.h>
 #include <gringo/converter.h>
 #include <gringo/streams.h>
-#include "clasp/clasp_options.h"
-#include "clasp/clasp_output.h"
+#include "clingcon/clasp/clasp_options.h"
+#include "clingcon/clasp/clasp_output.h"
 #include "clingcon/clingcon_output.h"
 #include "clasp/smodels_constraints.h"
 #include "gringo/gringo_app.h"

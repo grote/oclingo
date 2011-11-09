@@ -33,7 +33,15 @@ private:
 		uint32_t  id;
 		VarSigVec vars;
 	};
-	typedef std::pair<Loc,std::string> ErrorTok;
+        struct ErrorTok
+        {
+                enum Type       {PARSING, NONCONSTTERM};
+                ErrorTok(const Loc &loc, const std::string &token, Type type);
+                Loc                     loc;
+                std::string     token;
+                Type            type;
+        };
+
 	typedef std::vector<ErrorTok> ErrorVec;
         typedef boost::ptr_map<uint32_t, Term> ConstMap;
 	typedef std::list<DomStm> DomStmList;
@@ -68,7 +76,8 @@ public:
 	void parseError();
 	void parse();
 	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
-        void incremental(iPart part, uint32_t index = 0, uint32_t vol_window = 1);
+        void incremental(iPart part, uint32_t index = 0, int vol_window = 1);
+        bool checkVolTerm(Term *term);
 	void add(Statement *s);
         Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
         Term *term(Val::Type t, const Loc &loc, uint32_t index);
@@ -111,7 +120,7 @@ private:
 	uint32_t        iId_;
 	uint32_t        iVar_;
         // parsing the volatile part
-        uint32_t        volWindow_;
+        int             volWindow_;
 	// parsing const directives
 	ConstMap        constMap_;
 	// parsing domain statements

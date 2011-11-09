@@ -39,11 +39,20 @@ namespace Clingcon {
 
     class ConflictAnalyzer;
     class ReasonAnalyzer;
-    class Linear2IRSRA;
-    class Linear2GroupedIRSRA;
-    class FirstUIPRA;
-    class Linear2IISCA;
-    class Linear2GroupedIISCA;
+    class LogIRSRA;
+    class FwdLinearIRSRA;
+    class SCCIRSRA;
+    class RangeIRSRA;
+    class SCCRangeRA;
+    class LinearIRSRA;
+    class LinearGroupedIRSRA;
+    class LinearIISCA;
+    class LogIISCA;
+    class FwdLinearIISCA;
+    class LinearGroupedIISCA;
+    class SCCIISCA;
+    class RangeCA;
+    class SCCRangeCA;
 
 
     class GecodeSolver : public CSPSolver
@@ -54,11 +63,20 @@ namespace Clingcon {
     public:
         friend class SearchSpace;
         //debug
-        friend class Linear2IRSRA;
-        friend class Linear2GroupedIRSRA;
-        friend class FirstUIPRA;
-        friend class Linear2IISCA;
-        friend class Linear2GroupedIISCA;
+        friend class LinearIRSRA;
+        friend class LogIRSRA;
+        friend class FwdLinearIRSRA;
+        friend class SCCIRSRA;
+        friend class RangeIRSRA;
+        friend class SCCRangeRA;
+        friend class LinearGroupedIRSRA;
+        friend class LinearIISCA;
+        friend class LogIISCA;
+        friend class FwdLinearIISCA;
+        friend class LinearGroupedIISCA;
+        friend class SCCIISCA;
+        friend class RangeCA;
+        friend class SCCRangeCA;
 
 
         static std::vector<int> optValues;
@@ -79,7 +97,7 @@ namespace Clingcon {
 
         GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
-                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay);
+                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, int cspPropDelay);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -117,6 +135,8 @@ namespace Clingcon {
         void setRecording(bool r);
         //virtual bool propagate(const Clasp::LitVec& lv, bool& foundNewLits);
         virtual bool propagate();
+        bool _propagate(Clasp::LitVec& );
+        bool finishPropagation();
         virtual bool propagateMinimize();
         virtual void reset();
         virtual void undo(unsigned int level);
@@ -171,7 +191,7 @@ namespace Clingcon {
         std::vector<unsigned int> dl_; // dl_[Y] = X. spaces_[Y] has decision level X
         std::vector<unsigned int> assLength_; // length of the assignment of space X
 
-        typedef std::map<unsigned int, unsigned int> LitToAssPosition;
+        typedef std::map<Clasp::Literal, unsigned int> LitToAssPosition;
         //typedef std::map<unsigned int, unsigned int> AssPosToSize;
 
         LitToAssPosition litToAssPosition_;
@@ -203,7 +223,8 @@ namespace Clingcon {
         bool              initialLookahead_;
         Mode              reduceReason_;
         Mode              reduceConflict_;
-        unsigned int      cspPropDelay_;
+        int               cspPropDelay_;
+        unsigned int      cspPropDelayCounter_;
 
         class CSPDummy : public Clasp::Constraint
         {
@@ -238,9 +259,14 @@ namespace Clingcon {
         {
         public:
             friend class GecodeSolver;
-            friend class Linear2IRSRA;
-            friend class FirstUIPRA;
-            friend class Linear2IISCA;
+            friend class LogIRSRA;
+            friend class FwdLinearIRSRA;
+            friend class SCCIRSRA;
+            friend class RangeIRSRA;
+            friend class SCCRangeRA;
+            friend class LinearIRSRA;
+            friend class LinearGroupedIRSRA;
+            friend class LinearIISCA;
             enum Value
             {
                 BFREE,

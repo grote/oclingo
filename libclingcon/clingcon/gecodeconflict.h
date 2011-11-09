@@ -51,15 +51,6 @@ namespace Clingcon
         }
         virtual void shrink(Clasp::LitVec& conf)
         {
-            /*
-            std::cout << "Conflicting with: " << std::endl;
-            for (Clasp::LitVec::const_iterator i = conflict.begin(); i != conflict.end(); ++i)
-            {
-                if (i->sign()) std::cout << "f ";
-                else std::cout << "t ";
-                std::cout << g_->num2name(i->var()) << std::endl;
-            }
-        */
             oldLength_+=conf.size();
             ++numCalls_;
             t_.start();
@@ -78,29 +69,6 @@ namespace Clingcon
         LinearIISCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearIISCA()
         {
-            std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
-            std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
-            std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
-        }
-
-        virtual void shrink(Clasp::LitVec& conflict);
-    private:
-        GecodeSolver* g_;
-        unsigned int  props_;
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
-        unsigned int oldLength_;
-    };
-
-    class Linear2IISCA : public ConflictAnalyzer
-    {
-    public:
-        Linear2IISCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
-        ~Linear2IISCA()
-        {
             std::cout << props_ << " propagations in linear2 Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
@@ -111,7 +79,6 @@ namespace Clingcon
 
         virtual void shrink(Clasp::LitVec& conflict);
     private:
-        size_t getIndexBelowDL(uint32 level);
         GecodeSolver* g_;
         unsigned int  props_;
         Timer         t_;
@@ -120,12 +87,12 @@ namespace Clingcon
         unsigned int oldLength_;
     };
 
-    class ExpIISCA : public ConflictAnalyzer
+    class LogIISCA : public ConflictAnalyzer
     {
     public:
-        ExpIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+        LogIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
         {}
-        ~ExpIISCA()
+        ~LogIISCA()
         {
             std::cout << props_ << " propagations in exp Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
@@ -151,29 +118,6 @@ namespace Clingcon
         FwdLinearIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~FwdLinearIISCA()
         {
-            std::cout << props_ << " propagations in fwdlin Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
-            std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
-            std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
-        }
-        virtual void shrink(Clasp::LitVec& conflict);
-
-    private:
-        GecodeSolver* g_;
-        Timer         t_;
-        unsigned int  props_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
-        unsigned int oldLength_;
-    };
-
-    class FwdLinear2IISCA : public ConflictAnalyzer
-    {
-    public:
-        FwdLinear2IISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
-        ~FwdLinear2IISCA()
-        {
             std::cout << props_ << " propagations in fwdlin2 Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
@@ -191,11 +135,11 @@ namespace Clingcon
         unsigned int oldLength_;
     };
 
-    class Linear2GroupedIISCA : public ConflictAnalyzer
+    class LinearGroupedIISCA : public ConflictAnalyzer
     {
     public:
-        Linear2GroupedIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
-        ~Linear2GroupedIISCA()
+        LinearGroupedIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
+        ~LinearGroupedIISCA()
         {
             std::cout << props_ << " propagations in lin2grooped Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
@@ -206,7 +150,6 @@ namespace Clingcon
         virtual void shrink(Clasp::LitVec& conflict);
 
     private:
-        size_t getIndexBelowDL(uint32 level);
         GecodeSolver* g_;
         Timer         t_;
         unsigned int  props_;
@@ -241,32 +184,6 @@ namespace Clingcon
         unsigned int oldLength_;
     };
 
-
-
-    class UnionIISCA : public ConflictAnalyzer
-    {
-    public:
-        UnionIISCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
-        ~UnionIISCA()
-        {
-            std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
-            std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
-            std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
-        }
-
-        virtual void shrink(Clasp::LitVec& conflict);
-    private:
-        GecodeSolver* g_;
-        unsigned int  props_;
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
-        unsigned int oldLength_;
-    };
-
-
     class RangeCA : public ConflictAnalyzer
     {
     public:
@@ -290,29 +207,6 @@ namespace Clingcon
         unsigned int oldLength_;
     };
 
-
-    class RangeLinearCA : public ConflictAnalyzer
-    {
-    public:
-        RangeLinearCA(GecodeSolver* g) : g_(g), range_(g), linear_(g) {}
-        ~RangeLinearCA()
-        {
-        }
-
-        virtual void shrink(Clasp::LitVec& conflict)
-        {
-            Clasp::LitVec temp = conflict;
-            range_.shrink(conflict);
-            std::reverse(conflict.begin(), conflict.end());
-            linear_.shrink(temp);
-            std::swap(temp,conflict);
-        }
-
-    private:
-        GecodeSolver* g_;
-        RangeCA range_;
-        LinearIISCA linear_;
-    };
 
     class SCCRangeCA : public ConflictAnalyzer
     {
