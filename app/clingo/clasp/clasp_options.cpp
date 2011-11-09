@@ -227,10 +227,10 @@ void GeneralOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptio
 
 		("solution-recording", bool_switch(&config->enumerate.record), "Add conflicts for computed models")
 		("restart-on-model", bool_switch(&config->enumerate.restartOnModel), "Restart (instead of backtrack) after each model")
-		("project", bool_switch(&config->enumerate.project), "Project models to named atoms in enumeration mode\n")
+                //("project", bool_switch(&config->enumerate.project), "Project models to named atoms in enumeration mode\n")
 		
-		("brave"    , bool_switch(&config->enumerate.brave), "Compute brave consequences")
-		("cautious" , bool_switch(&config->enumerate.cautious), "Compute cautious consequences\n")
+                //("brave"    , bool_switch(&config->enumerate.brave), "Compute brave consequences")
+                //("cautious" , bool_switch(&config->enumerate.cautious), "Compute cautious consequences\n")
 
 		("pre" , bool_switch(&config->onlyPre), "Run ASP preprocessor and exit")
 		("search-limit", value<std::pair<int, int> >(), "Terminate search after <n> conflicts or <m> restarts\n", "<n,m>")
@@ -301,14 +301,14 @@ bool GeneralOptions::validateOptions(ProgramOptions::OptionValues& vm, Messages&
 void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
 	OptionGroup search("Clasp - Search Options");
 	search.addOptions()
-		("lookahead"  , storeTo(config->heuristic.lookahead)->setImplicit(),
+                /*("lookahead"  , storeTo(config->heuristic.lookahead)->setImplicit(),
 			"Configure failed-literal detection (fld)\n"
 			"      Default: no (atom, if --nolookback)\n"
 			"      Valid:   atom, body, hybrid, no\n"
 			"        atom  : Apply failed-literal detection to atoms\n"
 			"        body  : Apply failed-literal detection to bodies\n"
 			"        hybrid: Apply Nomore++-like failed-literal detection\n"
-			"        no    : Do not apply failed-literal detection", "<arg>")
+                        "        no    : Do not apply failed-literal detection", "<arg>")*/
 		("initial-lookahead", storeTo(config->heuristic.lookaheadNum), "Restrict fld to <n> decisions\n", "<n>")
 
 		("heuristic", storeTo(config->heuristic.heuristic)->parser(SearchOptions::mapHeuristic), 
@@ -343,7 +343,7 @@ void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	
 	OptionGroup lookback("Clasp - Lookback Options");
 	lookback.addOptions()
-		("no-lookback"   ,bool_switch(), "Disable all lookback strategies\n")
+                //("no-lookback"   ,bool_switch(), "Disable all lookback strategies\n")
 
 		("restarts,r", storeTo(parseSolve)->parser(&SolveOptionsWrapper::mapRestarts),
 			"Configure restart policy\n"

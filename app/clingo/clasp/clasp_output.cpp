@@ -110,7 +110,7 @@ void AspOutput::initSolve(const Solver&, ProgramBuilder* api, Enumerator*) {
 void AspOutput::printModel(const Solver& s, const Enumerator&) {
 	assert(s.strategies().symTab.get());
 	const AtomIndex& index = *s.strategies().symTab;
-	for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
+        for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
 		if (s.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty()) {
 			printf("%s%s ", it->second.name.c_str(), format[atom_sep]);
 		}
