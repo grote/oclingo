@@ -30,6 +30,7 @@ TESTS = [
 	['technical1', 'technical.lp', 'online3.lp', 'online3.out'],
 	['technical1', 'technical.lp', 'online4.lp', 'online4.out'],
 	['technical1', 'technical.lp', 'online5.lp', 'online5.out'],
+	['technical2', 'volatile1.lp', 'vonline1.lp', 'vonline1.out'],
 	['tictactoe', 'tictactoe.lp', 'online.lp',   'online.out'],
 	['tictactoe', 'tictactoe.lp', 'online2.lp', 'online2.out'],
 	['tictactoe', 'tictactoe.lp', 'online3.lp', 'online3.out'],
@@ -93,8 +94,8 @@ class TestCase:
 			raise IOError('File not found: ' + self.instance)
 		if not os.path.isfile(self.online):
 			raise IOError('File not found: ' + self.online)
-#		if not os.path.isfile(self.output):
-#			raise IOError('File not found: ' + self.output)
+		if not os.path.isfile(self.output):
+			raise IOError('File not found: ' + self.output)
 
 
 def findPrograms():
@@ -169,9 +170,9 @@ if __name__ == '__main__':
 		print 'You need at least python 2.6'
 		sys.exit(1)
 
-#	try:
-	sys.exit(main())
-#	except Exception, err:
-#		sys.stderr.write('ERROR: %s\n' % str(err))
-#		sys.exit(1)
+	try:
+		sys.exit(main())
+	except Exception, err:
+		sys.stderr.write('ERROR: %s\n' % str(err))
+		sys.exit(1)
 

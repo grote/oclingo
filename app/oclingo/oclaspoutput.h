@@ -26,16 +26,16 @@ class ExternalKnowledge;
 class oClaspOutput : public iClaspOutput
 {
 public:
-	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port, bool import);
+	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
 	~oClaspOutput();
 	ExternalKnowledge& getExternalKnowledge();
 	void startExtInput();
 	void stopExtInput();
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
-	uint32_t getIncAtom(int vol_window);
+	uint32_t getVolAtom(int vol_window);
 	void freezeAtom(uint32_t symbol);
 	void unfreezeAtom(uint32_t symbol);
-	uint32_t getVolAtom();
+	uint32_t getVolExtAtom();
 	uint32_t getVolWindowAtom(int window);
 	uint32_t getVolAtomAss();
 	VarVec   getVolWindowAtomAss(int step);

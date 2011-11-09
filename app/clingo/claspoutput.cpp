@@ -132,8 +132,9 @@ ClaspOutput::~ClaspOutput()
 {
 }
 
-iClaspOutput::iClaspOutput(bool shiftDisj)
+iClaspOutput::iClaspOutput(bool shiftDisj, IncConfig &config)
 	: ClaspOutput(shiftDisj)
+	, config_(config)
 	, initialized(false)
 {
 }
@@ -144,34 +145,38 @@ void iClaspOutput::initialize()
 		initialized = true;
 		ClaspOutput::initialize();
 	}
-	else if(incUids_.size()) {
-		if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
-		incUids_.pop_front();
+	// unfreeze volatile atom for coming step
+	else {
+		std::map<int, uint32_t>::iterator it = volUids_.find(config_.incStep+1);
+		if(it != volUids_.end()) {
+			b_->unfreeze(volUids_[config_.incStep+1]);
+			volUids_.erase(it);
+		}
 	}
 }
 
-uint32_t iClaspOutput::getNewIncUid()
+uint32_t iClaspOutput::getNewVolUid()
 {
 	// create a new uid
 	int uid = symbol();
 	b_->freeze(uid);
-
 	return uid;
 }
 
-uint32_t iClaspOutput::getIncAtom(int vol_window = 1)
+uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
 {
-	if(incUids_.size() < vol_window) {
-		incUids_.resize(vol_window, 0);
-	}
-	if(incUids_.at(vol_window-1) == 0) {
-		incUids_.at(vol_window-1) = getNewIncUid();
+	// volatile atom expires at step
+	int step = config_.incStep + vol_window;
+
+	// get new atom for step
+	if(volUids_.find(step) == volUids_.end()) {
+		volUids_[step] = getNewVolUid();
 	}
 
-	return incUids_.at(vol_window-1);
+	return volUids_[step];
 }
 
-std::deque<uint32_t> iClaspOutput::getIncUids()
+std::map<int, uint32_t> iClaspOutput::getVolUids()
 {
-	return incUids_;
+	return volUids_;
 }

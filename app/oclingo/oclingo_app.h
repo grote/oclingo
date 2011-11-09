@@ -34,8 +34,9 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 	{
 		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 
-		foreach(uint32_t atom, out->getIncUids()) {
-			if(atom) a.push_back(i.find(atom)->lit);
+		std::pair<int,uint32_t> atom;
+		foreach(atom, out->getVolUids()) {
+			if(atom.second) a.push_back(i.find(atom.second)->lit);
 		}
 
 		if(app.clingo.mode == OCLINGO) {

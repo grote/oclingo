@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <gringo/inclit.h>
 #include <gringo/gringo.h>
 #include <gringo/lparseconverter.h>
 #include <clasp/program_builder.h>
@@ -28,7 +29,7 @@ class ClaspOutput : public LparseConverter
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
-	virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
+	virtual std::map<int, uint32_t> getVolUids() { return std::map<int, uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
@@ -55,12 +56,13 @@ protected:
 class iClaspOutput : public ClaspOutput
 {
 public:
-	iClaspOutput(bool shiftDisj);
+	iClaspOutput(bool shiftDisj, IncConfig &config);
 	void initialize();
-	uint32_t getNewIncUid();
-	uint32_t getIncAtom(int vol_window);
-	std::deque<uint32_t> getIncUids();
+	uint32_t getNewVolUid();
+	virtual uint32_t getVolAtom(int vol_window);
+	std::map<int, uint32_t> getVolUids();
 private:
+	IncConfig &config_;
 	bool initialized;
-	std::deque<uint32_t> incUids_;
+	std::map<int, uint32_t> volUids_;
 };

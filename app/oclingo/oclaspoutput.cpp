@@ -21,8 +21,8 @@
 
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
-oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port, bool import)
-	: iClaspOutput(shiftDisj)
+oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import)
+	: iClaspOutput(shiftDisj, config)
 	, ext_input_(false)
 	, vol_atom_(0)
 	, vol_atom_frozen_(0)
@@ -63,13 +63,13 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 }
 
 // needed because ProgramBuilder does not update frozen atoms when grounding up to ControllerStep
-uint32_t oClaspOutput::getIncAtom(int vol_window = 1) {
+uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
 	if(ext_->getStep() + vol_window < ext_->getControllerStep()) {
 		// don't add to incUids_ in order to skip freezing and unfreezing
 		return falseSymbol();
 	} else {
 		// IncAtom is really needed, so call proper function
-		return iClaspOutput::getIncAtom(vol_window);
+		return iClaspOutput::getVolAtom(vol_window);
 	}
 }
 
@@ -89,7 +89,7 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 	b_->unfreeze(symbol);
 }
 
-uint32_t oClaspOutput::getVolAtom() {
+uint32_t oClaspOutput::getVolExtAtom() {
 	if(vol_atom_ == 0) {
 		vol_atom_ = unnamedSymbol();
 	}
