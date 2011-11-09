@@ -35,14 +35,16 @@ public:
 	uint32_t getVolAtom(int vol_window);
 	void freezeAtom(uint32_t symbol);
 	void unfreezeAtom(uint32_t symbol);
-	uint32_t getVolExtAtom();
+
+	uint32_t getQueryAtom();
+	uint32_t getQueryAtomAss();
+	void finalizeQueryAtom();
+	void deprecateQueryAtom();
+	void unfreezeOldQueryAtoms();
+
 	uint32_t getVolWindowAtom(int window);
-	uint32_t getVolAtomAss();
 	VarVec   getVolWindowAtomAss(int step);
 	void updateVolWindowAtoms(int step);
-	void finalizeVolAtom();
-	void deprecateVolAtom();
-	void unfreezeOldVolAtoms();
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const Symbol &symbol);

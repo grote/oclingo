@@ -209,8 +209,6 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
 	if(M == ICLINGO && app.clingo.mode == ICLINGO)
 	{
-		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-
 		std::pair<int,uint32_t> atom;
 		foreach(atom, out->getVolUids()) {
 			assert(atom.second);

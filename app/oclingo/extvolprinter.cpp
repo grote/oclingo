@@ -22,7 +22,7 @@ using namespace lparseconverter_impl;
 
 void ExtVolPrinter::print() {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolExtAtom();
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getQueryAtom();
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 

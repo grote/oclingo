@@ -72,6 +72,7 @@ uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
 		return iClaspOutput::getVolAtom(vol_window);
 	}
 }
+
 void oClaspOutput::freezeAtom(uint32_t symbol) {
 	b_->freeze(symbol);
 }
@@ -80,12 +81,42 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 	b_->unfreeze(symbol);
 }
 
-uint32_t oClaspOutput::getVolExtAtom() {
+
+uint32_t oClaspOutput::getQueryAtom() {
 	if(vol_atom_ == 0) {
 		vol_atom_ = symbol();
 	}
 	return vol_atom_;
 }
+
+uint32_t oClaspOutput::getQueryAtomAss() {
+	return vol_atom_;
+}
+
+void oClaspOutput::finalizeQueryAtom() {
+	if(vol_atom_ && vol_atom_ != vol_atom_frozen_) {
+		freezeAtom(vol_atom_);
+		vol_atom_frozen_ = vol_atom_;
+	}
+}
+
+void oClaspOutput::deprecateQueryAtom() {
+	// deprecate vol atom if not null and not already deprecated
+	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
+		vol_atoms_old_.push_back(vol_atom_);
+		vol_atom_ = 0;
+	}
+}
+
+// make sure to call between updateProgram and endProgram
+void oClaspOutput::unfreezeOldQueryAtoms() {
+	// unfreeze all old (deprecated) volatile atoms
+	foreach(VarVec::value_type atom, vol_atoms_old_) {
+		unfreezeAtom(atom);
+	}
+	vol_atoms_old_.clear();
+}
+
 
 uint32_t oClaspOutput::getVolWindowAtom(int window) {
 	// atoms are expired at "step"
@@ -104,10 +135,6 @@ uint32_t oClaspOutput::getVolWindowAtom(int window) {
 	}
 
 	return vol_atom_map_[step];
-}
-
-uint32_t oClaspOutput::getVolAtomAss() {
-	return vol_atom_;
 }
 
 VarVec oClaspOutput::getVolWindowAtomAss(int step) {
@@ -148,35 +175,11 @@ void oClaspOutput::updateVolWindowAtoms(int step) {
 	}
 }
 
-void oClaspOutput::finalizeVolAtom() {
-	if(vol_atom_ && vol_atom_ != vol_atom_frozen_) {
-		freezeAtom(vol_atom_);
-		vol_atom_frozen_ = vol_atom_;
-	}
-}
-
-void oClaspOutput::deprecateVolAtom() {
-	// deprecate vol atom if not null and not already deprecated
-	if(vol_atom_ && (!vol_atoms_old_.size() || vol_atom_ != vol_atoms_old_.back())) {
-		vol_atoms_old_.push_back(vol_atom_);
-		vol_atom_ = 0;
-	}
-}
-
-// make sure to call between updateProgram and endProgram
-void oClaspOutput::unfreezeOldVolAtoms() {
-	// unfreeze all old (deprecated) volatile atoms
-	foreach(VarVec::value_type atom, vol_atoms_old_) {
-		unfreezeAtom(atom);
-	}
-	vol_atoms_old_.clear();	
-}
-
 void oClaspOutput::doFinalize() {
 	printExternalTable();
 
 	// freeze volatile atom
-	finalizeVolAtom();
+	finalizeQueryAtom();
 
 	ClaspOutput::doFinalize();
 }
