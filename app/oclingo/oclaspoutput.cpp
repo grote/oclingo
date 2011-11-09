@@ -62,14 +62,6 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
-uint32_t oClaspOutput::unnamedSymbol() {
-	uint32_t atom = symbol();
-	b_->setAtomName(atom, 0);
-	atomUnnamed_[atom - lastUnnamed_] = false;
-
-	return atom;
-}
-
 void oClaspOutput::freezeAtom(uint32_t symbol) {
 	b_->freeze(symbol);
 }
@@ -80,7 +72,7 @@ void oClaspOutput::unfreezeAtom(uint32_t symbol) {
 
 uint32_t oClaspOutput::getVolAtom() {
 	if(vol_atom_ == 0) {
-		vol_atom_ = unnamedSymbol();
+		vol_atom_ = symbol();
 	}
 	return vol_atom_;
 }
@@ -91,7 +83,7 @@ uint32_t oClaspOutput::getVolWindowAtom(int window) {
 
 	// get new atom for step
 	if(vol_atom_map_.find(step) == vol_atom_map_.end()) {
-		vol_atom_map_[step] = unnamedSymbol();
+		vol_atom_map_[step] = symbol();
 	}
 
 	// freeze atom if not already frozen

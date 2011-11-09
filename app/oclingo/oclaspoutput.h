@@ -46,7 +46,6 @@ protected:
 	void doFinalize();
 	void printExternalTableEntry(const Symbol &symbol);
 private:
-	uint32_t unnamedSymbol();
 	ExternalKnowledge* ext_;
 	bool ext_input_;
 	uint32_t vol_atom_;
