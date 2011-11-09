@@ -25,12 +25,12 @@
 
 class ClaspOutput : public LparseConverter
 {
-	typedef std::vector<bool> BoolVec;
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
 	virtual std::map<int, uint32_t> getVolUids() { return std::map<int, uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
+	Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
 	SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
@@ -49,8 +49,6 @@ protected:
 	virtual void doFinalize();
 protected:
 	Clasp::ProgramBuilder *b_;
-	BoolVec  atomUnnamed_;
-	uint32_t lastUnnamed_;
 };
 
 class iClaspOutput : public ClaspOutput

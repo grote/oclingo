@@ -213,7 +213,10 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 
 		std::pair<int,uint32_t> atom;
 		foreach(atom, out->getVolUids()) {
-			if(atom.second) a.push_back(i.find(atom.second)->lit);
+			assert(atom.second);
+			Clasp::ProgramBuilder &api = out->getProgramBuilder();
+			Clasp::Literal lit = api.getAtom(api.getEqAtom(atom.second))->literal();
+			a.push_back(lit);
 		}
 	}
 }

@@ -33,6 +33,7 @@ extern "C"
 #include <gringo/lparseconverter.h>
 #include <gringo/grounder.h>
 #include <clingo/claspoutput.h>
+#include <clasp/program_builder.h>
 
 namespace lua_impl_h
 {
@@ -45,6 +46,12 @@ namespace lua_impl_h
 			, active(false)
 			, started(false)
 		{ }
+
+		Clasp::Literal getLit(Clasp::Var atom)
+		{
+			Clasp::ProgramBuilder &api = output->getProgramBuilder();
+			return api.getAtom(api.getEqAtom(atom))->literal();
+		}
 
 		Domain *dom(lua_State *)
 		{
@@ -116,29 +123,25 @@ namespace lua_impl_h
 		void pushIsTrue(lua_State *L)
 		{
 			checkIter(L, "pushIsTrue");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
-			lua_pushboolean(L, atom && solver->isTrue(atom->lit));
+			lua_pushboolean(L, atom && solver->isTrue(getLit(start->symbol)));
 		}
 
 		void pushIsFalse(lua_State *L)
 		{
 			checkIter(L, "pushIsFalse");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
-			lua_pushboolean(L, atom && solver->isFalse(atom->lit));
+			lua_pushboolean(L, atom && solver->isFalse(getLit(start->symbol)));
 		}
 
 		void pushIsUndef(lua_State *L)
 		{
 			checkIter(L, "pushIsUndef");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
-			lua_pushboolean(L, atom && solver->value(atom->lit.var()) == Clasp::value_free);
+			lua_pushboolean(L, atom && solver->value(getLit(start->symbol)) == Clasp::value_free);
 		}
 
 		void pushLevel(lua_State *L)
 		{
 			checkIter(L, "pushLevel");
-			Clasp::Atom *atom = solver->strategies().symTab->find(start->symbol);
-			lua_pushnumber(L, !atom || solver->value(atom->lit.var()) == Clasp::value_free ? -1 : solver->level(atom->lit.var()));
+			lua_pushnumber(L, !atom || solver->value(getLit(start->symbol).var()) == Clasp::value_free ? -1 : solver->level(getLit(start->symbol).var()));
 		}
 
 		typedef LparseConverter::SymbolMap::iterator SymIt;
