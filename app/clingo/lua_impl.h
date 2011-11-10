@@ -123,25 +123,25 @@ namespace lua_impl_h
 		void pushIsTrue(lua_State *L)
 		{
 			checkIter(L, "pushIsTrue");
-			lua_pushboolean(L, atom && solver->isTrue(getLit(start->symbol)));
+			lua_pushboolean(L, start->symbol && solver->isTrue(getLit(start->symbol)));
 		}
 
 		void pushIsFalse(lua_State *L)
 		{
 			checkIter(L, "pushIsFalse");
-			lua_pushboolean(L, atom && solver->isFalse(getLit(start->symbol)));
+			lua_pushboolean(L, start->symbol && solver->isFalse(getLit(start->symbol)));
 		}
 
 		void pushIsUndef(lua_State *L)
 		{
 			checkIter(L, "pushIsUndef");
-			lua_pushboolean(L, atom && solver->value(getLit(start->symbol)) == Clasp::value_free);
+			lua_pushboolean(L, start->symbol && solver->value(getLit(start->symbol).var()) == Clasp::value_free);
 		}
 
 		void pushLevel(lua_State *L)
 		{
 			checkIter(L, "pushLevel");
-			lua_pushnumber(L, !atom || solver->value(getLit(start->symbol).var()) == Clasp::value_free ? -1 : solver->level(getLit(start->symbol).var()));
+			lua_pushnumber(L, !start->symbol || solver->value(getLit(start->symbol).var()) == Clasp::value_free ? -1 : (int)solver->level(getLit(start->symbol).var()));
 		}
 
 		typedef LparseConverter::SymbolMap::iterator SymIt;
