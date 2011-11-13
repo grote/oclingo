@@ -18,7 +18,6 @@
 #pragma once
 
 #include <gringo/gringo.h>
-#include <gringo/prgvisitor.h>
 
 class PrgVisitor
 {

@@ -10,9 +10,7 @@
 #include <gringo/lparseconverter.h>
 #include <clingcon/cspdomainliteral.h>
 #include <clingcon/cspdomain.h>
-#include <clingcon/constraintvarcond.h>
 #include <clingcon/interval.h>
-
 #include <clingcon/cspconstraint.h>
 
 #include <iostream>
