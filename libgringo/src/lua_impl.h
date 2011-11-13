@@ -19,6 +19,7 @@
 #include <gringo/luaterm.h>
 #include <gringo/lualit.h>
 #include <gringo/func.h>
+#include <gringo/exceptions.h>
 
 #if WITH_LUA == 1
 extern "C"

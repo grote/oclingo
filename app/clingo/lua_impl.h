@@ -32,8 +32,11 @@ extern "C"
 
 #include <gringo/lparseconverter.h>
 #include <gringo/grounder.h>
+#include <gringo/domain.h>
 #include <clingo/claspoutput.h>
+#include <clasp/solver.h>
 #include <clasp/program_builder.h>
+#include "claspoutput.h"
 
 namespace lua_impl_h
 {
@@ -273,61 +276,5 @@ namespace lua_impl_h
 	}
 
 }
-
-template <Mode M>
-class ClingoApp<M>::LuaImpl
-{
-public:
-	LuaImpl(Grounder *g, Clasp::Solver *s, ClaspOutput *o)
-		: domIter_(g, s, o)
-	{
-		lua_State *L = g->luaState();
-		if(L)
-		{
-			onModel_     = onIndex(L, "onModel");
-			onBeginStep_ = onIndex(L, "onBeginStep");
-			onEndStep_   = onIndex(L, "onEndStep");
-			lua_impl_h::Assignment_register(L, &domIter_);
-		}
-	}
-
-	int onIndex(lua_State *L, const char *onName)
-	{
-		lua_getglobal(L, onName);
-		int index = lua_gettop(L);
-		if(!lua_isfunction(L, index)) { lua_pop(L, 1); return -1; }
-		else                          { return index; }
-	}
-
-	void onCall(int index)
-	{
-		if(index != -1)
-		{
-			lua_State *L = domIter_.grounder->luaState();
-			if(L)
-			{
-				domIter_.reset();
-				lua_pushvalue(L, index);
-				lua_call(L, 0, 0);
-				domIter_.active = false;
-			}
-		}
-
-	}
-
-	void onModel()     { onCall(onModel_); }
-	void onBeginStep() { onCall(onBeginStep_); }
-	void onEndStep()   { onCall(onEndStep_); }
-
-	bool locked()
-	{
-		return onModel_ != -1 || onBeginStep_ != -1 || onEndStep_ != -1;
-	}
-private:
-	lua_impl_h::DomainIter domIter_;
-	int onModel_;
-	int onBeginStep_;
-	int onEndStep_;
-};
 
 #undef ASSIGNMENT
