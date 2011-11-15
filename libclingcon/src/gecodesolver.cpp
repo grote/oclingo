@@ -125,7 +125,6 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
     if (reduceReason == "linear-grouped") reduceReason_ = LINEAR_GROUPED;
     if (reduceReason == "scc")            reduceReason_ = SCC;
-    if (reduceReason == "log")            reduceReason_ = LOG;
     if (reduceReason == "range")          reduceReason_ = RANGE;
     if (reduceReason == "sccrange")       reduceReason_ = SCCRANGE;
 
@@ -134,10 +133,10 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
     if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
     if (reduceConflict == "linear-grouped") reduceConflict_ = LINEAR_GROUPED;
-    if (reduceConflict == "log")            reduceConflict_ = LOG;
     if (reduceConflict == "scc")            reduceConflict_ = SCC;
     if (reduceConflict == "range")          reduceConflict_ = RANGE;
     if (reduceConflict == "sccrange")       reduceConflict_ = SCCRANGE;
+
 
 }
 
@@ -315,7 +314,6 @@ bool GecodeSolver::initialize()
         case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
         case LINEAR_GROUPED: conflictAnalyzer_ = new LinearGroupedIISCA(this); break;
         case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
-        case LOG:            conflictAnalyzer_ = new LogIISCA(this); break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
         case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
         default: assert(false);
@@ -328,7 +326,6 @@ bool GecodeSolver::initialize()
         case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
         case LINEAR_GROUPED: reasonAnalyzer_ = new LinearGroupedIRSRA(this); break;
         case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
-        case LOG:            reasonAnalyzer_ = new LogIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
         case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
         default: assert(false);

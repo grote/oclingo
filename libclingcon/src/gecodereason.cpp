@@ -114,150 +114,6 @@ ReifFailOn::dispose(Space& home) {
 }
 
 
-void LogIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
-{
-    oldLength_+=ends-begin;
-    t_.start();
-    ++numCalls_;
-    //t_.start();
-    Clasp::LitVec::const_iterator end = ends;
-    if (end-begin==0)
-    {
-        t_.stop();
-        return;
-    }
-
-    // copy the very first searchspace
-    GecodeSolver::SearchSpace* original;
-    GecodeSolver::SearchSpace* tester = 0;
-    original = g_->getRootSpace();
-    if (!original)
-    {
-        t_.stop();
-        return;
-    }
-
-    unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
-
-    g_->setRecording(false);
-
-    size_t index = g_->spaces_.size()-1;
-    if (index) --index;
-
-    //how many constraints to leave out
-    unsigned int num=1;
-    unsigned int upperBound=end-begin;
-    while(end-begin!=0)
-    {
-        size_t start = 0;
-        while(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            --end;
-            if (end-begin==0)
-            {
-                goto Ende;
-            }
-            --upperBound;
-            if (upperBound==1)
-            {
-                tester=0;
-                goto Add;
-            }
-            if (num==upperBound)
-            {
-                //num=1;
-                num/=2;
-            }
-            continue;
-        }
-
-        //recalculate the index
-        while(g_->assLength(index) > (end-num)-begin) --index;
-        while(g_->assLength(index+1) <= (end-num)-begin) ++index;
-
-        start = g_->assLength(index);
-        assert(!g_->spaces_[index]->failed());
-
-        tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-        reiffail2(*tester,tester->b_[lindex]);
-        tester->propagate(begin+start, end-num);
-        tester->propagate(reason.begin(),reason.end());
-
-        props_++;
-
-
-        //assert(!tester->failed());
-        //tester->status();
-        //assert(!tester->failed());
-
-
-
-        // if reason still derives l we can remove all
-        if (tester->failed() || tester->status()==SS_FAILED)
-        {
-            // still reason without it, throw it away, it did not contribute to the reason
-            end -=num;
-            upperBound-=num;
-            if (upperBound==1)
-            {
-                goto Add;
-            }
-
-            delete tester;
-            num=std::min(num*2,upperBound);
-            // if we are expecting a reason we do not need to check the whole next (bigger) part
-            // (as there is a reason in it)
-            // we just start counting to it again
-            if (num==upperBound)
-            {
-                //num=1;
-                num/=2;
-            }
-            continue;
-        }
-        else
-        {
-            if (num==1)
-            {
-                Add:
-                original->propagate(*(end-1));
-                //assert(!original->failed());
-                reason.push_back(*(end-1));
-                //assert(!original->failed());
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                if (end-begin<=1  || (original->failed() || original->status()==SS_FAILED))
-                {
-                    delete tester;
-                    goto Ende;
-                }
-                --end;
-                upperBound=end-begin;
-                num=1;
-                delete tester;
-                continue;
-            }
-            else
-            {
-                upperBound=num;
-                //num=1;
-                num/=2;
-                delete tester;
-                continue;
-            }
-        }
-    }
-
-    Ende:
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), reiffail2(*original,original->b_[lindex]), original->status()==SS_FAILED));
-    delete original;
-    g_->setRecording(true);
-    t_.stop();
-    sumLength_+=reason.size();
-}
-
-
-
 
 void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begins, const Clasp::LitVec::const_iterator& ends)
 {
@@ -276,6 +132,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
     GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
@@ -302,14 +159,34 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
         }
 
         tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-        tester->propagate(begin+1, end);
         ++props_;
+
+
+        //tester->propagate(begin+1, end);
+        for (Clasp::LitVec::const_iterator it = begin+1; it < end; ++it)
+        {
+            tester->propagate(*it);
+            if (tester->failed() || tester->status()==SS_FAILED)
+            {
+                // still reason, throw it away, it did not contribute to the reason
+                ++begin;
+                original->propagate(*(it));
+                reason.push_back(*(it));
+                end=it;
+                if (original->failed() || original->status()==SS_FAILED)
+                {
+                    delete tester;
+                    goto Ende;
+                }
+                break;
+            }
+
+        }
+
 
         // if reason still derives l we can remove the last one
         if (tester->failed() || tester->status()==SS_FAILED)
         {
-            // still reason, throw it away, it did not contribute to the reason
-            ++begin;
         }
         else
         {
@@ -359,9 +236,8 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
-    int it = (ends-begin)-1;
-    Clasp::LitVec::const_iterator end = ends;
-    if (end-begin==0)
+    //Clasp::LitVec::const_iterator end = ends;
+    if (ends-begin==0)
     {
         t_.stop();
         return;
@@ -371,6 +247,7 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
@@ -385,141 +262,90 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
 
 
     VarSet checker(varSets_[l.var()]);
+    VarSet reasonChecker(g_->getVariables().size());
     unsigned int checkCount = checker.count();
-    VarSet done(it+1);
+    VarSet done(ends-begin);
+    VarSet reasonDone(ends-begin);
 
-    while(true)
+
+    Start:
+    done = reasonDone;
+    tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
+    props_++;
+    do
     {
-        //should not happen, otherwise i would have found a reason before and exit
-        assert(done.count()!=ends-begin);
-
-        // if one round passed
-        if(it<0)
+        checkCount=checker.count();
+        for(int it=(ends-begin)-1; it >=0; --it)
         {
-            // check if knew knowledge was derived, if yes, repeat from beginning, else leave loop
-            if (checkCount<checker.count())
+            //should not happen, otherwise i would have found a reason before and exit
+            assert(done.count()!=ends-begin);
+
+            // already visited this literal
+            if (done.test(it)) continue;
+
+
+            // if the last literal is already derived, we do not need to add it to the reason
+            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
             {
-                checkCount=checker.count();
-                it = (ends-begin)-1;
-                continue;
-            }
-            break;
-        }
-
-        // already visited this literal
-        if (done.test(it))
-        {
-            //std::cout << "Skip watched " << g_->num2name((begin+it)->var()) << std::endl;
-            --it;
-            continue;
-        }
-
-        // if the last literal is already derived, we do not need to add it to the reason
-        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
-            checker|=varSets_[(begin+it)->var()];
-            done.set(it);
-
-            //RESTART
-            if (checkCount<checker.count())
-            {
-                checkCount=checker.count();
-                it = (ends-begin)-1;
-                continue;
-            }
-            else//end
-            --it;
-            continue;
-        }
-
-        if (checker.intersects(varSets_[(begin+it)->var()]))
-        {
-            tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-
-            tester->propagate(begin, begin+it);
-            props_++;
-            done.set(it);
-
-            // if reason still derives l we can remove the last one
-            if (tester->failed() || tester->status()==SS_FAILED)
-            {
-                // still reason, throw it away, it did not contribute to the reason
-                --it;
-            }
-            else
-            {
-                original->propagate(*(begin+it));
-                reason.push_back(*(begin+it));
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
-
-                if (original->failed() || original->status()==SS_FAILED)
+                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
+                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
                 {
+                    reason.push_back(*(begin+it));
                     delete tester;
                     goto Ende;
                 }
+                //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
                 checker|=varSets_[(begin+it)->var()];
-                //RESTART
-                if (checkCount<checker.count())
+                done.set(it);
+                reasonDone.set(it);
+
+                continue;
+            }
+            if (checker.intersects(varSets_[(begin+it)->var()]))
+            {
+                tester->propagate(*(begin+it));
+
+                done.set(it);
+
+                // if reason still derives l we can remove the last one
+                if (tester->failed() || tester->status()==SS_FAILED)
                 {
+                    // still failing
+                    original->propagate(*(begin+it));
+                    reason.push_back(*(begin+it));
+                    reasonDone.set(it);
+
+                    if (original->failed() || original->status()==SS_FAILED)
+                    {
+                         delete tester;
+                         goto Ende;
+                    }
+                    //checker|=varSets_[(begin+it)->var()];
+                    reasonChecker|=varSets_[(begin+it)->var()];
+                    checker=reasonChecker;
+                    reasonDone|=~done; //dont check any other yet unchecked literals
                     delete tester;
-                    checkCount=checker.count();
-                    it = (ends-begin)-1;
+                    goto Start;
+                }
+                else
+                {
+                    checker|=varSets_[(begin+it)->var()];
                     continue;
                 }
-                else//end
-                --it;
             }
-            delete tester;
         }
-        else
-            --it;
-    }
 
-    //std::cout << "Final watch from beginning" << std::endl;
-    //for (it = 0; it != (ends-begin)-1; ++it)
-    for (it = (ends-begin)-1; it != 0; --it)
-    {
-        if (done.test(it))
-        {
-            //std::cout << "Skip watched " << g_->num2name((begin+it)->var()) << std::endl;
+        if (checkCount<checker.count()) // check if knew knowledge was derived, if yes, repeat from beginning,
             continue;
-        }
-
-        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
-            continue;
-        }
-
-        tester = static_cast<GecodeSolver::SearchSpace*>(original->clone());
-
-        tester->propagate(begin, begin+it);
-        props_++;
-
-        // if reason still derives l we can remove the last one
-        if (tester->failed() || tester->status()==SS_FAILED)
-        {
-            // still reason, throw it away, it did not contribute to the reason
-        }
         else
         {
-            original->propagate(*(begin+it));
-            reason.push_back(*(begin+it));
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (original->failed() || original->status()==SS_FAILED)
-            {
-                //std::cout << " yes and found" << std::endl;
-
-                delete tester;
-                goto Ende;
-            }
-            //std::cout << " yes" << std::endl;
+            checker.set();
+            continue;
         }
-        delete tester;
+        assert(true);
     }
+    while (true);
 
-    reason.push_back(*(begin+it));
     Ende:
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
@@ -548,6 +374,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
@@ -600,7 +427,6 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
-    //t_.start();
     Clasp::LitVec::const_iterator end = ends;
     if (end-begin==0)
     {
@@ -612,6 +438,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
@@ -632,31 +459,50 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
         while(end>start)
         {
             tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-            reiffail2(*tester,tester->b_[lindex]);
-            tester->propagate(start,end-1);
-            tester->propagate(reason.begin(),reason.end());
             props_++;
+            reiffail2(*tester,tester->b_[lindex]);
+            tester->propagate(reason.begin(),reason.end());
 
             if (tester->failed() ||  tester->status()==SS_FAILED)
             {
                 // still reason, throw it away, it did not contribute to the reason
-                --end;
+                end=start;
+                break;
             }
-            else
+
+            //tester->propagate(start,end-1);
+            for (Clasp::LitVec::const_iterator it = start; it < end; ++it)
             {
-                original->propagate(*(end-1));
-                reason.push_back(*(end-1));
-                //props_++;
-                //std::cout << "reason" << std::endl;
-                //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                if (end-begin>1 && original->status() == SS_FAILED)// we found the literal because we failed
-                { 
+                tester->propagate(*it);
+                if (tester->failed() || tester->status()==SS_FAILED)
+                {
                     delete tester;
-                    goto Ende;
+                    original->propagate(*(it));
+                    reason.push_back(*(it));
+                    if (original->failed() || original->status() == SS_FAILED)
+                    {
+                        goto Ende;
+                    }
+                    // still conflict, throw it away, it did not contribute to the reason
+                    end=it;
                 }
-                --end;
+                else
+                if (it==end-2)
+                {
+                    original->propagate(*(end-1));
+                    reason.push_back(*(end-1));
+                    delete tester;
+                    //props_++;
+                    //std::cout << "reason" << std::endl;
+                    //we propagate to find the shortest reason
+                    if (original->failed() || original->status() == SS_FAILED)
+                    {
+                        goto Ende;
+                    }
+                    --end;
+                }
             }
-            delete tester;
+
         }
         --index;
     }
@@ -688,6 +534,7 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
     GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
@@ -717,17 +564,25 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
         }
         else
         {
-            original->propagate(start, end);
-            reason.insert(reason.end(), start, end);
-            //props_++;
-
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (start > begin && (original->failed() || original->status() == SS_FAILED))
+            for (Clasp::LitVec::const_iterator it = start; it < end; ++it)
             {
-                delete tester;
-                goto Ende;
+                tester->propagate(*it);
+                if (tester->failed() || tester->status()==SS_FAILED)
+                {
+                    original->propagate(start, it+1);
+                    reason.insert(reason.end(), start, it+1);
+                    //props_++;
+                    //std::cout << "reason" << std::endl;
+                    //this is enough, but we have to propagate "original", to get a fresh clone out of it
+                    if (start > begin && (original->failed() || original->status() == SS_FAILED))
+                    {
+                        delete tester;
+                        goto Ende;
+                    }
+                    end=start;
+                }
             }
-            end=start;
+            assert(true);
         }
         delete tester;
         --index;  
@@ -765,9 +620,8 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
-    int it = (ends-begin)-1;
-    Clasp::LitVec::const_iterator end = ends;
-    if (end-begin==0)
+    //Clasp::LitVec::const_iterator end = ends;
+    if (ends-begin==0)
     {
         t_.stop();
         return;
@@ -776,120 +630,87 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     // copy the very first searchspace
     GecodeSolver::SearchSpace* original;
     original = g_->getRootSpace();
+    ++props_;
     if (!original)
     {
         t_.stop();
         return;
     }
 
-
     unsigned int lindex = g_->varToIndex(l.var());
     reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
 
+
     VarSet checker(varSets_[l.var()]);
     unsigned int checkCount = checker.count();
-    VarSet done(it+1);
+    VarSet done(ends-begin);
 
-    while(true)
+    do
     {
-        //should not happen, otherwise i would have found a reason before and exit
-        assert(done.count()!=ends-begin);
-
-        // if one round passed
-        if(it<0)
+        checkCount=checker.count();
+        for(int it=(ends-begin)-1; it >=0; --it)
         {
-            // check if knew knowledge was derived, if yes, repeat from beginning, else leave loop
-            if (checkCount<checker.count())
+            //should not happen, otherwise i would have found a reason before and exit
+            assert(done.count()!=ends-begin);
+
+            // already visited this literal
+            if (done.test(it)) continue;
+
+
+            // if the last literal is already derived, we do not need to add it to the reason
+            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
             {
-                checkCount=checker.count();
-                it = (ends-begin)-1;
+                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
+                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
+                {
+                    reason.push_back(*(begin+it));
+                    goto Ende;
+                }
+                //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
+                checker|=varSets_[(begin+it)->var()];
+                done.set(it);
+
                 continue;
             }
-            break;
+
+            if (checker.intersects(varSets_[(begin+it)->var()]))
+            {
+                original->propagate(*(begin+it));
+                reason.push_back(*(begin+it));
+
+                done.set(it);
+
+                // if reason still derives l we can remove the last one
+                if (original->failed() || original->status()==SS_FAILED)
+                {
+                    goto Ende;
+                }
+                else
+                {
+                    checker|=varSets_[(begin+it)->var()];
+                    continue;
+                }
+            }
         }
 
-        // already visited this literal
-        if (done.test(it))
-        {
-            --it;
+        if (checkCount<checker.count()) // check if knew knowledge was derived, if yes, repeat from beginning,
             continue;
-        }
-
-        // if the last literal is already derived, we do not need to add it to the reason
-        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            //std::cout << "Already assigned " << g_->num2name((begin+it)->var()) << std::endl;
-            checker|=varSets_[(begin+it)->var()];
-            done.set(it);
-
-            //RESTART
-            if (checkCount<checker.count())
-            {
-                checkCount=checker.count();
-                it = (ends-begin)-1;
-                continue;
-            }
-            else//end
-            --it;
-            continue;
-        }
-
-        if (checker.intersects(varSets_[(begin+it)->var()]))
-        {
-            original->propagate(*(begin+it));
-            reason.push_back(*(begin+it));
-            //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (original->failed() || original->status()==SS_FAILED)
-            {
-                goto Ende;
-            }
-            checker|=varSets_[(begin+it)->var()];
-            //std::cout << " yes" << std::endl;
-            //RESTART
-            if (checkCount<checker.count())
-            {
-                //delete tester;
-                checkCount=checker.count();
-                it = (ends-begin)-1;
-                continue;
-            }
-            else//end
-                --it;
-            //delete tester;
-        }
         else
-            --it;
-    }
-
-    for (it = (ends-begin)-1; it != 0; --it)
-    {
-        if (done.test(it))
         {
+            checker.set();
             continue;
         }
-
-        if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
-        {
-            continue;
-        }
-
-        original->propagate(*(begin+it));
-        reason.push_back(*(begin+it));
-        //this is enough, but we have to propagate "original", to get a fresh clone out of it
-        if (original->failed() || original->status()==SS_FAILED)
-        {
-            goto Ende;
-        }
+        assert(true);
     }
+    while (true);
 
-    reason.push_back(*(begin+it));
     Ende:
-
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), reiffail2(*original,original->b_[lindex]), original->status()==SS_FAILED));
+    //std::cout << "Ende" << std::endl;
+    assert((delete original, original = g_->getRootSpace(), reiffail2(*original,original->b_[lindex]), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();

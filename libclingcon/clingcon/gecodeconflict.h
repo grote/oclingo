@@ -69,7 +69,7 @@ namespace Clingcon
         LinearIISCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearIISCA()
         {
-            std::cout << props_ << " propagations in linear2 Conflict in " << t_.total() << std::endl;
+            std::cout << props_ << " propagations in linear Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -87,6 +87,7 @@ namespace Clingcon
         unsigned int oldLength_;
     };
 
+/*
     class LogIISCA : public ConflictAnalyzer
     {
     public:
@@ -111,7 +112,7 @@ namespace Clingcon
         unsigned int oldLength_;
 
     };
-
+*/
     class FwdLinearIISCA : public ConflictAnalyzer
     {
     public:

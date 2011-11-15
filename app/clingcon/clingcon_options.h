@@ -128,7 +128,6 @@ struct ClingconOptions
             else if (temp == "linear-fwd")        { out = temp; return true; }
             else if (temp == "linear-grouped")    { out = temp; return true; }
             else if (temp == "scc")               { out = temp; return true; }
-            else if (temp == "log")               { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
             else if (temp == "sccrange")          { out = temp; return true; }
             return false;
@@ -143,7 +142,6 @@ struct ClingconOptions
             else if (temp == "linear-fwd")        { out = temp; return true; }
             else if (temp == "linear-grouped")    { out = temp; return true; }
             else if (temp == "scc")               { out = temp; return true; }
-            else if (temp == "log")               { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
             else if (temp == "sccrange")          { out = temp; return true; }
             return false;
@@ -312,7 +310,6 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      linear-fwd     : Do a linear IRS check forward\n"
                          "      linear-grouped : Do a grouped linear check\n"
                          "      scc            : Do an IRS check using the variable dependency tree\n"
-                         "      log            : Do a logarithmic IRS check backward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
                          "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
                 )
