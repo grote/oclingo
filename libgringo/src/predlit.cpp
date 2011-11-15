@@ -198,14 +198,15 @@ const VarDomains &PredLit::allVals(Grounder *g)
 
 bool PredLit::compatible(PredLit* pred)
 {
+	if (dom() != pred->dom()) { return false; }
 	Substitution subst;
 	std::vector<AbsTerm::Ref*> a, b;
 	foreach(const Term &term, terms_)       { a.push_back(term.abstract(subst)); }
 	subst.clearMap();
 	foreach(const Term &term, pred->terms_) { b.push_back(term.abstract(subst)); }
-	
+
 	typedef boost::tuple<AbsTerm::Ref*, AbsTerm::Ref*> TermPair;
-	for(std::vector<AbsTerm::Ref*>::iterator i = a.begin(), j = a.begin(); i != a.end(); i++, j++)
+	for(std::vector<AbsTerm::Ref*>::iterator i = a.begin(), j = b.begin(); i != a.end(); i++, j++)
 		{
 		if(!AbsTerm::unify(**i, **j)) { return false; }
 	}
