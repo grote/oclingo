@@ -131,7 +131,7 @@ struct FromGringo : public Clasp::Input
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 
 	FromGringo(ClingoApp<M> &app, Streams& str);
-	void otherOutput();
+	void otherOutput(IncConfig &config);
 	Format format() const { return Clasp::Input::SMODELS; }
 	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { return api ? api->createMinimize(s, heu) : 0; }
 	void getAssumptions(Clasp::LitVec& a);
@@ -170,8 +170,9 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <Mode M>
-void FromGringo<M>::otherOutput()
+void FromGringo<M>::otherOutput(IncConfig &config)
 {
+	(void) config;
 	assert(false);
 }
 
@@ -186,9 +187,9 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	}
 	else if(app.clingo.mode == ICLINGO)
 	{
-		out.reset(new iClaspOutput(app.gringo.disjShift));
+		out.reset(new iClaspOutput(app.gringo.disjShift, config));
 	}
-	else { otherOutput(); }
+	else { otherOutput(config); }
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
 	{
 		storage.reset(new Storage(out.get()));
@@ -208,10 +209,12 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
 	if(M == ICLINGO && app.clingo.mode == ICLINGO)
 	{
-		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-
-		foreach(uint32_t atom, out->getIncUids()) {
-			if(atom) a.push_back(i.find(atom)->lit);
+		std::pair<int,uint32_t> atom;
+		foreach(atom, out->getVolUids()) {
+			assert(atom.second);
+			Clasp::ProgramBuilder &api = out->getProgramBuilder();
+			Clasp::Literal lit = api.getAtom(api.getEqAtom(atom.second))->literal();
+			a.push_back(lit);
 		}
 	}
 }

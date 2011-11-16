@@ -72,11 +72,11 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
                            const std::string& ICLString, const std::string& branchVarString,
                            const std::string& branchValString, std::vector<int> optValueVec,
                            bool optAllPar, bool initialLookahead, const std::string& reduceReason,
-                           const std::string& reduceConflict, unsigned int cspPropDelay) :
+                           const std::string& reduceConflict, int cspPropDelay) :
     currentSpace_(0), lazyLearn_(lazyLearn),
     useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
-    initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay)
+    initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay), cspPropDelayCounter_(0)
 {
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
     if (optValues.size()>0) ++optValues.back(); // last element must also be found
@@ -196,10 +196,11 @@ unsigned int GecodeSolver::currentDL() const
 
 unsigned int GecodeSolver::assLength(unsigned int index) const
 {
-    if (index < assLength_.size())
+    assert(index<assLength_.size());
+    //if (index < assLength_.size())
         return assLength_[index];
-    else
-        return assignment_.size();
+   // else
+    //    return assignment_.size();
 }
 
 bool GecodeSolver::initialize()
@@ -245,11 +246,20 @@ bool GecodeSolver::initialize()
 
         int newVar = begin->second.lit.var();
 
+        // convert uids to solver literal ids
 
-        // convert uids to solver literal ids 
-        //std::cout << num2name(newVar) << std::endl;
+        /*
+        if (s_->isTrue(Literal(newVar,false)))
+            std::cout << "t ";
+        if (s_->isTrue(Literal(newVar,true)))
+            std::cout << "f ";
+        if (s_->isFalse(Literal(newVar,false)))
+            std::cout << "f ";
+        if (s_->isFalse(Literal(newVar,true)))
+            std::cout << "t ";
+        std::cout << num2name(newVar) << std::endl;
 
-
+*/
 
         i->second->registerAllVariables(this);
 
@@ -291,19 +301,21 @@ bool GecodeSolver::initialize()
 
     // propagate empty constraint set, maybe some trivial constraints can be fullfilled
     currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_);
-    spaces_.push_back(currentSpace_);
+    spaces_.push_back(currentSpace_); // special root space
+    //assLength_.push_back(0);
     dl_.push_back(0);
+    assLength_.push_back(0);
 
 
 
     switch(reduceConflict_)
     {
         case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
-        case LINEAR:         conflictAnalyzer_ = new Linear2IISCA(this); break;
-        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinear2IISCA(this); break;
-        case LINEAR_GROUPED: conflictAnalyzer_ = new Linear2GroupedIISCA(this); break;
+        case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
+        case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
+        case LINEAR_GROUPED: conflictAnalyzer_ = new LinearGroupedIISCA(this); break;
         case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
-        case LOG:            conflictAnalyzer_ = new ExpIISCA(this); break;
+        case LOG:            conflictAnalyzer_ = new LogIISCA(this); break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
         case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
         default: assert(false);
@@ -312,11 +324,11 @@ bool GecodeSolver::initialize()
     switch(reduceReason_)
     {
         case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
-        case LINEAR:         reasonAnalyzer_ = new Linear2IRSRA(this); break;
-        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinear2IRSRA(this); break;
-        case LINEAR_GROUPED: reasonAnalyzer_ = new Linear2GroupedIRSRA(this); break;
+        case LINEAR:         reasonAnalyzer_ = new LinearIRSRA(this); break;
+        case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
+        case LINEAR_GROUPED: reasonAnalyzer_ = new LinearGroupedIRSRA(this); break;
         case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
-        case LOG:            reasonAnalyzer_ = new ExpIRSRA(this); break;
+        case LOG:            reasonAnalyzer_ = new LogIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
         case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
         default: assert(false);
@@ -754,12 +766,43 @@ GecodeSolver::DomainMap eq(const GecodeSolver::DomainMap& a,  const GecodeSolver
 
 bool GecodeSolver::hasAnswer()
 {
+    /*
+    currentSpace_->print(getVariables());
+
+    std::cout << "Assignment:@" << currentDL() << std::endl;
+    for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
+    {
+        if (i->sign())
+            std::cout << "neg ";
+        else
+            std::cout << "pos ";
+        std::cout << num2name(i->var()) << "@" << s_->level(i->var()) << " ";
+    }
+    std::cout << std::endl;
+
+    for (std::map<unsigned int, unsigned int>::iterator i = indexToVar_.begin(); i != indexToVar_.end();++i)
+    {
+        if (s_->isTrue(Literal(i->second,false)))
+            std::cout << "t ";
+        if (s_->isTrue(Literal(i->second,true)))
+            std::cout << "f ";
+        std::cout << num2name(i->second) << std::endl;
+    }
+    std::cout << std::endl;
+*/
+
     // first weak answer? of solver assignment A
     delete dfsSearchEngine_;
     delete babSearchEngine_;
     dfsSearchEngine_ = 0;
     babSearchEngine_ = 0;
     asCounter_ = 0;
+    //assert(currentSpace_->stable());
+
+
+    if (!finishPropagation())
+        return false;
+
     // currently using a depth first search, this could be changed by options
     if (!optimize_)
         dfsSearchEngine_ = new DFS<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
@@ -792,7 +835,9 @@ bool GecodeSolver::hasAnswer()
         return true;
     }
     else
+    {
         setConflict(assignment_);
+    }
     return false;
 }
 
@@ -835,8 +880,16 @@ void GecodeSolver::setRecording(bool r)
     recording_ = r;
 }
 
+/*
+  4 cases:
+  1. all spaces are available and propagated, conflict is complete assignment
+  2. unknown number of spaces, conflict is the assigned variables in the last space
+  3. unknown number of spaces, conflict is the assigned variables in the last space + 1 more literal
+  4. empty conflict
+  */
 void GecodeSolver::setConflict(Clasp::LitVec conflict)
 {
+    assert(conflict.size()==0 || conflict.size() == assLength(spaces_.size()-1) || conflict.size() == assLength(spaces_.size()-1) +1);
     conflictAnalyzer_->shrink(conflict);
 
     unsigned int maxDL = 0;
@@ -877,14 +930,9 @@ void GecodeSolver::printAnswer()
 
 bool GecodeSolver::propagate()
 {
-
-    if (updateOpt_)
-    {
-        return propagateMinimize();
-    }
-
-
     /*
+    std::cout << "Propagate begin ";
+    currentSpace_->print(getVariables());std::cout << std::endl;
     std::cout << "Assignment:@" << currentDL() << std::endl;
     for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
     {
@@ -892,114 +940,225 @@ bool GecodeSolver::propagate()
             std::cout << "neg ";
         else
             std::cout << "pos ";
-        std::cout << num2name(i->var()) << " ";
+        std::cout << num2name(i->var()) << "@" << s_->level(i->var()) << " ";
     }
     std::cout << std::endl;
-*/
+
+    for (std::map<unsigned int, unsigned int>::iterator i = indexToVar_.begin(); i != indexToVar_.end();++i)
+    {
+        if (s_->isTrue(Literal(i->second,false)))
+            std::cout << "t ";
+        if (s_->isTrue(Literal(i->second,true)))
+            std::cout << "f ";
+        std::cout << num2name(i->second) << std::endl;
+    }
+    std::cout << "Propagate end ";
+    std::cout << std::endl;
+    */
+
+    if (updateOpt_)
+    {
+        return propagateMinimize();
+    }
+
     // if already failed, create conflict, this may be on a lower level
     if (currentSpace_->failed())
     {
-        setConflict(assignment_);
+        Clasp::LitVec vec(assignment_.begin(), assignment_.begin()+assLength_[spaces_.size()-1]);
+        setConflict(vec);
         return false;
     }
     else // everything is fine
     {
-        /*
-        // if we need to update the minimize function, do this
-        if (updateOpt_ && GecodeSolver::optValues.size()>0)
-        { 
-            // this is still the old space, no new knowledge has been integrated
-            derivedLits_.clear();
-            currentSpace_->updateOptValues();
-            updateOpt_=false;
-
-            if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
-            {
-                // there was a problem due to the update function
-                if (derivedLits_.size()>0)
-                {
-                    uint32 dl = s_->decisionLevel();
-                    if (!propagateNewLiteralsToClasp())
-                        return false;
-                    // if we backtracked during assigning, clear propQueue
-                    if (dl>s_->decisionLevel())
-                        propQueue_.clear();
-                }
-            }
-            else
-            {
-                setConflict(assignment_);
-                return false;
-            }
-        }*/
-
-        // no updateOpt or no problem with this
-
         // remove already assigned literals, this happens if we have propagated a new literal to clasp
         Clasp::LitVec clits;
+        bool newKnowledge = false;
         for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
         {
-            //assert(s_->isTrue(*i));
-            //if (!s_->isTrue(*i))
-            //{
-                //this literal was once propagated but then backtracked without any notice of me, so we ignore it
-            //    continue;
-            //}
             // add if free
             // conflict if contradicting
             GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
             if ( constr == SearchSpace::BFREE)
+            {
                 clits.push_back(*i);
+                newKnowledge = true;
+                /*
+                std::cout << "clit: ";
+                if (i->sign())
+                    std::cout << "neg ";
+                else
+                    std::cout << "pos ";
+                std::cout << num2name(i->var()) << std::endl;
+                */
+            }
             if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
                 ( constr == SearchSpace::BTRUE  && i->sign()==true  )
                 )
             {
+                /*
+                std::cout << "Conflicting with clasp Assignment ";
+                if (i->sign())
+                    std::cout << "neg ";
+                else
+                    std::cout << "pos ";
+                std::cout << num2name(i->var()) << std::endl;
+                */
+                clits.clear();
+                clits.assign(assignment_.begin(), assignment_.begin()+assLength_[spaces_.size()-1]);
+                clits.push_back(*i);
                 //std::cout << "Conflicting due to wrong assignment of clasp variable" << std::endl;
-                setConflict(assignment_);
+                setConflict(clits);
                 return false;
             }
         }
         propQueue_.clear();
 
         // we have something to propagate
-        if (clits.size())
+        if (newKnowledge)
         {
             // if we have a new decision level, create a new space
-            if (s_->decisionLevel() > currentDL())
+
+            if (!_propagate(clits))
+                return false;
+        }
+    return true;
+    }
+}
+
+bool GecodeSolver::_propagate(Clasp::LitVec& clits)
+{
+    /*
+    currentSpace_->print(getVariables());
+
+    std::cout << "Assignment:@" << currentDL() << std::endl;
+    for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
+    {
+        if (i->sign())
+            std::cout << "neg ";
+        else
+            std::cout << "pos ";
+        std::cout << num2name(i->var()) << "@" << s_->level(i->var()) << " ";
+    }
+    std::cout << std::endl;
+
+    for (std::map<unsigned int, unsigned int>::iterator i = indexToVar_.begin(); i != indexToVar_.end();++i)
+    {
+        if (s_->isTrue(Literal(i->second,false)))
+            std::cout << "t ";
+        if (s_->isTrue(Literal(i->second,true)))
+            std::cout << "f ";
+        std::cout << num2name(i->second) << std::endl;
+    }
+    std::cout << std::endl;
+    */
+
+    if (s_->decisionLevel()==0)
+    {
+        derivedLits_.clear();
+        currentSpace_->propagate(clits.begin(), clits.end());
+        if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+        {
+            //currentSpace_->print(getVariables());
+
+            /*
+            std::cout << "Assignment:inProp@" << currentDL() << std::endl;
+            for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
             {
-                //register in solver for undo event
-                assert(s_->decisionLevel()!=0);
-                s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
-
-                //std::cout << "store a new space" << std::endl;
-                // store old space
-                /*if (dl_.size() && currentDL_ == dl_.back())
-                {
-                    delete spaces_.back();
-                    spaces_.back() = static_cast<SearchSpace*>(currentSpace_->clone());
-                    assLength_.back() = assignment_.size();
-                    propsPerLevel_.back() = propsPerLevelCounter_;
-                }
-                else*/
-                //{
-                // this will be the new space and dl
-                spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
-                dl_.push_back(s_->decisionLevel());
-                currentSpace_ = spaces_.back();
-
-                //this is for the old one
-                assLength_.push_back(assignment_.size());
-                //}
-
+                if (i->sign())
+                    std::cout << "neg ";
+                else
+                    std::cout << "pos ";
+                std::cout << num2name(i->var()) << "@" << s_->level(i->var()) << " ";
             }
+            std::cout << std::endl;
+            */
 
+            // this function avoids propagating already decided literals
+            if(!propagateNewLiteralsToClasp())
+                return false;
+        }
+        // currentSpace_->status() == FAILED
+        else
+        {
+            // could save a bit of conflict size if conflict resultet from propagate function, which does singular propagation
+            //clits.clear();
+            //clits.reserve(assignment_.size()+clits.size());
+            //clits.insert(clits.begin(), assignment_.begin(), assignment_.end()); // this is the complete conflict
+            //on decision level 0 we only can have root conflict
+            clits.clear();
+            setConflict(clits);
+            return false;
+        }
+
+        return true;
+    }
+
+    if (s_->decisionLevel() == currentDL())
+    {
+        assignment_.insert(assignment_.end(), clits.begin(), clits.end());
+        assLength_.back()=assignment_.size();
+        if (cspPropDelay_==-1 || (spaces_.size()==dl_.size())) // allways or we already have this space
+        {
             derivedLits_.clear();
-            currentSpace_->propagate(clits.begin(),clits.end()); // can lead to failed space
-
+            currentSpace_->propagate(clits.begin(), clits.end());
             if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
             {
-                assignment_.insert(assignment_.end(), clits.begin(), clits.end());
+                // this function avoids propagating already decided literals
+                unsigned int oldDL = s_->decisionLevel();
+                if(!propagateNewLiteralsToClasp())
+                    return false;
+                if (oldDL > s_->decisionLevel()) // we do not need to update assignment as we backjumped!
+                    return true;
+            }
+            else
+            {
+                //clits already included in assignment
+                clits.clear();
+                clits.insert(clits.begin(), assignment_.begin(), assignment_.begin() + assLength_[spaces_.size()-1]);
+                setConflict(clits);
+                return false;
+            }
+        }
 
+        return true;
+    }
+
+    ++cspPropDelayCounter_;
+    if (abs(cspPropDelay_) > 0 && (cspPropDelayCounter_ % abs(cspPropDelay_)) == 0 )
+    {
+        cspPropDelayCounter_ = 1;
+
+        //propagate all old knowledge!
+
+        //redo propagation
+
+        derivedLits_.clear();
+
+        unsigned int oldDL = s_->decisionLevel();
+        if (!finishPropagation())
+            return false;
+        if (oldDL > s_->decisionLevel()) // we backjumped!
+        {
+            return true;
+        }
+
+
+
+        dl_.push_back(s_->decisionLevel());
+        assignment_.insert(assignment_.end(), clits.begin(), clits.end());
+        assLength_.push_back(assignment_.size());
+
+        //register in solver for undo event
+        assert(s_->decisionLevel()!=0);
+        s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
+
+        if (cspPropDelay_==-1)
+        {
+            spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
+            currentSpace_ = spaces_.back();
+            currentSpace_->propagate(clits.begin(), clits.end());
+            if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+            {
                 // this function avoids propagating already decided literals
                 if(!propagateNewLiteralsToClasp())
                     return false;
@@ -1007,18 +1166,101 @@ bool GecodeSolver::propagate()
             // currentSpace_->status() == FAILED
             else
             {
-                // could save a bit of conflict size if conflict resultet from propagate function, which does singular propagation
-
-//#pragma message "This is not so good, conflicting literals will be in front, change and test"
-                clits.insert(clits.begin(), assignment_.begin(), assignment_.end());
-                //clits.insert(clits.end(), assignment_.begin(), assignment_.end());
+                //assignment already has clits included!
+                clits.clear();
+                clits.insert(clits.begin(), assignment_.begin(), assignment_.begin() + assLength_[spaces_.size()-1]);
                 setConflict(clits);
+                //setConflict(assignment_);
                 return false;
             }
-            return true;
         }
-    return true;
     }
+    else
+    {
+        assert(cspPropDelay_!=-1);
+        /*
+        currentSpace_->print(getVariables());
+
+        std::cout << "Assignment:@" << currentDL() << std::endl;
+        for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
+        {
+            if (i->sign())
+                std::cout << "neg ";
+            else
+                std::cout << "pos ";
+            std::cout << num2name(i->var()) << " ";
+        }
+        std::cout << std::endl;
+        */
+        dl_.push_back(s_->decisionLevel());
+        assignment_.insert(assignment_.end(), clits.begin(), clits.end());
+        assLength_.push_back(assignment_.size());
+        //register in solver for undo event
+        assert(s_->decisionLevel()!=0);
+        s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
+    }
+
+    return true;
+}
+
+
+bool GecodeSolver::finishPropagation()
+{
+    while(spaces_.size() < dl_.size())
+    {
+        unsigned int last = spaces_.size()-1;    // the last space index
+        unsigned int next = last+1; // the index before
+
+
+        unsigned int start = assLength_[last];
+        unsigned int end = assLength_[next];
+        spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
+        currentSpace_ = spaces_.back();
+        derivedLits_.clear();
+
+        currentSpace_->propagate(assignment_.begin()+start, assignment_.begin()+end);
+        if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+        {
+            /*
+            currentSpace_->print(getVariables());
+
+            std::cout << "Assignment:@" << currentDL() << std::endl;
+            for (Clasp::LitVec::const_iterator i = assignment_.begin(); i != assignment_.end(); ++i)
+            {
+                if (i->sign())
+                    std::cout << "neg ";
+                else
+                    std::cout << "pos ";
+                std::cout << num2name(i->var()) << " ";
+            }
+            std::cout << std::endl;
+            */
+            // this function avoids propagating already decided literals
+            unsigned int oldDL = s_->decisionLevel();
+            if(!propagateNewLiteralsToClasp())
+            {
+                //undo the last space as it might not be fully propagated to clasp
+                delete spaces_.back();
+                spaces_.pop_back();
+                currentSpace_ = spaces_.back();
+                return false;
+            }
+            if (oldDL > s_->decisionLevel()) // we backjumped!
+            {
+                //std::cout << s_->decisionLevel() << " " << oldDL << std::endl;
+                break;
+            }
+        }
+        // currentSpace_->status() == FAILED
+        else
+        {
+            //nur alles was currentSpace bisher mitbekommen hat in den Konflikt einbringen !!!
+            Clasp::LitVec ret(assignment_.begin(), assignment_.begin()+end);    // this is the old conflict
+            setConflict(ret);
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -1027,40 +1269,25 @@ bool GecodeSolver::propagate()
      //Clasp::LitVec oldDerivedLits;
      //oldDerivedLits.swap(derivedLits_); // maybe something was already propagated
      updateOpt_ = false;
-     //TODO: what if i have no space
-     size_t i = 0;
-     assert(spaces_.size());
-     SearchSpace* current = spaces_[0];
-     while (true)
+     for (size_t i = 0; i < spaces_.size(); ++i)
      {
+         SearchSpace* current = spaces_[i];
          derivedLits_.clear();
          current->updateOptValues();
 
          //PROBLEM, arbeite direkt auf dem space, dieser kann fehlschlagen!
          if (current->failed() || current->status()==SS_FAILED)
          {
-             Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+assLength(i));
+             Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+assLength_[i]);
              propQueue_.clear();
+             s_->setBacktrackLevel(std::min(dl_[i],s_->backtrackLevel()));
+             if (dl_[i] < s_->decisionLevel())
+                 s_->undoUntil(dl_[i]);
              setConflict(conflict);
              return false;
          }
          else
          {
-             //monotone
-             /*if (current == currentSpace_)
-             {
-                 if (derivedLits_.size()>0)
-                 {
-                     unsigned int dl = currentDL();
-                     s_->setBacktrackLevel(std::min(dl,s_->backtrackLevel()));
-                     if (dl < s_->decisionLevel())
-                         s_->undoUntil(dl);
-                     if (!propagateNewLiteralsToClasp())
-                         return false;
-                     break;
-                 }
-             }
-             else*/
              if (derivedLits_.size()>0)
              {
                  unsigned int dl = dl_[i];
@@ -1072,13 +1299,6 @@ bool GecodeSolver::propagate()
                  break;
              }
          }
-         if (current == currentSpace_)
-             break;// nothing found
-         else
-             if (++i < spaces_.size())
-                 current = spaces_[i];
-  //           else
- //                current = currentSpace_;
      }
      //derivedLits_.swap(oldDerivedLits);
      return propagate();
@@ -1094,8 +1314,9 @@ bool GecodeSolver::propagate()
 void GecodeSolver::undo(unsigned int level)
 {
     assert(level!=0);
+   // std::cout << "undo level " << level << std::endl;
     //assert(level <= currentDL());
-    assert(level==currentDL());
+    //assert(level==currentDL());
 
     //std::cout << "undo level" << level << "/" << currentDL() << std::endl;
 
@@ -1109,57 +1330,85 @@ void GecodeSolver::undo(unsigned int level)
     //std::cout << "backtrack to index " << index << std::endl;
 
 
-
-    delete spaces_.back();
-    spaces_.pop_back();
-    currentSpace_ = spaces_.back();
-
-    //currentSpace_ = spaces_[index];//static_cast<GecodeSolver::SearchSpace*>(spaces_[index]->clone());
     propQueue_.clear();
+    assert(level==currentDL());
 
-    //erase all spaces above
-   /* ++index;
-    for (unsigned int j = index; j != spaces_.size(); ++j)
-    {
-        delete spaces_[j];
-    }
-    spaces_.resize(index);*/
-    //dl_.resize(index);
+
     dl_.pop_back();
-    //assignment_.resize(assLength_[index-1]);
-    assignment_.resize(assLength_.back());
-    //assLength_.resize(index-1);
     assLength_.pop_back();
-
-
-
-    //currentDL_ = level-1;
-    //currentDL_ = dl_[index-1];
+    assignment_.resize(assLength_.back());
+    if(spaces_.size()>dl_.size())
+    {
+        delete spaces_.back();
+        spaces_.pop_back();
+    }
+    currentSpace_ = spaces_.back();
     return;
 }
 
 bool GecodeSolver::propagateNewLiteralsToClasp()
 {
-    unsigned int size = assignment_.size();
+    unsigned int size = assLength_[spaces_.size()-1];
 
+    /*
+    std::cout << "Derived:@" << currentDL() << std::endl;
+    for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
+    {
+        if (i->sign())
+            std::cout << "neg ";
+        else
+            std::cout << "pos ";
+        std::cout << num2name(i->var()) << " ";
+    }
+    std::cout << std::endl;
+
+    */
     if (lazyLearn_)
     {
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
 
+            /*
+            if (s_->isTrue(*i))
+                std::cout << "true ";
+            else
+                if (s_->isFalse(*i))
+                    std::cout << "false ";
+                else
+                    std::cout << "unset ";
+
+            if (i->sign())
+                std::cout << "neg ";
+            else
+                std::cout << "pos ";
+            std::cout << num2name(i->var()) << " ";
+            */
+
             // if not already decided
             //if (s_->value(i->var())==Clasp::value_free)
-            if (!s_->isTrue(*i))  // if the literal is not already true (undecided or false)          
+            if (s_->isTrue(*i))  // if the literal is already true
+                continue;
+            if (s_->isFalse(*i))
             {
-                litToAssPosition_[(*i).var()] = size;
-                //assignment_.push_back(*i);
-                if (!s_->force(*i, &dummyReason_))
-                {
+                Clasp::Literal conf(~(*i));
 
-                    derivedLits_.clear();
-                    return false;
-                }
+                derivedLits_.clear();
+                derivedLits_.reserve(size+1);
+                derivedLits_.insert(derivedLits_.begin(), assignment_.begin(), assignment_.begin()+size);
+                derivedLits_.push_back(conf);// also add the conflicting literal, this can be on a higher decision level
+                setConflict(derivedLits_);
+                return false;
+            }
 
+            assert(spaces_.size());
+            litToAssPosition_[(*i)] = size;
+            if (!s_->addNewImplication(*i,s_->decisionLevel(),&dummyReason_))
+            //if (!s_->addNewImplication(*i,dl_[currentSpaceI_],&dummyReason_))
+                //if (!s_->force(*i, &dummyReason_))
+            {
+
+                derivedLits_.clear();
+                return false;
             }
         }
         derivedLits_.clear();
@@ -1203,12 +1452,49 @@ bool GecodeSolver::propagateNewLiteralsToClasp()
 
 void GecodeSolver::createReason(Clasp::LitVec& reason, const Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
 {
+ /*   Clasp::LitVec temp;
+    temp.insert(temp.begin(), begin,end);
+    Clasp::LitVec::iterator foo = std::find(temp.begin()+1, temp.end(), l);
+    if (foo!=temp.end())
+        temp.erase(foo);
+                            foo = std::find(temp.begin()+1, temp.end(), ~l);
+    if (foo!=temp.end())
+        temp.erase(foo);
+    reasonAnalyzer_->generate(reason, l, temp.begin(), temp.end());*/
+
+    //static int counter = -1;
+    //std::cout << ++counter << std::endl;
+
+    assert(reason.size()==0);
     reasonAnalyzer_->generate(reason, l, begin, end);
+    /*
+    std::cout << "Reason for " ;
+    if (l.sign())
+        std::cout << "neg ";
+    else
+        std::cout << "pos ";
+    std::cout << num2name(l.var()) << " " << std::endl;
+    for (Clasp::LitVec::const_iterator i = reason.begin(); i != reason.end(); ++i)
+    {
+        if (s_->isTrue(*i))
+            std::cout << "true: ";
+        else
+        if (s_->isFalse(*i))
+            std::cout << "false: ";
+        else
+            std::cout << "unknown: ";
+        if (i->sign())
+            std::cout << "neg ";
+        else
+            std::cout << "pos ";
+        std::cout << num2name(i->var()) << " ";
+    }
+    std::cout << std::endl;*/
 }
 
 Clasp::ConstraintType GecodeSolver::CSPDummy::reason(const Literal& l, Clasp::LitVec& reason)
 {
-    gecode_->createReason(reason, l, gecode_->assignment_.begin(), gecode_->assignment_.begin()+gecode_->litToAssPosition_[l.var()]);
+    gecode_->createReason(reason, l, gecode_->assignment_.begin(), gecode_->assignment_.begin()+gecode_->litToAssPosition_[l]);
     return Clasp::Constraint_t::learnt_other;
 }
 

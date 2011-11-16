@@ -1,0 +1,125 @@
+Got input:
+#step 1.
+wumpus_moves(left, 1).
+agent_moves(right, 1).
+#endstep.
+
+Warning: Head wumpus_moves(left,1) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Answer: 1
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  at(2,1,2)             go(right,2)       wumpus_at(2,3,2)   
+   3.  at(3,1,3)             go(right,3)       wumpus_at(2,3,3)   
+   4.  at(4,1,4)             go(up,4)          wumpus_at(2,3,4)   
+   5.  at(4,2,5)             go(up,5)          wumpus_at(2,3,5)   
+   6.  at(4,3,6)             go(up,6)          wumpus_at(2,3,6)   
+   7.  at(4,4,7)             go(down,7)        grab(7)            wumpus_at(2,3,7)  
+   8.  at(4,3,8)             go(down,8)        wumpus_at(2,3,8)   
+   9.  at(4,2,9)             go(down,9)        wumpus_at(2,3,9)   
+  10.  at(4,1,10)            go(left,10)       wumpus_at(2,3,10)  
+  11.  at(3,1,11)            go(left,11)       wumpus_at(2,3,11)  
+  12.  at(2,1,12)            go(left,12)       wumpus_at(2,3,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(2,3,13)  
+Answer: 2
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  at(2,1,2)             go(right,2)       wumpus_at(2,3,2)   
+   3.  at(3,1,3)             go(right,3)       wumpus_at(2,3,3)   
+   4.  at(4,1,4)             go(up,4)          wumpus_at(2,3,4)   
+   5.  at(4,2,5)             go(up,5)          wumpus_at(2,3,5)   
+   6.  at(4,3,6)             go(up,6)          wumpus_at(2,3,6)   
+   7.  at(4,4,7)             go(left,7)        grab(7)            wumpus_at(2,3,7)  
+   8.  at(3,4,8)             go(left,8)        wumpus_at(2,3,8)   
+   9.  at(2,4,9)             go(left,9)        wumpus_at(2,3,9)   
+  10.  at(1,4,10)            go(down,10)       wumpus_at(2,3,10)  
+  11.  at(1,3,11)            go(down,11)       wumpus_at(2,3,11)  
+  12.  at(1,2,12)            go(down,12)       wumpus_at(2,3,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(2,3,13)  
+Got input:
+#step 2.
+wumpus_moves(up, 2).
+agent_moves(right, 2).
+#endstep.
+
+Answer: 1
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  agent_moves(right,2)  at(2,1,2)         go(right,2)        wumpus_at(2,3,2)  wumpus_moves(up,2)  
+   3.  at(3,1,3)             go(right,3)       wumpus_at(2,4,3)   
+   4.  at(4,1,4)             go(up,4)          wumpus_at(2,4,4)   
+   5.  at(4,2,5)             go(up,5)          wumpus_at(2,4,5)   
+   6.  at(4,3,6)             go(up,6)          wumpus_at(2,4,6)   
+   7.  at(4,4,7)             go(down,7)        grab(7)            wumpus_at(2,4,7)  
+   8.  at(4,3,8)             go(down,8)        wumpus_at(2,4,8)   
+   9.  at(4,2,9)             go(down,9)        wumpus_at(2,4,9)   
+  10.  at(4,1,10)            go(left,10)       wumpus_at(2,4,10)  
+  11.  at(3,1,11)            go(left,11)       wumpus_at(2,4,11)  
+  12.  at(2,1,12)            go(left,12)       wumpus_at(2,4,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(2,4,13)  
+Got input:
+#step 3.
+agent_moves(right, 3).
+#endstep.
+
+Answer: 1
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  agent_moves(right,2)  at(2,1,2)         go(right,2)        wumpus_at(2,3,2)  wumpus_moves(up,2)  
+   3.  agent_moves(right,3)  at(3,1,3)         go(right,3)        wumpus_at(2,4,3)  
+   4.  at(4,1,4)             go(up,4)          wumpus_at(2,4,4)   
+   5.  at(4,2,5)             go(up,5)          wumpus_at(2,4,5)   
+   6.  at(4,3,6)             go(up,6)          wumpus_at(2,4,6)   
+   7.  at(4,4,7)             go(down,7)        grab(7)            wumpus_at(2,4,7)  
+   8.  at(4,3,8)             go(down,8)        wumpus_at(2,4,8)   
+   9.  at(4,2,9)             go(down,9)        wumpus_at(2,4,9)   
+  10.  at(4,1,10)            go(left,10)       wumpus_at(2,4,10)  
+  11.  at(3,1,11)            go(left,11)       wumpus_at(2,4,11)  
+  12.  at(2,1,12)            go(left,12)       wumpus_at(2,4,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(2,4,13)  
+Got input:
+#step 4.
+wumpus_moves(right, 4).
+agent_moves(up, 4).
+#endstep.
+
+Answer: 1
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  agent_moves(right,2)  at(2,1,2)         go(right,2)        wumpus_at(2,3,2)  wumpus_moves(up,2)     
+   3.  agent_moves(right,3)  at(3,1,3)         go(right,3)        wumpus_at(2,4,3)  
+   4.  agent_moves(up,4)     at(4,1,4)         go(up,4)           wumpus_at(2,4,4)  wumpus_moves(right,4)  
+   5.  at(4,2,5)             go(up,5)          wumpus_at(3,4,5)   
+   6.  at(4,3,6)             go(up,6)          wumpus_at(3,4,6)   
+   7.  at(4,4,7)             go(down,7)        grab(7)            wumpus_at(3,4,7)  
+   8.  at(4,3,8)             go(down,8)        wumpus_at(3,4,8)   
+   9.  at(4,2,9)             go(down,9)        wumpus_at(3,4,9)   
+  10.  at(4,1,10)            go(left,10)       wumpus_at(3,4,10)  
+  11.  at(3,1,11)            go(left,11)       wumpus_at(3,4,11)  
+  12.  at(2,1,12)            go(left,12)       wumpus_at(3,4,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(3,4,13)  
+Got input:
+#step 5.
+agent_moves(up, 5).
+#endstep.
+
+Answer: 1
+   0.  at(1,1,0)             wumpus_at(2,3,0)  
+   1.  agent_moves(right,1)  at(1,1,1)         go(right,1)        wumpus_at(2,3,1)  
+   2.  agent_moves(right,2)  at(2,1,2)         go(right,2)        wumpus_at(2,3,2)  wumpus_moves(up,2)     
+   3.  agent_moves(right,3)  at(3,1,3)         go(right,3)        wumpus_at(2,4,3)  
+   4.  agent_moves(up,4)     at(4,1,4)         go(up,4)           wumpus_at(2,4,4)  wumpus_moves(right,4)  
+   5.  agent_moves(up,5)     at(4,2,5)         go(up,5)           wumpus_at(3,4,5)  
+   6.  at(4,3,6)             go(up,6)          wumpus_at(3,4,6)   
+   7.  at(4,4,7)             go(down,7)        grab(7)            wumpus_at(3,4,7)  
+   8.  at(4,3,8)             go(down,8)        wumpus_at(3,4,8)   
+   9.  at(4,2,9)             go(down,9)        wumpus_at(3,4,9)   
+  10.  at(4,1,10)            go(left,10)       wumpus_at(3,4,10)  
+  11.  at(3,1,11)            go(left,11)       wumpus_at(3,4,11)  
+  12.  at(2,1,12)            go(left,12)       wumpus_at(3,4,12)  
+  13.  at(1,1,13)            won(13)           wumpus_at(3,4,13)  
+Got input:
+#step 6.
+wumpus_moves(right, 6).
+agent_moves(up, 6).
+#endstep.
+

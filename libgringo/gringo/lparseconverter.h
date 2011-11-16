@@ -104,7 +104,7 @@ public:
 	virtual void printExternalTableEntry(Symbol const &symbol) = 0;
 	virtual uint32_t symbol() = 0;
 	virtual void doFinalize() = 0;
-	virtual uint32_t getIncAtom(int vol_window) { (void) vol_window; return 0; }
+	virtual uint32_t getVolAtom(int vol_window) { (void) vol_window; return 0; }
 protected:
 	DisplayMap            atomsHidden_;
 	DisplayMap            atomsShown_;

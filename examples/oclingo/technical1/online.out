@@ -1,0 +1,74 @@
+Answer: 1
+  B.  a        
+  1.  step(1)  
+Answer: 2
+  B.  b        
+  1.  step(1)  
+Got input:
+#step 1.
+e(1).
+#endstep.
+
+Answer: 1
+  B.  a     
+  1.  c(1)  e(1)  step(1)  
+Answer: 2
+  B.  b     
+  1.  c(1)  e(1)  step(1)  
+Got input:
+#step 4.
+e(4).
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+Got input:
+#step 6.
+:- not b.
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+Got input:
+#step 4.
+e(4).
+#endstep.
+
+Warning: Head e(4) has not been declared external. The entire rule will be ignored. Try starting oclingo with --import=all
+Answer: 1
+  B.  b        
+  1.  c(1)     e(1)  step(1)  
+  2.  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  step(5)  
+  6.  step(6)  
+Got input:
+#step 9.
+e(9).
+#endstep.
+
+Answer: 1
+   B.  b        
+   1.  c(1)     e(1)  step(1)  
+   2.  step(2)  
+   3.  step(3)  
+   4.  c(4)     e(4)  step(4)  
+   5.  step(5)  
+   6.  step(6)  
+   7.  step(7)  
+   8.  step(8)  
+   9.  c(9)     e(9)  step(9)  
+Got input:
+#stop.
+

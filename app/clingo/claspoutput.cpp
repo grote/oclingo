@@ -23,7 +23,6 @@
 ClaspOutput::ClaspOutput(bool shiftDisj)
 	: LparseConverter(shiftDisj)
 	, b_(0)
-	, lastUnnamed_(0)
 {
 }
 
@@ -31,8 +30,6 @@ void ClaspOutput::initialize()
 {
 	LparseConverter::initialize();
 	b_->setCompute(false_, false);
-	lastUnnamed_ = atomUnnamed_.size();
-	atomUnnamed_.clear();
 }
 
 void ClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
@@ -105,7 +102,6 @@ void ClaspOutput::printComputeRule(int models, const AtomVec &pos, const AtomVec
 void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name)
 {
 	b_->setAtomName(symbol, name.c_str());
-	atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
 void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
@@ -115,25 +111,21 @@ void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
 
 uint32_t ClaspOutput::symbol()
 {
-	uint32_t atom = b_->newAtom();
-	atomUnnamed_.resize(atom + 1 - lastUnnamed_, true);
-	return atom;
+	return b_->newAtom();
 }
 
 void ClaspOutput::doFinalize()
 {
 	printSymbolTable();
-	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
-	lastUnnamed_+= atomUnnamed_.size();
-	atomUnnamed_.clear();
 }
 
 ClaspOutput::~ClaspOutput()
 {
 }
 
-iClaspOutput::iClaspOutput(bool shiftDisj)
+iClaspOutput::iClaspOutput(bool shiftDisj, IncConfig &config)
 	: ClaspOutput(shiftDisj)
+	, config_(config)
 	, initialized(false)
 {
 }
@@ -144,34 +136,34 @@ void iClaspOutput::initialize()
 		initialized = true;
 		ClaspOutput::initialize();
 	}
-	else if(incUids_.size()) {
-		if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
-		incUids_.pop_front();
+	// unfreeze volatile atom for coming step
+	else {
+		std::map<int, uint32_t>::iterator it = volUids_.find(config_.incStep+1);
+		if(it != volUids_.end()) {
+			b_->unfreeze(volUids_[config_.incStep+1]);
+			volUids_.erase(it);
+		}
 	}
 }
 
-uint32_t iClaspOutput::getNewIncUid()
+uint32_t iClaspOutput::getNewVolUid(int step)
 {
-	// create a new uid
-	int uid = symbol();
-	b_->freeze(uid);
-
-	return uid;
-}
-
-uint32_t iClaspOutput::getIncAtom(int vol_window = 1)
-{
-	if(incUids_.size() < vol_window) {
-		incUids_.resize(vol_window, 0);
-	}
-	if(incUids_.at(vol_window-1) == 0) {
-		incUids_.at(vol_window-1) = getNewIncUid();
+	if(volUids_.find(step) == volUids_.end()) {
+		// create a new uid
+		volUids_[step] = symbol();
+		b_->freeze(volUids_[step]);
 	}
 
-	return incUids_.at(vol_window-1);
+	return volUids_[step];
 }
 
-std::deque<uint32_t> iClaspOutput::getIncUids()
+uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
 {
-	return incUids_;
+	// volatile atom expires at current step + vol window size
+	return getNewVolUid(config_.incStep + vol_window);
+}
+
+std::map<int, uint32_t> iClaspOutput::getVolUids()
+{
+	return volUids_;
 }

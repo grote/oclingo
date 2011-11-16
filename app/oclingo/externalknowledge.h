@@ -54,7 +54,6 @@ public:
 	bool checkHead(LparseConverter::Symbol const &sym);
 	void addHead(uint32_t symbol);
 	bool addPrematureKnowledge();
-	int getStep();
 	void setControllerStep(int step);
 	int getControllerStep();
 	bool needsNewStep();

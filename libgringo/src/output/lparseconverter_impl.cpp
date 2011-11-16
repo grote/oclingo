@@ -345,7 +345,7 @@ void IncPrinter::print(PredLitRep *) { }
 void IncPrinter::print(int vol_window)
 {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = output_->getIncAtom(vol_window);
+	int atom = output_->getVolAtom(vol_window);
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 

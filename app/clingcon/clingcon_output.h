@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include "clasp/clasp_output.h"
+#include "clingcon/clasp/clasp_output.h"
 #include <clingcon/cspsolver.h>
 
 namespace Clingcon

@@ -60,6 +60,9 @@ BUGS
 %debug(B) $== $sum{lev(E) : set(B,pos(E)) : sccatom(E), -1} :- hold(conjunction(B)), litb(pos(conjunction(B))), rule(pos(A),pos(conjunction(B))), sccatom(A).
 this is a bug, junctioncond does not work
 
+temp ~/work/clingcon-benchmarks/BENCHMARKS/UFSCheck/meta.lp --csp-num-as=1 --stats=2 0 --quiet --csp-prop-freq=1 liefert falsches Ergebnis
+
+
 
 COMMENTS
 
