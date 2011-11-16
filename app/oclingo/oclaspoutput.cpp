@@ -62,17 +62,6 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
 
-// needed because ProgramBuilder does not update frozen atoms when grounding up to ControllerStep
-uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
-	if(ext_->getStep() + vol_window < ext_->getControllerStep()) {
-		// don't add to incUids_ in order to skip freezing and unfreezing
-		return falseSymbol();
-	} else {
-		// IncAtom is really needed, so call proper function
-		return iClaspOutput::getVolAtom(vol_window);
-	}
-}
-
 void oClaspOutput::freezeAtom(uint32_t symbol) {
 	b_->freeze(symbol);
 }
@@ -118,61 +107,21 @@ void oClaspOutput::unfreezeOldQueryAtoms() {
 }
 
 
-uint32_t oClaspOutput::getVolWindowAtom(int window) {
-	// atoms are expired at "step"
-	int step = window + ext_->getControllerStep();
-
-	// get new atom for step
-	if(vol_atom_map_.find(step) == vol_atom_map_.end()) {
-		vol_atom_map_[step] = symbol();
+// needed because ProgramBuilder does not update frozen atoms when grounding up to ControllerStep
+// this way frozen atoms only get created when needed
+uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
+	if(config_.incStep + vol_window < ext_->getControllerStep()) {
+		// don't add to incUids_ in order to skip freezing and unfreezing
+		return falseSymbol();
+	} else {
+		// IncAtom is really needed, so call proper function
+		return iClaspOutput::getVolAtom(vol_window);
 	}
-
-	// freeze atom if not already frozen
-	if(vol_window_atoms_frozen_.find(vol_atom_map_[step]) == vol_window_atoms_frozen_.end()) {
-		vol_window_atoms_frozen_.insert(vol_atom_map_[step]);
-		// needs to be frozen before assumption for this atom is retrieved
-		freezeAtom(vol_atom_map_[step]);
-	}
-
-	return vol_atom_map_[step];
 }
 
-VarVec oClaspOutput::getVolWindowAtomAss(int step) {
-	VarVec vec;
-
-	// find old volatile atoms
-	for(std::map<int, uint32_t>::iterator it = vol_atom_map_.begin(); it != vol_atom_map_.end(); ++it) {
-		// extract assumption atoms from map if they expire after current step
-		if(it->first > step) {
-			vec.push_back(it->second);
-		}
-	}
-
-	return vec;
-}
-
-void oClaspOutput::updateVolWindowAtoms(int step) {
-	std::map<int, uint32_t>::iterator del = vol_atom_map_.begin();
-	std::map<int, uint32_t>::const_iterator end = vol_atom_map_.end();
-
-	// find old volatile atoms
-	for(std::map<int, uint32_t>::iterator it = vol_atom_map_.begin(); it != end; ++it) {
-		if(it->first <= step) {
-			// unfreeze expired atoms
-			unfreezeAtom(it->second);
-			vol_window_atoms_frozen_.erase(it->second);
-
-			// set deletion marker
-			if(it->first >= del->first) {
-				del = it;
-			}
-		}
-	}
-
-	// deprecate and erase old volatile atoms
-	if(vol_atom_map_.size() > 0 && del->first <= step) {
-		vol_atom_map_.erase(vol_atom_map_.begin(), ++del);
-	}
+// volatile parts from controller need to be relative to controller step
+uint32_t oClaspOutput::getVolTimeDecayAtom(int window) {
+	return getNewVolUid(ext_->getControllerStep() + window);
 }
 
 void oClaspOutput::doFinalize() {

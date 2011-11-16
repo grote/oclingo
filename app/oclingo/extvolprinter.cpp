@@ -28,7 +28,7 @@ void ExtVolPrinter::print() {
 
 void ExtVolPrinter::printWindow(int window) {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolWindowAtom(window);
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolTimeDecayAtom(window);
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 

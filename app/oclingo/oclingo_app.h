@@ -56,21 +56,9 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 				o_output->deprecateQueryAtom();
 			}
 
-			// assume volatile atoms for time decay to be true
-			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
-			foreach(VarVec::value_type atom, window_ass) {
-				if(atom) {
-					lit = api.getAtom(api.getEqAtom(atom))->literal();
-					a.push_back(lit);
-				}
-			}
-
-			//const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
+			// assume external atom to be false
 			foreach(uint32_t ext, o_output->getExternalKnowledge().getExternals()) {
-				// TODO fix bug
-				// atom is not in AtomIndex if hidden with #hide
 				lit = api.getAtom(api.getEqAtom(ext))->literal();
-				// assume external atom to be false
 				a.push_back(~lit);
 			}
 		} // end OCLINGO only part

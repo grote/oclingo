@@ -56,11 +56,12 @@ class iClaspOutput : public ClaspOutput
 public:
 	iClaspOutput(bool shiftDisj, IncConfig &config);
 	void initialize();
-	uint32_t getNewVolUid();
+	uint32_t getNewVolUid(int step);
 	virtual uint32_t getVolAtom(int vol_window);
 	std::map<int, uint32_t> getVolUids();
-private:
+protected:
 	IncConfig &config_;
+private:
 	bool initialized;
 	std::map<int, uint32_t> volUids_;
 };

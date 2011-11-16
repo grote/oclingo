@@ -146,25 +146,21 @@ void iClaspOutput::initialize()
 	}
 }
 
-uint32_t iClaspOutput::getNewVolUid()
+uint32_t iClaspOutput::getNewVolUid(int step)
 {
-	// create a new uid
-	int uid = symbol();
-	b_->freeze(uid);
-	return uid;
+	if(volUids_.find(step) == volUids_.end()) {
+		// create a new uid
+		volUids_[step] = symbol();
+		b_->freeze(volUids_[step]);
+	}
+
+	return volUids_[step];
 }
 
 uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
 {
-	// volatile atom expires at step
-	int step = config_.incStep + vol_window;
-
-	// get new atom for step
-	if(volUids_.find(step) == volUids_.end()) {
-		volUids_[step] = getNewVolUid();
-	}
-
-	return volUids_[step];
+	// volatile atom expires at current step + vol window size
+	return getNewVolUid(config_.incStep + vol_window);
 }
 
 std::map<int, uint32_t> iClaspOutput::getVolUids()

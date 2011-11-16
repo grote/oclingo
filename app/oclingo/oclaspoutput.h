@@ -32,7 +32,6 @@ public:
 	void startExtInput();
 	void stopExtInput();
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
-	uint32_t getVolAtom(int vol_window);
 	void freezeAtom(uint32_t symbol);
 	void unfreezeAtom(uint32_t symbol);
 
@@ -42,9 +41,8 @@ public:
 	void deprecateQueryAtom();
 	void unfreezeOldQueryAtoms();
 
-	uint32_t getVolWindowAtom(int window);
-	VarVec   getVolWindowAtomAss(int step);
-	void updateVolWindowAtoms(int step);
+	uint32_t getVolAtom(int vol_window);
+	uint32_t getVolTimeDecayAtom(int window);
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const Symbol &symbol);

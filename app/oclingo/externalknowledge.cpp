@@ -127,10 +127,6 @@ int ExternalKnowledge::poll() {
 }
 
 void ExternalKnowledge::get() {
-	// first update time decay atoms
-	// needs to be here because before EndProgram and after new step
-	output_->updateVolWindowAtoms(step_);
-
 	try {
 		if(!reading_) {
 			if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
@@ -272,10 +268,6 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 	to_freeze_.clear();
 
 	return added;
-}
-
-int ExternalKnowledge::getStep() {
-	return step_;
 }
 
 void ExternalKnowledge::setControllerStep(int step) {
