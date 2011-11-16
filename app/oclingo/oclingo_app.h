@@ -42,6 +42,13 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 			a.push_back(lit);
 		}
 
+		std::pair<Val,uint32_t> aatom;
+		foreach(aatom, out->getAssertUids()) {
+			assert(aatom.second);
+			lit = api.getAtom(api.getEqAtom(aatom.second))->literal();
+			a.push_back(lit);
+		}
+
 		if(app.clingo.mode == OCLINGO) {
 			oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
 

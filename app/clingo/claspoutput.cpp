@@ -138,7 +138,7 @@ void iClaspOutput::initialize()
 	}
 	// unfreeze volatile atom for coming step
 	else {
-		std::map<int, uint32_t>::iterator it = volUids_.find(config_.incStep+1);
+		VolMap::iterator it = volUids_.find(config_.incStep+1);
 		if(it != volUids_.end()) {
 			b_->unfreeze(volUids_[config_.incStep+1]);
 			volUids_.erase(it);
@@ -163,7 +163,37 @@ uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
 	return getNewVolUid(config_.incStep + vol_window);
 }
 
-std::map<int, uint32_t> iClaspOutput::getVolUids()
+ClaspOutput::VolMap iClaspOutput::getVolUids()
 {
 	return volUids_;
+}
+
+uint32_t iClaspOutput::getAssertAtom(Val term)
+{
+	if(assertUids_.find(term) == assertUids_.end()) {
+		// create a new uid
+		assertUids_[term] = symbol();
+		b_->freeze(assertUids_[term]);
+	}
+
+	return assertUids_[term];
+}
+
+ClaspOutput::AssertMap iClaspOutput::getAssertUids()
+{
+	return assertUids_;
+}
+
+void iClaspOutput::retractAtom(Val term)
+{
+	// TODO add better error handling
+	AssertMap::iterator it = assertUids_.find(term);
+	if(it != assertUids_.end()) {
+		b_->unfreeze(assertUids_[term]);
+		assertUids_.erase(it);
+	} else {
+		std::cerr << "Error: Term ";
+		term.print(storage(), std::cerr);
+		std::cerr << " was not used to assert rules.";
+	}
 }

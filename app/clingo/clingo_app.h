@@ -216,6 +216,8 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 			Clasp::Literal lit = api.getAtom(api.getEqAtom(atom.second))->literal();
 			a.push_back(lit);
 		}
+
+		// TODO add assertion atom assumptions
 	}
 }
 

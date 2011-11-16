@@ -62,9 +62,10 @@ public:
 	void setStep(int step);
 	void forget(int step);
 	void terminate();
-	void setCumulative();
-	void setVolatile();
+	void setPart(Part part);
 	void setVolatileWindow(int window);
+	void setAssert();
+	void retract();
 
 	bool isTerminated();
 
@@ -73,6 +74,7 @@ public:
 private:
 	void parse(std::istream &sin);
 	void doAdd();
+	void saveTerm();
 
 private:
 	std::istream* in_;
@@ -87,5 +89,6 @@ private:
 	bool got_step_;
 	Part part_;
 	int volatile_window_;
+	Val assert_term_;
 };
 

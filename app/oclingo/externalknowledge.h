@@ -50,7 +50,7 @@ public:
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
-	void savePrematureVol(bool volatile, int window);
+	void savePrematureVol(OnlineParser::Part part, int window);
 	bool checkHead(LparseConverter::Symbol const &sym);
 	void addHead(uint32_t symbol);
 	bool addPrematureKnowledge();
@@ -79,7 +79,7 @@ private:
 
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
-	std::list<std::pair<bool,int> > vol_stack_;
+	std::list<std::pair<OnlineParser::Part,int> > vol_stack_;
 
 	// externals handling
 	VarVec externals_;

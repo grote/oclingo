@@ -195,8 +195,8 @@ void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 }
 
 // always call with addStackPtr()
-void ExternalKnowledge::savePrematureVol(bool vol, int window=0) {
-	vol_stack_.push_back(std::make_pair(vol, window));
+void ExternalKnowledge::savePrematureVol(OnlineParser::Part part, int window=0) {
+	vol_stack_.push_back(std::make_pair(part, window));
 }
 
 bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
@@ -245,14 +245,14 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
-			// add volatile information to parser
-			if(vol_stack_.front().first) parser.setVolatile();
+			// add part information to parser
+			parser.setPart(vol_stack_.front().first);
 			parser.setVolatileWindow(vol_stack_.front().second);
 			vol_stack_.pop_front();
 
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
 			// return to adding cummulative rules
-			parser.setCumulative();
+			parser.setPart(OnlineParser::CUMULATIVE);
 		}
 	}
 

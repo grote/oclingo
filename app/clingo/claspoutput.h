@@ -25,10 +25,14 @@
 
 class ClaspOutput : public LparseConverter
 {
+protected:
+	typedef boost::unordered_map<int, uint32_t> VolMap;
+	typedef boost::unordered_map<Val, uint32_t> AssertMap;
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
-	virtual std::map<int, uint32_t> getVolUids() { return std::map<int, uint32_t>(); }
+	virtual VolMap getVolUids() { return VolMap(); }
+	virtual AssertMap getAssertUids() { return AssertMap(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
 	SymbolMap &symbolMap() { return symbolMap_; }
@@ -58,10 +62,14 @@ public:
 	void initialize();
 	uint32_t getNewVolUid(int step);
 	virtual uint32_t getVolAtom(int vol_window);
-	std::map<int, uint32_t> getVolUids();
+	VolMap getVolUids();
+	uint32_t getAssertAtom(Val term);
+	AssertMap getAssertUids();
+	void retractAtom(Val term);
 protected:
 	IncConfig &config_;
 private:
 	bool initialized;
-	std::map<int, uint32_t> volUids_;
+	VolMap volUids_;
+	AssertMap assertUids_;
 };

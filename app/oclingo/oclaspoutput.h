@@ -52,7 +52,4 @@ private:
 	uint32_t vol_atom_;
 	uint32_t vol_atom_frozen_;
 	VarVec vol_atoms_old_;
-	VarSet vol_window_atoms_frozen_;
-
-	std::map<int, uint32_t> vol_atom_map_;
 };
