@@ -45,10 +45,6 @@ protected:
   /// Constructor for cloning \a p
   ReifFailOn(Space& home, bool shared, ReifFailOn& p);
 
-  // index to the boolvar array, index > 0 means boolvar is true,
-  // index < 0 means boolvar is false
-  // if true, index-1 is index
-  // if false, index+1 is index
 public:
   /// Perform copying during cloning
   virtual Actor* copy(Space& home, bool share);
@@ -166,14 +162,14 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
         for (Clasp::LitVec::const_iterator it = begin+1; it < end; ++it)
         {
             tester->propagate(*it);
-            if (tester->failed() || tester->status()==SS_FAILED)
+            if (tester->status()==SS_FAILED)
             {
                 // still reason, throw it away, it did not contribute to the reason
                 ++begin;
                 original->propagate(*(it));
                 reason.push_back(*(it));
                 end=it;
-                if (original->failed() || original->status()==SS_FAILED)
+                if (original->status()==SS_FAILED)
                 {
                     delete tester;
                     goto Ende;
@@ -185,7 +181,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
 
 
         // if reason still derives l we can remove the last one
-        if (tester->failed() || tester->status()==SS_FAILED)
+        if (tester->status()==SS_FAILED)
         {
         }
         else
@@ -194,7 +190,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
             //++props_;
             reason.push_back(*(begin));
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (end-begin==1 || (original->failed() || original->status()==SS_FAILED))
+            if (end-begin==1 || original->status()==SS_FAILED)
             {
                 delete tester;
                 goto Ende;
@@ -308,14 +304,14 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
                 done.set(it);
 
                 // if reason still derives l we can remove the last one
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     // still failing
                     original->propagate(*(begin+it));
                     reason.push_back(*(begin+it));
                     reasonDone.set(it);
 
-                    if (original->failed() || original->status()==SS_FAILED)
+                    if (original->status()==SS_FAILED)
                     {
                          delete tester;
                          goto Ende;
@@ -404,7 +400,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
         reason.push_back(*(end-1));
         //props_++;
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
-        if (end-begin==1 || (original->failed() || original->status()== SS_FAILED))
+        if (end-begin==1 || original->status()== SS_FAILED)
         {
             goto Ende;
         }
@@ -451,7 +447,8 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     g_->setRecording(false);
 
     size_t index = g_->spaces_.size()-1;
-    if (index) --index;
+    while (g_->assLength_[index]>(ends-begin)) --index;
+    //if (index) --index;
 
     do
     {
@@ -463,10 +460,11 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
             reiffail2(*tester,tester->b_[lindex]);
             tester->propagate(reason.begin(),reason.end());
 
-            if (tester->failed() ||  tester->status()==SS_FAILED)
+            if (tester->status()==SS_FAILED)
             {
                 // still reason, throw it away, it did not contribute to the reason
                 end=start;
+                delete tester;
                 break;
             }
 
@@ -474,12 +472,12 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
             for (Clasp::LitVec::const_iterator it = start; it < end; ++it)
             {
                 tester->propagate(*it);
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     delete tester;
                     original->propagate(*(it));
                     reason.push_back(*(it));
-                    if (original->failed() || original->status() == SS_FAILED)
+                    if (original->status() == SS_FAILED)
                     {
                         goto Ende;
                     }
@@ -495,7 +493,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
                     //props_++;
                     //std::cout << "reason" << std::endl;
                     //we propagate to find the shortest reason
-                    if (original->failed() || original->status() == SS_FAILED)
+                    if (original->status() == SS_FAILED)
                     {
                         goto Ende;
                     }
@@ -547,7 +545,7 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
     g_->setRecording(false);
 
     size_t index = g_->spaces_.size()-1;
-    if (index) --index;
+    while (g_->assLength_[index]>(ends-begin)) --index;
 
     do
     {
@@ -557,7 +555,7 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
         tester->propagate(reason.begin(),reason.end());
         props_++;
 
-        if (tester->failed() || tester->status()==SS_FAILED)
+        if (tester->status()==SS_FAILED)
         {
             // still reason, throw it away, it did not contribute to the reason
             end=start;
@@ -567,14 +565,14 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
             for (Clasp::LitVec::const_iterator it = start; it < end; ++it)
             {
                 tester->propagate(*it);
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     original->propagate(start, it+1);
                     reason.insert(reason.end(), start, it+1);
                     //props_++;
                     //std::cout << "reason" << std::endl;
                     //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                    if (start > begin && (original->failed() || original->status() == SS_FAILED))
+                    if (start > begin && original->status() == SS_FAILED)
                     {
                         delete tester;
                         goto Ende;
@@ -683,7 +681,7 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
                 done.set(it);
 
                 // if reason still derives l we can remove the last one
-                if (original->failed() || original->status()==SS_FAILED)
+                if (original->status()==SS_FAILED)
                 {
                     goto Ende;
                 }

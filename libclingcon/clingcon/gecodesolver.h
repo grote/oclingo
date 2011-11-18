@@ -111,8 +111,8 @@ namespace Clingcon {
         typedef IntervalSet<int> Domain;
         typedef std::map<unsigned int, Domain> DomainMap;
 
-        // is called when b_[index] is derived via propagation (also by setting it manually?)
-        void newlyDerived(int index);
+        // is called when lit is derived via propagation (also by setting it manually?)
+        void newlyDerived(Clasp::Literal lit);
         void addVarToIndex(unsigned int var, unsigned int index);
     private:
 
@@ -157,13 +157,13 @@ namespace Clingcon {
 
         //void generateReason(Clasp::LitVec& lits, unsigned int upToAssPos);
         //void generateConflict(Clasp::LitVec& lits, unsigned int upToAssPos);
-        bool propagateNewLiteralsToClasp();
+        bool propagateNewLiteralsToClasp(size_t level);
         //adds a conflict to the clausecreator
         void createReason(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
         /*
                          * sets a conflict wrt to the current assignment
     */
-        void setConflict(Clasp::LitVec conflict);
+        void setConflict(Clasp::LitVec conflict, size_t index);
         /*
     * pre: cdg has been build
     * param in: variable to start with

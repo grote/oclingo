@@ -29,7 +29,7 @@
 namespace Clingcon
 {
 
-void LinearIISCA::shrink(Clasp::LitVec& conflict)
+void LinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -58,7 +58,6 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
     g_->setRecording(false);
 
     Clasp::LitVec newConflict;
-    size_t index = g_->spaces_.size()-1;
     // special case, the last literal is surely conflicting
     if (conflict.size()>g_->assLength(index))
     {
@@ -66,7 +65,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
         newConflict.push_back(conflict.back());
         --end;
         original->propagate(conflict.back());
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -87,7 +86,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
             tester->propagate(newConflict.begin(),newConflict.end());
             props_++;
 
-            if (tester->failed() || tester->status()==SS_FAILED)
+            if (tester->status()==SS_FAILED)
             {
                 delete tester;
 
@@ -100,13 +99,13 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
             {
                 tester->propagate(*it);
 
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     delete tester;
 
                     original->propagate(*(it));
                     newConflict.push_back(*(it));
-                    if (original->failed() || original->status() == SS_FAILED)
+                    if (original->status() == SS_FAILED)
                     {
                         goto Ende;
                     }
@@ -122,7 +121,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
                     //props_++;
                     //std::cout << "reason" << std::endl;
                     //we propagate to find the shortest reason
-                    if (original->failed() || original->status() == SS_FAILED)
+                    if (original->status() == SS_FAILED)
                     {
                         goto Ende;
                     }
@@ -144,10 +143,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict)
 }
 
 
-
-
-
-void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
+void FwdLinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -177,7 +173,6 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
     g_->setRecording(false);
 
     Clasp::LitVec newConflict;
-    size_t index = g_->spaces_.size()-1;
     // special case, the last literal is surely conflicting
     if (conflict.size()>g_->assLength(index))
     {
@@ -185,7 +180,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
         newConflict.push_back(conflict.back());
         --end;
         original->propagate(conflict.back());
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -219,7 +214,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
         {
             tester->propagate(*it);
 
-            if (tester->failed() ||  tester->status()==SS_FAILED)
+            if (tester->status()==SS_FAILED)
             {
                 ++begin;
                 end=it;
@@ -227,7 +222,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
                 newConflict.push_back(*(it));
 
                 //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                if (original->failed() || original->status()==SS_FAILED)
+                if (original->status()==SS_FAILED)
                 {
                     delete tester;
                     goto Ende;
@@ -239,7 +234,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 
 
 
-        if (tester->failed() ||  tester->status()==SS_FAILED)
+        if (tester->status()==SS_FAILED)
         {
             //++begin;
         }
@@ -249,7 +244,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
             //++props_;
             newConflict.push_back(*(begin));
             //this is enough, but we have to propagate "original", to get a fresh clone out of it
-            if (end-begin>1 && (original->failed() || original->status()==SS_FAILED))
+            if (end-begin>1 && original->status()==SS_FAILED)
             {
                 delete tester;
                 goto Ende;
@@ -271,7 +266,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict)
 
 
 
-void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
+void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -300,7 +295,6 @@ void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
     g_->setRecording(false);
 
     Clasp::LitVec newConflict;
-    size_t index = g_->spaces_.size()-1;
     // special case, the last literal is surely conflicting
     if (conflict.size()>g_->assLength(index))
     {
@@ -308,7 +302,7 @@ void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
         newConflict.push_back(conflict.back());
         original->propagate(conflict.back());
         --end;
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -325,7 +319,7 @@ void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
 
         props_++;
 
-        if (tester->failed() || tester->status()==SS_FAILED)
+        if (tester->status()==SS_FAILED)
         {
            end=start;
         }
@@ -335,14 +329,14 @@ void LinearGroupedIISCA::shrink(Clasp::LitVec& conflict)
             for (Clasp::LitVec::const_iterator it = start; it < end; ++it)
             {
                 tester->propagate(*it);
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     original->propagate(start, it+1);
                     newConflict.insert(newConflict.end(), start, it+1);
                     //props_++;
                     //std::cout << "reason" << std::endl;
                     //this is enough, but we have to propagate "original", to get a fresh clone out of it
-                    if (start > conflict.begin() && (original->failed() || original->status() == SS_FAILED))
+                    if (start > conflict.begin() && original->status() == SS_FAILED)
                     {
 
                         delete tester;
@@ -386,7 +380,7 @@ SCCIISCA::SCCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_
     }
 }
 
-void SCCIISCA::shrink(Clasp::LitVec& conflict)
+void SCCIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -415,7 +409,6 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
 
     int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
-    size_t index = g_->spaces_.size()-1;
     VarSet done(it+1);
     VarSet conflictDone(it+1);
     VarSet checker(varSets_[(conflict.end()-1)->var()]);
@@ -431,7 +424,7 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
         conflictChecker|=varSets_[(begin+it)->var()];
         --it;
         original->propagate(conflict.back());
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -479,14 +472,14 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
                 done.set(it);
 
                 // if reason still derives l we can remove the last one
-                if (tester->failed() || tester->status()==SS_FAILED)
+                if (tester->status()==SS_FAILED)
                 {
                     // still failing
                     original->propagate(*(begin+it));
                     newConflict.push_back(*(begin+it));
                     conflictDone.set(it);
 
-                    if (original->failed() || original->status()==SS_FAILED)
+                    if (original->status()==SS_FAILED)
                     {
                          delete tester;
                          goto Ende;
@@ -530,7 +523,7 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict)
 }
 
 
-void RangeCA::shrink(Clasp::LitVec& conflict)
+void RangeCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -559,7 +552,6 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
 
     Clasp::LitVec newConflict;
     Clasp::LitVec::const_iterator it=conflict.end()-1;
-    size_t index = g_->spaces_.size()-1;
     // special case, the last literal is surely conflicting
     if (conflict.size()>g_->assLength(index))
     {
@@ -567,7 +559,7 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         newConflict.push_back(conflict.back());
         --it;
         original->propagate(conflict.back());
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -598,7 +590,7 @@ void RangeCA::shrink(Clasp::LitVec& conflict)
         original->propagate(*it);
         //++props_;
         newConflict.insert(newConflict.end(), *it);
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             //std::cout << "Failed" << std::endl;
             goto Ende;
@@ -627,7 +619,7 @@ SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLen
     }
 }
 
-void SCCRangeCA::shrink(Clasp::LitVec& conflict)
+void SCCRangeCA::shrink(Clasp::LitVec& conflict, size_t index)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -654,7 +646,6 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
 
     int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
-    size_t index = g_->spaces_.size()-1;
     VarSet done(it+1);
     VarSet checker(varSets_[(conflict.end()-1)->var()]);
     Clasp::LitVec::const_iterator begin = conflict.begin();
@@ -667,7 +658,7 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
         done.set(it);
         --it;
         original->propagate(conflict.back());
-        if (original->failed() || original->status()==Gecode::SS_FAILED)
+        if (original->status()==Gecode::SS_FAILED)
         {
             goto Ende;
         }
@@ -708,7 +699,7 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict)
 
                 done.set(it);
 
-                if (original->failed() || original->status()==SS_FAILED)
+                if (original->status()==SS_FAILED)
                 {
                     goto Ende;
                 }
