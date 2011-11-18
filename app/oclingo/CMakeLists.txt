@@ -7,4 +7,9 @@ LEMON(OCLINGO_SRC ${OCLINGO_PARSER})
 
 add_library(appoclingo-lib STATIC ${OCLINGO_SRC})
 set_target_properties(appoclingo-lib PROPERTIES OUTPUT_NAME appoclingo)
-target_link_libraries(appoclingo-lib pthread)
+if(WIN32)
+	target_link_libraries(appoclingo-lib ws2_32)
+else()
+	target_link_libraries(appoclingo-lib pthread)
+endif()
+
