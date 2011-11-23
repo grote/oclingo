@@ -50,7 +50,6 @@ private:
         const std::string message_;
 };
 	class ClingconPropagator;
-        class LogIRSRA;
         class FwdLinearIRSRA;
         class SCCIRSRA;
         class SCCRangeRA;
@@ -60,7 +59,6 @@ private:
 	class CSPSolver
 	{
 
-            friend class LogIRSRA;
             friend class FwdLinearIRSRA;
             friend class SCCIRSRA;
             friend class SCCRangeRA;

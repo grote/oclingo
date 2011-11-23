@@ -128,17 +128,13 @@ namespace Clingcon {
 
 
     class ReifWait : public Propagator {
-    public:
-        typedef void (GecodeSolver::* MemFun)(int);
     protected:
       /// View to wait for becoming assigned
       Int::BoolView x;
       /// Continuation to execute
 
-      MemFun c;
-      //void (*c)(Space&);
       /// Constructor for creation
-      ReifWait(Space& home, Int::BoolView x, MemFun c0, int index);
+      ReifWait(Space& home, Int::BoolView x, Clasp::Var var);
       /// Constructor for cloning \a p
       ReifWait(Space& home, bool shared, ReifWait& p);
 
@@ -147,7 +143,7 @@ namespace Clingcon {
       // index < 0 means boolvar is false
       // if true, index-1 is index
       // if false, index+1 is index
-      int index_;
+      Clasp::Var var_;
     public:
       /// Perform copying during cloning
       virtual Actor* copy(Space& home, bool share);
@@ -156,27 +152,26 @@ namespace Clingcon {
       /// Perform propagation
       virtual ExecStatus propagate(Space& home, const ModEventDelta& med);
       /// Post propagator that waits until \a x becomes assigned and then executes \a c
-      static ExecStatus post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index);
+      static ExecStatus post(Space& home, GecodeSolver* csps, Int::BoolView x, Clasp::Var var);
       /// Delete propagator and return its size
       virtual size_t dispose(Space& home);
     };
 
     GecodeSolver* ReifWait::solver = 0;
 
-    void reifwait(Home home, GecodeSolver* csps, BoolVar x, ReifWait::MemFun c,
-                  int index, IntConLevel) {
+    void reifwait(Home home, GecodeSolver* csps, BoolVar x, Clasp::Var var, IntConLevel) {
         if (home.failed()) return;
-        GECODE_ES_FAIL(ReifWait::post(home,csps, x,c, index));
+        GECODE_ES_FAIL(ReifWait::post(home,csps, x, var));
     }
 
 
-    ReifWait::ReifWait(Space& home, Int::BoolView x0, MemFun c0, int index)
-        : Propagator(home), x(x0), c(c0), index_(index) {
+    ReifWait::ReifWait(Space& home, Int::BoolView x0, Clasp::Var var)
+        : Propagator(home), x(x0), var_(var) {
         x.subscribe(home,*this,PC_GEN_ASSIGNED);
     }
 
     ReifWait::ReifWait(Space& home, bool shared, ReifWait& p)
-        : Propagator(home,shared,p), c(p.c), index_(p.index_) {
+        : Propagator(home,shared,p), var_(p.var_) {
         x.update(home,shared,p.x);
     }
 
@@ -193,22 +188,22 @@ namespace Clingcon {
     ReifWait::propagate(Space& home, const ModEventDelta&) {
         assert(x.assigned());
         if (x.status() == Int::BoolVarImp::ONE)
-            (solver->*c)(index_+1);
+            solver->newlyDerived(Clasp::Literal(var_, false));
         else
-            (solver->*c)(-index_-1);
+            solver->newlyDerived(Clasp::Literal(var_, true));
         return home.failed() ? ES_FAILED : home.ES_SUBSUMED(*this);
     }
     ExecStatus
-    ReifWait::post(Space& home, GecodeSolver* csps, Int::BoolView x, MemFun c, int index) {
+    ReifWait::post(Space& home, GecodeSolver* csps, Int::BoolView x, Clasp::Var var) {
         solver = csps;
         if (x.assigned()) {
             if (x.status() == Int::BoolVarImp::ONE)
-                (solver->*c)(index+1);
+                solver->newlyDerived(Clasp::Literal(var, false));
             else
-                (solver->*c)(-index-1);
+                solver->newlyDerived(Clasp::Literal(var, true));
             return home.failed() ? ES_FAILED : ES_OK;
         } else {
-            (void) new (home) ReifWait(home,x,c,index);
+            (void) new (home) ReifWait(home,x,var);
             return ES_OK;
         }
     }

@@ -39,7 +39,6 @@ namespace Clingcon {
 
     class ConflictAnalyzer;
     class ReasonAnalyzer;
-    class LogIRSRA;
     class FwdLinearIRSRA;
     class SCCIRSRA;
     class RangeIRSRA;
@@ -47,7 +46,6 @@ namespace Clingcon {
     class LinearIRSRA;
     class LinearGroupedIRSRA;
     class LinearIISCA;
-    class LogIISCA;
     class FwdLinearIISCA;
     class LinearGroupedIISCA;
     class SCCIISCA;
@@ -64,14 +62,12 @@ namespace Clingcon {
         friend class SearchSpace;
         //debug
         friend class LinearIRSRA;
-        friend class LogIRSRA;
         friend class FwdLinearIRSRA;
         friend class SCCIRSRA;
         friend class RangeIRSRA;
         friend class SCCRangeRA;
         friend class LinearGroupedIRSRA;
         friend class LinearIISCA;
-        friend class LogIISCA;
         friend class FwdLinearIISCA;
         friend class LinearGroupedIISCA;
         friend class SCCIISCA;
@@ -89,7 +85,6 @@ namespace Clingcon {
             LINEAR_FWD,
             LINEAR_GROUPED,
             SCC,
-            LOG,
             RANGE,
             SCCRANGE
 
@@ -116,8 +111,8 @@ namespace Clingcon {
         typedef IntervalSet<int> Domain;
         typedef std::map<unsigned int, Domain> DomainMap;
 
-        // is called when b_[index] is derived via propagation (also by setting it manually?)
-        void newlyDerived(int index);
+        // is called when lit is derived via propagation (also by setting it manually?)
+        void newlyDerived(Clasp::Literal lit);
         void addVarToIndex(unsigned int var, unsigned int index);
     private:
 
@@ -162,13 +157,13 @@ namespace Clingcon {
 
         //void generateReason(Clasp::LitVec& lits, unsigned int upToAssPos);
         //void generateConflict(Clasp::LitVec& lits, unsigned int upToAssPos);
-        bool propagateNewLiteralsToClasp();
+        bool propagateNewLiteralsToClasp(size_t level);
         //adds a conflict to the clausecreator
         void createReason(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
         /*
                          * sets a conflict wrt to the current assignment
     */
-        void setConflict(Clasp::LitVec conflict);
+        void setConflict(Clasp::LitVec conflict, size_t index);
         /*
     * pre: cdg has been build
     * param in: variable to start with
@@ -259,7 +254,6 @@ namespace Clingcon {
         {
         public:
             friend class GecodeSolver;
-            friend class LogIRSRA;
             friend class FwdLinearIRSRA;
             friend class SCCIRSRA;
             friend class RangeIRSRA;

@@ -43,7 +43,7 @@ namespace Clingcon
         SimpleRA() : numCalls_(0), sumLength_(0), oldLength_(0){}
         ~SimpleRA()
         {
-            std::cout << 0 << " propagataions in simple reasons in " << t_.total() << std::endl;
+            std::cout << 0 << " copys in simple reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(0)/float(oldLength_))*100 << " %" << std::endl;
@@ -67,33 +67,7 @@ namespace Clingcon
 
     //irreducible reason set
     //////////////// THIS IS NOT IRREDUCIBLE, if reason is a,b,c, then c can be the cause of ab, but ab is the minimal reason
-    ///////////////// Time is consumed by clone and propagation (tester) 1/1
-    //////////////////
-    /////////////////
 
-
-    class LogIRSRA : public ReasonAnalyzer
-    {
-    public:
-        LogIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
-        ~LogIRSRA()
-        {
-            std::cout << props_ << " propagataions in exp reasons in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
-            std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
-            std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
-        }
-        virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end);
-
-    private:
-        GecodeSolver* g_;
-        unsigned int  props_;
-        Timer         t_;
-        unsigned int numCalls_;
-        unsigned int sumLength_;
-        unsigned int oldLength_;
-    };
 
 
     class FwdLinearIRSRA : public ReasonAnalyzer
@@ -102,7 +76,7 @@ namespace Clingcon
         FwdLinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~FwdLinearIRSRA()
         {
-            std::cout << props_ << " propagataions in fwdlinear2 reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in fwdlinear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -126,7 +100,7 @@ namespace Clingcon
         SCCIRSRA(GecodeSolver* g);
         ~SCCIRSRA()
         {
-            std::cout << props_ << " propagataions in scc reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in scc reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -153,7 +127,7 @@ namespace Clingcon
         RangeIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~RangeIRSRA()
         {
-            std::cout << props_ << " propagataions in range reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -177,7 +151,7 @@ namespace Clingcon
         LinearIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearIRSRA()
         {
-            std::cout << props_ << " propagataions in linear2 reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -202,7 +176,7 @@ namespace Clingcon
         LinearGroupedIRSRA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearGroupedIRSRA()
         {
-            std::cout << props_ << " propagataions in linear2 grouped reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in linear2 grouped reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
@@ -227,7 +201,7 @@ namespace Clingcon
         SCCRangeRA(GecodeSolver* g);
         ~SCCRangeRA()
         {
-            std::cout << props_ << " propagataions in scc-range reasons in " << t_.total() << std::endl;
+            std::cout << props_ << " copys in scc-range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;

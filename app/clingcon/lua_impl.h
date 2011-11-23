@@ -41,7 +41,7 @@ namespace lua_impl_h
 {
         struct DomainIter
         {
-                DomainIter(Grounder *g, Clasp::Solver *s, ClaspOutput *o)
+                DomainIter(Grounder *g, Clasp::Solver *s, CSPOutput *o)
                         : grounder(g)
                         , solver(s)
                         , output(o)
@@ -148,7 +148,7 @@ namespace lua_impl_h
 
                 Grounder      *grounder;
                 Clasp::Solver *solver;
-                ClaspOutput   *output;
+                CSPOutput   *output;
                 bool           active;
                 bool           started;
                 SymIt          start;
@@ -274,7 +274,7 @@ namespace lua_impl_h
 
 }
 
-template <Mode M>
+template <CSPMode M>
 class ClingconApp<M>::LuaImpl
 {
 public:
