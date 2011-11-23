@@ -47,7 +47,7 @@ protected:
 	void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
 	void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-	void printExternalTableEntry(const Symbol &symbol);
+	virtual void printExternalTableEntry(const Symbol &symbol);
 	using LparseConverter::symbol;
 	uint32_t symbol();
 	virtual void doFinalize();

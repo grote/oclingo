@@ -51,7 +51,7 @@ void oClaspOutput::stopExtInput() {
 void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
 		Symbol const &sym = symbol(head);
-		if (sym.external) { head = sym.external; }
+		if (sym.external) { head = sym.symbol; }
 		if(ext_->checkHead(sym)) {
 			ext_->addHead(head);
 		} else {
@@ -135,5 +135,6 @@ void oClaspOutput::doFinalize() {
 
 void oClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
+	std::cerr << "  I AM NOT CALLED CAN NOT ADD EXTERNAL" << std::endl;
 	ext_->addExternal(symbol.external);
 }
