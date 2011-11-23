@@ -49,6 +49,8 @@ start:
 		"#cumulative" { return OPARSER_CUMULATIVE; }
 		"#volatile"   { return OPARSER_VOLATILE; }
 		"#endstep"    { return OPARSER_ENDSTEP; }
+		"#assert"     { return OPARSER_ASSERT; }
+		"#retract"    { return OPARSER_RETRACT; }
 		"."           { return OPARSER_DOT; }
 		":"           { return OPARSER_COLON; }
 		":-"          { return OPARSER_IF; }

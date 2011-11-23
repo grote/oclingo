@@ -27,7 +27,8 @@ class ExtBasePrinter : public Printer
 public:
 	using ::Printer::print;
 	virtual void print() { }
-	virtual void printWindow(int window) { (void) window;}
+	virtual void printTimeDecay(int window) { (void) window;}
+	virtual void printAssert(Val term) { (void) term; }
 	virtual ~ExtBasePrinter() { }
 };
 
@@ -37,7 +38,8 @@ public:
 	ExtVolPrinter(LparseConverter *output) : output_(output) {  }
 	void print(PredLitRep *l) { (void) l; }
 	void print();
-	void printWindow(int window);
+	void printTimeDecay(int window);
+	void printAssert(Val term);
 	Output *output() const { return output_; }
 private:
 	LparseConverter *output_;

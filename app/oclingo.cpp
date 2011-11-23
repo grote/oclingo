@@ -18,9 +18,9 @@
 #include "oclingo/oclingo_app.h"
 
 template <>
-void FromGringo<OCLINGO>::otherOutput()
+void FromGringo<OCLINGO>::otherOutput(IncConfig &config)
 {
-	out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift, app.oclingo.online.port, app.oclingo.online.import));
+	out.reset(new oClaspOutput(grounder.get(), solver, app.gringo.disjShift, config, app.oclingo.online.port, app.oclingo.online.import));
 }
 
 

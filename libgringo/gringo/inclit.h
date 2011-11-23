@@ -39,13 +39,13 @@ public:
 	{
 	public:
 		using ::Printer::print;
-		virtual void print(uint32_t vol_window) { (void) vol_window; }
+		virtual void print(int vol_window) { (void) vol_window; }
 		virtual ~Printer() { }
 	};
 	enum Type { CUMULATIVE, VOLATILE };
 
 public:
-	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId, uint32_t vol_window=1);
+	IncLit(const Loc &loc, IncConfig &config_, Type type, uint32_t varId, int vol_window=1);
 	void normalize(Grounder *g, const Expander &e);
 	bool fact() const { return true; }
 	bool forcePrint() { return type_ == VOLATILE; }
@@ -64,5 +64,5 @@ private:
 	IncConfig         &config_;
 	Type               type_;
 	clone_ptr<VarTerm> var_;
-	uint32_t           vol_window_;
+	int                vol_window_;
 };

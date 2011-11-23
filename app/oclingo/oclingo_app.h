@@ -32,41 +32,42 @@ void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 {
 	if(app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO)
 	{
-		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
+		Clasp::ProgramBuilder &api = out->getProgramBuilder();
+		Clasp::Literal lit;
 
-		foreach(uint32_t atom, out->getIncUids()) {
-			if(atom) a.push_back(i.find(atom)->lit);
+		std::pair<int,uint32_t> atom;
+		foreach(atom, out->getVolUids()) {
+			assert(atom.second);
+			lit = api.getAtom(api.getEqAtom(atom.second))->literal();
+			a.push_back(lit);
+		}
+
+		std::pair<Val,uint32_t> aatom;
+		foreach(aatom, out->getAssertUids()) {
+			assert(aatom.second);
+			lit = api.getAtom(api.getEqAtom(aatom.second))->literal();
+			a.push_back(lit);
 		}
 
 		if(app.clingo.mode == OCLINGO) {
 			oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
 
 			// assume volatile atom to be true for this iteration only
-			uint32_t vol_atom = o_output->getVolAtomAss();
+			uint32_t vol_atom = o_output->getQueryAtomAss();
 			if(vol_atom) {
-				a.push_back(i.find(vol_atom)->lit);
+				lit = api.getAtom(api.getEqAtom(vol_atom))->literal();
+				a.push_back(lit);
 			}
 			// only deprecate volatile atom if we want the answer set this step
 			if(!o_output->getExternalKnowledge().needsNewStep()) {
-				o_output->deprecateVolAtom();
+				o_output->deprecateQueryAtom();
 			}
 
-			// assume volatile atoms for time decay to be true
-			VarVec window_ass = o_output->getVolWindowAtomAss(config.incStep-1);
-			foreach(VarVec::value_type atom, window_ass) {
-				if(atom) {
-					a.push_back(i.find(atom)->lit);
-				}
+			// assume external atom to be false
+			foreach(uint32_t ext, o_output->getExternalKnowledge().getExternals()) {
+				lit = api.getAtom(api.getEqAtom(ext))->literal();
+				a.push_back(~lit);
 			}
-
-			VarVec& ass = o_output->getExternalKnowledge().getExternals();
-			for(VarVec::iterator lit = ass.begin(); lit != ass.end(); ++lit) {
-				Clasp::Atom* atom = i.find(*lit);
-				if(atom) { // atom is not in AtomIndex if hidden with #hide
-					// assume external atom to be false
-					a.push_back(~atom->lit);
-				}
-			} // end for
 		} // end OCLINGO only part
 	}
 }
@@ -120,13 +121,14 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 
 				// do new step if there's no model or controller needs new step
 				if(!ext.hasModel() || ext.needsNewStep()) {
-					for(int i = config.incStep; i < ext.getControllerStep(); i++) {
+					do {
 						out->initialize(); // gives new IncUid for volatiles
 						config.incStep++;
 						app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 						ext.endStep();
 						out->finalize();
-					}
+					} while(config.incStep < ext.getControllerStep());
+
 					if(ext.addPrematureKnowledge()) {
 						// call finalize again if there was premature knowlegde added
 						out->finalize();

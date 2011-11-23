@@ -18,16 +18,21 @@
 
 #pragma once
 
+#include <gringo/inclit.h>
 #include <gringo/gringo.h>
 #include <gringo/lparseconverter.h>
 #include <clasp/program_builder.h>
 
 class ClaspOutput : public LparseConverter
 {
+protected:
+	typedef boost::unordered_map<int, uint32_t> VolMap;
+	typedef boost::unordered_map<Val, uint32_t> AssertMap;
 public:
 	ClaspOutput(bool shiftDisj);
 	virtual void initialize();
-	virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
+	virtual VolMap getVolUids() { return VolMap(); }
+	virtual AssertMap getAssertUids() { return AssertMap(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
 	SymbolMap &symbolMap() { return symbolMap_; }
@@ -53,12 +58,18 @@ protected:
 class iClaspOutput : public ClaspOutput
 {
 public:
-	iClaspOutput(bool shiftDisj);
+	iClaspOutput(bool shiftDisj, IncConfig &config);
 	void initialize();
-	uint32_t getNewIncUid();
-	int getIncAtom(uint32_t vol_window = 1);
-	std::deque<uint32_t> getIncUids();
+	uint32_t getNewVolUid(int step);
+	virtual uint32_t getVolAtom(int vol_window);
+	VolMap getVolUids();
+	uint32_t getAssertAtom(Val term);
+	AssertMap getAssertUids();
+	void retractAtom(Val term);
+protected:
+	IncConfig &config_;
 private:
 	bool initialized;
-	std::deque<uint32_t> incUids_;
+	VolMap volUids_;
+	AssertMap assertUids_;
 };

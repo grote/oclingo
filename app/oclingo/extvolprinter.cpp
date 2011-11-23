@@ -22,13 +22,19 @@ using namespace lparseconverter_impl;
 
 void ExtVolPrinter::print() {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolAtom();
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getQueryAtom();
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 
-void ExtVolPrinter::printWindow(int window) {
+void ExtVolPrinter::printTimeDecay(int window) {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolWindowAtom(window);
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolTimeDecayAtom(window);
+	if(atom > 0) { printer->addBody(atom, false); }
+}
+
+void ExtVolPrinter::printAssert(Val term) {
+	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
+	int atom = dynamic_cast<oClaspOutput*>(output_)->getAssertAtom(term);
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 

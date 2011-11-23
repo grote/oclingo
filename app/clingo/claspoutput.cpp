@@ -106,6 +106,7 @@ void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name
 
 void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
+	(void) symbol;
 }
 
 uint32_t ClaspOutput::symbol()
@@ -122,8 +123,9 @@ ClaspOutput::~ClaspOutput()
 {
 }
 
-iClaspOutput::iClaspOutput(bool shiftDisj)
+iClaspOutput::iClaspOutput(bool shiftDisj, IncConfig &config)
 	: ClaspOutput(shiftDisj)
+	, config_(config)
 	, initialized(false)
 {
 }
@@ -134,34 +136,64 @@ void iClaspOutput::initialize()
 		initialized = true;
 		ClaspOutput::initialize();
 	}
-	else if(incUids_.size()) {
-		if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
-		incUids_.pop_front();
+	// unfreeze volatile atom for coming step
+	else {
+		VolMap::iterator it = volUids_.find(config_.incStep+1);
+		if(it != volUids_.end()) {
+			b_->unfreeze(volUids_[config_.incStep+1]);
+			volUids_.erase(it);
+		}
 	}
 }
 
-uint32_t iClaspOutput::getNewIncUid()
+uint32_t iClaspOutput::getNewVolUid(int step)
 {
-	// create a new uid
-	int uid = symbol();
-	b_->freeze(uid);
-
-	return uid;
-}
-
-int iClaspOutput::getIncAtom(uint32_t vol_window)
-{
-	if(incUids_.size() < vol_window) {
-		incUids_.resize(vol_window, 0);
-	}
-	if(incUids_.at(vol_window-1) == 0) {
-		incUids_.at(vol_window-1) = getNewIncUid();
+	if(volUids_.find(step) == volUids_.end()) {
+		// create a new uid
+		volUids_[step] = symbol();
+		b_->freeze(volUids_[step]);
 	}
 
-	return incUids_.at(vol_window-1);
+	return volUids_[step];
 }
 
-std::deque<uint32_t> iClaspOutput::getIncUids()
+uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
 {
-	return incUids_;
+	// volatile atom expires at current step + vol window size
+	return getNewVolUid(config_.incStep + vol_window);
+}
+
+ClaspOutput::VolMap iClaspOutput::getVolUids()
+{
+	return volUids_;
+}
+
+uint32_t iClaspOutput::getAssertAtom(Val term)
+{
+	if(assertUids_.find(term) == assertUids_.end()) {
+		// create a new uid
+		assertUids_[term] = symbol();
+		b_->freeze(assertUids_[term]);
+	}
+
+	return assertUids_[term];
+}
+
+ClaspOutput::AssertMap iClaspOutput::getAssertUids()
+{
+	return assertUids_;
+}
+
+void iClaspOutput::retractAtom(Val term)
+{
+	// TODO add better error handling
+	AssertMap::iterator it = assertUids_.find(term);
+	if(it != assertUids_.end()) {
+		b_->unfreeze(assertUids_[term]);
+		assertUids_.erase(it);
+	} else {
+		std::cerr << "Error: Term ";
+		term.print(storage(), std::cerr);
+		std::cerr << " was not used to assert rules.";
+	}
 }

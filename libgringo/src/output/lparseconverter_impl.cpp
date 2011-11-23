@@ -116,7 +116,7 @@ class IncPrinter : public IncLit::Printer
 public:
 	IncPrinter(LparseConverter *output) : output_(output) {  }
 	void print(PredLitRep *l);
-	void print(uint32_t vol_window);
+	void print(int vol_window);
 	LparseConverter *output() const { return output_; }
 private:
 	LparseConverter *output_;
@@ -334,10 +334,10 @@ void JunctionLitPrinter::finish()
 
 void IncPrinter::print(PredLitRep *) { }
 
-void IncPrinter::print(uint32_t vol_window)
+void IncPrinter::print(int vol_window)
 {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
-	int atom = output_->getIncAtom(vol_window);
+	int atom = output_->getVolAtom(vol_window);
 	if(atom > 0) { printer->addBody(atom, false); }
 }
 

@@ -45,10 +45,12 @@ program ::= program line DOT.
 
 line ::= STEP NUMBER(num).           { onlineParser->setStep(num.number); }
 line ::= rule.
-line ::= CUMULATIVE.                 { onlineParser->setCumulative(); }
-line ::= VOLATILE.                   { onlineParser->setVolatile(); }
+line ::= CUMULATIVE.                 { onlineParser->setPart(OnlineParser::CUMULATIVE); }
+line ::= VOLATILE.                   { onlineParser->setPart(OnlineParser::VOLATILE); }
 line ::= VOLATILE COLON NUMBER(num). { onlineParser->setVolatileWindow(num.number); }
 line ::= FORGET NUMBER(num).         { onlineParser->forget(num.number); }
+line ::= ASSERT  COLON term.         { onlineParser->setAssert(); }
+line ::= RETRACT COLON term.         { onlineParser->retract(); }
 line ::= ENDSTEP.
 line ::= STOP.                       { onlineParser->terminate(); }
 

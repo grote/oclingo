@@ -37,7 +37,7 @@ OnlineParser::OnlineParser(oClaspOutput *output, std::istream* in)
 	, output_(output)
 	, terminated_(false)
 	, got_step_(false)
-	, volatile_(false)
+	, part_(CUMULATIVE)
 	, volatile_window_(0)
 { }
 
@@ -108,12 +108,14 @@ void OnlineParser::doAdd() {
 
 		// add volatile atom with special Printer
 		ExtBasePrinter *vol_printer = output_->printer<ExtBasePrinter>();
-		if(volatile_window_ == 0) {
+		if(part_ == VOLATILE && volatile_window_ == 0) {
 			// prolog like volatile that is discarded after each query
 			vol_printer->print();
-		} else {
+		} else if(part_ == VOLATILE) {
 			// step based volatile
-			vol_printer->printWindow(volatile_window_);
+			vol_printer->printTimeDecay(volatile_window_);
+		} else if(part_ == ASSERT) {
+			vol_printer->printAssert(assert_term_);
 		}
 
 		printer->end();
@@ -129,14 +131,14 @@ void OnlineParser::add(StackPtr stm) {
 
 void OnlineParser::add(Type type, uint32_t n) {
 	if(type == STM_RULE) {
-		if(volatile_) type = USER;	// set custom rule type
+		if(part_ != CUMULATIVE) type = USER;	// set custom rule type
 		StackPtr stack = get(type, n);
 
 		if(output_->getExternalKnowledge().needsNewStep()) {
 			// add rules in later step, so externals are declared
 			output_->getExternalKnowledge().addStackPtr(stack);
-			// remember status for volatile rules
-			output_->getExternalKnowledge().savePrematureVol(volatile_, volatile_window_);
+			// remember current part and volatile window
+			output_->getExternalKnowledge().savePrematureVol(part_, volatile_window_);
 		} else {
 			// add rules right away
 			output_->startExtInput();
@@ -145,7 +147,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 		}
 	}
 	else {
-		if(type == STM_CONSTRAINT && volatile_) type = USER + 1;	// set custom rule type
+		if(type == STM_CONSTRAINT && part_ != CUMULATIVE) type = USER + 1;	// set custom rule type
 		GroundProgramBuilder::add(type, n);
 	}
 }
@@ -171,18 +173,32 @@ void OnlineParser::terminate() {
 	terminated_ = true;
 }
 
-void OnlineParser::setCumulative() {
-	volatile_ = false;
-}
-
-void OnlineParser::setVolatile() {
-	volatile_ = true;
+void OnlineParser::setPart(Part part) {
+	part_ = part;
 }
 
 void OnlineParser::setVolatileWindow(int window) {
-	setVolatile();
-
 	volatile_window_ = window;
+
+	setPart(VOLATILE);
+}
+
+void OnlineParser::setAssert() {
+	saveTerm();
+
+	setPart(ASSERT);
+}
+
+void OnlineParser::retract() {
+	saveTerm();
+
+	output_->retractAtom(assert_term_);
+}
+
+void OnlineParser::saveTerm() {
+	assert(stack_->type == TERM && stack_->vals.size());
+
+	assert_term_ = stack_->vals.back();
 }
 
 bool OnlineParser::isTerminated() {

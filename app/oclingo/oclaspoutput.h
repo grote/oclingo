@@ -26,7 +26,7 @@ class ExternalKnowledge;
 class oClaspOutput : public iClaspOutput
 {
 public:
-	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, uint32_t port, bool import);
+	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
 	~oClaspOutput();
 	ExternalKnowledge& getExternalKnowledge();
 	void startExtInput();
@@ -34,14 +34,15 @@ public:
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void freezeAtom(uint32_t symbol);
 	void unfreezeAtom(uint32_t symbol);
-	uint32_t getVolAtom();
-	uint32_t getVolWindowAtom(int window);
-	uint32_t getVolAtomAss();
-	VarVec   getVolWindowAtomAss(int step);
-	void updateVolWindowAtoms(int step);
-	void finalizeVolAtom();
-	void deprecateVolAtom();
-	void unfreezeOldVolAtoms();
+
+	uint32_t getQueryAtom();
+	uint32_t getQueryAtomAss();
+	void finalizeQueryAtom();
+	void deprecateQueryAtom();
+	void unfreezeOldQueryAtoms();
+
+	uint32_t getVolAtom(int vol_window);
+	uint32_t getVolTimeDecayAtom(int window);
 protected:
 	void doFinalize();
 	void printExternalTableEntry(const Symbol &symbol);
@@ -51,7 +52,4 @@ private:
 	uint32_t vol_atom_;
 	uint32_t vol_atom_frozen_;
 	VarVec vol_atoms_old_;
-	VarSet vol_window_atoms_frozen_;
-
-	std::map<int, uint32_t> vol_atom_map_;
 };

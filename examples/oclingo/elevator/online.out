@@ -1,0 +1,121 @@
+Answer: 1
+  0.  currentFloor(0,0)  
+  1.  currentFloor(0,1)  goal(1)  
+Got input:
+#step 1.
+ext_on(7,1).
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)  
+   1.  currentFloor(0,1)  ext_on(7,1)  on(7,1)  up(1)  
+   2.  currentFloor(1,2)  on(7,2)      up(2)    
+   3.  currentFloor(2,3)  on(7,3)      up(3)    
+   4.  currentFloor(3,4)  on(7,4)      up(4)    
+   5.  currentFloor(4,5)  on(7,5)      up(5)    
+   6.  currentFloor(5,6)  on(7,6)      up(6)    
+   7.  currentFloor(6,7)  on(7,7)      up(7)    
+   8.  currentFloor(7,8)  on(7,8)      open(8)  
+   9.  currentFloor(7,9)  goal(9)      
+Got input:
+#step 2.
+ext_on(7,2).
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)  
+   1.  currentFloor(0,1)  ext_on(7,1)  on(7,1)  up(1)  
+   2.  currentFloor(1,2)  ext_on(7,2)  on(7,2)  up(2)  
+   3.  currentFloor(2,3)  on(7,3)      up(3)    
+   4.  currentFloor(3,4)  on(7,4)      up(4)    
+   5.  currentFloor(4,5)  on(7,5)      up(5)    
+   6.  currentFloor(5,6)  on(7,6)      up(6)    
+   7.  currentFloor(6,7)  on(7,7)      up(7)    
+   8.  currentFloor(7,8)  on(7,8)      open(8)  
+   9.  currentFloor(7,9)  goal(9)      
+Got input:
+#step 3.
+ext_on(7,3).
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)  
+   1.  currentFloor(0,1)  ext_on(7,1)  on(7,1)  up(1)  
+   2.  currentFloor(1,2)  ext_on(7,2)  on(7,2)  up(2)  
+   3.  currentFloor(2,3)  ext_on(7,3)  on(7,3)  up(3)  
+   4.  currentFloor(3,4)  on(7,4)      up(4)    
+   5.  currentFloor(4,5)  on(7,5)      up(5)    
+   6.  currentFloor(5,6)  on(7,6)      up(6)    
+   7.  currentFloor(6,7)  on(7,7)      up(7)    
+   8.  currentFloor(7,8)  on(7,8)      open(8)  
+   9.  currentFloor(7,9)  goal(9)      
+Got input:
+#step 7.
+ext_on(4,7).
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)   
+   1.  currentFloor(0,1)   ext_on(7,1)  on(7,1)   up(1)    
+   2.  currentFloor(1,2)   ext_on(7,2)  on(7,2)   up(2)    
+   3.  currentFloor(2,3)   ext_on(7,3)  on(7,3)   up(3)    
+   4.  currentFloor(3,4)   on(7,4)      up(4)     
+   5.  currentFloor(4,5)   on(7,5)      up(5)     
+   6.  currentFloor(5,6)   on(7,6)      up(6)     
+   7.  currentFloor(6,7)   ext_on(4,7)  on(4,7)   on(7,7)  up(7)  
+   8.  currentFloor(7,8)   on(4,8)      on(7,8)   open(8)  
+   9.  currentFloor(7,9)   down(9)      on(4,9)   
+  10.  currentFloor(6,10)  down(10)     on(4,10)  
+  11.  currentFloor(5,11)  down(11)     on(4,11)  
+  12.  currentFloor(4,12)  on(4,12)     open(12)  
+  13.  currentFloor(4,13)  goal(13)     
+Got input:
+#step 11.
+ext_on(1,11).
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)   
+   1.  currentFloor(0,1)   ext_on(7,1)  on(7,1)       up(1)     
+   2.  currentFloor(1,2)   ext_on(7,2)  on(7,2)       up(2)     
+   3.  currentFloor(2,3)   ext_on(7,3)  on(7,3)       up(3)     
+   4.  currentFloor(3,4)   on(7,4)      up(4)         
+   5.  currentFloor(4,5)   on(7,5)      up(5)         
+   6.  currentFloor(5,6)   on(7,6)      up(6)         
+   7.  currentFloor(6,7)   ext_on(4,7)  on(4,7)       on(7,7)   up(7)     
+   8.  currentFloor(7,8)   on(4,8)      on(7,8)       open(8)   
+   9.  currentFloor(7,9)   down(9)      on(4,9)       
+  10.  currentFloor(6,10)  down(10)     on(4,10)      
+  11.  currentFloor(5,11)  down(11)     ext_on(1,11)  on(1,11)  on(4,11)  
+  12.  currentFloor(4,12)  on(1,12)     on(4,12)      open(12)  
+  13.  currentFloor(4,13)  down(13)     on(1,13)      
+  14.  currentFloor(3,14)  down(14)     on(1,14)      
+  15.  currentFloor(2,15)  down(15)     on(1,15)      
+  16.  currentFloor(1,16)  on(1,16)     open(16)      
+  17.  currentFloor(1,17)  goal(17)     
+Got input:
+#step 13.
+#endstep.
+
+Answer: 1
+   0.  currentFloor(0,0)   
+   1.  currentFloor(0,1)   ext_on(7,1)  on(7,1)       up(1)     
+   2.  currentFloor(1,2)   ext_on(7,2)  on(7,2)       up(2)     
+   3.  currentFloor(2,3)   ext_on(7,3)  on(7,3)       up(3)     
+   4.  currentFloor(3,4)   on(7,4)      up(4)         
+   5.  currentFloor(4,5)   on(7,5)      up(5)         
+   6.  currentFloor(5,6)   on(7,6)      up(6)         
+   7.  currentFloor(6,7)   ext_on(4,7)  on(4,7)       on(7,7)   up(7)     
+   8.  currentFloor(7,8)   on(4,8)      on(7,8)       open(8)   
+   9.  currentFloor(7,9)   down(9)      on(4,9)       
+  10.  currentFloor(6,10)  down(10)     on(4,10)      
+  11.  currentFloor(5,11)  down(11)     ext_on(1,11)  on(1,11)  on(4,11)  
+  12.  currentFloor(4,12)  on(1,12)     on(4,12)      open(12)  
+  13.  currentFloor(4,13)  down(13)     on(1,13)      
+  14.  currentFloor(3,14)  down(14)     on(1,14)      
+  15.  currentFloor(2,15)  down(15)     on(1,15)      
+  16.  currentFloor(1,16)  on(1,16)     open(16)      
+  17.  currentFloor(1,17)  goal(17)     
+Got input:
+#stop.
+
