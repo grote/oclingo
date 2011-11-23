@@ -205,7 +205,7 @@ void ExternalKnowledge::savePrematureVol(bool vol, int window=0) {
 
 bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
 	// check if head atom has been defined as external
-	if(!sym.external || find(externals_.begin(), externals_.end(), sym.external) == externals_.end()) {
+	if(!sym.external || find(externals_.begin(), externals_.end(), sym.symbol) == externals_.end()) {
 		std::ostringstream emsg;
 		emsg << "Warning: Head ";
 		sym.print(output_->storage(), emsg);
