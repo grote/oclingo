@@ -209,15 +209,22 @@ void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
 	if(M == ICLINGO && app.clingo.mode == ICLINGO)
 	{
+		Clasp::ProgramBuilder &api = out->getProgramBuilder();
+		Clasp::Literal lit;
+
 		std::pair<int,uint32_t> atom;
 		foreach(atom, out->getVolUids()) {
 			assert(atom.second);
-			Clasp::ProgramBuilder &api = out->getProgramBuilder();
-			Clasp::Literal lit = api.getAtom(api.getEqAtom(atom.second))->literal();
+			lit = api.getAtom(api.getEqAtom(atom.second))->literal();
 			a.push_back(lit);
 		}
 
-		// TODO add assertion atom assumptions
+		std::pair<Val,uint32_t> aatom;
+		foreach(aatom, out->getAssertUids()) {
+			assert(aatom.second);
+			lit = api.getAtom(api.getEqAtom(aatom.second))->literal();
+			a.push_back(lit);
+		}
 	}
 }
 
