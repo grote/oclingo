@@ -145,39 +145,31 @@ void DisplayPrinter::end()
 
 void ExternalPrinter::print(PredLitRep *l)
 {
-	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->print(l);
 	if (head_)
 	{
 		LparseConverter::Symbol const &sym = output_->symbol(l);
-		if (sym.external == 0) { sym.external = output_->symbol(); }
-		ext_.push_back(sym.external);
+		sym.external = true;
 	}
 }
 
 void ExternalPrinter::begin()
 {
-	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->begin();
 	head_ = true;
 	ext_.clear();
 }
 
 void ExternalPrinter::endHead()
 {
-	static_cast<RulePrinter *>(output()->printer<Rule::Printer>())->endHead();
 	head_ = false;
-
 }
 
 void ExternalPrinter::end()
 {
-	RulePrinter *printer = static_cast<RulePrinter *>(output()->printer<Rule::Printer>());
-	foreach(uint32_t sym, ext_) { printer->addBody(sym, false); }
-	printer->end();
 }
 
 ///////////////////////////////// OptimizePrinter /////////////////////////////////
 
-void OptimizePrinter::begin(Optimize::Type type, bool maximize)
+void OptimizePrinter::begin(Optimize::Type, bool maximize)
 {
 	lits_.clear();
 	maximize_ = maximize;

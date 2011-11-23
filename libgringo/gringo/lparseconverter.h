@@ -30,7 +30,7 @@ public:
 
 		Symbol(Repr &repr, uint32_t symbol)
 			: symbol(symbol)
-			, external(0)
+			, external(false)
 			, undefined(false)
 		{
 			std::swap(this->repr, repr);
@@ -41,7 +41,7 @@ public:
 
 		Repr     repr;
 		uint32_t symbol;
-		uint32_t mutable external;
+		bool     mutable external;
 		bool     mutable undefined;
 	};
 
