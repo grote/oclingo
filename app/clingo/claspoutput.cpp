@@ -20,12 +20,13 @@
 #include <gringo/storage.h>
 #include <gringo/domain.h>
 
-ClaspOutput::ClaspOutput(bool shiftDisj, IncConfig &config)
+ClaspOutput::ClaspOutput(bool shiftDisj, IncConfig &config, bool incremental)
 	: LparseConverter(shiftDisj)
 	, b_(0)
 	, config_(config)
 	, initialized(false)
 	, trueAtom_(0)
+	, incremental_(incremental)
 {
 }
 
@@ -36,15 +37,6 @@ void ClaspOutput::initialize()
 		initialized = true;
 		LparseConverter::initialize();
 		b_->setCompute(false_, false);
-	}
-	else
-	{
-		VolMap::iterator it = volUids_.find(config_.incStep + 1);
-		if (it != volUids_.end()) 
-		{
-			b_->startRule().addHead(it->second).endRule();
-			volUids_.erase(it);
-		}
 	}
 }
 
@@ -134,6 +126,16 @@ uint32_t ClaspOutput::symbol()
 void ClaspOutput::doFinalize()
 {
 	printSymbolTable();
+	printExternalTable();
+	VolMap::iterator end = volUids_.lower_bound(config_.incStep + 1);
+	for (VolMap::iterator it = volUids_.begin(); it != end; it++)
+	{
+		b_->startRule().addHead(it->second).endRule();
+	}
+	volUids_.erase(volUids_.begin(), end);
+	// Note: make sure that there is always a volatile atom
+	// this is important to prevent clasp from polluting its top level
+	if (incremental_) { getVolAtom(1); }
 }
 
 void ClaspOutput::forgetStep(int step)
@@ -171,7 +173,7 @@ uint32_t ClaspOutput::getNewVolUid(int step)
 	}
 }
 
-uint32_t ClaspOutput::getVolAtom(int vol_window = 1)
+uint32_t ClaspOutput::getVolAtom(int vol_window)
 {
 	// volatile atom expires at current step + vol window size
 	return getNewVolUid(config_.incStep + vol_window);
