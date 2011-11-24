@@ -237,13 +237,9 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	: app(a)
 {
 	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO);
-	if (app.clingo.mode == CLINGO)
+	if (app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO) 
 	{
-		out.reset(new ClaspOutput(app.gringo.disjShift));
-	}
-	else if(app.clingo.mode == ICLINGO)
-	{
-		out.reset(new iClaspOutput(app.gringo.disjShift, config));
+		out.reset(new ClaspOutput(app.gringo.disjShift, config));
 	}
 	else { otherOutput(config); }
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)
@@ -263,25 +259,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 template <Mode M>
 void FromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
-	if(M == ICLINGO && app.clingo.mode == ICLINGO)
-	{
-		Clasp::ProgramBuilder &api = out->getProgramBuilder();
-		Clasp::Literal lit;
-
-		std::pair<int,uint32_t> atom;
-		foreach(atom, out->getVolUids()) {
-			assert(atom.second);
-			lit = api.getAtom(api.getEqAtom(atom.second))->literal();
-			a.push_back(lit);
-		}
-
-		std::pair<Val,uint32_t> aatom;
-		foreach(aatom, out->getAssertUids()) {
-			assert(aatom.second);
-			lit = api.getAtom(api.getEqAtom(aatom.second))->literal();
-			a.push_back(lit);
-		}
-	}
+	out->getProgramBuilder().getAssumptions(a);
 }
 
 template <Mode M>

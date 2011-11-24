@@ -20,16 +20,32 @@
 #include <gringo/storage.h>
 #include <gringo/domain.h>
 
-ClaspOutput::ClaspOutput(bool shiftDisj)
+ClaspOutput::ClaspOutput(bool shiftDisj, IncConfig &config)
 	: LparseConverter(shiftDisj)
 	, b_(0)
+	, config_(config)
+	, initialized(false)
+	, trueAtom_(0)
 {
 }
 
 void ClaspOutput::initialize()
 {
-	LparseConverter::initialize();
-	b_->setCompute(false_, false);
+	if (!initialized)
+	{
+		initialized = true;
+		LparseConverter::initialize();
+		b_->setCompute(false_, false);
+	}
+	else
+	{
+		VolMap::iterator it = volUids_.find(config_.incStep + 1);
+		if (it != volUids_.end()) 
+		{
+			b_->startRule().addHead(it->second).endRule();
+			volUids_.erase(it);
+		}
+	}
 }
 
 void ClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
@@ -106,7 +122,8 @@ void ClaspOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name
 
 void ClaspOutput::printExternalTableEntry(const Symbol &symbol)
 {
-	(void) symbol;
+	externalAtoms_[config_.incStep].push_back(symbol.symbol);
+	b_->freeze(symbol.symbol);
 }
 
 uint32_t ClaspOutput::symbol()
@@ -119,81 +136,76 @@ void ClaspOutput::doFinalize()
 	printSymbolTable();
 }
 
-ClaspOutput::~ClaspOutput()
+void ClaspOutput::forgetStep(int step)
 {
-}
-
-iClaspOutput::iClaspOutput(bool shiftDisj, IncConfig &config)
-	: ClaspOutput(shiftDisj)
-	, config_(config)
-	, initialized(false)
-{
-}
-
-void iClaspOutput::initialize()
-{
-	if(!initialized) {
-		initialized = true;
-		ClaspOutput::initialize();
+	ExternalMap::iterator it = externalAtoms_.find(step);
+	if (it != externalAtoms_.end())
+	{
+		foreach (uint32_t sym, it->second) { b_->unfreeze(sym); }
+		externalAtoms_.erase(it);
 	}
-	// unfreeze volatile atom for coming step
-	else {
-		VolMap::iterator it = volUids_.find(config_.incStep+1);
-		if(it != volUids_.end()) {
-			b_->unfreeze(volUids_[config_.incStep+1]);
-			volUids_.erase(it);
+}
+
+uint32_t ClaspOutput::getNewVolUid(int step)
+{
+	if (step < config_.incStep + 1)
+	{
+		// this case should be relatively unlikely
+		// there are better ways to handle an out-of-order volatile statements
+		if (!trueAtom_) 
+		{
+			trueAtom_ = symbol();
+			b_->startRule().addHead(trueAtom_).endRule();
 		}
+		return trueAtom_;
+	}
+	else
+	{
+		uint32_t &sym = volUids_[step];
+		if(!sym)
+		{
+			sym = symbol();
+			b_->freeze(sym);
+		}
+		return sym;
 	}
 }
 
-uint32_t iClaspOutput::getNewVolUid(int step)
-{
-	if(volUids_.find(step) == volUids_.end()) {
-		// create a new uid
-		volUids_[step] = symbol();
-		b_->freeze(volUids_[step]);
-	}
-
-	return volUids_[step];
-}
-
-uint32_t iClaspOutput::getVolAtom(int vol_window = 1)
+uint32_t ClaspOutput::getVolAtom(int vol_window = 1)
 {
 	// volatile atom expires at current step + vol window size
 	return getNewVolUid(config_.incStep + vol_window);
 }
 
-ClaspOutput::VolMap iClaspOutput::getVolUids()
+uint32_t ClaspOutput::getAssertAtom(Val term)
 {
-	return volUids_;
-}
-
-uint32_t iClaspOutput::getAssertAtom(Val term)
-{
-	if(assertUids_.find(term) == assertUids_.end()) {
-		// create a new uid
-		assertUids_[term] = symbol();
-		b_->freeze(assertUids_[term]);
+	uint32_t &sym = assertUids_[term];
+	if (!sym)
+	{
+		sym = symbol();
+		b_->freeze(sym);
 	}
-
-	return assertUids_[term];
+	return sym;
 }
 
-ClaspOutput::AssertMap iClaspOutput::getAssertUids()
-{
-	return assertUids_;
-}
-
-void iClaspOutput::retractAtom(Val term)
+void ClaspOutput::retractAtom(Val term)
 {
 	// TODO add better error handling
 	AssertMap::iterator it = assertUids_.find(term);
-	if(it != assertUids_.end()) {
-		b_->unfreeze(assertUids_[term]);
+	if(it != assertUids_.end())
+	{
+		b_->startRule().addHead(it->second).endRule();
 		assertUids_.erase(it);
-	} else {
+	}
+	else
+	{
 		std::cerr << "Error: Term ";
 		term.print(storage(), std::cerr);
 		std::cerr << " was not used to assert rules.";
 	}
 }
+
+ClaspOutput::~ClaspOutput()
+{
+}
+

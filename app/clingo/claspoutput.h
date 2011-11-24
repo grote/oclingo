@@ -27,19 +27,27 @@ class ClaspOutput : public LparseConverter
 {
 protected:
 	typedef boost::unordered_map<int, uint32_t> VolMap;
+	typedef boost::unordered_map<int, AtomVec> ExternalMap;
 	typedef boost::unordered_map<Val, uint32_t> AssertMap;
 public:
-	ClaspOutput(bool shiftDisj);
+	ClaspOutput(bool shiftDisj, IncConfig &config);
 	virtual void initialize();
-	virtual VolMap getVolUids() { return VolMap(); }
-	virtual AssertMap getAssertUids() { return AssertMap(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
 	SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
 	~ClaspOutput();
+
+	// incremental interface
+	void forgetStep(int step);
+	uint32_t getNewVolUid(int step);
+	uint32_t getVolAtom(int vol_window);
+	uint32_t getAssertAtom(Val term);
+	void retractAtom(Val term);
+	
 protected:
-	virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+	// TODO: I do not want this method to be virtual! Why?
+	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 	void printWeightRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
@@ -53,23 +61,11 @@ protected:
 	virtual void doFinalize();
 protected:
 	Clasp::ProgramBuilder *b_;
+	IncConfig             &config_;
+	bool                   initialized;
+	VolMap                 volUids_;
+	AssertMap              assertUids_;
+	ExternalMap            externalAtoms_;
+	uint32_t               trueAtom_;
 };
 
-class iClaspOutput : public ClaspOutput
-{
-public:
-	iClaspOutput(bool shiftDisj, IncConfig &config);
-	void initialize();
-	uint32_t getNewVolUid(int step);
-	virtual uint32_t getVolAtom(int vol_window);
-	VolMap getVolUids();
-	uint32_t getAssertAtom(Val term);
-	AssertMap getAssertUids();
-	void retractAtom(Val term);
-protected:
-	IncConfig &config_;
-private:
-	bool initialized;
-	VolMap volUids_;
-	AssertMap assertUids_;
-};
