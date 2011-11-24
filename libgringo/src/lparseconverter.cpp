@@ -70,7 +70,6 @@ void LparseConverter::Symbol::print(const Storage *s, std::ostream &out) const
 LparseConverter::LparseConverter(bool shiftDisj)
 	: prioMap_(boost::bind(static_cast<int (Val::*)(const Val&, Storage *) const>(&Val::compare), _1, _2, boost::ref(s_)) < 0)
 	, shiftDisjunctions_(shiftDisj)
-	, newSymbolsDone_(0)
 {
 	initPrinters<LparseConverter>();
 }
@@ -109,18 +108,6 @@ void LparseConverter::display(const Val &head, LitVec body, bool show)
 void LparseConverter::prioLit(int32_t lit, const ValVec &set, bool maximize)
 {
 	prioMap_[set[1]][set].push_back(maximize ? -lit : lit);
-}
-
-void LparseConverter::prepareExternalTable()
-{
-	foreach (Symbol const *sym, newSymbols_)
-	{
-		Domain const *dom = storage()->domain(sym->repr.first);
-		if (dom->external() && !sym->external)
-		{
-			printBasicRule(sym->symbol, 1, int32_t(*sym));
-		}
-	}
 }
 
 void LparseConverter::prepareSymbolTable()
@@ -191,6 +178,11 @@ void LparseConverter::printExternalTable()
 	foreach (Symbol const *sym, newSymbols_)
 	{
 		if (sym->external) { printExternalTableEntry(*sym); }
+		else if (storage()->domain(sym->repr.first)->external())
+		{
+			sym->external = true;
+			printExternalTableEntry(*sym);
+		}
 	}
 }
 
@@ -198,17 +190,6 @@ void LparseConverter::addCompute(PredLitRep *l)
 {
 	if(l->sign()) { computeNeg_.push_back(symbol(l)); }
 	else          { computePos_.push_back(symbol(l)); }
-}
-
-void LparseConverter::endModule()
-{
-	foreach (Symbol const *sym, boost::make_iterator_range(newSymbols_.begin() + newSymbolsDone_, newSymbols_.end()))
-	{
-		Domain const *dom = storage()->domain(sym->repr.first);
-		// mark symbols that do not appear in any head
-		if (!dom->find(sym->repr.second.begin()).valid()) { sym->undefined = true; }
-	}
-	newSymbolsDone_ = newSymbols_.size();
 }
 
 void LparseConverter::finalize()
@@ -248,12 +229,10 @@ void LparseConverter::finalize()
 		}
 		printMinimizeRule(pos, neg, wPos, wNeg);
 	}
-	prepareExternalTable();
 	prepareSymbolTable();
 	doFinalize();
 	shownSymbols_.clear();
 	newSymbols_.clear();
-	newSymbolsDone_ = 0;
 }
 
 void LparseConverter::printBasicRule(uint32_t head, uint32_t n, ...)

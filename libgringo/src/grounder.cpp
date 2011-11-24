@@ -238,7 +238,6 @@ void Grounder::ground(Module &module)
 		ground_();
 		output()->endComponent();
 	}
-	output()->endModule();
 	foreach(Domain *dom, domains())
 	{
 		dom->fix();

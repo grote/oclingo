@@ -239,7 +239,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 	assert(app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO);
 	if (app.clingo.mode == CLINGO || app.clingo.mode == ICLINGO) 
 	{
-		out.reset(new ClaspOutput(app.gringo.disjShift, config));
+		out.reset(new ClaspOutput(app.gringo.disjShift, config, app.clingo.mode == ICLINGO));
 	}
 	else { otherOutput(config); }
 	if(app.clingo.mode == CLINGO && app.gringo.groundInput)

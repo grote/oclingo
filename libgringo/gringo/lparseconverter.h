@@ -31,7 +31,6 @@ public:
 		Symbol(Repr &repr, uint32_t symbol)
 			: symbol(symbol)
 			, external(false)
-			, undefined(false)
 		{
 			std::swap(this->repr, repr);
 		}
@@ -42,7 +41,6 @@ public:
 		Repr     repr;
 		uint32_t symbol;
 		bool     mutable external;
-		bool     mutable undefined;
 	};
 
 	struct BySymbol { };
@@ -78,7 +76,6 @@ public:
 	Symbol const &symbol(PredLitRep *l);
 	uint32_t falseSymbol() const { return false_; }
 	virtual void initialize();
-	virtual void endModule();
 	void finalize();
 	void printSymbolTable();
 	void printExternalTable();
@@ -89,7 +86,6 @@ public:
 	void printBasicRule(uint32_t head, const LitVec &lits);
 	void display(const Val &head, LitVec body, bool show);
 	void prepareSymbolTable();
-	void prepareExternalTable();
 	virtual ~LparseConverter();
 
 public:
@@ -117,5 +113,4 @@ protected:
 	SymbolMap             symbolMap_;
 	ShownSymbols          shownSymbols_;
 	NewSymbols            newSymbols_;
-	uint32_t              newSymbolsDone_;
 };

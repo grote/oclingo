@@ -26,11 +26,11 @@
 class ClaspOutput : public LparseConverter
 {
 protected:
-	typedef boost::unordered_map<int, uint32_t> VolMap;
+	typedef std::map<int, uint32_t> VolMap;
 	typedef boost::unordered_map<int, AtomVec> ExternalMap;
 	typedef boost::unordered_map<Val, uint32_t> AssertMap;
 public:
-	ClaspOutput(bool shiftDisj, IncConfig &config);
+	ClaspOutput(bool shiftDisj, IncConfig &config, bool incremental);
 	virtual void initialize();
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
 	Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
@@ -67,5 +67,6 @@ protected:
 	AssertMap              assertUids_;
 	ExternalMap            externalAtoms_;
 	uint32_t               trueAtom_;
+	bool const             incremental_;
 };
 
