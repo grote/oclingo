@@ -25,25 +25,6 @@
 
 typedef struct lua_State lua_State;
 
-struct TermExpansion
-{
-	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &) const;
-	virtual void expand(Grounder *g);
-	virtual ~TermExpansion();
-};
-typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
-
-struct TermDepthExpansion : public TermExpansion
-{
-	TermDepthExpansion(IncConfig &config);
-	virtual bool limit(Grounder *g, const ValRng &rng, int32_t &offset) const;
-	virtual void expand(Grounder *g);
-	virtual ~TermDepthExpansion();
-
-	IncConfig &config;
-	int        start;
-};
-
 class Module
 {
 	friend class Grounder;
@@ -82,14 +63,13 @@ private:
 	typedef boost::ptr_vector<Module> ModuleVec;
 
 public:
-	Grounder(Output *out, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic);
+	Grounder(Output *out, bool debug, BodyOrderHeuristicPtr heuristic);
 	void analyze(const std::string &depGraph = "", bool stats = false);
 	void addMagic();
 	void ground(Module &module);
 	void enqueue(Groundable *g);
 	void externalStm(uint32_t nameId, uint32_t arity);
 	uint32_t createVar();
-	TermExpansion &termExpansion() const;
 	BodyOrderHeuristic& heuristic() const;
 	Module *createModule();
 	void addInternal(Statement *stm);
@@ -114,17 +94,10 @@ private:
 	bool                   debug_;
 	std::auto_ptr<LuaImpl> luaImpl_;
 	Stats                  stats_;
-	TermExpansionPtr       termExpansion_;
 	BodyOrderHeuristicPtr  heuristic_;
 	Module                *current_;
 	bool                   optimizeEdb_;
 };
-
-// ========================== TermExpansion ==========================
-
-inline bool TermExpansion::limit(Grounder *, const ValRng &, int32_t &) const { return false; }
-inline void TermExpansion::expand(Grounder *) { }
-inline TermExpansion::~TermExpansion() { }
 
 // ========================== Module ==========================
 
@@ -133,5 +106,4 @@ inline StatementPtrVec &Module::statements() { return statements_; }
 
 // ========================== Grounder ==========================
 
-inline TermExpansion &Grounder::termExpansion() const { return *termExpansion_; }
 inline uint32_t Grounder::aggrUid() { return aggrUids_++; }

@@ -41,13 +41,7 @@ void External::endGround(Grounder *g)
 
 void External::addDomain(Grounder *g)
 {
-	try { head_->addDomain(g, false); }
-	catch(const AtomRedefinedException &ex)
-	{
-		std::stringstream ss;
-		print(g, ss);
-		throw ModularityException(StrLoc(g, loc()), ss.str(), ex.what());
-	}
+	head_->addDomain(g, false);
 }
 
 bool External::grounded(Grounder *g)

@@ -113,7 +113,6 @@ class Groundable;
 
 struct Loc;
 struct IncConfig;
-struct TermExpansion;
 struct VarDomains;
 
 namespace LitDep
@@ -141,7 +140,6 @@ typedef boost::iterator_range<ValVec::const_iterator> ValRng;
 typedef boost::iterator_range<StatementPtrVec::iterator> StatementRng;
 typedef std::pair<Loc, uint32_t> VarSig;
 typedef std::vector<VarSig> VarSigVec;
-typedef std::auto_ptr<TermExpansion> TermExpansionPtr;
 typedef std::auto_ptr<BodyOrderHeuristic> BodyOrderHeuristicPtr;
 typedef std::auto_ptr<Module> ModulePtr;
 typedef std::pair<bool, bool> BoolPair;

@@ -58,7 +58,7 @@ bool StaticIndex::hasNew() const
 	return false;
 }
 
-bool StaticIndex::init(Grounder* g)
+bool StaticIndex::init(Grounder*)
 {
 	return hasNew();
 }

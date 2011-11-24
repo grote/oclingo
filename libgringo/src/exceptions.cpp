@@ -130,16 +130,6 @@ const char *TypeException::what() const throw()
 	return msg_.c_str();
 }
 
-AtomRedefinedException::AtomRedefinedException(const std::string &atom)
-	: atom_(atom)
-{
-}
-
-const char *AtomRedefinedException::what() const throw()
-{
-	return atom_.c_str();
-}
-
 ModularityException::ModularityException(const StrLoc &stmLoc, const std::string &stmStr, const std::string &atom)
 {
 	std::ostringstream oss;

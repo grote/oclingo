@@ -51,7 +51,6 @@ public:
 	void initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden);
 	bool validateOptions(ProgramOptions::OptionValues& values, Messages&);
 	void addDefaults(std::string& def);
-	TermExpansionPtr termExpansion(IncConfig &config) const;
 
 	/** The constant assignments in the format "constant=term" */
 	std::vector<std::string> consts;
@@ -74,7 +73,6 @@ public:
 	bool stats;
 	/** whether magic set rewriting is enabled */
 	bool magic;
-	IExpand iexpand;
 	ProgramOptions::HeuristicOptions heuristics;
 };
 

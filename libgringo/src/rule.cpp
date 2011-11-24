@@ -77,13 +77,7 @@ void Rule::addDomain(Grounder *g, bool fact)
 {
 	if(head_.get())
 	{
-		try { head_->addDomain(g, fact); }
-		catch(const AtomRedefinedException &ex)
-		{
-			std::stringstream ss;
-			print(g, ss);
-			throw ModularityException(StrLoc(g, loc()), ss.str(), ex.what());
-		}
+		head_->addDomain(g, fact);
 	}
 }
 
@@ -113,6 +107,7 @@ bool Rule::grounded(Grounder *g)
 		}
 		else if(lit.forcePrint()) { lit.accept(printer); }
 	}
+	#pragma message "an exception might be thrown here by clasp; it should be caught to handle redefinitions"
 	printer->end();
 	if(head_.get()) { addDomain(g, fact); }
 	return true;

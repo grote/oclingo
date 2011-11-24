@@ -167,7 +167,7 @@ void DisplayHeadLit::print(Storage *sto, std::ostream &out) const
 	term_->print(sto, out);
 }
 
-Index *DisplayHeadLit::index(Grounder *g, Formula *gr, VarSet &bound)
+Index *DisplayHeadLit::index(Grounder *, Formula *, VarSet &)
 {
 	return new MatchIndex(this);
 }

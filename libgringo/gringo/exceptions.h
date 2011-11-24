@@ -110,16 +110,6 @@ private:
 	mutable std::string msg_;
 };
 
-class AtomRedefinedException : public std::exception
-{
-public:
-	AtomRedefinedException(const std::string &atom);
-	const char *what() const throw();
-	~AtomRedefinedException() throw() { }
-private:
-	const std::string   atom_;
-};
-
 class ModularityException : public std::exception
 {
 public:

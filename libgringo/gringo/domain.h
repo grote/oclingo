@@ -22,8 +22,6 @@
 
 class Domain
 {
-private:
-	typedef std::map<int32_t, ValVecSet> OffsetMap;
 public:
 	typedef std::pair<PredIndex*,Formula*> PredInfo;
 	typedef std::vector<PredInfo> PredInfoVec;
@@ -34,13 +32,11 @@ public:
 	const ValVecSet::Index &find(const ValVec::const_iterator &v) const;
 	bool insert(Grounder *g, const ValVec::const_iterator &v, bool fact = false);
 	uint32_t size() const   { return vals_.size(); }
-	void fix()              { lastInsertPos_ = vals_.size(); }
 	void external(bool e)   { external_ = e; }
 	bool external() const   { return external_; }
 	uint32_t arity() const  { return arity_; }
 	uint32_t nameId() const { return nameId_; }
 	uint32_t domId() const  { return domId_; }
-	void addOffset(int32_t offset);
 	bool extend(Grounder *g, PredIndex *idx, uint32_t offset);
 	//! creates a map of all possible values for every variable in the literal
 	void allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms);
@@ -49,11 +45,9 @@ private:
 	uint32_t       arity_;
 	uint32_t       domId_;
 	ValVecSet      vals_;
-	OffsetMap      valsLarger_;
 	PredInfoVec    index_;
 	PredIndexVec   completeIndex_;
 	uint32_t       new_;
-	uint32_t       lastInsertPos_;
 	bool           external_;
 public:
 	bool           show;
