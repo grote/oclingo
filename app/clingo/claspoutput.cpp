@@ -167,7 +167,6 @@ uint32_t ClaspOutput::getNewVolUid(int step)
 		if(!sym)
 		{
 			sym = symbol();
-			volUids_[step] = sym;
 			b_->freeze(sym);
 		}
 		return sym;
@@ -186,7 +185,6 @@ uint32_t ClaspOutput::getAssertAtom(Val term)
 	if (!sym)
 	{
 		sym = symbol();
-		assertUids_[term] = sym;
 		b_->freeze(sym);
 	}
 	return sym;
