@@ -24,22 +24,18 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	: grounder_(grounder)
 	, output_(output)
 	, solver_(solver)
-	, forget_(0)
-	, import_(import)
 	, socket_(NULL)
 	, port_(port)
 	, reading_(false)
 	, new_input_(false)
 	, my_post_(true)
 	, solver_stopped_(false)
+	, import_(import)
 	, step_(1)
 	, controller_step_(1)
 	, model_(true)
 	, debug_(false)
 {
-	externals_per_step_.push_back(VarVec());
-	externals_per_step_.push_back(VarVec());
-
 	post_ = new ExternalKnowledge::PostPropagator(this);
 
 //	debug_ = grounder_->options().debug;
@@ -63,12 +59,6 @@ void ExternalKnowledge::addPostPropagator() {
 void ExternalKnowledge::removePostPropagator() {
 	solver_->removePost(post_);
 	my_post_ = true;
-}
-
-void ExternalKnowledge::addExternal(uint32_t symbol) {
-	externals_.push_back(symbol);
-	to_freeze_.push_back(symbol);
-	externals_per_step_.at(step_).push_back(symbol);
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -199,6 +189,7 @@ void ExternalKnowledge::savePrematureVol(OnlineParser::Part part, int window=0) 
 	vol_stack_.push_back(std::make_pair(part, window));
 }
 
+/*
 bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
 	// check if head atom has been defined as external
 	if(!sym.external || find(externals_.begin(), externals_.end(), sym.symbol) == externals_.end()) {
@@ -233,6 +224,7 @@ void ExternalKnowledge::addHead(uint32_t symbol) {
 		}
 	}
 }
+*/
 
 bool ExternalKnowledge::addPrematureKnowledge() {
 	assert(stacks_.size() == vol_stack_.size());
@@ -256,16 +248,7 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 		}
 	}
 
-	// forget externals if necessary
-	if(forget_) {
-		forgetExternals(forget_);
-	}
-
-	// freeze externals that were not defined with premature knowledge
-	foreach(uint32_t symbol, to_freeze_) {
-		output_->freezeAtom(symbol);
-	}
-	to_freeze_.clear();
+	// TODO check if premature #forget statement is handled properly
 
 	return added;
 }
@@ -285,10 +268,6 @@ bool ExternalKnowledge::needsNewStep() {
 			stacks_.size() > 0;			// rule stack not empty
 }
 
-VarVec& ExternalKnowledge::getExternals() {
-	return externals_;
-}
-
 void ExternalKnowledge::endIteration() {
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
@@ -299,42 +278,6 @@ void ExternalKnowledge::endStep() {
 
 	step_++;
 	std::cerr << "Step: " << step_ << std::endl;
-	externals_per_step_.push_back(VarVec());
-}
-
-void ExternalKnowledge::forgetExternals(uint32_t step) {
-	// unfreeze old externals for simplification by clasp
-
-	if(needsNewStep()) {
-		if(step > forget_) forget_ = step;
-		return;
-	}
-
-	// make sure to not unfreeze more steps than grounded
-	if(step > externals_per_step_.size()-1) {
-		step = externals_per_step_.size()-1;
-	}
-
-	// check each step for externals to forget
-	for(uint32_t i = 0; i <= step; ++i) {
-		for(VarVec::iterator ext = externals_per_step_.at(i).begin(); ext != externals_per_step_.at(i).end(); ++ext) {
-			VarVec::iterator res = find(externals_.begin(), externals_.end(), *ext);
-			if(res != externals_.end()) {
-				// delete external atom from externals list
-				externals_.erase(res);
-				// sometimes we were about to freeze it which we should not do anymore
-				res = find(to_freeze_.begin(), to_freeze_.end(), *ext);
-				if(res != to_freeze_.end()) {
-					to_freeze_.erase(res);
-				} else {
-					// external was not yet added to program, so needs unfreezing
-					output_->unfreezeAtom(*ext);
-				}
-			}
-		} // end step for
-		externals_per_step_.at(i).clear();
-	}
-	forget_ = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////

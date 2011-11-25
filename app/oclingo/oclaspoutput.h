@@ -23,7 +23,7 @@
 
 class ExternalKnowledge;
 
-class oClaspOutput : public iClaspOutput
+class oClaspOutput : public ClaspOutput
 {
 public:
 	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
@@ -31,9 +31,8 @@ public:
 	ExternalKnowledge& getExternalKnowledge();
 	void startExtInput();
 	void stopExtInput();
-	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+//	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void freezeAtom(uint32_t symbol);
-	void unfreezeAtom(uint32_t symbol);
 
 	uint32_t getQueryAtom();
 	uint32_t getQueryAtomAss();
@@ -41,11 +40,10 @@ public:
 	void deprecateQueryAtom();
 	void unfreezeOldQueryAtoms();
 
-	uint32_t getVolAtom(int vol_window);
+//	uint32_t getVolAtom(int vol_window);
 	uint32_t getVolTimeDecayAtom(int window);
 protected:
 	void doFinalize();
-	void printExternalTableEntry(const Symbol &symbol);
 private:
 	ExternalKnowledge* ext_;
 	bool ext_input_;

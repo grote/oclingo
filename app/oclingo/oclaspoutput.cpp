@@ -22,7 +22,7 @@
 GRINGO_EXPORT_PRINTER(ExtVolPrinter)
 
 oClaspOutput::oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import)
-	: iClaspOutput(shiftDisj, config)
+	: ClaspOutput(shiftDisj, config, true)
 	, ext_input_(false)
 	, vol_atom_(0)
 	, vol_atom_frozen_(0)
@@ -48,6 +48,7 @@ void oClaspOutput::stopExtInput() {
 		ext_input_ = false;
 }
 
+/*
 void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg) {
 	if(ext_input_) {
 		Symbol const &sym = symbol(head);
@@ -61,13 +62,10 @@ void oClaspOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomV
 	}
 	ClaspOutput::printBasicRule(head, pos, neg);
 }
+*/
 
 void oClaspOutput::freezeAtom(uint32_t symbol) {
 	b_->freeze(symbol);
-}
-
-void oClaspOutput::unfreezeAtom(uint32_t symbol) {
-	b_->unfreeze(symbol);
 }
 
 
@@ -101,12 +99,12 @@ void oClaspOutput::deprecateQueryAtom() {
 void oClaspOutput::unfreezeOldQueryAtoms() {
 	// unfreeze all old (deprecated) volatile atoms
 	foreach(VarVec::value_type atom, vol_atoms_old_) {
-		unfreezeAtom(atom);
+		b_->startRule().addHead(atom).endRule();
 	}
 	vol_atoms_old_.clear();
 }
 
-
+/*
 // needed because ProgramBuilder does not update frozen atoms when grounding up to ControllerStep
 // this way frozen atoms only get created when needed
 uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
@@ -115,9 +113,10 @@ uint32_t oClaspOutput::getVolAtom(int vol_window = 1) {
 		return falseSymbol();
 	} else {
 		// IncAtom is really needed, so call proper function
-		return iClaspOutput::getVolAtom(vol_window);
+		return ClaspOutput::getVolAtom(vol_window);
 	}
 }
+*/
 
 // volatile parts from controller need to be relative to controller step
 uint32_t oClaspOutput::getVolTimeDecayAtom(int window) {
@@ -125,16 +124,8 @@ uint32_t oClaspOutput::getVolTimeDecayAtom(int window) {
 }
 
 void oClaspOutput::doFinalize() {
-	printExternalTable();
-
 	// freeze volatile atom
 	finalizeQueryAtom();
 
 	ClaspOutput::doFinalize();
-}
-
-void oClaspOutput::printExternalTableEntry(const Symbol &symbol)
-{
-	std::cerr << "  I AM NOT CALLED CAN NOT ADD EXTERNAL" << std::endl;
-	ext_->addExternal(symbol.external);
 }

@@ -51,8 +51,8 @@ public:
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void savePrematureVol(OnlineParser::Part part, int window);
-	bool checkHead(LparseConverter::Symbol const &sym);
-	void addHead(uint32_t symbol);
+//	bool checkHead(LparseConverter::Symbol const &sym);
+//	void addHead(uint32_t symbol);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
@@ -60,7 +60,6 @@ public:
 	VarVec& getExternals();
 	void endIteration();
 	void endStep();
-	void forgetExternals(uint32_t step);
 
 protected:
 	struct PostPropagator : public Clasp::PostPropagator {
@@ -81,13 +80,6 @@ private:
 	StackPtrList stacks_;
 	std::list<std::pair<OnlineParser::Part,int> > vol_stack_;
 
-	// externals handling
-	VarVec externals_;
-	VarVec to_freeze_;
-	std::vector<VarVec> externals_per_step_;
-	uint32_t forget_;
-	bool import_;
-
 	// socket stuff
 	boost::asio::io_service io_service_;
 	boost::asio::ip::tcp::socket* socket_;
@@ -100,6 +92,7 @@ private:
 	bool my_post_;
 	bool solver_stopped_;
 
+	bool import_;
 	int step_;
 	int controller_step_;
 	bool model_;
