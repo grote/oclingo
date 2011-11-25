@@ -27,50 +27,21 @@
 // FromGringo
 /////////////////////////////////////////////////////////////////////////////////////////
 
+
 template <>
 void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
 {
-	if(app.clingo.mode == ICLINGO || app.clingo.mode == OCLINGO)
-	{
-		Clasp::ProgramBuilder &api = out->getProgramBuilder();
-		Clasp::Literal lit;
+	oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
 
-		std::pair<int,uint32_t> atom;
-		foreach(atom, out->getVolUids()) {
-			assert(atom.second);
-			lit = api.getAtom(api.getEqAtom(atom.second))->literal();
-			a.push_back(lit);
-		}
-
-		std::pair<Val,uint32_t> aatom;
-		foreach(aatom, out->getAssertUids()) {
-			assert(aatom.second);
-			lit = api.getAtom(api.getEqAtom(aatom.second))->literal();
-			a.push_back(lit);
-		}
-
-		if(app.clingo.mode == OCLINGO) {
-			oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
-
-			// assume volatile atom to be true for this iteration only
-			uint32_t vol_atom = o_output->getQueryAtomAss();
-			if(vol_atom) {
-				lit = api.getAtom(api.getEqAtom(vol_atom))->literal();
-				a.push_back(lit);
-			}
-			// only deprecate volatile atom if we want the answer set this step
-			if(!o_output->getExternalKnowledge().needsNewStep()) {
-				o_output->deprecateQueryAtom();
-			}
-
-			// assume external atom to be false
-			foreach(uint32_t ext, o_output->getExternalKnowledge().getExternals()) {
-				lit = api.getAtom(api.getEqAtom(ext))->literal();
-				a.push_back(~lit);
-			}
-		} // end OCLINGO only part
+	// TODO do this somewhere else:
+	// only deprecate volatile atom if we want the answer set this step
+	if(!o_output->getExternalKnowledge().needsNewStep()) {
+		o_output->deprecateQueryAtom();
 	}
+
+	out->getProgramBuilder().getAssumptions(a);
 }
+
 
 template <>
 bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)

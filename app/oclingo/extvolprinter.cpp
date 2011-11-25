@@ -23,19 +23,19 @@ using namespace lparseconverter_impl;
 void ExtVolPrinter::print() {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = dynamic_cast<oClaspOutput*>(output_)->getQueryAtom();
-	if(atom > 0) { printer->addBody(atom, false); }
+	if(atom > 0) { printer->addBody(atom, true); }
 }
 
 void ExtVolPrinter::printTimeDecay(int window) {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = dynamic_cast<oClaspOutput*>(output_)->getVolTimeDecayAtom(window);
-	if(atom > 0) { printer->addBody(atom, false); }
+	if(atom > 0) { printer->addBody(atom, true); }
 }
 
 void ExtVolPrinter::printAssert(Val term) {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = dynamic_cast<oClaspOutput*>(output_)->getAssertAtom(term);
-	if(atom > 0) { printer->addBody(atom, false); }
+	if(atom > 0) { printer->addBody(atom, true); }
 }
 
 GRINGO_REGISTER_PRINTER(ExtVolPrinter, ExtBasePrinter, LparseConverter)

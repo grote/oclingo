@@ -25,8 +25,8 @@ TESTS = [
 	['little_robot', 'robot.lp', 'world.lp', 'online3.lp', 'online3.out'],
 	['sensor', 'sensor.lp', 'room.lp',  'online.lp',  'online.out'],
 	['sensor', 'sensor.lp', 'room3.lp', 'online3.lp', 'online3.out'],
-	['technical1', 'technical.lp',  'online.lp',  'online.out'],
-	['technical1', 'technical.lp', 'online2.lp', 'online2.out'],
+#	['technical1', 'technical.lp',  'online.lp',  'online.out'],
+#	['technical1', 'technical.lp', 'online2.lp', 'online2.out'],
 	['technical1', 'technical.lp', 'online3.lp', 'online3.out'],
 	['technical1', 'technical.lp', 'online4.lp', 'online4.out'],
 	['technical1', 'technical.lp', 'online5.lp', 'online5.out'],
@@ -35,7 +35,7 @@ TESTS = [
 	['tictactoe', 'tictactoe.lp', 'online2.lp', 'online2.out'],
 	['tictactoe', 'tictactoe.lp', 'online3.lp', 'online3.out'],
 	['wumpus', 'wumpus.lp', 'world.lp',  'online.lp',  'online.out'],
-	['wumpus', 'wumpus.lp', 'world2.lp', 'online2.lp', 'online2.out'],
+#	['wumpus', 'wumpus.lp', 'world2.lp', 'online2.lp', 'online2.out'],
 		]
 
 OCLINGO = ''
@@ -63,7 +63,7 @@ def main():
 		if result:
 			print "Test " + test.name + "/" + test.online + " completed sucessfully."
 		else:
-			print "Error: Test " + test.name + "/" + test.online + " failed!"
+			print "Error: Test " + test.online + " failed!"
 			return 1
 
 	print
