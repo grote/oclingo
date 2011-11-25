@@ -4,3 +4,4 @@
 	* RecursiveAggregates
 	* PlainAggregatePrinter
 	* OptimizeStatements
+	* RefCount

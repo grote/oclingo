@@ -32,7 +32,6 @@ Domain::Domain(uint32_t nameId, uint32_t arity, uint32_t domId)
 	, domId_(domId)
 	, vals_(arity)
 	, new_(0)
-	, lastInsertPos_(0)
 	, external_(false)
 	, show(false)
 	, hide(false)
@@ -44,36 +43,10 @@ const ValVecSet::Index &Domain::find(const ValVec::const_iterator &v) const
 	return vals_.find(v);
 }
 
-bool Domain::insert(Grounder *g, const ValVec::const_iterator &v, bool fact)
+bool Domain::insert(Grounder *, const ValVec::const_iterator &v, bool fact)
 {
-	int32_t offset;
-	if(!g->termExpansion().limit(g, ValRng(v, v + arity_), offset))
-	{
-		ValVecSet::InsertRes res = vals_.insert(v, fact);
-		uint32_t pos = res.get<0>();
-		if(pos < lastInsertPos_)
-		{
-			std::stringstream ss;
-			ss << g->string(nameId_);
-			if(arity_ > 0)
-			{
-				ss << "(";
-				for(ValVec::const_iterator it = v; it != v + arity_; it++)
-				{
-					if(it != v) { ss << ","; }
-					it->print(g, ss);
-				}
-				ss << ")";
-			}
-			throw AtomRedefinedException(ss.str());
-		}
-		return res.get<1>();
-	}
-	else
-	{
-		valsLarger_.insert( OffsetMap::value_type(offset, ValVecSet(arity_)) ).first->second.insert(v, fact);
-		return false;
-	}
+	ValVecSet::InsertRes res = vals_.insert(v, fact);
+	return res.get<1>();
 }
 
 bool Domain::extend(Grounder *g, PredIndex *idx, uint32_t offset)
@@ -85,16 +58,6 @@ bool Domain::extend(Grounder *g, PredIndex *idx, uint32_t offset)
 		modified = idx->extend(g, k) || modified;
 	}
 	return modified;
-}
-
-void Domain::addOffset(int32_t offset)
-{
-	OffsetMap::iterator valIterator = valsLarger_.find(offset);
-	if (valIterator != valsLarger_.end())
-	{
-		vals_.extend(valIterator->second);
-		valsLarger_.erase(valIterator);
-	}
 }
 
 void Domain::allVals(Grounder *g, const TermPtrVec &terms, VarDomains &varDoms)

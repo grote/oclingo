@@ -28,11 +28,14 @@ namespace reifiedoutput_impl
 	void DisplayPrinter::begin(const Val &head, Type type)
 	{
 		#pragma message "reimplement me"
+		(void)head;
+		(void)type;
 	}
 
 	void DisplayPrinter::print(PredLitRep *l)
 	{
 		#pragma message "reimplement me"
+		(void)l;
 		//out() << (show() ? "show" : "hide") << "(";
 		//output_->val(output_->symbol(l)).print(output_->storage(), out());
 		//out() << ").\n";

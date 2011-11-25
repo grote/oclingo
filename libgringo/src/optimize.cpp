@@ -82,7 +82,7 @@ bool OptimizeSetLit::fact() const
 	return true;
 }
 
-bool OptimizeSetLit::match(Grounder *g)
+bool OptimizeSetLit::match(Grounder *)
 {
 	return true;
 }
@@ -113,7 +113,7 @@ void OptimizeSetLit::accept(Printer *)
 
 }
 
-Index *OptimizeSetLit::index(Grounder *, Formula *gr, VarSet &)
+Index *OptimizeSetLit::index(Grounder *, Formula *, VarSet &)
 {
 	return new MatchIndex(this);
 }

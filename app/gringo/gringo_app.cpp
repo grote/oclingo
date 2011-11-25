@@ -116,7 +116,7 @@ int GringoApp::doRun()
 	else
 	{
 		IncConfig config;
-		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config), gringo.heuristics.heuristic);
+		Grounder  g(o.get(), generic.verbose > 2, gringo.heuristics.heuristic);
 		createModules(g);
 		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
 

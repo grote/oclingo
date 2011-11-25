@@ -66,20 +66,8 @@ GringoOptions::GringoOptions()
 	, compat(false)
 	, stats(false)
 	, magic(false)
-	, iexpand(IEXPAND_ALL)
 {
 	heuristics.heuristic.reset(new BasicBodyOrderHeuristic());
-}
-
-TermExpansionPtr GringoOptions::termExpansion(IncConfig &config) const
-{
-	switch(iexpand)
-	{
-		case IEXPAND_ALL:   { return TermExpansionPtr(new TermExpansion()); }
-		case IEXPAND_DEPTH: { return TermExpansionPtr(new TermDepthExpansion(config)); }
-	}
-	assert(false);
-	return TermExpansionPtr(0);
 }
 
 void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden)
@@ -111,12 +99,6 @@ void GringoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 
 		("ifixed"    , storeTo(ifixed),                 "Fix number of incremental steps to <num>", "<num>")
 		("iinit"     , storeTo(iinit),                  "Start to ground from step <num>", "<num>")
-		("iexpand"   , storeTo(iexpand),
-			"Limits the expansion of terms\n"
-			"      Default: All\n"
-			"      Valid:   All, Depth\n"
-			"        All   : Do not limit term expansion\n"
-			"        Depth : Limit according to term depth\n")
 	;
 	OptionGroup basic("Basic Options");
 	root.addOptions(gringo);

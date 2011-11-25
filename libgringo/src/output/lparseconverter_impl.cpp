@@ -338,7 +338,7 @@ void IncPrinter::print(int vol_window)
 {
 	RulePrinter *printer = static_cast<RulePrinter *>(output_->printer<Rule::Printer>());
 	int atom = output_->getVolAtom(vol_window);
-	if(atom > 0) { printer->addBody(atom, false); }
+	if(atom > 0) { printer->addBody(atom, true); }
 }
 
 }
@@ -349,3 +349,4 @@ GRINGO_REGISTER_PRINTER(lparseconverter_impl::ComputePrinter, Compute::Printer, 
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::ExternalPrinter, External::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::JunctionLitPrinter, JunctionLit::Printer, LparseConverter)
 GRINGO_REGISTER_PRINTER(lparseconverter_impl::IncPrinter, IncLit::Printer, LparseConverter)
+

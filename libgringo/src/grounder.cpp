@@ -47,48 +47,6 @@ public:
 
 #endif
 
-// ========================== TermDepthExpansion ==========================
-
-TermDepthExpansion::TermDepthExpansion(IncConfig &config)
-	: config(config)
-	, start(config.incStep)
-{
-}
-
-bool TermDepthExpansion::limit(Grounder *g, const ValRng &rng, int32_t &offset) const
-{
-	bool found = false;
-	offset = 0;
-	foreach(const Val &val, rng)
-	{
-		if ( val.type == Val::FUNC )
-		{
-			int32_t depth = g->func(val.index).getDepth();
-			if(depth >= config.incStep)
-			{
-				if(offset < depth) { offset = depth; }
-				found = true;
-			}
-		}
-	}
-	return found;
-}
-
-void TermDepthExpansion::expand(Grounder *g)
-{
-	foreach (Domain *dom, g->domains())
-	{
-		for( ; start < config.incStep; start++)
-		{
-			dom->addOffset(start);
-		}
-	}
-}
-
-TermDepthExpansion::~TermDepthExpansion()
-{
-}
-
 // ========================== Module ==========================
 
 StatementRng Module::add(Grounder *g, Statement *s, bool optimizeEdb)
@@ -141,13 +99,12 @@ Module::~Module()
 
 // ========================== Grounder ==========================
 
-Grounder::Grounder(Output *output, bool debug, TermExpansionPtr exp, BodyOrderHeuristicPtr heuristic)
+Grounder::Grounder(Output *output, bool debug, BodyOrderHeuristicPtr heuristic)
 	: Storage(output)
 	, internal_(0)
 	, aggrUids_(0)
 	, debug_(debug)
 	, luaImpl_(new LuaImpl(this))
-	, termExpansion_(exp)
 	, heuristic_(heuristic)
 	, current_(0)
 	, optimizeEdb_(true)
@@ -217,7 +174,6 @@ void Grounder::analyze(const std::string &depGraph, bool stats)
 
 void Grounder::ground(Module &module)
 {
-	termExpansion().expand(this);
 	foreach(Module::Component &component, module.components_)
 	{
 		if(debug_)
@@ -237,11 +193,6 @@ void Grounder::ground(Module &module)
 		}
 		ground_();
 		output()->endComponent();
-	}
-	output()->endModule();
-	foreach(Domain *dom, domains())
-	{
-		dom->fix();
 	}
 }
 

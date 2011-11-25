@@ -37,7 +37,6 @@ private:
 public:
 	Output();
 	virtual void initialize() { }
-	virtual void endModule() { }
 	virtual void endComponent() { foreach(DelayedPrinter *printer, delayedPrinters_) { printer->finish(); } }
 	virtual void finalize() {  }
 	Storage *storage() const { return s_; }

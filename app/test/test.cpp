@@ -19,18 +19,17 @@ struct Tester : public Clasp::Enumerator::Report
 	{
 		// ground/solve
 		{
+			IncConfig ic;
 			Clasp::ProgramBuilder pb;
-			ClaspOutput o(true);
-			TermExpansionPtr te(new TermExpansion());
+			ClaspOutput o(true, ic, false);
 			BodyOrderHeuristicPtr bo(new BasicBodyOrderHeuristic());
-			Grounder g(&o, false, te, bo);
+			Grounder g(&o, false, bo);
 			Clasp::Solver s;
 			Module *mb = g.createModule();
 			Module *mc = g.createModule();
 			mc->parent(mb);
 			Module *mv = g.createModule();
 			mv->parent(mc);
-			IncConfig ic;
 			Streams in;
 			Parser p(&g, mb, mc, mv, ic, in, false, false);
 			Streams::StreamPtr sp(new std::stringstream(is));
