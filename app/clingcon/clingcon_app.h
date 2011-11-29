@@ -137,7 +137,7 @@ struct CSPFromGringo : public Clasp::Input
 	typedef Clasp::MinimizeConstraint* MinConPtr;
 
         CSPFromGringo(ClingconApp<M> &app, Streams& str, Clingcon::CSPSolver*);
-        void otherOutput();
+        void otherOutput(IncConfig &config);
 	Format format() const { return Clasp::Input::SMODELS; }
 	MinConPtr getMinimize(Clasp::Solver& s, Clasp::ProgramBuilder* api, bool heu) { return api ? api->createMinimize(s, heu) : 0; }
 	void getAssumptions(Clasp::LitVec& a);
@@ -177,7 +177,7 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <CSPMode M>
-void CSPFromGringo<M>::otherOutput()
+void CSPFromGringo<M>::otherOutput(IncConfig &)
 {
 	assert(false);
 }
@@ -188,15 +188,11 @@ CSPFromGringo<M>::CSPFromGringo(ClingconApp<M> &a, Streams& str, Clingcon::CSPSo
 	: app(a)
 {
 	assert(app.clingo.mode == CLINGCON || app.clingo.mode == ICLINGCON || app.clingo.mode == OCLINGCON);
-	if (app.clingo.mode == CLINGCON)
+        if (app.clingo.mode == CLINGCON || app.clingo.mode == ICLINGCON)
 	{
-                out.reset(new CSPOutput(app.gringo.disjShift, cspsolver));
+                out.reset(new CSPOutput(app.gringo.disjShift, config, app.clingo.mode == ICLINGCON, cspsolver));
 	}
-	else if(app.clingo.mode == ICLINGCON)
-	{
-                out.reset(new iCSPOutput(app.gringo.disjShift, cspsolver));
-	}
-	else { otherOutput(); }
+        else { otherOutput(config); }
 	if(app.clingo.mode == CLINGCON && app.gringo.groundInput)
 	{
 		storage.reset(new Storage(out.get()));
@@ -205,7 +201,7 @@ CSPFromGringo<M>::CSPFromGringo(ClingconApp<M> &a, Streams& str, Clingcon::CSPSo
 	else
 	{
 		bool inc = app.clingo.mode != CLINGCON || app.gringo.ifixed > 0;
-		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.termExpansion(config), app.gringo.heuristics.heuristic));
+                grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.heuristics.heuristic));
 		a.createModules(*grounder);
 		parser.reset(new CSPParser(grounder.get(), a.base_, a.cumulative_, a.volatile_, config, str, app.gringo.compat, inc));
 	}
@@ -214,15 +210,7 @@ CSPFromGringo<M>::CSPFromGringo(ClingconApp<M> &a, Streams& str, Clingcon::CSPSo
 template <CSPMode M>
 void CSPFromGringo<M>::getAssumptions(Clasp::LitVec& a)
 {
-	if(M == ICLINGCON && app.clingo.mode == ICLINGCON)
-	{
-		const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
-
-                foreach(uint32_t atom, out->getIncUids()) {
-                    if(atom) a.push_back(i.find(atom)->lit);
-                }
-
-	}
+        out->getProgramBuilder().getAssumptions(a);
 }
 
 template <CSPMode M>
@@ -394,7 +382,7 @@ int ClingconApp<M>::doRun()
             else
             {
                     IncConfig config;
-                    Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config), gringo.heuristics.heuristic);
+                    Grounder  g(o.get(), generic.verbose > 2, gringo.heuristics.heuristic);
                     createModules(g);
                     CSPParser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
 
@@ -537,6 +525,11 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
                 else
                 {
 
+                    const Clingcon::CSPSolver::ConstraintMap& m = cspsolver_->getConstraints();
+                    for(Clingcon::CSPSolver::ConstraintMap::const_iterator i = m.begin(); i != m.end(); ++i)
+                        solver_.setFrozen(f.api()->getLiteral(i->first).var(),true);
+                    //über csp atom liste rüber gehen und solver atoms setFrozen(var,true)
+                            //programbuilder hat getLiteral, liefert literal im solver-> var
                     cspsolver_->setSolver(&solver_);
                     cp_ = new Clingcon::ClingconPropagator(cspsolver_.get());
                     solver_.addPost(cp_);

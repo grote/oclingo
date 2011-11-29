@@ -584,67 +584,6 @@ void CSPParser::add(Statement *s)
 	else                           { last_.push_back(s); }
 }
 
-namespace
-{
-	class IncVarAdder : public PrgVisitor
-	{
-	public:
-		IncVarAdder(uint32_t var);
-		void add(Statement *s, IncConfig &config);
-
-	private:
-		void visit(VarTerm *var, bool bind);
-		void visit(Term* term, bool bind);
-		void visit(Lit *lit, bool domain);
-		void visit(Formula *grd, bool choice);
-
-	private:
-		uint32_t var_;
-		bool     found_;
-		Loc      loc_;
-		
-	};
-
-	IncVarAdder::IncVarAdder(uint32_t var)
-		: var_(var)
-		, found_(false)
-	{
-	}
-	
-	void IncVarAdder::add(Statement *s, IncConfig &config)
-	{
-		s->visit(this);
-		if(found_)
-		{
-			s->append(new IncLit(loc_, config, IncLit::CUMULATIVE, var_));
-		}
-	}
-	
-	void IncVarAdder::visit(VarTerm *var, bool)      
-	{
-		if(!found_ && var_ == var->nameId()) 
-		{
-			found_ = true;
-			loc_   = var->loc();
-		}
-	}
-	
-	void IncVarAdder::visit(Term* term, bool bind)
-	{
-		if(!found_) { term->visit(this, bind); }
-	}
-	
-	void IncVarAdder::visit(Lit *lit, bool)
-	{
-		if(!found_) { lit->visit(this); }
-	}
-	
-	void IncVarAdder::visit(Formula *grd, bool)
-	{
-		if(!found_) { grd->visit(this); }
-	}
-}
-
 void CSPParser::add()
 {
 	while(!last_.empty())
@@ -653,17 +592,17 @@ void CSPParser::add()
                 {
                         last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::VOLATILE, iVar_, volWindow_));
                 }
+                else if(current_ == cumulative_)
+                {
+                    last_.back().append(new IncLit(last_.back().loc(), config_, IncLit::CUMULATIVE, iVar_));
+                }
+
 
                 StatementRng rng(current_->add(g_, last_.pop_back().release(), current_ == base_));
                 foreach(Statement &statement, rng)
                 {
                     DomAdder domAdder(this);
                     domAdder.add(&statement);
-                    if(current_ == cumulative_)
-                    {
-                        IncVarAdder adder(iVar_);
-                        adder.add(&statement, config_);
-                    }
 		}
 	}
 }

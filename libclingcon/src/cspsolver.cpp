@@ -71,6 +71,11 @@ void CSPSolver::addConstraint(Constraint* c, int uid)
 
 }
 
+const CSPSolver::ConstraintMap& CSPSolver::getConstraints() const
+{
+    return constraints_;
+}
+
 void CSPSolver::addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec)
 {
     globalConstraints_ = gcvec.release();

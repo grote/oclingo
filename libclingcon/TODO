@@ -17,6 +17,7 @@ DONE
 
 TODO
 
+- test if recomputation instead of trailing can be used to save copying spaces !
 - rename SCC to CC
 - disable propQueue on force
 - lexical ordering constraint for minimization ?

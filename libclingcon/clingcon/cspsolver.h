@@ -67,6 +67,7 @@ private:
 
                 public:
                         typedef Interval<int> Domain;
+                        typedef boost::ptr_map<int, Constraint> ConstraintMap;
                         CSPSolver();
                         virtual ~CSPSolver();
 			/*
@@ -75,6 +76,7 @@ private:
 			 **/
                         virtual void setDomain(int lower, int upper);
                         virtual void addConstraint(Constraint* c, int uid);
+                        virtual const ConstraintMap& getConstraints() const;
                         virtual void addGlobalConstraints(LParseGlobalConstraintPrinter::GCvec& gcvec);
                         virtual bool hasOptimizeStm() const;
                         //virtual void addDomain(const std::string& var, int lower, int upper);
@@ -120,7 +122,7 @@ private:
 			Clasp::Solver* s_;
 			ClingconPropagator* clingconPropagator_;
 
-                        typedef boost::ptr_map<int, Constraint> ConstraintMap;
+
                         ConstraintMap constraints_;
                         LParseGlobalConstraintPrinter::GCvec globalConstraints_;
         protected:
