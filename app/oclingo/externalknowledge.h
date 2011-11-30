@@ -52,6 +52,7 @@ public:
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void savePrematureVol(OnlineParser::Part part, int window);
+	void savePrematureForget(int step);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
@@ -94,5 +95,6 @@ private:
 	int step_;
 	int controller_step_;
 	bool model_;
+	int forget_;
 	bool debug_;
 };
