@@ -142,6 +142,9 @@ void OnlineParser::add(Type type, uint32_t n) {
 			output_->getExternalKnowledge().addStackPtr(stack);
 			// remember current part and volatile window
 			output_->getExternalKnowledge().savePrematureVol(part_, volatile_window_);
+			// remember current assert term
+			// TODO come up with something more efficient
+			output_->getExternalKnowledge().savePrematureAssertTerm(assert_term_);
 		} else {
 			// add rules right away
 			GroundProgramBuilder::add(stack);
@@ -187,23 +190,26 @@ void OnlineParser::setPart(Part part) {
 
 void OnlineParser::setVolatileWindow(int window) {
 	volatile_window_ = window;
-
-	setPart(VOLATILE);
+	// don't change part here, has side-effects
 }
 
 void OnlineParser::setAssert() {
-	saveTerm();
+	getTerm();
 
 	setPart(ASSERT);
 }
 
+void OnlineParser::setAssertTerm(Val asster_term) {
+	assert_term_ = asster_term;
+}
+
 void OnlineParser::retract() {
-	saveTerm();
+	getTerm();
 
 	output_->retractAtom(assert_term_);
 }
 
-void OnlineParser::saveTerm() {
+void OnlineParser::getTerm() {
 	assert(stack_->type == TERM && stack_->vals.size());
 
 	assert_term_ = stack_->vals.back();

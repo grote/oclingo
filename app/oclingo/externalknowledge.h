@@ -52,6 +52,7 @@ public:
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void savePrematureVol(OnlineParser::Part part, int window);
+	void savePrematureAssertTerm(Val assert_term);
 	void savePrematureForget(int step);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
@@ -78,6 +79,7 @@ private:
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
 	std::list<std::pair<OnlineParser::Part,int> > vol_stack_;
+	std::list<Val> assert_stack_;
 
 	// socket stuff
 	boost::asio::io_service io_service_;

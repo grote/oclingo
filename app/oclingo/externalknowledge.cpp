@@ -190,12 +190,18 @@ void ExternalKnowledge::savePrematureVol(OnlineParser::Part part, int window=0) 
 	vol_stack_.push_back(std::make_pair(part, window));
 }
 
+// always call with addStackPtr()
+void ExternalKnowledge::savePrematureAssertTerm(Val assert_term) {
+	assert_stack_.push_back(assert_term);
+}
+
 void ExternalKnowledge::savePrematureForget(int step) {
 	forget_ = step;
 }
 
 bool ExternalKnowledge::addPrematureKnowledge() {
 	assert(stacks_.size() == vol_stack_.size());
+	assert(stacks_.size() == assert_stack_.size());
 
 	bool added = false;
 	// check for knowledge from previous steps and add it if found
@@ -208,7 +214,9 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 			// add part information to parser
 			parser.setPart(vol_stack_.front().first);
 			parser.setVolatileWindow(vol_stack_.front().second);
+			parser.setAssertTerm(assert_stack_.front());
 			vol_stack_.pop_front();
+			assert_stack_.pop_front();
 
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
 			// return to adding cummulative rules

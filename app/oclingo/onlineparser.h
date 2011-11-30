@@ -65,6 +65,7 @@ public:
 	void setPart(Part part);
 	void setVolatileWindow(int window);
 	void setAssert();
+	void setAssertTerm(Val asster_term);
 	void retract();
 
 	bool isTerminated();
@@ -74,7 +75,7 @@ public:
 private:
 	void parse(std::istream &sin);
 	void doAdd();
-	void saveTerm();
+	void getTerm();
 
 private:
 	std::istream* in_;

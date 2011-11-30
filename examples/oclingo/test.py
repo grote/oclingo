@@ -30,6 +30,7 @@ TESTS = [
 	['technical1', 'technical.lp', 'online3.lp', 'online3.out'],
 	['technical1', 'technical.lp', 'online4.lp', 'online4.out'],
 	['technical1', 'technical.lp', 'online5.lp', 'online5.out'],
+	['technical1', 'technical.lp', 'online6.lp', 'online6.out'],
 	['technical2', 'volatile1.lp', 'vonline1.lp', 'vonline1.out'],
 	['tictactoe', 'tictactoe.lp', 'online.lp',   'online.out'],
 	['tictactoe', 'tictactoe.lp', 'online2.lp', 'online2.out'],
