@@ -162,7 +162,10 @@ void OnlineParser::setStep(int step) {
 }
 
 void OnlineParser::forget(int step) {
-	output_->forgetStep(step);
+	// forget all externals that were added at t <= step
+	for(int i = 1; i <= step; ++i) {
+		output_->forgetStep(i);
+	}
 }
 
 void OnlineParser::terminate() {
