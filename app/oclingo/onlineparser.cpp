@@ -128,8 +128,13 @@ void OnlineParser::add(StackPtr stm) {
 }
 
 void OnlineParser::add(Type type, uint32_t n) {
-	if(type == STM_RULE) {
-		if(part_ != CUMULATIVE) type = USER;	// set custom rule type
+	if(type == STM_RULE || type == STM_CONSTRAINT) {
+		// set custom rule type for own handling in doAdd()
+		if(part_ != CUMULATIVE) {
+			if(type == STM_RULE)			{ type = USER;	}
+			else if(type == STM_CONSTRAINT)	{ type = USER + 1; }
+		}
+
 		StackPtr stack = get(type, n);
 
 		if(output_->getExternalKnowledge().needsNewStep()) {
@@ -143,7 +148,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 		}
 	}
 	else {
-		if(type == STM_CONSTRAINT && part_ != CUMULATIVE) type = USER + 1;	// set custom rule type
+		// add terms and stuff to stack
 		GroundProgramBuilder::add(type, n);
 	}
 }
