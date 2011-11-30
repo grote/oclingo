@@ -4,6 +4,7 @@
 #endstep.
 
 #step 1.
+#volatile.
 e(1).
 #volatile.
 :- not b.

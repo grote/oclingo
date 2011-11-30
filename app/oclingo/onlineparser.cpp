@@ -124,9 +124,7 @@ void OnlineParser::doAdd() {
 }
 
 void OnlineParser::add(StackPtr stm) {
-	output_->startExtInput();
 	GroundProgramBuilder::add(stm);
-	output_->stopExtInput();
 }
 
 void OnlineParser::add(Type type, uint32_t n) {
@@ -141,9 +139,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 			output_->getExternalKnowledge().savePrematureVol(part_, volatile_window_);
 		} else {
 			// add rules right away
-			output_->startExtInput();
 			GroundProgramBuilder::add(stack);
-			output_->stopExtInput();
 		}
 	}
 	else {

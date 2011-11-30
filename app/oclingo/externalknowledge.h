@@ -40,7 +40,7 @@ public:
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
-	void addExternal(uint32_t symbol);
+
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -48,16 +48,14 @@ public:
 	int poll();
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
+
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void savePrematureVol(OnlineParser::Part part, int window);
-//	bool checkHead(LparseConverter::Symbol const &sym);
-//	void addHead(uint32_t symbol);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
 	bool needsNewStep();
-	VarVec& getExternals();
 	void endIteration();
 	void endStep();
 

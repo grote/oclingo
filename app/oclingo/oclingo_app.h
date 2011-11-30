@@ -27,22 +27,6 @@
 // FromGringo
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
-template <>
-void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
-{
-	oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
-
-	// TODO do this somewhere else:
-	// only deprecate volatile atom if we want the answer set this step
-	if(!o_output->getExternalKnowledge().needsNewStep()) {
-		o_output->deprecateQueryAtom();
-	}
-
-	out->getProgramBuilder().getAssumptions(a);
-}
-
-
 template <>
 bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 {

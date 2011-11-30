@@ -163,7 +163,7 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
-	output_->unfreezeOldQueryAtoms();
+	output_->deactivateQueryAtom();
 
 	if(new_input_) {
 		new_input_ = false;
@@ -188,43 +188,6 @@ void ExternalKnowledge::addStackPtr(GroundProgramBuilder::StackPtr stack) {
 void ExternalKnowledge::savePrematureVol(OnlineParser::Part part, int window=0) {
 	vol_stack_.push_back(std::make_pair(part, window));
 }
-
-/*
-bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
-	// check if head atom has been defined as external
-	if(!sym.external || find(externals_.begin(), externals_.end(), sym.symbol) == externals_.end()) {
-		std::ostringstream emsg;
-		emsg << "Warning: Head ";
-		sym.print(output_->storage(), emsg);
-		emsg << " has not been declared external.";
-
-		if(!import_) {
-			emsg << " The entire rule will be ignored. Try starting oclingo with --import=all";
-		}
-		std::cerr << emsg.str() << std::endl;
-		sendToClient(emsg.str());
-		if(!import_) return false;
-	}
-	return true;
-}
-
-void ExternalKnowledge::addHead(uint32_t symbol) {
-	// first remove head atom from externals
-	VarVec::iterator it = find(externals_.begin(), externals_.end(), symbol);
-	// only continue if head has been defined as external
-	if(it != externals_.end()) {
-		externals_.erase(it); // TODO do we want to keep it if this is a volatile rule?
-
-		// don't freeze added head or unfreeze it if necessary
-		it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
-		if(it != to_freeze_.end()) {
-			to_freeze_.erase(it);
-		} else {
-			output_->unfreezeAtom(symbol);
-		}
-	}
-}
-*/
 
 bool ExternalKnowledge::addPrematureKnowledge() {
 	assert(stacks_.size() == vol_stack_.size());
