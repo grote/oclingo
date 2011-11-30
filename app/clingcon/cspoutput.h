@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <gringo/inclit.h>
 #include <gringo/gringo.h>
 #include <gringo/lparseconverter.h>
 #include <clasp/program_builder.h>
@@ -26,17 +27,30 @@
 
 class CSPOutput : public Clingcon::CSPOutputInterface
 {
+protected:
+        typedef std::map<int, uint32_t> VolMap;
+        typedef boost::unordered_map<int, AtomVec> ExternalMap;
+        typedef boost::unordered_map<Val, uint32_t> AssertMap;
+
 	typedef std::vector<bool> BoolVec;
 public:
-        CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver);
+        CSPOutput(bool shiftDisj, IncConfig &config, bool incremental, Clingcon::CSPSolver* cspsolver);
 	virtual void initialize();
-        virtual std::deque<uint32_t> getIncUids() { return std::deque<uint32_t>(); }
 	void setProgramBuilder(Clasp::ProgramBuilder* api) { b_ = api; }
+        Clasp::ProgramBuilder &getProgramBuilder() { return *b_; }
         SymbolMap &symbolMap() { return symbolMap_; }
 	ValRng vals(Domain *dom, uint32_t offset) const;
         ~CSPOutput();
+
+        // incremental interface
+        void forgetStep(int step);
+        uint32_t getNewVolUid(int step);
+        uint32_t getVolAtom(int vol_window);
+        uint32_t getAssertAtom(Val term);
+        void retractAtom(Val term);
 protected:
-        virtual void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+        // TODO: I do not want this method to be virtual! Why?
+        void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
         void printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
         void printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
@@ -51,23 +65,14 @@ protected:
         uint32_t symbol(const std::string& name, bool freeze);
 	virtual void doFinalize();
 protected:
-	Clasp::ProgramBuilder *b_;
-	BoolVec  atomUnnamed_;
-	uint32_t lastUnnamed_;
+        Clasp::ProgramBuilder *b_;
+        IncConfig             &config_;
+        bool                   initialized;
+        VolMap                 volUids_;
+        AssertMap              assertUids_;
+        ExternalMap            externalAtoms_;
+        uint32_t               trueAtom_;
+        bool const             incremental_;
+
         Clingcon::CSPSolver* cspsolver_;
-};
-
-class iCSPOutput : public CSPOutput
-{
-public:
-        iCSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver);
-        ~iCSPOutput();
-	void initialize();
-        uint32_t getNewIncUid();
-        int getIncAtom(uint32_t vol_window = 1);
-        std::deque<uint32_t> getIncUids();
-private:
-        bool initialized;
-        std::deque<uint32_t> incUids_;
-
 };

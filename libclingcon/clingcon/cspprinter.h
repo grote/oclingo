@@ -255,6 +255,7 @@ namespace Clingcon
                 {
                     lparseconverter_impl::RulePrinter *printer = static_cast<lparseconverter_impl::RulePrinter*>(output_->printer<Rule::Printer>());
 
+#pragma i could use a constraint for mapping instead of string
                     boost::unordered_map<std::string,unsigned int>::iterator i = map_.find(name_[0]);
                     if (i!=map_.end())
                     {

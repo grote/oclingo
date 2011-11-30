@@ -163,7 +163,7 @@ namespace Clingcon {
         /*
                          * sets a conflict wrt to the current assignment
     */
-        void setConflict(Clasp::LitVec conflict, size_t index);
+        void setConflict(Clasp::LitVec conflict, size_t index, bool shrink=true);
         /*
     * pre: cdg has been build
     * param in: variable to start with

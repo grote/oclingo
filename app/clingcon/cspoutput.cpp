@@ -27,20 +27,25 @@
 #include <clingcon/groundconstraintvarlit.h>
 #include <gringo/litdep.h>
 
-CSPOutput::CSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
+CSPOutput::CSPOutput(bool shiftDisj, IncConfig &config, bool incremental, Clingcon::CSPSolver* cspsolver)
         : Clingcon::CSPOutputInterface(shiftDisj)
 	, b_(0)
-	, lastUnnamed_(0)
+        , config_(config)
+        , initialized(false)
+        , trueAtom_(0)
+        , incremental_(incremental)
         , cspsolver_(cspsolver)
 {
 }
 
 void CSPOutput::initialize()
 {
+    if (!initialized)
+    {
+        initialized=true;
         Clingcon::CSPOutputInterface::initialize();
 	b_->setCompute(false_, false);
-	lastUnnamed_ = atomUnnamed_.size();
-	atomUnnamed_.clear();
+    }
 }
 
 void CSPOutput::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg)
@@ -115,38 +120,46 @@ void CSPOutput::printComputeRule(int models, const AtomVec &pos, const AtomVec &
 void CSPOutput::printSymbolTableEntry(uint32_t symbol, const std::string &name)
 {
        b_->setAtomName(symbol, name.c_str());
-       atomUnnamed_[symbol - lastUnnamed_] = false;
 }
 
 
-void CSPOutput::printExternalTableEntry(const Symbol &)
+void CSPOutput::printExternalTableEntry(const Symbol &symbol)
 {
-
+    externalAtoms_[config_.incStep].push_back(symbol.symbol);
+    b_->freeze(symbol.symbol);
 }
 
 uint32_t CSPOutput::symbol()
 {
-	uint32_t atom = b_->newAtom();
-	atomUnnamed_.resize(atom + 1 - lastUnnamed_, true);
-	return atom;
+        return b_->newAtom();
 }
 
 uint32_t CSPOutput::symbol(const std::string& name, bool freeze)
 {
     uint32_t atom = symbol();
     b_->setAtomName(atom, name.c_str());
-    atomUnnamed_[atom - lastUnnamed_] = false;
     if (freeze)
-        b_->freeze(atom);
+    {
+        AtomVec vec;
+        vec.push_back(atom);
+        printChoiceRule(vec,AtomVec(),AtomVec());
+    }
     return atom;
 }
 
 void CSPOutput::doFinalize()
 {
 	printSymbolTable();
-	for(uint32_t i = 0; i < atomUnnamed_.size(); i++) { if(atomUnnamed_[i]) { b_->setAtomName(i + lastUnnamed_, 0); } }
-	lastUnnamed_+= atomUnnamed_.size();
-	atomUnnamed_.clear();
+        printExternalTable();
+        VolMap::iterator end = volUids_.lower_bound(config_.incStep + 1);
+        for (VolMap::iterator it = volUids_.begin(); it != end; it++)
+        {
+            b_->startRule().addHead(it->second).endRule();
+        }
+        volUids_.erase(volUids_.begin(), end);
+        // Note: make sure that there is always a volatile atom
+        // this is important to prevent clasp from polluting its top level
+        if (incremental_) { getVolAtom(1); }
 
         //Clingcon::ConstraintVec* constraints = storage()->output()->printer<Clingcon::LParseCSPPrinter>()->getConstraints();
         Clingcon::ConstraintVec* constraints = static_cast<Clingcon::LParseCSPLitPrinter*>(storage()->output()->printer<Clingcon::CSPLit::Printer>())->getConstraints();
@@ -191,59 +204,76 @@ ValRng CSPOutput::vals(Domain *dom, uint32_t offset) const
 	return ValRng(vals_.begin() + offset, vals_.begin() + offset + dom->arity());
 }*/
 
+void CSPOutput::forgetStep(int step)
+{
+    ExternalMap::iterator it = externalAtoms_.find(step);
+    if (it != externalAtoms_.end())
+    {
+        foreach (uint32_t sym, it->second) { b_->unfreeze(sym); }
+        externalAtoms_.erase(it);
+    }
+}
 
+uint32_t CSPOutput::getNewVolUid(int step)
+{
+    if (step < config_.incStep + 1)
+    {
+        // this case should be relatively unlikely
+        // there are better ways to handle an out-of-order volatile statements
+        if (!trueAtom_)
+        {
+            trueAtom_ = symbol();
+            b_->startRule().addHead(trueAtom_).endRule();
+        }
+        return trueAtom_;
+    }
+    else
+    {
+        uint32_t &sym = volUids_[step];
+        if(!sym)
+        {
+            sym = symbol();
+            b_->freeze(sym);
+        }
+        return sym;
+    }
+}
+
+uint32_t CSPOutput::getVolAtom(int vol_window)
+{
+    // volatile atom expires at current step + vol window size
+    return getNewVolUid(config_.incStep + vol_window);
+}
+
+uint32_t CSPOutput::getAssertAtom(Val term)
+{
+    uint32_t &sym = assertUids_[term];
+    if (!sym)
+    {
+        sym = symbol();
+        b_->freeze(sym);
+    }
+    return sym;
+}
+
+
+void CSPOutput::retractAtom(Val term)
+{
+    // TODO add better error handling
+    AssertMap::iterator it = assertUids_.find(term);
+    if(it != assertUids_.end())
+    {
+        b_->startRule().addHead(it->second).endRule();
+        assertUids_.erase(it);
+    }
+    else
+    {
+        std::cerr << "Error: Term ";
+        term.print(storage(), std::cerr);
+        std::cerr << " was not used to assert rules.";
+    }
+}
 
 CSPOutput::~CSPOutput()
-{
-}
-
-iCSPOutput::iCSPOutput(bool shiftDisj, Clingcon::CSPSolver* cspsolver)
-        : CSPOutput(shiftDisj,cspsolver)
-        , initialized(false)//, incUid_(0)
-{
-}
-
-void iCSPOutput::initialize()
-{
-        if(!initialized) {
-            initialized=true;
-            CSPOutput::initialize();
-        }
-        else if(incUids_.size()) {
-            if(incUids_.at(0)) b_->unfreeze(incUids_.at(0));
-            incUids_.pop_front();
-        }
-}
-
-uint32_t iCSPOutput::getNewIncUid()
-{
-       // create a new uid
-       int uid = symbol();
-       b_->freeze(uid);
-
-       return uid;
-}
-
-int iCSPOutput::getIncAtom(uint32_t vol_window)
-{
-       if(incUids_.size() < vol_window) {
-               incUids_.resize(vol_window, 0);
-       }
-       if(incUids_.at(vol_window-1) == 0) {
-               incUids_.at(vol_window-1) = getNewIncUid();
-       }
-
-       return incUids_.at(vol_window-1);
-}
-
-
-std::deque<uint32_t> iCSPOutput::getIncUids()
-//int iCSPOutput::getIncAtom()
-{
-        return incUids_;
-}
-
-
-iCSPOutput::~iCSPOutput()
 {
 }

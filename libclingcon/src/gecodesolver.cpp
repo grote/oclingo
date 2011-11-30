@@ -722,7 +722,7 @@ bool GecodeSolver::hasAnswer()
     }
     else
     {
-        setConflict(assignment_, spaces_.size()-1);
+        setConflict(assignment_, spaces_.size()-1, false);
     }
     return false;
 }
@@ -771,10 +771,11 @@ void GecodeSolver::setRecording(bool r)
   4. empty conflict
   5. conflict is not the assigned variables of the last space but of "some" space!
   */
-void GecodeSolver::setConflict(Clasp::LitVec conflict, size_t index)
+void GecodeSolver::setConflict(Clasp::LitVec conflict, size_t index, bool shrink)
 {
     //assert(conflict.size()==0 || conflict.size() == assLength(spaces_.size()-1) || conflict.size() == assLength(spaces_.size()-1) +1);
-    conflictAnalyzer_->shrink(conflict, index);
+    if (shrink)
+        conflictAnalyzer_->shrink(conflict, index);
 
 
     if (conflict.size()==0) // if root level conflict due to global constraints

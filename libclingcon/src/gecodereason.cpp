@@ -32,85 +32,6 @@
 namespace Clingcon
 {
 
-
-
-class ReifFailOn : public Propagator {
-protected:
-  /// View to wait for becoming assigned
-  Int::BoolView x;
-  /// Continuation to execute
-  //void (*c)(Space&);
-  /// Constructor for creation
-  ReifFailOn(Space& home, Int::BoolView x);
-  /// Constructor for cloning \a p
-  ReifFailOn(Space& home, bool shared, ReifFailOn& p);
-
-public:
-  /// Perform copying during cloning
-  virtual Actor* copy(Space& home, bool share);
-  /// Const function (defined as low unary)
-  virtual PropCost cost(const Space& home, const ModEventDelta& med) const;
-  /// Perform propagation
-  virtual ExecStatus propagate(Space& home, const ModEventDelta& med);
-  /// Post propagator that waits until \a x becomes assigned and then executes \a c
-  static ExecStatus post(Space& home, Int::BoolView x);
-  /// Delete propagator and return its size
-  virtual size_t dispose(Space& home);
-};
-
-
-void reiffail2(Space& home, BoolVar x) {
-    if (home.failed()) return;
-    GECODE_ES_FAIL(ReifFailOn::post(home, x));
-}
-
-
-ReifFailOn::ReifFailOn(Space& home, Int::BoolView x0)
-    : Propagator(home), x(x0) {
-    x.subscribe(home,*this,PC_GEN_ASSIGNED);
-}
-
-ReifFailOn::ReifFailOn(Space& home, bool shared, ReifFailOn& p)
-    : Propagator(home,shared,p) {
-    x.update(home,shared,p.x);
-}
-
-Actor*
-ReifFailOn::copy(Space& home, bool share) {
-    return new (home) ReifFailOn(home,share,*this);
-}
-PropCost
-ReifFailOn::cost(const Space&, const ModEventDelta&) const {
-    return PropCost::unary(PropCost::LO);
-}
-
-ExecStatus
-ReifFailOn::propagate(Space& home, const ModEventDelta&) {
-    assert(x.assigned());
-    home.fail();
-    return home.failed() ? ES_FAILED : home.ES_SUBSUMED(*this);
-}
-ExecStatus
-ReifFailOn::post(Space& home, Int::BoolView x) {
-    //solver = &home;
-    if (x.assigned()) {
-        home.fail();
-        return home.failed() ? ES_FAILED : ES_OK;
-    } else {
-        (void) new (home) ReifFailOn(home,x);
-        return ES_OK;
-    }
-}
-
-size_t
-ReifFailOn::dispose(Space& home) {
-    x.cancel(home,*this,PC_GEN_ASSIGNED);
-    (void) Propagator::dispose(home);
-    return sizeof(*this);
-}
-
-
-
 void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begins, const Clasp::LitVec::const_iterator& ends)
 {
     oldLength_+=ends-begins;
@@ -136,10 +57,14 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
     }
 
 
-    unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //unsigned int lindex = g_->varToIndex(l.var());
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
 
     while(end-begin!=0)
     {
@@ -201,7 +126,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
     }
 
     Ende:
-    assert((delete original, original = g_->getRootSpace(), reiffail2(*original,original->b_[lindex]), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     sumLength_+=reason.size();
@@ -251,8 +176,8 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     }
 
 
-    unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //unsigned int lindex = g_->varToIndex(l.var());
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
 
@@ -262,6 +187,10 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     unsigned int checkCount = checker.count();
     VarSet done(ends-begin);
     VarSet reasonDone(ends-begin);
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
 
 
     Start:
@@ -346,7 +275,7 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
-    assert((delete original, original = g_->getRootSpace(), reiffail2(*original,original->b_[lindex]), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -378,10 +307,14 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     }
 
 
-    unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //unsigned int lindex = g_->varToIndex(l.var());
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
 
     while(end-begin!=0)
     {
@@ -411,7 +344,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     sumLength_+=reason.size();
     g_->setRecording(true);
     //std::cout << sumLength_ << std::endl;
-    assert((delete original, original = g_->getRootSpace(), reiffail2(*original,original->b_[lindex]), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
 
     t_.stop();
@@ -442,11 +375,17 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     }
 
     unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+
 
     g_->setRecording(false);
 
     size_t index = g_->spaces_.size()-1;
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
+
     while (g_->assLength_[index]>(ends-begin)) --index;
     //if (index) --index;
 
@@ -457,7 +396,8 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
         {
             tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
             props_++;
-            reiffail2(*tester,tester->b_[lindex]);
+            //reiffail2(*tester,tester->b_[lindex]);
+            tester->propagate(~l);
             tester->propagate(reason.begin(),reason.end());
 
             if (tester->status()==SS_FAILED)
@@ -508,7 +448,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     Ende:
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), reiffail2(*original,original->b_[lindex]), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), original->propagate(~l), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -539,19 +479,25 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
         return;
     }
 
-    unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //unsigned int lindex = g_->varToIndex(l.var());
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
 
     size_t index = g_->spaces_.size()-1;
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
+
     while (g_->assLength_[index]>(ends-begin)) --index;
 
     do
     {
         Clasp::LitVec::const_iterator start = begin+g_->assLength(index);
         tester = static_cast<GecodeSolver::SearchSpace*>(g_->spaces_[index]->clone());
-        reiffail2(*tester,tester->b_[lindex]);
+        //reiffail2(*tester,tester->b_[lindex]);
+        tester->propagate(~l);
         tester->propagate(reason.begin(),reason.end());
         props_++;
 
@@ -589,7 +535,7 @@ void LinearGroupedIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l
     Ende:
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), reiffail2(*original,original->b_[lindex]), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), original->propagate(~l), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -636,7 +582,7 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     }
 
     unsigned int lindex = g_->varToIndex(l.var());
-    reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
+    //reiffail2(*original,original->b_[lindex]); // fail if we propagate the literal
 
     g_->setRecording(false);
 
@@ -644,6 +590,10 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     VarSet checker(varSets_[l.var()]);
     unsigned int checkCount = checker.count();
     VarSet done(ends-begin);
+
+    original->propagate(~l);
+    if (original->status()==SS_FAILED)
+        goto Ende;
 
     do
     {
@@ -708,7 +658,7 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     sumLength_+=reason.size();
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
-    assert((delete original, original = g_->getRootSpace(), reiffail2(*original,original->b_[lindex]), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
