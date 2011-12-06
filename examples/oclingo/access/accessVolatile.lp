@@ -4,8 +4,8 @@
 
 % This example provides a (fixed-size) sliding window implementation over aging
 % logic programs, where recent external events are evaluated in volatile program
-% parts. Take, e.g., Streams/stream01-14E.str as (interesting) logic program
-% stream, where comments in Streams/stream01-14E.str indicate desired outcomes.
+% parts. Take, e.g., streams/stream01-14E.str as (interesting) logic program
+% stream, where comments in streams/stream01-14E.str indicate desired outcomes.
 
 %%%%%%%%%%%%%
 % CONSTANTS %
