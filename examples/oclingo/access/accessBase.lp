@@ -4,8 +4,8 @@
 
 % This example provides a (fixed-size) sliding window implementation over aging
 % logic programs, where recent external events are mapped down to a fixed base
-% program. Take, e.g., streams/stream01-14E.str as (interesting) logic program
-% stream, where comments in streams/stream01-14E.str indicate desired outcomes.
+% program. Take, e.g., Streams/stream01-14E.str as (interesting) logic program
+% stream, where comments in Streams/stream01-14E.str indicate desired outcomes.
 
 %%%%%%%%%%%%%
 % CONSTANTS %
@@ -70,4 +70,4 @@ account(U,open)   :- user(U), not account(U,closed). % or open otherwise
 #hide.
 #show access/3.  % display user accesses in window
 #show account/2. % and the states of user accounts
-#show baseaccess/3. % derived via baseaccess atoms
+% #show baseaccess/3. % derived via baseaccess atoms
