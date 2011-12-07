@@ -45,6 +45,9 @@ access(claude,denied,4).
 #endstep.
 
 #step 6.
+% Accesses up to time point 3 are out-of-window, and respective atoms can be forgotten.
+% FUTURE ISSUE: Post #forget statements in encodings, as soon as oclingo supports this.
+#forget 1.
 #volatile : 3.
 access(alice,denied,6).
 % Alice: (+1@1) (-2@3) (-3@2)  -4@5          -6@6  => open
@@ -53,6 +56,7 @@ access(alice,denied,6).
 #endstep.
 
 #step 7.
+#forget 2.
 #volatile : 3.
 access(alice,denied,8).
 % Alice: (+1@1) (-2@3) (-3@2)  -4@5          -6@6          -8@7  => open
@@ -61,9 +65,7 @@ access(alice,denied,8).
 #endstep.
 
 #step 8.
-% Accesses up to time point 3 are out-of-window, and respective atoms can be forgotten.
-% FUTURE ISSUE: Post #forget statements in encodings, as soon as oclingo supports this.
-#forget 1.
+#forget 3.
 #volatile : 3.
 access(alice,denied,7).
 access(bob,denied,8).
@@ -73,7 +75,7 @@ access(bob,denied,8).
 #endstep.
 
 #step 9.
-#forget 2.
+#forget 4.
 #volatile : 3.
 access(alice,denied,10).
 access(bob,denied,10).
@@ -83,7 +85,7 @@ access(bob,denied,10).
 #endstep.
 
 #step 10.
-#forget 3.
+#forget 5.
 #volatile : 3.
 access(alice,denied,9).
 access(bob,denied,9).
@@ -93,7 +95,7 @@ access(bob,denied,9).
 #endstep.
 
 #step 11.
-#forget 4.
+#forget 6.
 #volatile : 3.
 access(alice,denied,11).
 access(alice,denied,12).
@@ -104,21 +106,21 @@ access(bob,granted,11).
 #endstep.
 
 #step 12.
-#forget 5.
+#forget 7.
 % Alice: (+1@1) (-2@3) (-3@2) (-4@5)        (-6@6) (-7@8) (-8@7)  -9@10  (-10@9)  -11@11   -12@11  => open
 % Bob:          (-2@4) (-3@2) (-4@4)                      (-8@8)  -9@10  (-10@9)  +11@11           => open
 % Claude:       (-2@4) (-3@5) (-4@5) (+5@3)                                                        => open
 #endstep.
 
 #step 13.
-#forget 6.
+#forget 8.
 % Alice: (+1@1) (-2@3) (-3@2) (-4@5)        (-6@6) (-7@8) (-8@7) (-9@10) (-10@9)  -11@11   -12@11  => open
 % Bob:          (-2@4) (-3@2) (-4@4)                      (-8@8) (-9@10) (-10@9)  +11@11           => open
 % Claude:       (-2@4) (-3@5) (-4@5) (+5@3)                                                        => open
 #endstep.
 
 #step 14.
-#forget 7.
+#forget 9.
 % Alice: (+1@1) (-2@3) (-3@2) (-4@5)        (-6@6) (-7@8) (-8@7) (-9@10) (-10@9) (-11@11) (-12@11) => open
 % Bob:          (-2@4) (-3@2) (-4@4)                      (-8@8) (-9@10) (-10@9) (+11@11)          => open
 % Claude:       (-2@4) (-3@5) (-4@5) (+5@3)                                                        => open
