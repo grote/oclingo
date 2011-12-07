@@ -1,7 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% LAUNCH: oclingo --iinit="2-retain" accessVolatile.lp %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % This example provides a (fixed-size) sliding window implementation over aging
 % logic programs, where recent external events are evaluated in volatile program
 % parts. Take, e.g., streams/stream01-14E.str as (interesting) logic program
@@ -16,6 +12,7 @@
 #const retain=window+2*offset.   % number of conjoined volatile programs (calculated)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
+#iinit 2 - retain.
 
 %%%%%%%%
 % BASE %

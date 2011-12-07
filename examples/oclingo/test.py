@@ -17,6 +17,10 @@
 ##########################################################################
 
 TESTS = [
+	['access', 'accessBase.lp',       'streams/stream01-14E.str', 'streams/stream01-14E.out'],
+	['access', 'accessCumulative.lp', 'streams/stream01-14E.str', 'streams/stream01-14E.out'],
+	['access', 'accessReground.lp',   'streams/stream01-14E.str', 'streams/stream01-14E.out'],
+	['access', 'accessVolatile.lp',   'streams/stream01-14E.str', 'streams/stream01-14E.out'],
 	['blocksworld', 'blocksworld.lp', 'instance.lp', 'online.lp', 'online.out'],
 	['elevator', 'elevator.lp', 'building.lp',  'online.lp',  'online.out'],
 	['elevator', 'elevator.lp', 'building2.lp', 'online2.lp', 'online2.out'],
@@ -60,11 +64,13 @@ def main():
 		output = runController(test)
 		
 		result = compareOutput(test, output)
-	
+		
+		test_string = test.name + " " + str.rsplit(test.encoding, '/')[-1] + " " +  str.rsplit(test.online, '/')[-1]
+		
 		if result:
-			print "Test " + test.name + "/" + test.online + " completed sucessfully."
+			print "Test " + test_string + " completed sucessfully."
 		else:
-			print "Error: Test " + test.online + " failed!"
+			print "Error: Test " + test_string + " failed!"
 			return 1
 
 	print

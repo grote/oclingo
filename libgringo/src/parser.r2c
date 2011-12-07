@@ -52,7 +52,7 @@ Parser::ErrorTok::ErrorTok(const Loc &loc, const std::string &token, Type type=P
 {
 }
 
-Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
+Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc, int32_t &iinit)
 	: g_(g)
 	, current_(base)
 	, base_(base)
@@ -63,6 +63,7 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	, parser_(parserAlloc(malloc))
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
+	, iinit_(iinit)
 	, level_(0)
 	, weak_(0)
 	, number_(new Optimize::SharedNumber::element_type(0))
@@ -106,6 +107,7 @@ start:
 		"#show"          { return PARSER_SHOW; }
 		"#hide"          { return PARSER_HIDE; }
 		"#const"         { return PARSER_CONST; }
+		"#iinit"         { return PARSER_IINIT; }
 		"#minimi"[zs]"e" { return PARSER_MINIMIZE; }
 		"#maximi"[zs]"e" { return PARSER_MAXIMIZE; }
 		"#compute"       { return PARSER_COMPUTE; }
@@ -449,7 +451,7 @@ void Parser::incremental(iPart part, uint32_t index, int vol_window)
 
 bool Parser::checkVolTerm(Term *term)
 {
-	if(!term->constant() || term->val(grounder()).type != Val::NUM)
+	if(!term->constant() || term->val(g_).type != Val::NUM)
 	{
 		std::ostringstream ss;
 		term->print(g_, ss);
@@ -486,6 +488,18 @@ Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 void Parser::constTerm(uint32_t index, Term *term)
 {
 	constMap_.insert(index, term);
+}
+
+void Parser::setIInit(Term *term)
+{
+	if(checkVolTerm(term))
+	{
+		if(iinit_ != 1)
+		{
+			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding." << std::endl;
+		}
+		iinit_ = term->val(g_).number();
+	}
 }
 
 namespace

@@ -1,7 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% LAUNCH: oclingo --iinit="2-modulo" accessBase.lp %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % This example provides a (fixed-size) sliding window implementation over aging
 % logic programs, where recent external events are mapped down to a fixed base
 % program. Take, e.g., streams/stream01-14E.str as (interesting) logic program
@@ -16,6 +12,7 @@
 #const modulo=window+2*offset+1. % number of time points in base program (calculated)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
+#iinit 2 - modulo.
 
 %%%%%%%%
 % BASE %

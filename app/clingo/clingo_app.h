@@ -252,7 +252,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
 		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.heuristics.heuristic));
 		a.createModules(*grounder);
-		parser.reset(new Parser(grounder.get(), a.base_, a.cumulative_, a.volatile_, config, str, app.gringo.compat, inc));
+		parser.reset(new Parser(grounder.get(), a.base_, a.cumulative_, a.volatile_, config, str, app.gringo.compat, inc, app.gringo.iinit));
 	}
 }
 

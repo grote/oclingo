@@ -1,0 +1,173 @@
+Answer: 1
+  B.  account(alice,open)  account(bob,open)  account(claude,open)  
+Got input:
+#step 1.
+#volatile : 3.
+access(alice,granted,1).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)  account(claude,open)  
+  1.  access(alice,granted,1)  
+Got input:
+#step 2.
+#volatile : 3.
+access(alice,denied,3).
+access(bob,denied,3).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)     account(claude,open)  
+  1.  access(alice,granted,1)  
+  3.  access(alice,denied,3)   access(bob,denied,3)  
+Got input:
+#step 3.
+#volatile : 3.
+access(alice,denied,2).
+access(claude,granted,5).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)       account(bob,open)     account(claude,open)  
+  1.  access(alice,granted,1)   
+  2.  access(alice,denied,2)    
+  3.  access(alice,denied,3)    access(bob,denied,3)  
+  5.  access(claude,granted,5)  
+Got input:
+#step 4.
+#volatile : 3.
+access(bob,denied,2).
+access(bob,denied,4).
+access(claude,denied,2).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)       account(bob,closed)   account(claude,open)     
+  2.  access(alice,denied,2)    access(bob,denied,2)  access(claude,denied,2)  
+  3.  access(alice,denied,3)    access(bob,denied,3)  
+  4.  access(bob,denied,4)      
+  5.  access(claude,granted,5)  
+Got input:
+#step 5.
+#volatile : 3.
+access(alice,denied,4).
+access(claude,denied,3).
+access(claude,denied,4).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)       account(bob,open)     account(claude,closed)   
+  2.  access(alice,denied,2)    access(bob,denied,2)  access(claude,denied,2)  
+  3.  access(claude,denied,3)   
+  4.  access(alice,denied,4)    access(bob,denied,4)  access(claude,denied,4)  
+  5.  access(claude,granted,5)  
+Got input:
+#step 6.
+#forget 1.
+#volatile : 3.
+access(alice,denied,6).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)        account(claude,closed)   
+  2.  access(bob,denied,2)     access(claude,denied,2)  
+  3.  access(claude,denied,3)  
+  4.  access(alice,denied,4)   access(bob,denied,4)     access(claude,denied,4)  
+  6.  access(alice,denied,6)   
+Got input:
+#step 7.
+#forget 2.
+#volatile : 3.
+access(alice,denied,8).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)        account(claude,open)  
+  3.  access(claude,denied,3)  
+  4.  access(alice,denied,4)   access(claude,denied,4)  
+  6.  access(alice,denied,6)   
+  8.  access(alice,denied,8)   
+Got input:
+#step 8.
+#forget 3.
+#volatile : 3.
+access(alice,denied,7).
+access(bob,denied,8).
+#endstep.
+
+Answer: 1
+  B.  account(alice,closed)   account(bob,open)     account(claude,open)  
+  6.  access(alice,denied,6)  
+  7.  access(alice,denied,7)  
+  8.  access(alice,denied,8)  access(bob,denied,8)  
+Got input:
+#step 9.
+#forget 4.
+#volatile : 3.
+access(alice,denied,10).
+access(bob,denied,10).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)      account(claude,open)  
+  7.  access(alice,denied,7)   
+  8.  access(alice,denied,8)   access(bob,denied,8)   
+  10.  access(alice,denied,10)  access(bob,denied,10)  
+Got input:
+#step 10.
+#forget 5.
+#volatile : 3.
+access(alice,denied,9).
+access(bob,denied,9).
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,closed)    account(claude,open)  
+  7.  access(alice,denied,7)   
+  8.  access(bob,denied,8)     
+  9.  access(alice,denied,9)   access(bob,denied,9)   
+  10.  access(alice,denied,10)  access(bob,denied,10)  
+Got input:
+#step 11.
+#forget 6.
+#volatile : 3.
+access(alice,denied,11).
+access(alice,denied,12).
+access(bob,granted,11).
+#endstep.
+
+Answer: 1
+  B.  account(alice,closed)    account(bob,open)       account(claude,open)  
+  9.  access(alice,denied,9)   access(bob,denied,9)    
+  10.  access(alice,denied,10)  access(bob,denied,10)   
+  11.  access(alice,denied,11)  access(bob,granted,11)  
+  12.  access(alice,denied,12)  
+Got input:
+#step 12.
+#forget 7.
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)       account(claude,open)  
+  9.  access(alice,denied,9)   access(bob,denied,9)    
+  11.  access(alice,denied,11)  access(bob,granted,11)  
+  12.  access(alice,denied,12)  
+Got input:
+#step 13.
+#forget 8.
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)      account(bob,open)       account(claude,open)  
+  11.  access(alice,denied,11)  access(bob,granted,11)  
+  12.  access(alice,denied,12)  
+Got input:
+#step 14.
+#forget 9.
+#endstep.
+
+Answer: 1
+  B.  account(alice,open)  account(bob,open)  account(claude,open)  
+Got input:
+#stop.
+
