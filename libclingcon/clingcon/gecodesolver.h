@@ -39,19 +39,6 @@ namespace Clingcon {
 
     class ConflictAnalyzer;
     class ReasonAnalyzer;
-    class FwdLinearIRSRA;
-    class SCCIRSRA;
-    class RangeIRSRA;
-    class SCCRangeRA;
-    class LinearIRSRA;
-
-    class LinearIISCA;
-    class FwdLinearIISCA;
-
-    class SCCIISCA;
-    class RangeCA;
-    class SCCRangeCA;
-
 
 
 
@@ -62,22 +49,6 @@ namespace Clingcon {
 
     public:
         friend class SearchSpace;
-        //debug
-        friend class LinearIRSRA;
-        friend class FwdLinearIRSRA;
-        friend class SCCIRSRA;
-        friend class RangeIRSRA;
-        friend class SCCRangeRA;
-
-        friend class LinearIISCA;
-        friend class FwdLinearIISCA;
-
-        friend class SCCIISCA;
-        friend class RangeCA;
-        friend class SCCRangeCA;
-
-
-
 
         static std::vector<int> optValues;
         static bool             optAll;
@@ -259,14 +230,6 @@ namespace Clingcon {
         {
         public:
             friend class GecodeSolver;
-            friend class FwdLinearIRSRA;
-            friend class SCCIRSRA;
-            friend class RangeIRSRA;
-            friend class SCCRangeRA;
-            friend class LinearIRSRA;
-
-            friend class LinearIISCA;
-
 
             enum Value
             {

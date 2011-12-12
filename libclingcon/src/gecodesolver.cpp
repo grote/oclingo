@@ -1118,7 +1118,7 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
 
             assert(spaces_.size());
             litToAssPosition_[(*i)] = size;
-            if (!s_->addNewImplication(*i,s_->decisionLevel(),&dummyReason_))
+            if (!s_->addNewImplication(*i,/*dl_[level]*/s_->decisionLevel(),&dummyReason_))
             {
 
                 derivedLits_.clear();
