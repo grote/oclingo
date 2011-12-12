@@ -44,13 +44,15 @@ namespace Clingcon {
     class RangeIRSRA;
     class SCCRangeRA;
     class LinearIRSRA;
-    class LinearGroupedIRSRA;
+
     class LinearIISCA;
     class FwdLinearIISCA;
-    class LinearGroupedIISCA;
+
     class SCCIISCA;
     class RangeCA;
     class SCCRangeCA;
+
+
 
 
     class GecodeSolver : public CSPSolver
@@ -66,13 +68,15 @@ namespace Clingcon {
         friend class SCCIRSRA;
         friend class RangeIRSRA;
         friend class SCCRangeRA;
-        friend class LinearGroupedIRSRA;
+
         friend class LinearIISCA;
         friend class FwdLinearIISCA;
-        friend class LinearGroupedIISCA;
+
         friend class SCCIISCA;
         friend class RangeCA;
         friend class SCCRangeCA;
+
+
 
 
         static std::vector<int> optValues;
@@ -83,14 +87,15 @@ namespace Clingcon {
             SIMPLE,
             LINEAR,
             LINEAR_FWD,
-            LINEAR_GROUPED,
             SCC,
             RANGE,
-            SCCRANGE
+            SCCRANGE,
+
+            LINEARTEST
 
         };
 
-        GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
+        GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
                      bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, int cspPropDelay);
         std::string num2name( unsigned int);
@@ -259,8 +264,10 @@ namespace Clingcon {
             friend class RangeIRSRA;
             friend class SCCRangeRA;
             friend class LinearIRSRA;
-            friend class LinearGroupedIRSRA;
+
             friend class LinearIISCA;
+
+
             enum Value
             {
                 BFREE,

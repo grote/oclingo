@@ -68,13 +68,12 @@ std::string GecodeSolver::num2name( unsigned int var)
 std::vector<int> GecodeSolver::optValues;
 bool             GecodeSolver::optAll = false;
 
-GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
+GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                            const std::string& ICLString, const std::string& branchVarString,
                            const std::string& branchValString, std::vector<int> optValueVec,
                            bool optAllPar, bool initialLookahead, const std::string& reduceReason,
                            const std::string& reduceConflict, int cspPropDelay) :
-    currentSpace_(0), lazyLearn_(lazyLearn),
-    useCDG_(useCDG), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
+    currentSpace_(0), lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
     initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay), cspPropDelayCounter_(0)
 {
@@ -123,7 +122,6 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if (reduceReason == "simple")         reduceReason_ = SIMPLE;
     if (reduceReason == "linear")         reduceReason_ = LINEAR;
     if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
-    if (reduceReason == "linear-grouped") reduceReason_ = LINEAR_GROUPED;
     if (reduceReason == "scc")            reduceReason_ = SCC;
     if (reduceReason == "range")          reduceReason_ = RANGE;
     if (reduceReason == "sccrange")       reduceReason_ = SCCRANGE;
@@ -132,7 +130,6 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool useCDG, bool weakAS, int numAS,
     if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
     if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
     if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
-    if (reduceConflict == "linear-grouped") reduceConflict_ = LINEAR_GROUPED;
     if (reduceConflict == "scc")            reduceConflict_ = SCC;
     if (reduceConflict == "range")          reduceConflict_ = RANGE;
     if (reduceConflict == "sccrange")       reduceConflict_ = SCCRANGE;
@@ -291,7 +288,6 @@ bool GecodeSolver::initialize()
         case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
         case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
         case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
-        case LINEAR_GROUPED: conflictAnalyzer_ = new LinearGroupedIISCA(this); break;
         case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
         case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
@@ -303,7 +299,6 @@ bool GecodeSolver::initialize()
         case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
         case LINEAR:         reasonAnalyzer_ = new LinearIRSRA(this); break;
         case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
-        case LINEAR_GROUPED: reasonAnalyzer_ = new LinearGroupedIRSRA(this); break;
         case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
         case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
@@ -686,8 +681,14 @@ bool GecodeSolver::hasAnswer()
     //assert(currentSpace_->stable());
 
 
+    unsigned int oldDL = s_->decisionLevel();
     if (!finishPropagation())
         return false;
+    if (oldDL > s_->decisionLevel()) //we backjumped
+    {
+        return false;
+    }
+
 
     // currently using a depth first search, this could be changed by options
     if (!optimize_)
@@ -902,7 +903,7 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
                 unsigned int oldDL = s_->decisionLevel();
                 if(!propagateNewLiteralsToClasp(spaces_.size()-1))
                     return false;
-                if (oldDL > s_->decisionLevel()) // we do not need to update assignment as we backjumped!
+                if (oldDL > s_->decisionLevel()) //we backjumped
                     return true;
             }
             else
@@ -955,8 +956,11 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
             if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
             {
                 // this function avoids propagating already decided literals
+                unsigned int oldDL = s_->decisionLevel();
                 if(!propagateNewLiteralsToClasp(spaces_.size()-1))
                     return false;
+                if (oldDL > s_->decisionLevel()) //we backjumped
+                    return true;
             }
             // currentSpace_->status() == FAILED
             else
@@ -1014,7 +1018,7 @@ bool GecodeSolver::finishPropagation()
             }
             if (oldDL > s_->decisionLevel()) // we backjumped!
             {
-                break;
+                return true;
             }
         }
         // currentSpace_->status() == FAILED
@@ -1089,10 +1093,11 @@ void GecodeSolver::undo(unsigned int level)
 
 bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
 {
-    unsigned int size = assLength_[level];
+
 
     if (lazyLearn_)
     {
+        unsigned int size = assLength_[level];
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
             // if not already decided
@@ -1125,16 +1130,19 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
     }
     else
     {
+        unsigned int size = assLength_[level];
         ClauseCreator gc(s_);
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
             if (!s_->isTrue(*i))
             {
+
                 uint32 dl = s_->decisionLevel();
                 //assignment_.push_back(*i);
                 gc.startAsserting(Constraint_t::learnt_conflict, *i);
                 Clasp::LitVec reason;
                 createReason(reason,*i,assignment_.begin(), assignment_.begin()+size);
+
 
                 for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
                 {
@@ -1145,8 +1153,29 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
                     derivedLits_.clear();
                     return false;
                 }
+                //if (s_->isTrue(*i))
+                //    std::cout << "has been allpied on level 10" << std::endl;
                 if (dl>s_->decisionLevel())
-                    assert(false && "Shouldn't occur here");
+                {
+                    // we backjumped
+                    if (dl_[level]==s_->decisionLevel())
+                    {
+                        // we just applied it on the implication level and can go on
+                        //int a = 0;
+                    }
+                    else
+                    {
+                        // we applied it on an even lower level due to shrinking or late propagation
+                        // so all further implications are not relevant any more
+                        derivedLits_.clear();
+                        return true;
+                        //break;
+                    }
+                    //%we backjumped, so the derived literals are maybe no longer derived !
+                    //%if they are derived on the last level where we have a space/propagated this is ok,
+                    //%        the others can be derived there true, otherwise we have to break
+                //    assert(false && "Shouldn't occur here");
+                }
             }
             else
             {
@@ -1220,6 +1249,8 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
 
         x_[i] = IntVar(*this, is);
     }
+
+    csps_->domains_.clear();
 
 
     // set static constraints
