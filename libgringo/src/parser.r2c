@@ -116,6 +116,7 @@ start:
 		"#volatile"      { return PARSER_VOLATILE; }
 		"#domain"        { return PARSER_DOMAIN; }
 		"#external"      { return PARSER_EXTERNAL; }
+		"#forget"        { return PARSER_FORGET; }
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
 		"#undef"         { return PARSER_UNDEF; }
@@ -229,6 +230,7 @@ start:
 		"#show"          { return PARSER_SHOW; }
 		"#hide"          { return PARSER_HIDE; }
 		"#const"         { return PARSER_CONST; }
+		"#iinit"         { return PARSER_IINIT; }
 		"#minimi"[zs]"e" { return PARSER_MINIMIZE; }
 		"#maximi"[zs]"e" { return PARSER_MAXIMIZE; }
 		"#compute"       { return PARSER_COMPUTE; }
@@ -237,6 +239,7 @@ start:
 		"#volatile"      { return PARSER_VOLATILE; }
 		"#domain"        { return PARSER_DOMAIN; }
 		"#external"      { return PARSER_EXTERNAL; }
+		"#forget"        { return PARSER_FORGET; }
 		"#infimum"       { return PARSER_INFIMUM; }
 		"#supremum"      { return PARSER_SUPREMUM; }
 		"#undef"         { return PARSER_UNDEF; }
@@ -449,6 +452,11 @@ void Parser::incremental(iPart part, uint32_t index, int vol_window)
 	if(current_ != base_) { iVar_ = g_->index("#I"); }
 }
 
+void Parser::setForgetId(uint32_t index)
+{
+	fId_ = index;
+}
+
 bool Parser::checkVolTerm(Term *term)
 {
 	if(!term->constant() || term->val(g_).type != Val::NUM)
@@ -467,7 +475,7 @@ Term *Parser::term(Val::Type t, const Loc &loc, uint32_t index)
 {
 	if(t == Val::ID)
 	{
-		if(current_ != base_ && index == iId_)
+		if((current_ != base_ && index == iId_) || index == fId_)
 		{
 			return new VarTerm(loc, iVar_);
 		}
@@ -504,7 +512,54 @@ void Parser::setIInit(Term *term)
 
 namespace
 {
+	class IVarIndexer : private PrgVisitor
+	{
+	private:
+		IVarIndexer(Grounder *g, uint32_t iVar) : g_(g), iVar_(iVar) { }
+		void visit(VarTerm *var, bool bind)
+		{
+			(void) bind;
+			if (var->nameId() == iVar_)
+			{
+				var->index(0,0);
+				g_->reserve(1);
+			}
+			else
+			{
+				throw std::runtime_error("IVarIndexer was called for term with variables.");
+			}
+		}
 
+		void visit(Term *term, bool bind)
+		{
+			(void) bind;
+			term->visit(this, false);
+		}
+	public:
+		static void index(Grounder *g, uint32_t iVar, Term *term)
+		{
+			IVarIndexer vx(g, iVar);
+			vx.visit(term, false);
+		}
+
+	private:
+		Grounder *g_;
+		uint32_t iVar_;
+	};
+}
+
+void Parser::saveForgetTerm(Term *term)
+{
+	// prepare term variable for replacement
+	IVarIndexer::index(g_, iVar_, term);
+	g_->addForgetTerm(term);
+
+	// clear forget ID for new terms
+	fId_ = -1;
+}
+
+namespace
+{
 	class DomAdder : public PrgVisitor
 	{
 	private:

@@ -255,6 +255,9 @@ meta ::= HIDE(tok) term(term) ncond(list).           {                 pParser->
 meta ::= CONST     IDENTIFIER(id) ASSIGN term(term). { pParser->constTerm(id.index, term); }
 meta ::= IINIT     term(term).                       { pParser->setIInit(term); }
 
+forgetid ::= IDENTIFIER(id).                { pParser->setForgetId(id.index); }
+meta ::= FORGET forgetid COLON term(term).  { pParser->saveForgetTerm(term); }
+
 signed(res) ::= IDENTIFIER(id).              { res = id; }
 signed(res) ::= MINUS(minus) IDENTIFIER(id). { res = minus; res.index = GRD->index(std::string("-") + GRD->string(id.index)); }
 

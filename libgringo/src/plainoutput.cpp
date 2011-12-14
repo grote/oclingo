@@ -274,6 +274,11 @@ void PlainOutput::doShow(uint32_t nameId, uint32_t arity, bool s)
 	out_.output() << (s ? "#show " : "#hide ") << storage()->string(nameId) << "/" << arity << ".\n";
 }
 
+void PlainOutput::forgetStep(int step)
+{
+	out_.output() << "#forget " << step << ".\n";
+}
+
 void PlainOutput::addCompute(PredLitRep *l)
 {
 	if(!compute_.str().empty()) { compute_ << ","; }

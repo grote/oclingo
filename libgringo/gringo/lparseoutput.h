@@ -35,6 +35,7 @@ public:
 	void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
 	void printSymbolTableEntry(uint32_t symbol, const std::string &name);
 	void printExternalTableEntry(const Symbol &symbol);
+	void forgetStep(int) { }
 	uint32_t symbol();
 private:
 	std::ostream &out_;

@@ -46,6 +46,7 @@ public:
 	bool shown(uint32_t domId);
 	virtual void doHideAll() { }
 	virtual void doShow(uint32_t, uint32_t, bool) { }
+	virtual void forgetStep(int) = 0;
 	void regDelayedPrinter(DelayedPrinter *printer) { delayedPrinters_.push_back(printer); }
 	template<class P>
 	static bool expPrinter();

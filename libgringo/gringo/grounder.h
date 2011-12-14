@@ -74,6 +74,8 @@ public:
 	Module *createModule();
 	void addInternal(Statement *stm);
 	uint32_t aggrUid();
+	void addForgetTerm(Term *forget);
+	void groundForget(int step);
 	
 	void luaExec(const Loc &loc, const std::string &s);
 	void luaCall(const LuaLit *lit, const ValVec &args, ValVec &vals);
@@ -97,6 +99,7 @@ private:
 	BodyOrderHeuristicPtr  heuristic_;
 	Module                *current_;
 	bool                   optimizeEdb_;
+	std::vector<Term*>     forgetTerms_;
 };
 
 // ========================== Module ==========================

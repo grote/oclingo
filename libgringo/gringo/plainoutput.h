@@ -82,6 +82,7 @@ public:
 	void finalize();
 	void doHideAll();
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
+	void forgetStep(int step);
 	void addCompute(PredLitRep *l);
 	void addOptimize(const Val &optnum, bool maximize, bool multi, const std::string &s);
 	~PlainOutput();
