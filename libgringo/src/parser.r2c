@@ -52,7 +52,7 @@ Parser::ErrorTok::ErrorTok(const Loc &loc, const std::string &token, Type type=P
 {
 }
 
-Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc, int32_t &iinit)
+Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc)
 	: g_(g)
 	, current_(base)
 	, base_(base)
@@ -63,7 +63,6 @@ Parser::Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &c
 	, parser_(parserAlloc(malloc))
 	, error_(false)
 	, include_(std::numeric_limits<uint32_t>::max())
-	, iinit_(iinit)
 	, level_(0)
 	, weak_(0)
 	, number_(new Optimize::SharedNumber::element_type(0))
@@ -500,14 +499,7 @@ void Parser::constTerm(uint32_t index, Term *term)
 
 void Parser::setIInit(Term *term)
 {
-	if(checkVolTerm(term))
-	{
-		if(iinit_ != 1)
-		{
-			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding." << std::endl;
-		}
-		iinit_ = term->val(g_).number();
-	}
+	if(checkVolTerm(term)) { config_.iinit = term->val(g_).number(); }
 }
 
 namespace

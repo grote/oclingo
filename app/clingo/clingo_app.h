@@ -252,7 +252,7 @@ FromGringo<M>::FromGringo(ClingoApp<M> &a, Streams& str)
 		bool inc = app.clingo.mode != CLINGO || app.gringo.ifixed > 0;
 		grounder.reset(new Grounder(out.get(), app.generic.verbose > 2, app.gringo.heuristics.heuristic));
 		a.createModules(*grounder);
-		parser.reset(new Parser(grounder.get(), a.base_, a.cumulative_, a.volatile_, config, str, app.gringo.compat, inc, app.gringo.iinit));
+		parser.reset(new Parser(grounder.get(), a.base_, a.cumulative_, a.volatile_, config, str, app.gringo.compat, inc));
 	}
 }
 
@@ -284,6 +284,7 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			app.setIinit(config);
 			app.groundBase(*grounder, config, app.gringo.iinit, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 		}
 		else

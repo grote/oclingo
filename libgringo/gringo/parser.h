@@ -68,7 +68,7 @@ public:
 	enum iPart { IPART_BASE, IPART_CUMULATIVE, IPART_VOLATILE };
 
 public:
-	Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc, int32_t &iinit);
+	Parser(Grounder *g, Module *base, Module *cum, Module *vol, IncConfig &config, Streams &streams, bool compat, bool inc);
 	int lex();
 	int lex_compat();
 	std::string errorToken();
@@ -113,7 +113,6 @@ private:
 	uint32_t        include_;
 	ErrorVec        errors_;
 	StatementPtrVec last_;
-	int32_t        &iinit_;
 	// parsing optimize statements
 	int32_t         level_;
 	int32_t         weak_;

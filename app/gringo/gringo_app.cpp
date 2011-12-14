@@ -58,6 +58,19 @@ Streams::StreamPtr GringoApp::constStream() const
 	return Streams::StreamPtr(constants.release());
 }
 
+void GringoApp::setIinit(IncConfig &cfg)
+{
+	if(cfg.iinit != 1)
+	{
+		if(gringo.iinit != 1)
+		{
+			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding with ";
+			std::cerr << cfg.iinit << "." << std::endl;
+		}
+		gringo.iinit = cfg.iinit;
+	}
+}
+
 void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 {
 	cfg.incStep     = step;
@@ -119,12 +132,13 @@ int GringoApp::doRun()
 		IncConfig config;
 		Grounder  g(o.get(), generic.verbose > 2, gringo.heuristics.heuristic);
 		createModules(g);
-		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0, gringo.iinit);
+		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
 
 		o->initialize();
 		p.parse();
 		if(gringo.magic) g.addMagic();
 		g.analyze(gringo.depGraph, gringo.stats);
+		setIinit(config);
 		groundBase(g, config, gringo.iinit, gringo.ifixed, gringo.ifixed);
 		o->finalize();
 	}

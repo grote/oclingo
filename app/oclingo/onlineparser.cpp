@@ -99,7 +99,7 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 
 void OnlineParser::doAdd() {
 	// special printing of volatile rules
-	if(stack_->type == USER or stack_->type == USER+1) {
+	if(stack_->type == USER || stack_->type == USER+1) {
 		Rule::Printer *printer = output_->printer<Rule::Printer>();
 		printer->begin();
 		if(stack_->type == USER) { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
