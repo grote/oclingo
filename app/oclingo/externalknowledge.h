@@ -54,6 +54,7 @@ public:
 	void savePrematureVol(OnlineParser::Part part, int window);
 	void savePrematureAssertTerm(Val assert_term);
 	void savePrematureForget(int step);
+	void savePrematureForget(int from, int to);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
@@ -98,5 +99,7 @@ private:
 	int controller_step_;
 	bool model_;
 	int forget_;
+	int forget_from_;
+	int forget_to_;
 	bool debug_;
 };

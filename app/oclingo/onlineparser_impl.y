@@ -49,6 +49,7 @@ line ::= CUMULATIVE.                 { onlineParser->setPart(OnlineParser::CUMUL
 line ::= VOLATILE.                   { onlineParser->setPart(OnlineParser::VOLATILE); }
 line ::= VOLATILE COLON NUMBER(num). { onlineParser->setPart(OnlineParser::VOLATILE); onlineParser->setVolatileWindow(num.number); }
 line ::= FORGET NUMBER(num).         { onlineParser->forget(num.number); }
+line ::= FORGET NUMBER(num) DOTS NUMBER(num2). { onlineParser->forget(num.number, num2.number); }
 line ::= ASSERT  COLON term.         { onlineParser->setAssert(); }
 line ::= RETRACT COLON term.         { onlineParser->retract(); }
 line ::= ENDSTEP.

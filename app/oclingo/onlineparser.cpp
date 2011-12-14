@@ -173,9 +173,17 @@ void OnlineParser::forget(int step) {
 	if(output_->getExternalKnowledge().needsNewStep()) {
 		output_->getExternalKnowledge().savePrematureForget(step);
 	} else {
-		// forget all externals that were added at t <= step
-		for(int i = 1; i <= step; ++i) {
-			output_->forgetStep(i);
+		// forget only externals that were added at "step"
+		output_->forgetStep(step);
+	}
+}
+
+void OnlineParser::forget(int from, int to) {
+	if(output_->getExternalKnowledge().needsNewStep()) {
+		output_->getExternalKnowledge().savePrematureForget(from, to);
+	} else {
+		for(; from <= to; ++from) {
+			output_->forgetStep(from);
 		}
 	}
 }

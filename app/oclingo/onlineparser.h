@@ -61,6 +61,7 @@ public:
 
 	void setStep(int step);
 	void forget(int step);
+	void forget(int from, int to);
 	void terminate();
 	void setPart(Part part);
 	void setVolatileWindow(int window);

@@ -35,6 +35,8 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	, controller_step_(1)
 	, model_(true)
 	, forget_(0)
+	, forget_from_(0)
+	, forget_to_(0)
 	, debug_(false)
 {
 	post_ = new ExternalKnowledge::PostPropagator(this);
@@ -199,18 +201,22 @@ void ExternalKnowledge::savePrematureForget(int step) {
 	forget_ = step;
 }
 
+void ExternalKnowledge::savePrematureForget(int from, int to) {
+	forget_from_ = from;
+	forget_to_ = to;
+}
+
 bool ExternalKnowledge::addPrematureKnowledge() {
 	assert(stacks_.size() == vol_stack_.size());
 	assert(stacks_.size() == assert_stack_.size());
 
 	bool added = false;
 	// check for knowledge from previous steps and add it if found
-	if(controller_step_ == step_ && (stacks_.size() > 0 || forget_)) {
-		added = true;
-
+	if(controller_step_ == step_ && (stacks_.size() > 0 || forget_ || forget_from_)) {
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
+			added = true;
 			// add part information to parser
 			parser.setPart(vol_stack_.front().first);
 			parser.setVolatileWindow(vol_stack_.front().second);
@@ -224,6 +230,11 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 		}
 
 		if(forget_) { parser.forget(forget_); forget_ = 0; }
+		if(forget_from_) {
+			parser.forget(forget_from_, forget_to_);
+			forget_from_ = 0;
+			forget_to_ = 0;
+		}
 	}
 
 	return added;
