@@ -50,6 +50,8 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     GecodeSolver::SearchSpace* original;
     GecodeSolver::SearchSpace* tester = 0;
     original = g_->getRootSpace();
+
+
     ++props_;
     if (!original)
     {
@@ -58,6 +60,9 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     }
 
     g_->setRecording(false);
+
+    assert((original->propagate(~l), original->propagate(begin, end), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
 
     Clasp::LitVec::const_iterator start = begin;//+g_->assLength(index);
 
@@ -105,7 +110,6 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
     }
     Ende:
     sumLength_+=reason.size();
-    //std::cout << sumLength_ << std::endl;
     assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), original->propagate(~l), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
@@ -139,6 +143,9 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
     }
 
     g_->setRecording(false);
+
+    assert((original->propagate(~l), original->propagate(begin, end), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
 
     Clasp::LitVec::const_iterator start = begin;
 
@@ -222,6 +229,9 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
 
     g_->setRecording(false);
 
+    assert((original->propagate(~l), original->propagate(begin, end), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
+
     original->propagate(~l);
     if (original->status()==SS_FAILED)
         goto Ende;
@@ -303,6 +313,8 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
 
     g_->setRecording(false);
 
+    assert((original->propagate(~l), original->propagate(begin, ends), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
 
     VarSet checker(varSets_[l.var()]);
     VarSet reasonChecker(g_->getVariables().size());
@@ -445,6 +457,9 @@ void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     }
 
     g_->setRecording(false);
+
+    assert((original->propagate(~l), original->propagate(begin, ends), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
 
 
     VarSet checker(varSets_[l.var()]);

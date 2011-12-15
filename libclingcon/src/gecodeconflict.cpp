@@ -143,7 +143,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 }
 */
 
-void LinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
+void LinearIISCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -170,13 +170,17 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
     Clasp::LitVec::const_iterator end = conflict.end();
 
     g_->setRecording(false);
+
+    assert((original->propagate(conflict.begin(), conflict.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
+
     Clasp::LitVec::const_iterator start = conflict.begin();
 
     Clasp::LitVec newConflict;
     // special case, the last literal is surely conflicting
-    if (conflict.size()>g_->assLength(index))
+    if (last)
     {
-        assert(conflict.size()==g_->assLength(index)+1);
+        //assert(conflict.size()==g_->assLength(index)+1);
         newConflict.push_back(conflict.back());
         --end;
         original->propagate(conflict.back());
@@ -235,7 +239,7 @@ void LinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 }
 
 
-void FwdLinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
+void FwdLinearIISCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -262,13 +266,17 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
     Clasp::LitVec::const_iterator end = conflict.end();
 
     g_->setRecording(false);
+
+    assert((original->propagate(conflict.begin(), conflict.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
+
     Clasp::LitVec::const_iterator start = conflict.begin();
 
     Clasp::LitVec newConflict;
     // special case, the last literal is surely conflicting
-    if (conflict.size()>g_->assLength(index))
+    if (last)
     {
-        assert(conflict.size()==g_->assLength(index)+1);
+        //assert(conflict.size()==g_->assLength(index)+1);
         newConflict.push_back(conflict.back());
         --end;
         original->propagate(conflict.back());
@@ -327,7 +335,7 @@ void FwdLinearIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 }
 
 
-void RangeCA::shrink(Clasp::LitVec& conflict, size_t index)
+void RangeCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -350,16 +358,17 @@ void RangeCA::shrink(Clasp::LitVec& conflict, size_t index)
         return;
     }
 
-
-
     g_->setRecording(false);
+
+    assert((original->propagate(conflict.begin(), conflict.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
 
     Clasp::LitVec newConflict;
     Clasp::LitVec::const_iterator it=conflict.end()-1;
     // special case, the last literal is surely conflicting
-    if (conflict.size()>g_->assLength(index))
+    if (last)
     {
-        assert(conflict.size()==g_->assLength(index)+1);
+        //assert(conflict.size()==g_->assLength(index)+1);
         newConflict.push_back(conflict.back());
         --it;
         original->propagate(conflict.back());
@@ -430,7 +439,7 @@ SCCIISCA::SCCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_
 }
 
 
-void SCCIISCA::shrink(Clasp::LitVec& conflict, size_t index)
+void SCCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -457,6 +466,9 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict, size_t index)
 
     g_->setRecording(false);
 
+    assert((original->propagate(conflict.begin(), conflict.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
+
     int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
     VarSet done(it+1);
@@ -466,9 +478,9 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict, size_t index)
     Clasp::LitVec::const_iterator begin = conflict.begin();
      unsigned int checkCount = 0;//checker.count();
     // special case, the last literal is surely conflicting
-    if (conflict.size()>g_->assLength(index))
+    if (last)
     {
-        assert(conflict.size()==g_->assLength(index)+1);
+        //assert(conflict.size()==g_->assLength(index)+1);
         newConflict.push_back(conflict.back());
         conflictDone.set(it);
         conflictChecker|=varSets_[(begin+it)->var()];
@@ -585,7 +597,7 @@ SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLen
     }
 }
 
-void SCCRangeCA::shrink(Clasp::LitVec& conflict, size_t index)
+void SCCRangeCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -610,6 +622,9 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict, size_t index)
 
     g_->setRecording(false);
 
+    assert((original->propagate(conflict.begin(), conflict.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), true));
+
     int it = (conflict.size())-1;
     Clasp::LitVec newConflict;
     VarSet done(it+1);
@@ -617,9 +632,9 @@ void SCCRangeCA::shrink(Clasp::LitVec& conflict, size_t index)
     Clasp::LitVec::const_iterator begin = conflict.begin();
      unsigned int checkCount = 0;//checker.count();
     // special case, the last literal is surely conflicting
-    if (conflict.size()>g_->assLength(index))
+    if (last)
     {
-        assert(conflict.size()==g_->assLength(index)+1);
+        //assert(conflict.size()==g_->assLength(index)+1);
         newConflict.push_back(conflict.back());
         done.set(it);
         --it;

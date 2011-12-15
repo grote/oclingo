@@ -34,7 +34,7 @@ namespace Clingcon
     public:
         virtual ~ConflictAnalyzer(){}
         // does change the conflict and maybe shrinks it
-        virtual void shrink(Clasp::LitVec& conflict, size_t index) = 0;
+        virtual void shrink(Clasp::LitVec& conflict, bool last) = 0;
     };
 
     class SimpleCA : public ConflictAnalyzer
@@ -49,7 +49,7 @@ namespace Clingcon
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(0)/float(oldLength_))*100 << " %" << std::endl;
         }
-        virtual void shrink(Clasp::LitVec& conf, size_t index)
+        virtual void shrink(Clasp::LitVec& conf, bool last)
         {
             oldLength_+=conf.size();
             ++numCalls_;
@@ -77,7 +77,7 @@ namespace Clingcon
         }
 
 
-        virtual void shrink(Clasp::LitVec& conflict, size_t index);
+        virtual void shrink(Clasp::LitVec& conflict, bool last);
     private:
         GecodeSolver* g_;
         unsigned int  props_;
@@ -100,7 +100,7 @@ namespace Clingcon
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
-        virtual void shrink(Clasp::LitVec& conflict, size_t index);
+        virtual void shrink(Clasp::LitVec& conflict, bool last);
 
     private:
         GecodeSolver* g_;
@@ -125,7 +125,7 @@ namespace Clingcon
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
-        virtual void shrink(Clasp::LitVec& conflict, size_t index);
+        virtual void shrink(Clasp::LitVec& conflict, bool last);
     private:
         GecodeSolver* g_;
         unsigned int  props_;
@@ -148,7 +148,7 @@ namespace Clingcon
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
-        virtual void shrink(Clasp::LitVec& conflict, size_t index);
+        virtual void shrink(Clasp::LitVec& conflict, bool last);
 
     private:
         GecodeSolver* g_;
@@ -175,7 +175,7 @@ namespace Clingcon
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
 
-        virtual void shrink(Clasp::LitVec& conflict, size_t index);
+        virtual void shrink(Clasp::LitVec& conflict, bool last);
     private:
         GecodeSolver* g_;
         unsigned int  props_;

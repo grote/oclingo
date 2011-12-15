@@ -40,8 +40,6 @@ namespace Clingcon {
     class ConflictAnalyzer;
     class ReasonAnalyzer;
 
-
-
     class GecodeSolver : public CSPSolver
     {
     public:
@@ -139,7 +137,8 @@ namespace Clingcon {
         /*
                          * sets a conflict wrt to the current assignment
     */
-        void setConflict(Clasp::LitVec conflict, size_t index, bool shrink=true);
+        // last == true, if we know that the last literal in the conflict is surely part of it!
+        void setConflict(Clasp::LitVec conflict, bool last, bool shrink=true);
         /*
     * pre: cdg has been build
     * param in: variable to start with
@@ -196,6 +195,7 @@ namespace Clingcon {
         Mode              reduceConflict_;
         int               cspPropDelay_;
         unsigned int      cspPropDelayCounter_;
+        unsigned int      propagated_; // the number of already propagated literals!
 
         class CSPDummy : public Clasp::Constraint
         {
