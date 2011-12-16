@@ -66,7 +66,7 @@ namespace Clingcon {
 
         GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
-                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, int cspPropDelay);
+                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -104,6 +104,7 @@ namespace Clingcon {
         void setRecording(bool r);
         //virtual bool propagate(const Clasp::LitVec& lv, bool& foundNewLits);
         virtual bool propagate();
+        bool propagateOldLits();
         bool _propagate(Clasp::LitVec& );
         bool finishPropagation();
         virtual bool propagateMinimize();
@@ -167,6 +168,22 @@ namespace Clingcon {
         LitToAssPosition litToAssPosition_;
         //AssPosToSize assPosToSize_;
 
+        struct ImpliedLiteral
+        {
+            ImpliedLiteral(Clasp::Literal x, uint32 level, size_t reasonLength) :
+                x_(x), level_(level), reasonLength_(reasonLength)
+            {}
+
+            Clasp::Literal x_;
+            uint32 level_;
+            size_t reasonLength_;
+        };
+
+        typedef std::list<ImpliedLiteral> ImplList;
+
+        // implieadLits_[l] = {(x,y,z)} is the literal x was applied at l, but we found a reason (ass[0]-ass[z]) on level y
+        std::map<size_t, ImplList> impliedLits_;
+
 
 
         //typedef std::map<unsigned int, std::set<unsigned int> > IntToSet;
@@ -193,7 +210,7 @@ namespace Clingcon {
         bool              initialLookahead_;
         Mode              reduceReason_;
         Mode              reduceConflict_;
-        int               cspPropDelay_;
+        unsigned int      cspPropDelay_;
         unsigned int      cspPropDelayCounter_;
         unsigned int      propagated_; // the number of already propagated literals!
 

@@ -158,7 +158,7 @@ struct ClingconOptions
         std::vector<int> optValues;        // Default: empty
         bool             optAll;           // Default: false
         bool             initialLookahead; // Default: false
-        int              cspPropDelay;     // Default: 1
+        unsigned int     cspPropDelay;     // Default: 1
 
 	CSPMode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
@@ -292,10 +292,9 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                 "      Valid:   <n1[,n2,n3,...]>\n")
                         ("csp-opt-all"    , bool_switch(&optAll)->defaultValue(false), "Compute all optimal models")
                         ("csp-initial-lookahead"    , bool_switch(&initialLookahead)->defaultValue(false), "Do singular lookahead on initialization")
-                 ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(-1), "Do CSP-Propagation every n requested decision levels\n"
-                                 "     -1          : do CSP-Propagation may several times per decision level (default)\n"
+                 ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
                                  "      0          : only on possible model\n"
-                                 "      n          : every n requested decision levels\n"
+                                 "      n          : every n steps\n"
                  )
                 ;
 

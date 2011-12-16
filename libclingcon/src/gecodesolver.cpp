@@ -72,7 +72,7 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                            const std::string& ICLString, const std::string& branchVarString,
                            const std::string& branchValString, std::vector<int> optValueVec,
                            bool optAllPar, bool initialLookahead, const std::string& reduceReason,
-                           const std::string& reduceConflict, int cspPropDelay) :
+                           const std::string& reduceConflict, unsigned int cspPropDelay) :
     currentSpace_(0), lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
     initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay), cspPropDelayCounter_(1), propagated_(0)
@@ -814,6 +814,15 @@ bool GecodeSolver::propagate()
         return propagateMinimize();
     }
 
+    uint32 oldDL = s_->decisionLevel();
+    if (!propagateOldLits())
+        return false;
+    if (oldDL > s_->decisionLevel()) // we backjumped
+    {
+        propQueue_.clear();
+        return true;
+    }
+
     // if already failed, create conflict, this may be on a lower level
     if (currentSpace_->failed())
     {
@@ -860,6 +869,125 @@ bool GecodeSolver::propagate()
         }
     return true;
     }
+}
+
+bool GecodeSolver::propagateOldLits()
+{
+    for (std::map<size_t,ImplList>::reverse_iterator i = impliedLits_.rbegin(); i != impliedLits_.rend(); ++i)
+    {
+        if (i->first > s_->decisionLevel())
+        {
+            ClauseCreator gc(s_);
+            // we backjumped and have something todo
+            ImplList::iterator j = i->second.begin();
+            while(j != i->second.end())
+            {
+                if (s_->value(j->x_.var())==value_free)
+                {
+                    if (j->level_ > s_->decisionLevel())
+                    {
+                        j = i->second.erase(j); // we can not imply this here, we backjumped too far
+                        continue;
+                    }
+                    uint32 oldDL = s_->decisionLevel();
+                    if (lazyLearn_)
+                    {
+
+                        litToAssPosition_[j->x_] = j->reasonLength_;
+                        if (!s_->addNewImplication(j->x_,j->level_,&dummyReason_))
+                        {
+                            i->second.erase(j);
+                            return false;
+                        }
+
+                    }
+                    else // early learn
+                    {
+                        //std::cout << "unassigned " << j->x_.var() << " now becomes true with asl " << j->reasonLength_ << std::endl;
+                        Clasp::LitVec reason;
+                        createReason(reason,j->x_,assignment_.begin(), assignment_.begin()+j->reasonLength_);
+                        gc.startAsserting(Constraint_t::learnt_conflict, j->x_);
+                        for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
+                        {
+                            assert(s_->isTrue(*r));
+                            gc.add(~(*r));
+                        }
+                        if(!gc.end())
+                        {
+                            i->second.erase(j);
+                            return false;
+                        }
+
+                    }
+
+                    j = i->second.erase(j);
+                    if (oldDL > s_->decisionLevel())
+                    {
+                        // we backjumped, restart
+                        j = i->second.begin();
+                    }
+                    continue;
+                }
+                else // some value
+                {
+                    if (s_->decisionLevel() > j->level_)
+                    {
+                        if (s_->isTrue(j->x_))
+                        {
+
+                            // the literal is true again but on a lower level, but still higher than ours
+                            if (s_->level(j->x_.var()) > j->level_)
+                            {
+                                //reinsert it on a new position
+                                //std::cout << "reinsert " << j->x_.var() << std::endl;
+                                impliedLits_[s_->level(j->x_.var())].push_back(ImpliedLiteral(j->x_, j->level_, j->reasonLength_));
+                            }
+                            //else
+                            //{
+                            //    j = i->second.remove(j); // we can not imply this here, we backjumped too far
+                            //    continue;
+                            //}
+                            j = i->second.erase(j);
+                            continue;
+                        }
+                        else
+                        {
+                            assert(s_->isFalse(j->x_));
+                            // we have a conflict ?
+                            if (s_->level(j->x_.var())<j->level_)
+                            {// we backjumped too far, continue
+                                j = i->second.erase(j);
+                                continue;
+                            }
+
+
+                            //std::cout << "Found Conflict " << j->x_.var() << " with asl " << j->reasonLength_ << std::endl;
+                            Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+j->reasonLength_);
+                            conflict.push_back(~(j->x_));
+
+                            for (Clasp::LitVec::const_iterator k = conflict.begin(); k != conflict.end(); ++k)
+                            {
+                                assert(s_->isTrue(*k));
+                            }
+                            setConflict(conflict, true);
+                            i->second.erase(j);
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        j = i->second.erase(j); // we can not imply this here, we backjumped too far
+                        continue;
+                    }
+
+                }
+                assert(true);
+
+            }
+        }else break;
+    }
+    return true;
+
 }
 
 bool GecodeSolver::_propagate(Clasp::LitVec& clits)
@@ -1027,6 +1155,7 @@ bool GecodeSolver::finishPropagation()
 
  bool GecodeSolver::propagateMinimize()
  {
+     impliedLits_.clear(); // dont know if this cant be done more clever
      //Clasp::LitVec oldDerivedLits;
      //oldDerivedLits.swap(derivedLits_); // maybe something was already propagated
      updateOpt_ = false;
@@ -1091,7 +1220,6 @@ void GecodeSolver::undo(unsigned int level)
 
 bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
 {
-
     bool back=false;
     unsigned int size = (level == dl_.size()-1 ? propagated_ : assLength_[level]);
     for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
@@ -1115,41 +1243,108 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
             back=true;
     }
 
-    if (!back)
-        return true;
+    //if (!back)
+    //   return true;
 
-    if (lazyLearn_)
+    if (!back) // there where no undef literals, so we do not want to backtrack
+               // just remember all better reasons
     {
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
-            if (s_->isTrue(*i) && s_->level(i->var())<=dl_[level])
-                continue; // do not derive literals that we are not the cause of
 
-            assert(spaces_.size());
-            litToAssPosition_[(*i)] = size;
-
-            if (!s_->addNewImplication(*i,dl_[level]/*s_->decisionLevel()*/,&dummyReason_))
+            assert(s_->isTrue(*i));
+            size_t oldImpl = s_->level(i->var());
+            if (oldImpl <= dl_[level])
+                continue;
+            /*std::map<size_t, ImplList>::iterator m = impliedLits_.find(oldImpl);
+            if (m == impliedLits_.end())
             {
+                m = (impliedLits_.insert(std::make_pair(oldImpl,ImplList()))).first;
+            }*/
+            impliedLits_[oldImpl].push_back(ImpliedLiteral(*i,dl_[level],size));
 
-                derivedLits_.clear();
-                return false;
+
+        }
+
+        return true;
+    }
+
+    if (lazyLearn_)
+    {
+
+        // derive undef and true lits because we are better
+        assert(spaces_.size());
+        bool first = true;
+        while(true)
+        {
+            for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
+            {
+                if (s_->isTrue(*i) && s_->level(i->var())<=dl_[level])
+                    continue; // do not derive literals that we are not the cause of
+
+                litToAssPosition_[(*i)] = size;
+                if (!s_->addNewImplication(*i,dl_[level]/*s_->decisionLevel()*/,&dummyReason_))
+                {
+                    derivedLits_.clear();
+                    return false;
+                }
+
+                if (s_->value(i->var())==value_free && s_->decisionLevel() > dl_[level])
+                    break;
             }
-
+            if (!first)
+                break;
+            first = false;
         }
         derivedLits_.clear();
         return true;
     }
     else
     {
+        uint32 implyon = dl_[level];
+        bool first = true;
         ClauseCreator gc(s_);
+        while(true)
+        {
         for (Clasp::LitVec::const_iterator i = derivedLits_.begin(); i != derivedLits_.end(); ++i)
         {
-
-            //if (!s_->isTrue(*i))
+            if (s_->value(i->var())==value_free) // propagate the yet undeffed ones
             {
-                uint32 dl = s_->decisionLevel();
+                //uint32 dl = s_->decisionLevel();
                 Clasp::LitVec reason;
                 createReason(reason,*i,assignment_.begin(), assignment_.begin()+size);
+                //std::cout << "Start asserting " << i->sign() << " " << i->var() << std::endl;
+                gc.startAsserting(Constraint_t::learnt_conflict, *i);
+                for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
+                {
+                    //std::cout << s_->isTrue(*r) << " level:" << s_->level(r->var()) << " var:" << r->var() << " ... ";
+                    assert(s_->isTrue(*r));
+                    gc.add(~(*r));
+                }
+                if(!gc.end())
+                {
+                    derivedLits_.clear();
+                    return false;
+                }
+                //std::cout << std::endl;
+                assert(s_->isTrue(*i));
+
+                if (s_->decisionLevel() < implyon) // we backjumped too far, the propagation is not valid anymore
+                {
+                    derivedLits_.clear();
+                    return true;
+                }
+                if (first)
+                {
+                    break;
+                }
+            }
+
+
+/*
+            //if (!s_->isTrue(*i))
+            {
+
 
                 uint32 max = 0;
                 for (Clasp::LitVec::const_iterator j = reason.begin(); j != reason.end(); ++j)
@@ -1157,8 +1352,8 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
                      max = s_->level(j->var()) > max ? s_->level(j->var()) : max;
                 }
 
-                if (s_->isTrue(*i) && s_->level(i->var())<=max)
-                    continue;
+                //if (s_->isTrue(*i) && s_->level(i->var())<=max)
+                //    continue;
 
                 if (dl_[level]==max)
                     gc.startAsserting(Constraint_t::learnt_conflict, *i);
@@ -1203,7 +1398,11 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
             //else
             {
 
-            }
+            }*/
+        }
+        if (!first)
+            break;
+        first = false;
         }
         derivedLits_.clear();
         return true;
