@@ -1,0 +1,138 @@
+Answer: 1
+  B.  a        
+  1.  step(1)  
+Answer: 2
+  B.  b        
+  1.  step(1)  
+Got input:
+#step 1.
+#assert :id(1).
+e(1).
+:- not a.
+#endstep.
+
+Answer: 1
+  B.  a     
+  1.  c(1)  e(1)  step(1)  
+Got input:
+#step 2.
+#endstep.
+
+Answer: 1
+  B.  a        
+  1.  c(1)     e(1)  step(1)  
+  2.  step(2)  
+Got input:
+#step 3.
+e(2).
+#endstep.
+
+Answer: 1
+  B.  a        
+  1.  c(1)     e(1)  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+Got input:
+#step 4.
+#retract : id(1).
+#endstep.
+
+Answer: 1
+  B.  a        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  step(4)  
+Answer: 2
+  B.  b        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  step(4)  
+Got input:
+#step 6.
+#assert :id(2).
+e(3).
+:- not b.
+#assert : id(2,1).
+e(5).
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  c(3)     e(3)  step(3)  
+  4.  step(4)  
+  5.  c(5)     e(5)  step(5)  
+  6.  step(6)  
+Got input:
+#step 7.
+e(4).
+#endstep.
+
+Answer: 1
+  B.  b        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  c(3)     e(3)  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  c(5)     e(5)  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+Got input:
+#step 8.
+#retract : id(2).
+#endstep.
+
+Answer: 1
+  B.  a        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  c(5)     e(5)  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+  8.  step(8)  
+Answer: 2
+  B.  b        
+  1.  step(1)  
+  2.  c(2)     e(2)  step(2)  
+  3.  step(3)  
+  4.  c(4)     e(4)  step(4)  
+  5.  c(5)     e(5)  step(5)  
+  6.  step(6)  
+  7.  step(7)  
+  8.  step(8)  
+Got input:
+#step 9.
+e(8).
+#retract : id(2,1).
+#endstep.
+
+Answer: 1
+   B.  a        
+   1.  step(1)  
+   2.  c(2)     e(2)  step(2)  
+   3.  step(3)  
+   4.  c(4)     e(4)  step(4)  
+   5.  step(5)  
+   6.  step(6)  
+   7.  step(7)  
+   8.  c(8)     e(8)  step(8)  
+   9.  step(9)  
+Answer: 2
+   B.  b        
+   1.  step(1)  
+   2.  c(2)     e(2)  step(2)  
+   3.  step(3)  
+   4.  c(4)     e(4)  step(4)  
+   5.  step(5)  
+   6.  step(6)  
+   7.  step(7)  
+   8.  c(8)     e(8)  step(8)  
+   9.  step(9)  
+Got input:
+#stop.
+

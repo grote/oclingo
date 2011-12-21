@@ -34,6 +34,9 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	, step_(1)
 	, controller_step_(1)
 	, model_(true)
+	, forget_(0)
+	, forget_from_(0)
+	, forget_to_(0)
 	, debug_(false)
 {
 	post_ = new ExternalKnowledge::PostPropagator(this);
@@ -163,7 +166,7 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
-	output_->unfreezeOldQueryAtoms();
+	output_->deactivateQueryAtom();
 
 	if(new_input_) {
 		new_input_ = false;
@@ -189,66 +192,50 @@ void ExternalKnowledge::savePrematureVol(OnlineParser::Part part, int window=0) 
 	vol_stack_.push_back(std::make_pair(part, window));
 }
 
-/*
-bool ExternalKnowledge::checkHead(LparseConverter::Symbol const &sym) {
-	// check if head atom has been defined as external
-	if(!sym.external || find(externals_.begin(), externals_.end(), sym.symbol) == externals_.end()) {
-		std::ostringstream emsg;
-		emsg << "Warning: Head ";
-		sym.print(output_->storage(), emsg);
-		emsg << " has not been declared external.";
-
-		if(!import_) {
-			emsg << " The entire rule will be ignored. Try starting oclingo with --import=all";
-		}
-		std::cerr << emsg.str() << std::endl;
-		sendToClient(emsg.str());
-		if(!import_) return false;
-	}
-	return true;
+// always call with addStackPtr()
+void ExternalKnowledge::savePrematureAssertTerm(Val assert_term) {
+	assert_stack_.push_back(assert_term);
 }
 
-void ExternalKnowledge::addHead(uint32_t symbol) {
-	// first remove head atom from externals
-	VarVec::iterator it = find(externals_.begin(), externals_.end(), symbol);
-	// only continue if head has been defined as external
-	if(it != externals_.end()) {
-		externals_.erase(it); // TODO do we want to keep it if this is a volatile rule?
-
-		// don't freeze added head or unfreeze it if necessary
-		it = find(to_freeze_.begin(), to_freeze_.end(), symbol);
-		if(it != to_freeze_.end()) {
-			to_freeze_.erase(it);
-		} else {
-			output_->unfreezeAtom(symbol);
-		}
-	}
+void ExternalKnowledge::savePrematureForget(int step) {
+	forget_ = step;
 }
-*/
+
+void ExternalKnowledge::savePrematureForget(int from, int to) {
+	forget_from_ = from;
+	forget_to_ = to;
+}
 
 bool ExternalKnowledge::addPrematureKnowledge() {
 	assert(stacks_.size() == vol_stack_.size());
+	assert(stacks_.size() == assert_stack_.size());
 
 	bool added = false;
 	// check for knowledge from previous steps and add it if found
-	if(controller_step_ == step_ && stacks_.size() > 0) {
-		added = true;
-
+	if(controller_step_ == step_ && (stacks_.size() > 0 || forget_ || forget_from_)) {
 		std::istream is(&b_);
 		OnlineParser parser(output_, &is);
 		while(stacks_.size()) {
+			added = true;
 			// add part information to parser
 			parser.setPart(vol_stack_.front().first);
 			parser.setVolatileWindow(vol_stack_.front().second);
+			parser.setAssertTerm(assert_stack_.front());
 			vol_stack_.pop_front();
+			assert_stack_.pop_front();
 
 			parser.add(GroundProgramBuilder::StackPtr(stacks_.pop_front().release()));
 			// return to adding cummulative rules
 			parser.setPart(OnlineParser::CUMULATIVE);
 		}
-	}
 
-	// TODO check if premature #forget statement is handled properly
+		if(forget_) { parser.forget(forget_); forget_ = 0; }
+		if(forget_from_) {
+			parser.forget(forget_from_, forget_to_);
+			forget_from_ = 0;
+			forget_to_ = 0;
+		}
+	}
 
 	return added;
 }

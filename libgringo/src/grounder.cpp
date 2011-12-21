@@ -256,6 +256,23 @@ Module *Grounder::createModule()
 	return &modules_.back();
 }
 
+void Grounder::addForgetTerm(Term *forget)
+{
+	forgetTerms_.push_back(forget);
+}
+
+void Grounder::groundForget(int step)
+{
+	if(forgetTerms_.size())
+	{
+		val(0, Val::number(step), 0);
+		foreach(Term *term, forgetTerms_)
+		{
+			output()->forgetStep(term->val(this).number());
+		}
+	}
+}
+
 Grounder::~Grounder()
 {
 }

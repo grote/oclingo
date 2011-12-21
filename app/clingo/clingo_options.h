@@ -60,7 +60,7 @@ struct ClingoOptions
 	bool claspMode;  // default: false
 	bool clingoMode; // default: true for clingo, false for iclingo
 	Mode mode;       // default: highest mode the current binary supports
-	bool iStats;     // default: false
+	uint8 iStats;     // default: 0
 	iClingoConfig inc;
 };
 
@@ -74,7 +74,7 @@ ClingoOptions<M>::ClingoOptions()
 	: claspMode(false)
 	, clingoMode(M == CLINGO)
 	, mode(M)
-	, iStats(false)
+	, iStats(0)
 { }
 
 template <Mode M>
@@ -87,7 +87,7 @@ void ClingoOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramOpt
 		clingoMode = false;
 		OptionGroup incremental("Incremental Computation Options");
 		incremental.addOptions()
-			("istats"      , bool_switch(&iStats) , "Print statistics for each incremental step\n")
+			("istats"   , storeTo(iStats)->parser(&Clasp::BasicOptions::mapStats)->setImplicit(), "Print statistics for each incremental step\n")
 
 			("imin"        , storeTo(inc.minSteps), "Perform at least <num> incremental solve steps", "<num>")
 			("imax"        , storeTo(inc.maxSteps), "Perform at most <num> incremental solve steps\n", "<num>")

@@ -1,7 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% LAUNCH: oclingo --iinit="1-offset" accessReground.lp %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % This example provides a (fixed-size) sliding window implementation over aging
 % logic programs, where recent external events are evaluated in own (volatile)
 % programs. Take, e.g., streams/stream01-14E.str as (interesting) logic program
@@ -15,6 +11,7 @@
 #const offset=2.                 % time points/terms may deviate up to 2 (by default)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
+#iinit 1 - offset.
 
 %%%%%%%%
 % BASE %

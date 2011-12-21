@@ -31,6 +31,7 @@ public:
 	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
 	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
 	void createModules(Grounder &g);
+	void setIinit(IncConfig &cfg);
 
 private:
 	GringoApp(const GringoApp&);

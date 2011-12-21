@@ -99,7 +99,7 @@ public:
 	virtual void add(Type type, uint32_t n = 0);
 	// call instead of add and later use add(StackPtr stm)
 	StackPtr get(Type type, uint32_t n);
-	virtual void add(StackPtr stm);
+	void add(StackPtr stm);
 	void addVal(const Val &val);
 	void addSign();
 	Storage *storage();

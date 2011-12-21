@@ -78,6 +78,7 @@ public:
 	void parse();
 	void maximize(bool maximize, bool inc = true) { maximize_ = maximize; level_+= inc; }
 	void incremental(iPart part, uint32_t index = 0, int vol_window = 1);
+	void setForgetId(uint32_t index);
 	bool checkVolTerm(Term *term);
 	void add(Statement *s);
 	Optimize *optimize(Optimize::Type type, const Loc &loc, TermPtrVec *terms, Term *weight, Term *prio, LitPtrVec *body);
@@ -85,6 +86,8 @@ public:
 	Grounder *grounder() { return g_; }
 	PredLit *predLit(const Loc &loc, uint32_t id, TermPtrVec &terms, bool sign);
 	void constTerm(uint32_t index, Term *term);
+	void setIInit(Term *term);
+	void saveForgetTerm(Term *term);
 	void domainStm(const Loc &loc, uint32_t id, const VarSigVec &vars);
 	DomStmRng domainStm(uint32_t var);
 	void show(uint32_t idx, bool show);
@@ -119,6 +122,7 @@ private:
 	bool            inc_;
 	uint32_t        iId_;
 	uint32_t        iVar_;
+	uint32_t        fId_;
 	// parsing the volatile part
 	int             volWindow_;
 	// parsing const directives

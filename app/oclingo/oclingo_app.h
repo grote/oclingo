@@ -27,22 +27,6 @@
 // FromGringo
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
-template <>
-void FromGringo<OCLINGO>::getAssumptions(Clasp::LitVec& a)
-{
-	oClaspOutput *o_output = static_cast<oClaspOutput*>(out.get());
-
-	// TODO do this somewhere else:
-	// only deprecate volatile atom if we want the answer set this step
-	if(!o_output->getExternalKnowledge().needsNewStep()) {
-		o_output->deprecateQueryAtom();
-	}
-
-	out->getProgramBuilder().getAssumptions(a);
-}
-
-
 template <>
 bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 {
@@ -66,6 +50,7 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			app.setIinit(config);
 			app.groundBase(*grounder, config, app.gringo.iinit, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 			out->finalize();
 

@@ -99,7 +99,7 @@ void OnlineParser::addSigned(uint32_t index, bool sign)
 
 void OnlineParser::doAdd() {
 	// special printing of volatile rules
-	if(stack_->type == USER or stack_->type == USER+1) {
+	if(stack_->type == USER || stack_->type == USER+1) {
 		Rule::Printer *printer = output_->printer<Rule::Printer>();
 		printer->begin();
 		if(stack_->type == USER) { printLit(printer, stack_->lits.size() - stack_->n - 1, true); }
@@ -124,14 +124,17 @@ void OnlineParser::doAdd() {
 }
 
 void OnlineParser::add(StackPtr stm) {
-	output_->startExtInput();
 	GroundProgramBuilder::add(stm);
-	output_->stopExtInput();
 }
 
 void OnlineParser::add(Type type, uint32_t n) {
-	if(type == STM_RULE) {
-		if(part_ != CUMULATIVE) type = USER;	// set custom rule type
+	if(type == STM_RULE || type == STM_CONSTRAINT) {
+		// set custom rule type for own handling in doAdd()
+		if(part_ != CUMULATIVE) {
+			if(type == STM_RULE)			{ type = USER;	}
+			else if(type == STM_CONSTRAINT)	{ type = USER + 1; }
+		}
+
 		StackPtr stack = get(type, n);
 
 		if(output_->getExternalKnowledge().needsNewStep()) {
@@ -139,15 +142,16 @@ void OnlineParser::add(Type type, uint32_t n) {
 			output_->getExternalKnowledge().addStackPtr(stack);
 			// remember current part and volatile window
 			output_->getExternalKnowledge().savePrematureVol(part_, volatile_window_);
+			// remember current assert term
+			// TODO come up with something more efficient
+			output_->getExternalKnowledge().savePrematureAssertTerm(assert_term_);
 		} else {
 			// add rules right away
-			output_->startExtInput();
 			GroundProgramBuilder::add(stack);
-			output_->stopExtInput();
 		}
 	}
 	else {
-		if(type == STM_CONSTRAINT && part_ != CUMULATIVE) type = USER + 1;	// set custom rule type
+		// add terms and stuff to stack
 		GroundProgramBuilder::add(type, n);
 	}
 }
@@ -166,7 +170,22 @@ void OnlineParser::setStep(int step) {
 }
 
 void OnlineParser::forget(int step) {
-	output_->forgetStep(step);
+	if(output_->getExternalKnowledge().needsNewStep()) {
+		output_->getExternalKnowledge().savePrematureForget(step);
+	} else {
+		// forget only externals that were added at "step"
+		output_->forgetStep(step);
+	}
+}
+
+void OnlineParser::forget(int from, int to) {
+	if(output_->getExternalKnowledge().needsNewStep()) {
+		output_->getExternalKnowledge().savePrematureForget(from, to);
+	} else {
+		for(; from <= to; ++from) {
+			output_->forgetStep(from);
+		}
+	}
 }
 
 void OnlineParser::terminate() {
@@ -179,23 +198,26 @@ void OnlineParser::setPart(Part part) {
 
 void OnlineParser::setVolatileWindow(int window) {
 	volatile_window_ = window;
-
-	setPart(VOLATILE);
+	// don't change part here, has side-effects
 }
 
 void OnlineParser::setAssert() {
-	saveTerm();
+	getTerm();
 
 	setPart(ASSERT);
 }
 
+void OnlineParser::setAssertTerm(Val asster_term) {
+	assert_term_ = asster_term;
+}
+
 void OnlineParser::retract() {
-	saveTerm();
+	getTerm();
 
 	output_->retractAtom(assert_term_);
 }
 
-void OnlineParser::saveTerm() {
+void OnlineParser::getTerm() {
 	assert(stack_->type == TERM && stack_->vals.size());
 
 	assert_term_ = stack_->vals.back();

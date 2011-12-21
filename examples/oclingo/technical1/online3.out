@@ -15,6 +15,7 @@ Answer: 1
   1.  step(1)  
 Got input:
 #step 1.
+#volatile.
 e(1).
 #volatile.
 :- not b.
@@ -31,7 +32,7 @@ Got input:
 
 Answer: 1
   B.  a        
-  1.  c(1)     e(1)  step(1)  
+  1.  step(1)  
   2.  step(2)  
 Got input:
 #step 2.
@@ -41,7 +42,7 @@ Got input:
 
 Answer: 1
   B.  b        
-  1.  c(1)     e(1)  step(1)  
+  1.  step(1)  
   2.  step(2)  
 Got input:
 #step 2.
@@ -51,7 +52,7 @@ Got input:
 
 Answer: 1
   B.  a        
-  1.  c(1)     e(1)  step(1)  
+  1.  step(1)  
   2.  step(2)  
 Got input:
 #step 6.
@@ -63,7 +64,7 @@ e(6).
 
 Answer: 1
   B.  b        
-  1.  c(1)     e(1)  step(1)  
+  1.  step(1)  
   2.  step(2)  
   3.  step(3)  
   4.  step(4)  
@@ -76,7 +77,7 @@ e(9).
 
 Answer: 1
    B.  a        
-   1.  c(1)     e(1)  step(1)  
+   1.  step(1)  
    2.  step(2)  
    3.  step(3)  
    4.  step(4)  
@@ -87,7 +88,7 @@ Answer: 1
    9.  c(9)     e(9)  step(9)  
 Answer: 2
    B.  b        
-   1.  c(1)     e(1)  step(1)  
+   1.  step(1)  
    2.  step(2)  
    3.  step(3)  
    4.  step(4)  

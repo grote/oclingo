@@ -84,6 +84,7 @@ public:
 	void finalize();
 	void doHideAll();
 	void doShow(uint32_t nameId, uint32_t arity, bool s);
+	void forgetStep(int) { }
 	void pushDep(size_t n = 1);
 	void addDep(size_t symbol, size_t n = 1);
 	void popDep(bool add, size_t n = 1);

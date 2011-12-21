@@ -52,6 +52,7 @@ start:
 		"#assert"     { return OPARSER_ASSERT; }
 		"#retract"    { return OPARSER_RETRACT; }
 		"."           { return OPARSER_DOT; }
+		".."          { return OPARSER_DOTS; }
 		":"           { return OPARSER_COLON; }
 		":-"          { return OPARSER_IF; }
 		","           { return OPARSER_COMMA; }

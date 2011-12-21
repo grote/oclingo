@@ -25,10 +25,12 @@ struct IncConfig
 {
 	int  incStep;
 	int  maxVolStep;
+	int  iinit;
 
 	IncConfig()
 		: incStep(std::numeric_limits<int>::min()),
-		  maxVolStep(1)
+		  maxVolStep(1),
+		  iinit(1)
 	{ }
 };
 

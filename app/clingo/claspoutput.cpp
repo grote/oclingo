@@ -203,7 +203,7 @@ void ClaspOutput::retractAtom(Val term)
 	{
 		std::cerr << "Error: Term ";
 		term.print(storage(), std::cerr);
-		std::cerr << " was not used to assert rules.";
+		std::cerr << " was not used to assert rules." << std::endl;
 	}
 }
 

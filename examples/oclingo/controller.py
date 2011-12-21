@@ -54,7 +54,7 @@ IN_PARSER = {
 	'endstep'		: re.compile("#endstep\."),
 	'cumulative'	: re.compile("#cumulative\."),
 	'volatile'		: re.compile("#volatile( : ?\d+)?\."),
-	'forget'		: re.compile("#forget (\d+)\."),
+	'forget'		: re.compile("#forget (\d+)(\.\.\d+)?\."),
 	'assert'		: re.compile("#assert : ?.+\."),
 	'retract'		: re.compile("#retract : ?.+\."),
 	'stop'			: re.compile("#stop\."),

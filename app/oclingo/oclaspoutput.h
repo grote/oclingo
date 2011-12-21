@@ -29,25 +29,10 @@ public:
 	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
 	~oClaspOutput();
 	ExternalKnowledge& getExternalKnowledge();
-	void startExtInput();
-	void stopExtInput();
-//	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
-	void freezeAtom(uint32_t symbol);
-
 	uint32_t getQueryAtom();
-	uint32_t getQueryAtomAss();
-	void finalizeQueryAtom();
-	void deprecateQueryAtom();
-	void unfreezeOldQueryAtoms();
-
-//	uint32_t getVolAtom(int vol_window);
+	void deactivateQueryAtom();
 	uint32_t getVolTimeDecayAtom(int window);
-protected:
-	void doFinalize();
 private:
 	ExternalKnowledge* ext_;
-	bool ext_input_;
 	uint32_t vol_atom_;
-	uint32_t vol_atom_frozen_;
-	VarVec vol_atoms_old_;
 };

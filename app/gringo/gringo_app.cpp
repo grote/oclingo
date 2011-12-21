@@ -58,6 +58,19 @@ Streams::StreamPtr GringoApp::constStream() const
 	return Streams::StreamPtr(constants.release());
 }
 
+void GringoApp::setIinit(IncConfig &cfg)
+{
+	if(cfg.iinit != 1)
+	{
+		if(gringo.iinit != 1)
+		{
+			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding with ";
+			std::cerr << cfg.iinit << "." << std::endl;
+		}
+		gringo.iinit = cfg.iinit;
+	}
+}
+
 void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 {
 	cfg.incStep     = step;
@@ -66,6 +79,7 @@ void GringoApp::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 		std::cerr << "% grounding cumulative " << cfg.incStep << " ..." << std::endl;
 	}
 	g.ground(*cumulative_);
+	g.groundForget(cfg.incStep);
 	if(goal <= step + cfg.maxVolStep-1)
 	{
 		if(generic.verbose > 2)
@@ -124,6 +138,7 @@ int GringoApp::doRun()
 		p.parse();
 		if(gringo.magic) g.addMagic();
 		g.analyze(gringo.depGraph, gringo.stats);
+		setIinit(config);
 		groundBase(g, config, gringo.iinit, gringo.ifixed, gringo.ifixed);
 		o->finalize();
 	}

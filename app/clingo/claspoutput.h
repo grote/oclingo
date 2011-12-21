@@ -46,7 +46,6 @@ public:
 	void retractAtom(Val term);
 	
 protected:
-	// TODO: I do not want this method to be virtual! Why?
 	void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
 	void printConstraintRule(uint32_t head, int32_t bound, const AtomVec &pos, const AtomVec &neg);
 	void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);

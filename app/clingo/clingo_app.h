@@ -284,6 +284,7 @@ bool FromGringo<M>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int)
 			grounder->analyze(app.gringo.depGraph, app.gringo.stats);
 			parser.reset(0);
 			app.luaInit(*grounder, *out);
+			app.setIinit(config);
 			app.groundBase(*grounder, config, app.gringo.iinit, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 		}
 		else
@@ -438,7 +439,7 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			}
 			if (clingo.iStats)
 			{
-				cout << "=============== step " << f.step()+1 << " ===============" << endl;
+				cout << "============ solve count " << f.step()+1 << " ===========" << endl;
 			}
 		}
 		else if (f.state() == ClaspFacade::state_solve)
@@ -470,12 +471,16 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			if (clingo.iStats)
 			{
 				timer_[0].lap();
-				cout << "\nModels   : " << solver_.stats.solve.models << "\n"
-						 << "Time     : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
+				cout << "\nModels      : " << solver_.stats.solve.models << "\n"
+						 << "Time        : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
 						 << ", p: " << timer_[ClaspFacade::state_preprocess].elapsed() << ", s: " << timer_[ClaspFacade::state_solve].elapsed() << ")\n"
-						 << "Rules    : " << f.api()->stats.rules[0] << "\n"
-						 << "Choices  : " << solver_.stats.solve.choices   << "\n"
-						 << "Conflicts: " << solver_.stats.solve.conflicts << "\n";
+						 << "Rules (step): " << f.api()->stats.rules[0] << "\n";
+				if(clingo.iStats == 1)
+				{
+					cout << "Choices     : " << solver_.stats.solve.choices   << "\n"
+						 << "Conflicts   : " << solver_.stats.solve.conflicts << "\n";
+				}
+				if(clingo.iStats > 1) out_->printStats(solver_.stats, *config_.solve.enumerator());
 			}
 			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();

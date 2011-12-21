@@ -40,7 +40,7 @@ public:
 	~ExternalKnowledge();
 	void addPostPropagator();
 	void removePostPropagator();
-	void addExternal(uint32_t symbol);
+
 	void startSocket(int port);
 	void sendModel(std::string);
 	bool hasModel();
@@ -48,16 +48,17 @@ public:
 	int poll();
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
+
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
 	void savePrematureVol(OnlineParser::Part part, int window);
-//	bool checkHead(LparseConverter::Symbol const &sym);
-//	void addHead(uint32_t symbol);
+	void savePrematureAssertTerm(Val assert_term);
+	void savePrematureForget(int step);
+	void savePrematureForget(int from, int to);
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
 	bool needsNewStep();
-	VarVec& getExternals();
 	void endIteration();
 	void endStep();
 
@@ -79,6 +80,7 @@ private:
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;
 	std::list<std::pair<OnlineParser::Part,int> > vol_stack_;
+	std::list<Val> assert_stack_;
 
 	// socket stuff
 	boost::asio::io_service io_service_;
@@ -96,5 +98,8 @@ private:
 	int step_;
 	int controller_step_;
 	bool model_;
+	int forget_;
+	int forget_from_;
+	int forget_to_;
 	bool debug_;
 };
