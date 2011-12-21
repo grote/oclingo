@@ -475,7 +475,12 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 						 << "Time        : " << fixed << setprecision(3) << timer_[0].elapsed() << " (g: " << timer_[ClaspFacade::state_read].elapsed()
 						 << ", p: " << timer_[ClaspFacade::state_preprocess].elapsed() << ", s: " << timer_[ClaspFacade::state_solve].elapsed() << ")\n"
 						 << "Rules (step): " << f.api()->stats.rules[0] << "\n";
-				out_->printStats(solver_.stats, *config_.solve.enumerator());
+				if(clingo.iStats == 1)
+				{
+					cout << "Choices     : " << solver_.stats.solve.choices   << "\n"
+						 << "Conflicts   : " << solver_.stats.solve.conflicts << "\n";
+				}
+				if(clingo.iStats > 1) out_->printStats(solver_.stats, *config_.solve.enumerator());
 			}
 			if(luaImpl.get()) { luaImpl->onEndStep(); }
 			solver_.stats.solve.reset();
