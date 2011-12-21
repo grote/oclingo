@@ -17,6 +17,7 @@ DONE
 
 TODO
 
+- dynamic setting of prop-delay
 - test if recomputation instead of trailing can be used to save copying spaces !
 - rename SCC to CC
 - disable propQueue on force
@@ -75,6 +76,7 @@ Der Reason ist die union der Trails der Variablen und davon die Transitive Hüll
 Vermutung: Ungenau und langsam
 
 
+-DCMAKE_BUILD_TYPE=release -DUSE_STATIC_LIBS=true -DWITH_CLINGCON=true -DBOOST_ROOT=/home/wv/bin/linux/64/boost-1.44/ -DGECODE_ROOT=/home/ostrowsk/usr/local
 
 export WITH_CLINGCON=1
 make target=clingcon-app
