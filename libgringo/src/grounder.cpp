@@ -263,10 +263,13 @@ void Grounder::addForgetTerm(Term *forget)
 
 void Grounder::groundForget(int step)
 {
-	val(0, Val::number(step), 0);
-	foreach(Term *term, forgetTerms_)
+	if(forgetTerms_.size())
 	{
-		output()->forgetStep(term->val(this).number());
+		val(0, Val::number(step), 0);
+		foreach(Term *term, forgetTerms_)
+		{
+			output()->forgetStep(term->val(this).number());
+		}
 	}
 }
 
