@@ -63,7 +63,6 @@ Answer: 1
   5.  access(claude,granted,5)  
 Got input:
 #step 6.
-#forget 1.
 #volatile : 3.
 access(alice,denied,6).
 #endstep.
@@ -76,7 +75,6 @@ Answer: 1
   6.  access(alice,denied,6)   
 Got input:
 #step 7.
-#forget 2.
 #volatile : 3.
 access(alice,denied,8).
 #endstep.
@@ -89,7 +87,6 @@ Answer: 1
   8.  access(alice,denied,8)   
 Got input:
 #step 8.
-#forget 3.
 #volatile : 3.
 access(alice,denied,7).
 access(bob,denied,8).
@@ -102,7 +99,6 @@ Answer: 1
   8.  access(alice,denied,8)  access(bob,denied,8)  
 Got input:
 #step 9.
-#forget 4.
 #volatile : 3.
 access(alice,denied,10).
 access(bob,denied,10).
@@ -115,7 +111,6 @@ Answer: 1
   10.  access(alice,denied,10)  access(bob,denied,10)  
 Got input:
 #step 10.
-#forget 5.
 #volatile : 3.
 access(alice,denied,9).
 access(bob,denied,9).
@@ -129,7 +124,6 @@ Answer: 1
   10.  access(alice,denied,10)  access(bob,denied,10)  
 Got input:
 #step 11.
-#forget 6.
 #volatile : 3.
 access(alice,denied,11).
 access(alice,denied,12).
@@ -144,7 +138,6 @@ Answer: 1
   12.  access(alice,denied,12)  
 Got input:
 #step 12.
-#forget 7.
 #endstep.
 
 Answer: 1
@@ -154,7 +147,6 @@ Answer: 1
   12.  access(alice,denied,12)  
 Got input:
 #step 13.
-#forget 8.
 #endstep.
 
 Answer: 1
@@ -163,7 +155,6 @@ Answer: 1
   12.  access(alice,denied,12)  
 Got input:
 #step 14.
-#forget 9.
 #endstep.
 
 Answer: 1
