@@ -1,0 +1,21 @@
+% Overtaking red car
+
+#step 1.
+#volatile : 6.
+at(behind,red,1).
+#endstep.
+
+#step 2.
+#volatile : 6.
+at(nextto,red,2).
+#endstep.
+
+#step 3.
+#volatile : 6.
+at(infront,red,3).
+#endstep.
+
+#step 4.
+#endstep.
+
+#stop.
