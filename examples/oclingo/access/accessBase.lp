@@ -12,7 +12,7 @@
 #const modulo=window+2*offset+1. % number of time points in base program (calculated)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
-#iinit 2 - modulo.
+#iinit 2-modulo.
 
 %%%%%%%%
 % BASE %
@@ -44,6 +44,9 @@ account(U,open)   :- user(U), not account(U,closed). % or open otherwise
 
 % expect user accesses at positive time points up to "offset" time beyond step number
 #external access(U,S,t+offset) : user(U) : signal(S) : 0 < t+offset.
+
+% revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
+#forget t : t-2*offset-1.
 
 % denied user access implies baseaccess at corresponding time circle position to hold
 :- user(U), access(U,denied,T), not baseaccess(U,denied,T #mod modulo), T := t+offset.

@@ -12,7 +12,7 @@
 #const retain=window+2*offset.   % number of conjoined volatile programs (calculated)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
-#iinit 2 - retain.
+#iinit 2-retain.
 
 %%%%%%%%
 % BASE %
@@ -35,6 +35,9 @@ signal(denied;granted). % some signals
 
 % expect user accesses at positive time points up to "offset" time beyond step number
 #external access(U,S,t+offset) : user(U) : signal(S) : 0 < t+offset.
+
+% revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
+#forget t : t-2*offset-1.
 
 % denied user access counting works backwards, and next-step counter values are input
 #external denied(U,1..denial,t+1) : user(U).

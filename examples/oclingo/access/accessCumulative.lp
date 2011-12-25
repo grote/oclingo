@@ -11,7 +11,7 @@
 #const offset=2.                 % time points/terms may deviate up to 2 (by default)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
-#iinit 1 - offset.
+#iinit 1-offset.
 
 %%%%%%%%
 % BASE %
@@ -34,6 +34,9 @@ signal(denied;granted). % some signals
 
 % expect user accesses at positive time points up to "offset" time beyond step number
 #external access(U,S,t+offset) : user(U) : signal(S).
+
+% revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
+#forget t : t-2*offset-1.
 
 % count consecutive denied user accesses up to a "denial" threshold and forward touch
 denied(U,1,     t) :- access(U,denied,t+offset), user(U).
