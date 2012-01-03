@@ -1,0 +1,84 @@
+%% Length: 11
+%% Maximum job ids: 2
+%% Maximum duration: 2
+%% Number of machines: 2
+%% Maximum schedule timespan: 4
+%% Modulo: 2*4+1=9
+
+#step 1.
+#volatile : 4.
+schedule_job(1,1,2,1).
+#volatile : 1.
+now(1).
+#endstep.
+
+#step 2.
+#volatile : 4.
+schedule_job(1,1,1,2).
+schedule_job(2,1,1,2).
+#volatile : 1.
+now(2).
+#endstep.
+
+#step 3.
+#volatile : 4.
+schedule_job(1,1,2,3).
+schedule_job(2,2,2,3).
+#volatile : 1.
+now(3).
+#endstep.
+
+#step 4.
+#volatile : 4.
+schedule_job(1,1,2,4).
+#volatile : 1.
+now(4).
+#endstep.
+
+#step 5.
+#volatile : 4.
+%schedule_job(1,1,2,5).
+#volatile : 1.
+now(5).
+#endstep.
+
+#step 6.
+#volatile : 1.
+now(6).
+#endstep.
+
+#step 7.
+#volatile : 1.
+now(7).
+#endstep.
+
+#step 8.
+#volatile : 4.
+schedule_job(1,2,2,8).
+schedule_job(2,1,2,8).
+#volatile : 1.
+now(8).
+#endstep.
+
+#step 9.
+#volatile : 4.
+schedule_job(1,1,1,9).
+schedule_job(2,1,1,9).
+#volatile : 1.
+now(9).
+#endstep.
+
+#step 10.
+#volatile : 4.
+schedule_job(1,1,2,10).
+#volatile : 1.
+now(10).
+#endstep.
+
+#step 11.
+#volatile : 1.
+now(11).
+#endstep.
+
+
+#stop.
