@@ -35,7 +35,7 @@ parser.add_option("-d", "--debug", dest="debug", help="show debugging output", a
 parser.set_defaults(
 	host = 'localhost',
 	port = 25277,
-	time = 1,
+	time = 0,
 	wait = "yes",
 	debug = False
 )
