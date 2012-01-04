@@ -1,0 +1,24 @@
+%% Length: 4
+%% Maximum job ids: 2
+%% Maximum duration: 2
+%% Number of machines: 2
+%% Maximum schedule timespan: 4
+%% Modulo: 2*4+1=9
+
+#step 1.
+#volatile : 4.
+schedule_job(1,1,2,1).
+schedule_job(2,1,1,1).
+#volatile : 1.
+now(1).
+#endstep.
+
+#step 4.
+#volatile : 4.
+schedule_job(1,1,2,4).
+schedule_job(2,1,2,4).
+#volatile : 1.
+now(4).
+#endstep.
+
+#stop.
