@@ -1620,7 +1620,10 @@ bool GecodeSolver::SearchSpace::updateOptValues()
 
     if (opts_.size()==1)
     {
-        rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
+        if (GecodeSolver::optAll)
+            rel(*this, opts_[0] <= GecodeSolver::optValues[0],ICL);
+        else
+            rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
     }
     return !failed();
 

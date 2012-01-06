@@ -13,7 +13,8 @@ DONE
 - disabled lookahead and --no-lookback
 - support for  csp-opt-val and csp-opt-all
 - optional initial lookahead of gecode constraints
-- dynamic setting of prop-delay
+- dynamic setting of csp-prop-delay, only do csp propagation every n steps
+- added Irreducible Infeasible Set algorithms for conflicts and reasons (--csp-reduce-conflict --csp-reduce-reason)
 
 
 TODO
@@ -21,8 +22,6 @@ TODO
 - test if recomputation instead of trailing can be used to save copying spaces !
 - disable propQueue on force
 - lexical ordering constraint for minimization ?
-- check if opt-all returns all solutions via BAB!!! or if i need to start another search!
-- remove warnings
 - remove memory leaks
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
@@ -31,27 +30,11 @@ TODO
 - add more global aggregates
 - decide between search heuristic! (DFS, BAB)
 - add statistics from Gecode
-- add IIS (Irreducible Infeasible Set) for generating reasons (also try grouped by dl)
-	-WARNING: asserting clauses are not asserting on current dl -> this makes clasp backjump, if this is the case maybe stop the propagation
-	- VORSICHT, wenn ich in anderer Reihenfolge propagiere kann sich der Fixpunkt ändern -> unsat kann rauskommen (theoretisch :-) )
-	- linear
-	- exponential grouped
-	!!!!!!!!!!! while(original->getValueOfConstraint((end-1)->var()!=GecodeSolver::SearchSpace::BFREE))!!!!!!!!! das ganze nochmal vorwärts statt rückwärts mit dieser optimierung, dadurch könnte man die Propagation wieder raushauen...
-	- internal (Gecode:)
-		GEHT NICHT, nach branching sind alle variablen assigned
-		Reason:
-			b=="a$>x"
-			kein labeling auf b, minimiere alle anderen b'
-			constraint a \/ b, wobei a nicht hergeleitet werden kann
-		Conflict:
-			reason für -b
-        - grouped via DL
 	
 - order constraints to the number of variables to speed up initial propagation
 - force statt setconflict benutzen, spart Codepath!?
 - look at possible benchmarks from "A General Nogood-Learning Framework for Pseudo-Boolean Multi-Valued SAT" and "Propagation = Lazy Clause Generation", SMT-Lib
 - :- n(P) $!= X : number(X), position(P). is not yet supported ?
-- prop nur alle n Schritte
 
 
 
@@ -66,14 +49,6 @@ temp ~/work/clingcon-benchmarks/BENCHMARKS/UFSCheck/meta.lp --csp-num-as=1 --sta
 
 
 COMMENTS
-
-Idee für neuen Ansatz: (Gecode Massiv verändern)
-Jedes Constraint bekommt eindeutige Nummer und vererbt diese auch weiter.
-Jedes Constraint Liste seiner Variablen.
-Jede Variable hat Trail mit Constraints und DL, welche diese Variable verändert haben.
-Der Reason ist die union der Trails der Variablen und davon die Transitive Hülle.
-Vermutung: Ungenau und langsam
-
 
 -DCMAKE_BUILD_TYPE=release -DUSE_STATIC_LIBS=true -DWITH_CLINGCON=true -DBOOST_ROOT=/home/wv/bin/linux/64/boost-1.44/ -DGECODE_ROOT=/home/ostrowsk/usr/local
 
