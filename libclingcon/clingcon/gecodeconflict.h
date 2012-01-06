@@ -158,11 +158,11 @@ namespace Clingcon
     };
 
 
-    class SCCIISCA : public ConflictAnalyzer
+    class CCIISCA : public ConflictAnalyzer
     {
     public:
-        SCCIISCA(GecodeSolver* g);
-        ~SCCIISCA()
+        CCIISCA(GecodeSolver* g);
+        ~CCIISCA()
         { 
         }
 
@@ -192,11 +192,11 @@ namespace Clingcon
     };
 
 
-    class SCCRangeCA : public ConflictAnalyzer
+    class CCRangeCA : public ConflictAnalyzer
     {
     public:
-        SCCRangeCA(GecodeSolver* g);
-        ~SCCRangeCA()
+        CCRangeCA(GecodeSolver* g);
+        ~CCRangeCA()
         {
         }
 

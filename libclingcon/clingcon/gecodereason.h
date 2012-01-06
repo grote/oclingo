@@ -165,11 +165,11 @@ namespace Clingcon
 
 
 
-    class SCCIRSRA : public ReasonAnalyzer
+    class CCIRSRA : public ReasonAnalyzer
     {
     public:
-        SCCIRSRA(GecodeSolver* g);
-        ~SCCIRSRA()
+        CCIRSRA(GecodeSolver* g);
+        ~CCIRSRA()
         {
         }
 
@@ -196,11 +196,11 @@ namespace Clingcon
     };
 
 
-    class SCCRangeRA : public ReasonAnalyzer
+    class CCRangeRA : public ReasonAnalyzer
     {
     public:
-        SCCRangeRA(GecodeSolver* g);
-        ~SCCRangeRA()
+        CCRangeRA(GecodeSolver* g);
+        ~CCRangeRA()
         { 
         }
 

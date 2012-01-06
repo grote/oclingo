@@ -56,9 +56,9 @@ namespace Clingcon {
             SIMPLE,
             LINEAR,
             LINEAR_FWD,
-            SCC,
+            CC,
             RANGE,
-            SCCRANGE,
+            CCRANGE,
 
             LINEARTEST
 

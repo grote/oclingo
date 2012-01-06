@@ -51,19 +51,19 @@ private:
 };
 	class ClingconPropagator;
         class FwdLinearIRSRA;
-        class SCCIRSRA;
-        class SCCRangeRA;
-        class SCCRangeCA;
-        class SCCIISCA;
+        class CCIRSRA;
+        class CCRangeRA;
+        class CCRangeCA;
+        class CCIISCA;
 
 	class CSPSolver
 	{
 
             friend class FwdLinearIRSRA;
-            friend class SCCIRSRA;
-            friend class SCCRangeRA;
-            friend class SCCRangeCA;
-            friend class SCCIISCA;
+            friend class CCIRSRA;
+            friend class CCRangeRA;
+            friend class CCRangeCA;
+            friend class CCIISCA;
 
                 public:
                         typedef Interval<int> Domain;

@@ -122,17 +122,17 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
     if (reduceReason == "simple")         reduceReason_ = SIMPLE;
     if (reduceReason == "linear")         reduceReason_ = LINEAR;
     if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
-    if (reduceReason == "scc")            reduceReason_ = SCC;
+    if (reduceReason == "cc")             reduceReason_ = CC;
     if (reduceReason == "range")          reduceReason_ = RANGE;
-    if (reduceReason == "sccrange")       reduceReason_ = SCCRANGE;
+    if (reduceReason == "ccrange")        reduceReason_ = CCRANGE;
 
 
-    if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
-    if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
-    if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
-    if (reduceConflict == "scc")            reduceConflict_ = SCC;
-    if (reduceConflict == "range")          reduceConflict_ = RANGE;
-    if (reduceConflict == "sccrange")       reduceConflict_ = SCCRANGE;
+    if (reduceConflict == "simple")       reduceConflict_ = SIMPLE;
+    if (reduceConflict == "linear")       reduceConflict_ = LINEAR;
+    if (reduceConflict == "linear-fwd")   reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "cc")           reduceConflict_ = CC;
+    if (reduceConflict == "range")        reduceConflict_ = RANGE;
+    if (reduceConflict == "ccrange")      reduceConflict_ = CCRANGE;
 
 
 }
@@ -288,9 +288,9 @@ bool GecodeSolver::initialize()
         case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
         case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
         case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
-        case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
+        case CC:             conflictAnalyzer_ = new CCIISCA(this); break; break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
-        case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
+        case CCRANGE:        conflictAnalyzer_ = new CCRangeCA(this); break;
         default: assert(false);
     };
 
@@ -299,9 +299,9 @@ bool GecodeSolver::initialize()
         case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
         case LINEAR:         reasonAnalyzer_ = new LinearIRSRA(this); break;
         case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
-        case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
+        case CC:             reasonAnalyzer_ = new CCIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
-        case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
+        case CCRANGE:        reasonAnalyzer_ = new CCRangeRA(this); break;
         default: assert(false);
     };
 

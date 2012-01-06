@@ -206,9 +206,9 @@ namespace Clingcon {
                         {
 
                             int res = a_[i].compare((cmp.a_[i]),s);
-                            if (res==0) return 0;
-#pragma message "This is strange, please test this"
+                            if (res!=0) return res;
                         }
+                        return 0;
                         // this is the way it was before but it does not make sense
                         //int res = a_->compare(*(cmp.a_),s);
                         //return (res != 0 ? b_->compare(*(cmp.b_),s) : res);
