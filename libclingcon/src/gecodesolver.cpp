@@ -811,6 +811,16 @@ void GecodeSolver::printAnswer()
 
 bool GecodeSolver::propagate()
 {
+    // if already failed, create conflict, this may be on a lower level
+    if (currentSpace_->failed())
+    {
+        Clasp::LitVec clits(assignment_.begin(), assignment_.begin()+propagated_);
+        setConflict(clits, false);
+        assert(s_->decisionLevel()==0);
+        return false;
+    }
+
+
     if (updateOpt_)
     {
         return propagateMinimize();
@@ -825,54 +835,43 @@ bool GecodeSolver::propagate()
         return true;
     }
 
-    // if already failed, create conflict, this may be on a lower level
-    if (currentSpace_->failed())
-    {
-        assert("I should have generated a conflict before" && false);
-        //Clasp::LitVec vec(assignment_.begin(), assignment_.begin()+assLength_[spaces_.size()-1]);
-        //setConflict(vec, false);
-        //return false;
-    }
-    //else // everything is fine
-    {
-        // remove already assigned literals, this happens if we have propagated a new literal to clasp
-        Clasp::LitVec clits;
-        //bool newKnowledge = false;
+    // remove already assigned literals, this happens if we have propagated a new literal to clasp
+    Clasp::LitVec clits;
+    //bool newKnowledge = false;
 
-        for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
+    for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
+    {
+        // add if free
+        // conflict if contradicting
+        GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
+        if ( constr == SearchSpace::BFREE)
         {
-            // add if free
-            // conflict if contradicting
-            GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
-            if ( constr == SearchSpace::BFREE)
-            {
-                clits.push_back(*i);
-                //newKnowledge = true;
-            }
-            if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
+            clits.push_back(*i);
+            //newKnowledge = true;
+        }
+        if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
                 ( constr == SearchSpace::BTRUE  && i->sign()==true  )
                 )
-            {
-                clits.clear();
-                clits.assign(assignment_.begin(), assignment_.begin()+propagated_/*assLength_[spaces_.size()-1]*/);
-                clits.push_back(*i);
-                setConflict(clits, true);
-                return false;
-            }
-        }
-        propQueue_.clear();
-
-        // we have something to propagate
-        if (clits.size())
         {
-            // if we have a new decision level, create a new space
-            if (!_propagate(clits))
-            {
-                return false;
-            }
+            clits.clear();
+            clits.assign(assignment_.begin(), assignment_.begin()+propagated_/*assLength_[spaces_.size()-1]*/);
+            clits.push_back(*i);
+            setConflict(clits, true);
+            return false;
         }
-    return true;
     }
+    propQueue_.clear();
+
+    // we have something to propagate
+    if (clits.size())
+    {
+        // if we have a new decision level, create a new space
+        if (!_propagate(clits))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool GecodeSolver::propagateOldLits()

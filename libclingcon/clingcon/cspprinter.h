@@ -55,6 +55,7 @@ namespace Clingcon
                     case CSPLit::INEQUAL:
                         ss << "$!=";
                         break;
+                    default: assert(("A simple constraint should always have a comparision operator", false));
                     }
                     printGroundConstraint(ss,b);
 
@@ -75,6 +76,7 @@ namespace Clingcon
                     case CSPLit::OR:  stack_.push_back(" $or ");  break;
                     case CSPLit::XOR: stack_.push_back(" $xor "); break;
                     case CSPLit::EQ:  stack_.push_back(" $eq ");  break;
+                    default: assert(("A connective should be used as a connective", false));
                     }
 
                 }
@@ -207,6 +209,7 @@ namespace Clingcon
                 case CSPLit::INEQUAL:
                     ss << "$!=";
                     break;
+                default: assert(("A simple constraint should always have a comparision operator", false));
                 }
                 ss << b->getString();
 
@@ -224,6 +227,7 @@ namespace Clingcon
                 case CSPLit::OR:  name_.push_back(" $or ");  break;
                 case CSPLit::XOR: name_.push_back(" $xor "); break;
                 case CSPLit::EQ:  name_.push_back(" $eq ");  break;
+                default: assert(("A connective should be used as a connective", false));
                 }
                 stack_.push_back(new Constraint(t));
 
