@@ -96,6 +96,7 @@ private:
 			virtual void reset() = 0;
 			virtual void propagateLiteral(const Clasp::Literal& l, int date) = 0;
                         virtual void undo(unsigned int level) = 0;
+                        virtual void printStatistics() = 0;
 			/*
 			 * pre: complete assignment
 			 * return true if a valid solution for the asp vars exists

@@ -25,6 +25,7 @@
 #include <clasp/clasp_facade.h>
 #include <program_opts/value.h>
 #include "gringo/gringo_options.h"
+#include <sstream>
 //#include "clingo/clingo_options.h"
 
 enum CSPMode { CSPCLASP, CLINGCON, ICLINGCON, OCLINGCON };
@@ -292,10 +293,10 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                 "      Valid:   <n1[,n2,n3,...]>\n")
                         ("csp-opt-all"    , bool_switch(&optAll)->defaultValue(false), "Compute all optimal models")
                         ("csp-initial-lookahead"    , bool_switch(&initialLookahead)->defaultValue(false), "Do singular lookahead on initialization")
-                 ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
-                                 "      0          : only on possible model\n"
-                                 "      n          : every n steps\n"
-                 )
+                        ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
+                                       "      0          : only on possible model\n"
+                                       "      n          : every n steps\n"
+                        )
                 ;
 
         csp.addOptions()

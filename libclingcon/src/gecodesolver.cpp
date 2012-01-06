@@ -75,10 +75,10 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                            const std::string& reduceConflict, unsigned int cspPropDelay) :
     currentSpace_(0), lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
-    initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay), cspPropDelayCounter_(1), propagated_(0)
+    initialLookahead_(initialLookahead), cspPropDelay_(abs(cspPropDelay)), cspPropDelayCounter_(1), propagated_(0)
 {
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
-    if (optValues.size()>0) ++optValues.back(); // last element must also be found
+    //if (optValues.size()>0) ++optValues.back(); // last element must also be found
 
     optAll=optAllPar;
 
@@ -683,7 +683,9 @@ bool GecodeSolver::hasAnswer()
 
     unsigned int oldDL = s_->decisionLevel();
     if (!finishPropagation())
+    {
         return false;
+    }
     if (oldDL > s_->decisionLevel()) //we backjumped
     {
         return false;
@@ -865,7 +867,9 @@ bool GecodeSolver::propagate()
         {
             // if we have a new decision level, create a new space
             if (!_propagate(clits))
+            {
                 return false;
+            }
         }
     return true;
     }
@@ -990,6 +994,8 @@ bool GecodeSolver::propagateOldLits()
 
 }
 
+
+
 bool GecodeSolver::_propagate(Clasp::LitVec& clits)
 {
     assert(assLength_.size() > 1 ? assLength_[assLength_.size()-2] < assLength_[assLength_.size()-1] : true);
@@ -1057,6 +1063,7 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
         assLength_.back()=propagated_;
         if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
         {
+            //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
             unsigned int oldDL = s_->decisionLevel();
             if(!propagateNewLiteralsToClasp(spaces_.size()-1))
@@ -1124,6 +1131,7 @@ bool GecodeSolver::finishPropagation()
         currentSpace_->propagate(assignment_.begin()+start, assignment_.begin()+end);
         if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
         {
+            //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
             unsigned int oldDL = s_->decisionLevel();
             if(!propagateNewLiteralsToClasp(spaces_.size()-1))
@@ -1217,6 +1225,13 @@ void GecodeSolver::undo(unsigned int level)
     currentSpace_ = spaces_.back();
     return;
 }
+
+void GecodeSolver::printStatistics()
+{
+    conflictAnalyzer_->printStatistics();
+    reasonAnalyzer_->printStatistics();
+}
+
 
 bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
 {

@@ -33,6 +33,7 @@ namespace Clingcon
     {
     public:
         virtual ~ConflictAnalyzer(){}
+        virtual void printStatistics() = 0;
         // does change the conflict and maybe shrinks it
         virtual void shrink(Clasp::LitVec& conflict, bool last) = 0;
     };
@@ -43,12 +44,17 @@ namespace Clingcon
         SimpleCA() : numCalls_(0), sumLength_(0), oldLength_(0){}
         ~SimpleCA()
         {
+        }
+
+        virtual void printStatistics()
+        {
             std::cout << 0 << " copys in simple Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
             std::cout << float(0)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(0)/float(oldLength_))*100 << " %" << std::endl;
         }
+
         virtual void shrink(Clasp::LitVec& conf, bool last)
         {
             oldLength_+=conf.size();
@@ -69,8 +75,13 @@ namespace Clingcon
         LinearIISCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~LinearIISCA()
         {
+        }
+
+        virtual void printStatistics()
+        {
             std::cout << props_ << " copys in linear Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -94,12 +105,18 @@ namespace Clingcon
         FwdLinearIISCA(GecodeSolver* g) : g_(g),  props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~FwdLinearIISCA()
         {
+        }
+
+        virtual void printStatistics()
+        {
             std::cout << props_ << " copys in fwdlin Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
+
         virtual void shrink(Clasp::LitVec& conflict, bool last);
 
     private:
@@ -118,8 +135,13 @@ namespace Clingcon
         RangeCA(GecodeSolver* g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0){}
         ~RangeCA()
         {
+        }
+
+        virtual void printStatistics()
+        {
             std::cout << props_ << " copys in range Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -141,13 +163,21 @@ namespace Clingcon
     public:
         SCCIISCA(GecodeSolver* g);
         ~SCCIISCA()
+        { 
+        }
+
+        virtual void printStatistics()
         {
             std::cout << props_ << " copys in scc Conflict in " << t_.total() << std::endl;
-            std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            //std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            //std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of  " << float(sumLength_) << std::endl;
+            std::cout << numCalls_ << " same   with similar old length " << float(oldLength_) << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
         }
+
         virtual void shrink(Clasp::LitVec& conflict, bool last);
 
     private:
@@ -168,8 +198,13 @@ namespace Clingcon
         SCCRangeCA(GecodeSolver* g);
         ~SCCRangeCA()
         {
+        }
+
+        virtual void printStatistics()
+        {
             std::cout << props_ << " copys in scc-range Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;

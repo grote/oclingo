@@ -239,7 +239,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     while(end-begin!=0)
     {
         // if the last literal is already derived, we do not need to add it to the reason
-        if(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
+        /*if(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
         {
             --end;
             if (end-begin==0)
@@ -247,7 +247,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
                 goto Ende;
             }
             continue;
-        }
+        }*/
 
         original->propagate(*(end-1));
         reason.push_back(*(end-1));
@@ -262,9 +262,9 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
 
     Ende:
     sumLength_+=reason.size();
-    g_->setRecording(true);
     assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
+    g_->setRecording(true);
 
     t_.stop();
 }

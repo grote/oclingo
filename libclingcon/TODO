@@ -13,11 +13,11 @@ DONE
 - disabled lookahead and --no-lookback
 - support for  csp-opt-val and csp-opt-all
 - optional initial lookahead of gecode constraints
+- dynamic setting of prop-delay
 
 
 TODO
 
-- dynamic setting of prop-delay
 - test if recomputation instead of trailing can be used to save copying spaces !
 - rename SCC to CC
 - disable propQueue on force
