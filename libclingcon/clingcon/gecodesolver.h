@@ -56,9 +56,9 @@ namespace Clingcon {
             SIMPLE,
             LINEAR,
             LINEAR_FWD,
-            SCC,
+            CC,
             RANGE,
-            SCCRANGE,
+            CCRANGE,
 
             LINEARTEST
 
@@ -110,6 +110,7 @@ namespace Clingcon {
         virtual bool propagateMinimize();
         virtual void reset();
         virtual void undo(unsigned int level);
+        virtual void printStatistics();
         /*
     * pre: complete assignment
     * return true if a valid solution for the asp vars exists

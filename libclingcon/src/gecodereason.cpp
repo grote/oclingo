@@ -239,7 +239,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     while(end-begin!=0)
     {
         // if the last literal is already derived, we do not need to add it to the reason
-        if(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
+        /*if(original->getValueOfConstraint((end-1)->var())!=GecodeSolver::SearchSpace::BFREE)
         {
             --end;
             if (end-begin==0)
@@ -247,7 +247,7 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
                 goto Ende;
             }
             continue;
-        }
+        }*/
 
         original->propagate(*(end-1));
         reason.push_back(*(end-1));
@@ -262,16 +262,16 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
 
     Ende:
     sumLength_+=reason.size();
-    g_->setRecording(true);
     assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
     delete original;
+    g_->setRecording(true);
 
     t_.stop();
 }
 
 
 
-SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+CCIRSRA::CCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
@@ -288,7 +288,7 @@ SCCIRSRA::SCCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_
     }
 }
 
-void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
+void CCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
     oldLength_+=ends-begin;
     t_.start();
@@ -417,7 +417,7 @@ void SCCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cl
 }
 
 
-SCCRangeRA::SCCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+CCRangeRA::CCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
@@ -434,7 +434,7 @@ SCCRangeRA::SCCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLen
     }
 }
 
-void SCCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
+void CCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
     oldLength_+=ends-begin;
     t_.start();

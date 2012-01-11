@@ -299,6 +299,7 @@ void ClingconApp<M>::handleSignal(int) {
 	fprintf(stderr, "\n*** INTERRUPTED! ***\n");
 	if(facade_ && facade_->state() != Clasp::ClaspFacade::state_not_started)
 		printResult(ClingconApp::reason_interrupt);
+        cspsolver_->printStatistics();
 	_exit(solver_.stats.solve.models != 0 ?  S_SATISFIABLE : S_UNKNOWN);
 }
 
@@ -414,6 +415,7 @@ int ClingconApp<M>::doRun()
 	else { clasp.solveIncremental(*in_, config_, clingo.inc, this); }
 	timer_[0].stop();
 	printResult(reason_end);
+        cspsolver_->printStatistics();
 	if      (clasp.result() == ClaspFacade::result_unsat) { return S_UNSATISFIABLE; }
 	else if (clasp.result() == ClaspFacade::result_sat)   { return S_SATISFIABLE; }
 	else                                                  { return S_UNKNOWN; }

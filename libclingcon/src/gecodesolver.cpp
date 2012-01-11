@@ -75,10 +75,10 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                            const std::string& reduceConflict, unsigned int cspPropDelay) :
     currentSpace_(0), lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
-    initialLookahead_(initialLookahead), cspPropDelay_(cspPropDelay), cspPropDelayCounter_(1), propagated_(0)
+    initialLookahead_(initialLookahead), cspPropDelay_(abs(cspPropDelay)), cspPropDelayCounter_(1), propagated_(0)
 {
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
-    if (optValues.size()>0) ++optValues.back(); // last element must also be found
+    //if (optValues.size()>0) ++optValues.back(); // last element must also be found
 
     optAll=optAllPar;
 
@@ -122,17 +122,17 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
     if (reduceReason == "simple")         reduceReason_ = SIMPLE;
     if (reduceReason == "linear")         reduceReason_ = LINEAR;
     if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
-    if (reduceReason == "scc")            reduceReason_ = SCC;
+    if (reduceReason == "cc")             reduceReason_ = CC;
     if (reduceReason == "range")          reduceReason_ = RANGE;
-    if (reduceReason == "sccrange")       reduceReason_ = SCCRANGE;
+    if (reduceReason == "ccrange")        reduceReason_ = CCRANGE;
 
 
-    if (reduceConflict == "simple")         reduceConflict_ = SIMPLE;
-    if (reduceConflict == "linear")         reduceConflict_ = LINEAR;
-    if (reduceConflict == "linear-fwd")     reduceConflict_ = LINEAR_FWD;
-    if (reduceConflict == "scc")            reduceConflict_ = SCC;
-    if (reduceConflict == "range")          reduceConflict_ = RANGE;
-    if (reduceConflict == "sccrange")       reduceConflict_ = SCCRANGE;
+    if (reduceConflict == "simple")       reduceConflict_ = SIMPLE;
+    if (reduceConflict == "linear")       reduceConflict_ = LINEAR;
+    if (reduceConflict == "linear-fwd")   reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "cc")           reduceConflict_ = CC;
+    if (reduceConflict == "range")        reduceConflict_ = RANGE;
+    if (reduceConflict == "ccrange")      reduceConflict_ = CCRANGE;
 
 
 }
@@ -288,9 +288,9 @@ bool GecodeSolver::initialize()
         case SIMPLE:         conflictAnalyzer_ = new SimpleCA(); break;
         case LINEAR:         conflictAnalyzer_ = new LinearIISCA(this); break;
         case LINEAR_FWD:     conflictAnalyzer_ = new FwdLinearIISCA(this); break;
-        case SCC:            conflictAnalyzer_ = new SCCIISCA(this); break; break;
+        case CC:             conflictAnalyzer_ = new CCIISCA(this); break; break;
         case RANGE:          conflictAnalyzer_ = new RangeCA(this); break;
-        case SCCRANGE:       conflictAnalyzer_ = new SCCRangeCA(this); break;
+        case CCRANGE:        conflictAnalyzer_ = new CCRangeCA(this); break;
         default: assert(false);
     };
 
@@ -299,9 +299,9 @@ bool GecodeSolver::initialize()
         case SIMPLE:         reasonAnalyzer_ = new SimpleRA(); break;
         case LINEAR:         reasonAnalyzer_ = new LinearIRSRA(this); break;
         case LINEAR_FWD:     reasonAnalyzer_ = new FwdLinearIRSRA(this); break;
-        case SCC:            reasonAnalyzer_ = new SCCIRSRA(this); break;
+        case CC:             reasonAnalyzer_ = new CCIRSRA(this); break;
         case RANGE:          reasonAnalyzer_ = new RangeIRSRA(this); break;
-        case SCCRANGE:       reasonAnalyzer_ = new SCCRangeRA(this); break;
+        case CCRANGE:        reasonAnalyzer_ = new CCRangeRA(this); break;
         default: assert(false);
     };
 
@@ -683,7 +683,9 @@ bool GecodeSolver::hasAnswer()
 
     unsigned int oldDL = s_->decisionLevel();
     if (!finishPropagation())
+    {
         return false;
+    }
     if (oldDL > s_->decisionLevel()) //we backjumped
     {
         return false;
@@ -809,6 +811,16 @@ void GecodeSolver::printAnswer()
 
 bool GecodeSolver::propagate()
 {
+    // if already failed, create conflict, this may be on a lower level
+    if (currentSpace_->failed())
+    {
+        Clasp::LitVec clits(assignment_.begin(), assignment_.begin()+propagated_);
+        setConflict(clits, false);
+        assert(s_->decisionLevel()==0);
+        return false;
+    }
+
+
     if (updateOpt_)
     {
         return propagateMinimize();
@@ -823,52 +835,43 @@ bool GecodeSolver::propagate()
         return true;
     }
 
-    // if already failed, create conflict, this may be on a lower level
-    if (currentSpace_->failed())
-    {
-        assert("I should have generated a conflict before" && false);
-        //Clasp::LitVec vec(assignment_.begin(), assignment_.begin()+assLength_[spaces_.size()-1]);
-        //setConflict(vec, false);
-        //return false;
-    }
-    //else // everything is fine
-    {
-        // remove already assigned literals, this happens if we have propagated a new literal to clasp
-        Clasp::LitVec clits;
-        //bool newKnowledge = false;
+    // remove already assigned literals, this happens if we have propagated a new literal to clasp
+    Clasp::LitVec clits;
+    //bool newKnowledge = false;
 
-        for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
+    for (Clasp::LitVec::const_iterator i = propQueue_.begin(); i != propQueue_.end(); ++i)
+    {
+        // add if free
+        // conflict if contradicting
+        GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
+        if ( constr == SearchSpace::BFREE)
         {
-            // add if free
-            // conflict if contradicting
-            GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
-            if ( constr == SearchSpace::BFREE)
-            {
-                clits.push_back(*i);
-                //newKnowledge = true;
-            }
-            if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
+            clits.push_back(*i);
+            //newKnowledge = true;
+        }
+        if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
                 ( constr == SearchSpace::BTRUE  && i->sign()==true  )
                 )
-            {
-                clits.clear();
-                clits.assign(assignment_.begin(), assignment_.begin()+propagated_/*assLength_[spaces_.size()-1]*/);
-                clits.push_back(*i);
-                setConflict(clits, true);
-                return false;
-            }
-        }
-        propQueue_.clear();
-
-        // we have something to propagate
-        if (clits.size())
         {
-            // if we have a new decision level, create a new space
-            if (!_propagate(clits))
-                return false;
+            clits.clear();
+            clits.assign(assignment_.begin(), assignment_.begin()+propagated_/*assLength_[spaces_.size()-1]*/);
+            clits.push_back(*i);
+            setConflict(clits, true);
+            return false;
         }
-    return true;
     }
+    propQueue_.clear();
+
+    // we have something to propagate
+    if (clits.size())
+    {
+        // if we have a new decision level, create a new space
+        if (!_propagate(clits))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool GecodeSolver::propagateOldLits()
@@ -990,6 +993,8 @@ bool GecodeSolver::propagateOldLits()
 
 }
 
+
+
 bool GecodeSolver::_propagate(Clasp::LitVec& clits)
 {
     assert(assLength_.size() > 1 ? assLength_[assLength_.size()-2] < assLength_[assLength_.size()-1] : true);
@@ -1057,6 +1062,7 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
         assLength_.back()=propagated_;
         if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
         {
+            //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
             unsigned int oldDL = s_->decisionLevel();
             if(!propagateNewLiteralsToClasp(spaces_.size()-1))
@@ -1124,6 +1130,7 @@ bool GecodeSolver::finishPropagation()
         currentSpace_->propagate(assignment_.begin()+start, assignment_.begin()+end);
         if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
         {
+            //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
             unsigned int oldDL = s_->decisionLevel();
             if(!propagateNewLiteralsToClasp(spaces_.size()-1))
@@ -1217,6 +1224,13 @@ void GecodeSolver::undo(unsigned int level)
     currentSpace_ = spaces_.back();
     return;
 }
+
+void GecodeSolver::printStatistics()
+{
+    conflictAnalyzer_->printStatistics();
+    reasonAnalyzer_->printStatistics();
+}
+
 
 bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
 {
@@ -1605,7 +1619,10 @@ bool GecodeSolver::SearchSpace::updateOptValues()
 
     if (opts_.size()==1)
     {
-        rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
+        if (GecodeSolver::optAll)
+            rel(*this, opts_[0] <= GecodeSolver::optValues[0],ICL);
+        else
+            rel(*this, opts_[0] < GecodeSolver::optValues[0],ICL);
     }
     return !failed();
 

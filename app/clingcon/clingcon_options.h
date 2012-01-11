@@ -126,9 +126,9 @@ struct ClingconOptions
             if      (temp == "simple")            { out = temp; return true; }
             else if (temp == "linear")            { out = temp; return true; }
             else if (temp == "linear-fwd")        { out = temp; return true; }
-            else if (temp == "scc")               { out = temp; return true; }
+            else if (temp == "cc")                { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
-            else if (temp == "sccrange")          { out = temp; return true; }
+            else if (temp == "ccrange")           { out = temp; return true; }
             return false;
 
         }
@@ -139,9 +139,9 @@ struct ClingconOptions
             if      (temp == "simple")            { out = temp; return true; }
             else if (temp == "linear")            { out = temp; return true; }
             else if (temp == "linear-fwd")        { out = temp; return true; }
-            else if (temp == "scc")               { out = temp; return true; }
+            else if (temp == "cc")                { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
-            else if (temp == "sccrange")          { out = temp; return true; }
+            else if (temp == "ccrange")           { out = temp; return true; }
             return false;
 
         }
@@ -292,10 +292,10 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                                 "      Valid:   <n1[,n2,n3,...]>\n")
                         ("csp-opt-all"    , bool_switch(&optAll)->defaultValue(false), "Compute all optimal models")
                         ("csp-initial-lookahead"    , bool_switch(&initialLookahead)->defaultValue(false), "Do singular lookahead on initialization")
-                 ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
-                                 "      0          : only on possible model\n"
-                                 "      n          : every n steps\n"
-                 )
+                        ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
+                                       "      0          : only on possible model\n"
+                                       "      n          : every n steps\n"
+                        )
                 ;
 
         csp.addOptions()
@@ -304,16 +304,16 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                          "      linear         : Do a linear IRS check backward\n"
                          "      linear-fwd     : Do a linear IRS check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
-                         "      scc            : Do an IRS check using the variable dependency tree\n"
-                         "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
+                         "      cc             : Do an IRS check using the variable dependency tree\n"
+                         "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"
                 )
                 ("csp-reduce-conflict", storeTo(cspConflict)->defaultValue("simple")->parser(ClingconOptions::checkReduceConflict), "Determine the method to reduce the conflicts.\n"
                          "      simple         : Do nothin (default)\n"
                          "      linear         : Do a linear IIS check backward\n"
                          "      linear-fwd     : Do a linear IIS check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
-                         "      scc            : Do an IIS check using the variable dependency tree\n"
-                         "      sccrange       : Take the first range of fitting literals connected by variables (backwards)\n"
+                         "      cc             : Do an IIS check using the variable dependency tree\n"
+                         "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"
                 );
 
         root.addOptions(csp,true);

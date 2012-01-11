@@ -51,19 +51,19 @@ private:
 };
 	class ClingconPropagator;
         class FwdLinearIRSRA;
-        class SCCIRSRA;
-        class SCCRangeRA;
-        class SCCRangeCA;
-        class SCCIISCA;
+        class CCIRSRA;
+        class CCRangeRA;
+        class CCRangeCA;
+        class CCIISCA;
 
 	class CSPSolver
 	{
 
             friend class FwdLinearIRSRA;
-            friend class SCCIRSRA;
-            friend class SCCRangeRA;
-            friend class SCCRangeCA;
-            friend class SCCIISCA;
+            friend class CCIRSRA;
+            friend class CCRangeRA;
+            friend class CCRangeCA;
+            friend class CCIISCA;
 
                 public:
                         typedef Interval<int> Domain;
@@ -96,6 +96,7 @@ private:
 			virtual void reset() = 0;
 			virtual void propagateLiteral(const Clasp::Literal& l, int date) = 0;
                         virtual void undo(unsigned int level) = 0;
+                        virtual void printStatistics() = 0;
 			/*
 			 * pre: complete assignment
 			 * return true if a valid solution for the asp vars exists

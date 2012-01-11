@@ -421,7 +421,7 @@ void RangeCA::shrink(Clasp::LitVec& conflict, bool last)
 }
 
 
-SCCIISCA::SCCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+CCIISCA::CCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
@@ -439,7 +439,7 @@ SCCIISCA::SCCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_
 }
 
 
-void SCCIISCA::shrink(Clasp::LitVec& conflict, bool last)
+void CCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
@@ -585,7 +585,7 @@ void SCCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 }
 
 
-SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
+CCRangeCA::CCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0), oldLength_(0)
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
@@ -597,7 +597,7 @@ SCCRangeCA::SCCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLen
     }
 }
 
-void SCCRangeCA::shrink(Clasp::LitVec& conflict, bool last)
+void CCRangeCA::shrink(Clasp::LitVec& conflict, bool last)
 {
     oldLength_+=conflict.size();
     t_.start();
