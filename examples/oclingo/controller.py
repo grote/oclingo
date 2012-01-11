@@ -50,13 +50,13 @@ FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")
 INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")
 RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")
 IN_PARSER = {
-	'step'			: re.compile("#step (\d+)\."),
+	'step'			: re.compile("#step (\d+)( *: *\d+ *)?\."),
 	'endstep'		: re.compile("#endstep\."),
 	'cumulative'	: re.compile("#cumulative\."),
-	'volatile'		: re.compile("#volatile( : ?\d+)?\."),
+	'volatile'		: re.compile("#volatile( : *\d+)?\."),
 	'forget'		: re.compile("#forget (\d+)(\.\.\d+)?\."),
-	'assert'		: re.compile("#assert : ?.+\."),
-	'retract'		: re.compile("#retract : ?.+\."),
+	'assert'		: re.compile("#assert : *.+\."),
+	'retract'		: re.compile("#retract : *.+\."),
 	'stop'			: re.compile("#stop\."),
 }
 PARSER = [
@@ -66,6 +66,7 @@ PARSER = [
 	re.compile("^End of Step.$"),
 	re.compile("^Warning: (?P<series>.+)$"),
 	re.compile("^Error: (?P<series>.+)$"),
+	re.compile("^UNSAT at step (\d+)$")
 ]
 
 def main():
@@ -158,7 +159,9 @@ def prepareInput():
 		raise RuntimeError("More than one online file was given")
 
 def getAnswerSets(s):
+	global exit
 	answer_sets = []
+
 	while not exit:
 		try:
 			output = recv_until(s, '\0')
@@ -181,6 +184,9 @@ def getAnswerSets(s):
 						raise RuntimeWarning(line)
 					elif i == 5:
 						raise RuntimeError(line)
+					elif i == 6:
+						print "Program was unsatisfiable and stopped at step %s!" % match.group(1)
+						return answer_sets
 			if not matched:
 				raise SyntaxError("Unkown output received from server: %s" % line)
 	return answer_sets

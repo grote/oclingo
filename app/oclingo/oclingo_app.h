@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 // Copyright (c) 2009, Benjamin Kaufmann
 //
@@ -53,55 +53,66 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			app.setIinit(config);
 			app.groundBase(*grounder, config, app.gringo.iinit, app.clingo.mode == CLINGO ? app.gringo.ifixed : 1, app.clingo.mode == CLINGO ? app.gringo.ifixed : app.clingo.inc.iQuery);
 			out->finalize();
-
-			if(app.clingo.mode == OCLINGO) {
-				ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
-				ext.addPrematureKnowledge(); // only for freezing base and 1st step externals
-
-				// get/receive new external input
-				ext.get();
-			}
 		}
-		else if(app.clingo.mode == OCLINGO) {
-			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
-
-			// TODO rewrite process logic in a more sane way (might break things)
-			if(solver->hasConflict()) {
-				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
-			}
-			else {
-				// add new facts and check for termination condition
-				if(!ext.addInput()) {
-					return false; // exit if received #stop.
-				}
-
-				// do new step if there's no model or controller needs new step
-				if(!ext.hasModel() || ext.needsNewStep()) {
-					do {
-						out->initialize(); // gives new IncUid for volatiles
-						config.incStep++;
-						app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
-						ext.endStep();
-						out->finalize();
-					} while(config.incStep < ext.getControllerStep());
-
-					if(ext.addPrematureKnowledge()) {
-						// call finalize again if there was premature knowlegde added
-						out->finalize();
-					}
-				} else {
-					ext.endIteration();
-					out->finalize();
-				}
-			}
-			// get/receive new external input
-			ext.get();
-		} else {
+		else if(app.clingo.mode != OCLINGO)
+		{
 			out->initialize();
 			config.incStep++;
 			app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
 			out->finalize();
 		}
+
+		if(app.clingo.mode == OCLINGO)
+		{
+			ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(out.get())->getExternalKnowledge();
+
+			if(solver->hasConflict())
+			{
+				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
+			}
+			else
+			{
+				// inform controller in case there are no models within set bound
+				if(!ext.hasModel() && config.incStep >= ext.getBound()) {
+					std::stringstream s;
+					s << config.incStep;
+					ext.sendToClient("UNSAT at step "+s.str());
+				}
+				// get/receive new external input
+				ext.get();
+
+				// add new facts and check for termination condition
+				if(!ext.addInput()) { return false; /* exit if received #stop. */ }
+
+				// do new step only if bound is obeyed and if there's no model or the controller needs new step
+				if(config.incStep < ext.getBound() && (!ext.hasModel() || ext.needsNewStep()))
+				{
+					// ground program up to current controller step
+					do
+					{
+						out->initialize(); // gives new IncUid for volatiles
+						config.incStep++;
+						app.groundStep(*grounder, config, config.incStep, app.clingo.inc.iQuery);
+						ext.endStep();
+						out->finalize();
+					}
+					while(config.incStep < ext.getControllerStep());
+
+					// now program is ready for premature knowledge to be added
+					if(ext.addPrematureKnowledge())
+					{
+						// call finalize again if there was premature knowledge added
+						out->finalize();
+					}
+				}
+				else
+				{
+					// do not increase step, just finish this iteration
+					ext.endIteration();
+					out->finalize();
+				}
+			}
+		} // end OCLINGO
 	}
 	release();
 	return true;
@@ -118,13 +129,16 @@ void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade
 	(void) f;
 	using namespace Clasp;
 
-	if(clingo.mode == OCLINGO && e == ClaspFacade::event_model) {
+	if(clingo.mode == OCLINGO && e == ClaspFacade::event_model)
+	{
 		// TODO unified model output (also minimize + consequences)
 		std::string model = "";
 		assert(solver_.strategies().symTab.get());
 		const AtomIndex& index = *solver_.strategies().symTab;
-		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
-			if (solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty()) {
+		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it)
+		{
+			if (solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty())
+			{
 				model += it->second.name + " ";
 			}
 		}

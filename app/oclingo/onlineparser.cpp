@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
 // This file is part of gringo.
@@ -156,7 +156,7 @@ void OnlineParser::add(Type type, uint32_t n) {
 	}
 }
 
-void OnlineParser::setStep(int step) {
+void OnlineParser::setStep(int step, int bound) {
 	if(got_step_) {
 		std::stringstream warning_msg;
 		warning_msg << "Warning: New '#step " << step << ".' without prior '#endstep.' encountered. Ignoring....\n";
@@ -166,6 +166,7 @@ void OnlineParser::setStep(int step) {
 	} else {
 		got_step_ = true;
 		output_->getExternalKnowledge().setControllerStep(step);
+		output_->getExternalKnowledge().setBound(bound);
 	}
 }
 
