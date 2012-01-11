@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 // Copyright (c) 2009, Benjamin Kaufmann
 //
@@ -72,14 +72,20 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 			}
 			else
 			{
+				// inform controller in case there are no models within set bound
+				if(!ext.hasModel() && config.incStep >= ext.getBound()) {
+					std::stringstream s;
+					s << config.incStep;
+					ext.sendToClient("UNSAT at step "+s.str());
+				}
 				// get/receive new external input
 				ext.get();
 
 				// add new facts and check for termination condition
 				if(!ext.addInput()) { return false; /* exit if received #stop. */ }
 
-				// do new step if there's no model or controller needs new step
-				if(!ext.hasModel() || ext.needsNewStep())
+				// do new step only if bound is obeyed and if there's no model or the controller needs new step
+				if(config.incStep < ext.getBound() && (!ext.hasModel() || ext.needsNewStep()))
 				{
 					// ground program up to current controller step
 					do

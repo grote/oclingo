@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 //
 // This file is part of gringo.
 //
@@ -58,6 +58,8 @@ public:
 	bool addPrematureKnowledge();
 	void setControllerStep(int step);
 	int getControllerStep();
+	void setBound(int bound);
+	int getBound();
 	bool needsNewStep();
 	void endIteration();
 	void endStep();
@@ -97,6 +99,7 @@ private:
 	bool import_;
 	int step_;
 	int controller_step_;
+	int bound_;
 	bool model_;
 	int forget_;
 	int forget_from_;

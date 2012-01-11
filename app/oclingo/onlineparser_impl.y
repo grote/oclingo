@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
 // This file is part of gringo.
@@ -43,7 +43,7 @@ start ::= program.
 program ::= .
 program ::= program line DOT.
 
-line ::= STEP NUMBER(num).           { onlineParser->setStep(num.number); }
+line ::= step.
 line ::= rule.
 line ::= CUMULATIVE.                 { onlineParser->setPart(OnlineParser::CUMULATIVE); }
 line ::= VOLATILE.                   { onlineParser->setPart(OnlineParser::VOLATILE); }
@@ -54,6 +54,9 @@ line ::= ASSERT  COLON term.         { onlineParser->setAssert(); }
 line ::= RETRACT COLON term.         { onlineParser->retract(); }
 line ::= ENDSTEP.
 line ::= STOP.                       { onlineParser->terminate(); }
+
+step ::= STEP NUMBER(num).                    { onlineParser->setStep(num.number); }
+step ::= STEP NUMBER(num) COLON NUMBER(num2). { onlineParser->setStep(num.number, num2.number); }
 
 id ::= IDENTIFIER(id). { onlineParser->addSigned(id.index, false); }
 

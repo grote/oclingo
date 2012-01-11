@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
 // This file is part of gringo.
@@ -33,6 +33,7 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, C
 	, import_(import)
 	, step_(1)
 	, controller_step_(1)
+	, bound_(INT_MAX)
 	, model_(true)
 	, forget_(0)
 	, forget_from_(0)
@@ -69,16 +70,12 @@ void ExternalKnowledge::startSocket(int port) {
 
 	if(debug_) std::cerr << "Starting socket..." << std::endl;
 
-	try {
-		tcp::acceptor acceptor(io_service_, tcp::endpoint(tcp::v4(), port));
-		socket_ = new tcp::socket(io_service_);
-		acceptor.accept(*socket_);
+	// don't catch exceptions here, exit with error instead
+	tcp::acceptor acceptor(io_service_, tcp::endpoint(tcp::v4(), port));
+	socket_ = new tcp::socket(io_service_);
+	acceptor.accept(*socket_);
 
-		if(debug_) std::cerr << "Client connected..." << std::endl;
-	}
-	catch (std::exception& e) {
-		std::cerr << "Warning: " << e.what() << std::endl;
-	}
+	if(debug_) std::cerr << "Client connected..." << std::endl;
 }
 
 void ExternalKnowledge::sendModel(std::string model) {
@@ -101,7 +98,7 @@ void ExternalKnowledge::sendToClient(std::string msg) {
 		boost::asio::write(*socket_, boost::asio::buffer(msg+char(0)), boost::asio::transfer_all());
 	}
 	catch (std::exception& e) {
-		std::cerr << "Warning: Could not send answer set. " << e.what() << std::endl;
+		std::cerr << "Warning: Could not send message to controller " << e.what() << std::endl;
 	}
 }
 
@@ -158,10 +155,12 @@ void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, siz
 }
 
 bool ExternalKnowledge::addInput() {
-	if(model_)
+	if(model_) {
 		sendToClient("End of Step.\n");
+	}
 
-	if(!new_input_ && model_) {
+	// wait here for input if there is none so far and we have a model or reached bound
+	if(!new_input_ && (model_ || step_ >= bound_)) {
 		io_service_.reset();
 		io_service_.run_one();
 	}
@@ -246,6 +245,20 @@ void ExternalKnowledge::setControllerStep(int step) {
 
 int ExternalKnowledge::getControllerStep() {
 	return controller_step_;
+}
+
+// call after setControllerStep()
+void ExternalKnowledge::setBound(int bound) {
+	if(controller_step_ > INT_MAX - bound) {
+		// integer overflow will happen, so assume maximal bound
+		bound_ = INT_MAX;
+	} else {
+		bound_ = controller_step_ + bound;
+	}
+}
+
+int ExternalKnowledge::getBound() {
+	return bound_;
 }
 
 bool ExternalKnowledge::needsNewStep() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote <tgrote@uni-potsdam.de>
+// Copyright (c) 2012, Torsten Grote <tgrote@uni-potsdam.de>
 // Copyright (c) 2009, Roland Kaminski <kaminski@cs.uni-potsdam.de>
 //
 // This file is part of gringo.
@@ -59,7 +59,7 @@ public:
 	void add(StackPtr stm);
 	void add(Type type, uint32_t n = 0);
 
-	void setStep(int step);
+	void setStep(int step, int bound=INT_MAX);
 	void forget(int step);
 	void forget(int from, int to);
 	void terminate();
