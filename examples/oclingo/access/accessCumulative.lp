@@ -36,7 +36,8 @@ signal(denied;granted). % some signals
 #external access(U,S,t+offset) : user(U) : signal(S).
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
-#forget t : t-2*offset-1.
+% FIXME commented out due to unsolved bug
+%#forget t : t-2*offset-1.
 
 % count consecutive denied user accesses up to a "denial" threshold and forward touch
 denied(U,1,     t) :- access(U,denied,t+offset), user(U).
