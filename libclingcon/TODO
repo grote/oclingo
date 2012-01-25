@@ -19,10 +19,10 @@ DONE
 
 TODO
 
+- rename linear to backwards etc...
 - test if recomputation instead of trailing can be used to save copying spaces !
 - disable propQueue on force
 - lexical ordering constraint for minimization ?
-- remove memory leaks
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
 - write Makefile

@@ -441,6 +441,7 @@ CCIISCA::CCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0
 
 void CCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 {
+    //std::cout << conflict.size() << " before" << std::endl;
     oldLength_+=conflict.size();
     t_.start();
     ++numCalls_;
@@ -574,6 +575,7 @@ void CCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 
     Ende:
     sumLength_+=newConflict.size();
+    //std::cout << newConflict.size() << "after" << std::endl;
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
     conflict.swap(newConflict);

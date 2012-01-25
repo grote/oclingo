@@ -111,7 +111,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in fwdlin Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same  with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -141,7 +141,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in range Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same  with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -170,9 +170,9 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in scc Conflict in " << t_.total() << std::endl;
             //std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            //std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
-            std::cout << numCalls_ << " ccalls with average length of  " << float(sumLength_) << std::endl;
-            std::cout << numCalls_ << " same   with similar old length " << float(oldLength_) << std::endl;
+            //std::cout << numCalls_ << " same  with similar old length " << float(oldLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " ccalls with average length of  " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same   with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -204,7 +204,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in scc-range Conflict in " << t_.total() << std::endl;
             std::cout << numCalls_ << " ccalls with average length of " << float(sumLength_)/numCalls_ << std::endl;
-            std::cout << numCalls_ << " same   with similar old length" << float(oldLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same  with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsC per call" << std::endl;
             std::cout << "ReducedToC " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedC " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
