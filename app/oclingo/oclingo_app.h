@@ -124,6 +124,22 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <>
+void ClingoApp<OCLINGO>::doState(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
+	using namespace Clasp;
+
+	if(clingo.mode == OCLINGO && f.state() == ClaspFacade::state_solve) {
+/*		if(e == ClaspFacade::event_state_enter) {
+			std::cerr << "  SOLVING STARTED" << std::endl;
+		} else*/ if(e == ClaspFacade::event_state_exit) {
+			if(dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().hasModel()) {
+				std::cerr << "\n  ],\n  \"Result\": \"SATISFIABLE\"\n}" << std::endl;
+			}
+		}
+	}
+
+}
+
+template <>
 void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 {
 	(void) f;
@@ -133,6 +149,7 @@ void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade
 	{
 		// TODO unified model output (also minimize + consequences)
 		std::string model = "";
+		std::string new_model = "    {\n      \"Value\" : [\n        ";
 		assert(solver_.strategies().symTab.get());
 		const AtomIndex& index = *solver_.strategies().symTab;
 		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it)
@@ -140,8 +157,12 @@ void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade
 			if (solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty())
 			{
 				model += it->second.name + " ";
+				new_model += "\"" + it->second.name + "\", ";
 			}
 		}
-		dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().sendModel(model);
+		new_model = new_model.substr(0, new_model.size()-2);
+		new_model += "\n      ]\n    }\n";
+
+		dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().sendModel(model, new_model);
 	}
 }

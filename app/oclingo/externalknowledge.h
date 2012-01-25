@@ -42,7 +42,7 @@ public:
 	void removePostPropagator();
 
 	void startSocket(int port);
-	void sendModel(std::string);
+	void sendModel(std::string model, std::string new_model);
 	bool hasModel();
 	void sendToClient(std::string msg);
 	int poll();

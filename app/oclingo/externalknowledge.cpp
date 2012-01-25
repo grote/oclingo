@@ -78,9 +78,15 @@ void ExternalKnowledge::startSocket(int port) {
 	if(debug_) std::cerr << "Client connected..." << std::endl;
 }
 
-void ExternalKnowledge::sendModel(std::string model) {
+void ExternalKnowledge::sendModel(std::string model, std::string new_model="") {
 	std::stringstream ss;
 	ss << "Step: " << step_ << "\n" << model;
+
+	if(!model_) {
+		std::cerr << "{\n";
+		std::cerr << "  \"Witnesses\": [\n";
+	}
+	std::cerr << new_model;
 
 	sendToClient(ss.str());
 
