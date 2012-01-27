@@ -67,7 +67,7 @@ private:
 
                 public:
                         typedef Interval<int> Domain;
-                        typedef boost::ptr_map<int, Constraint> ConstraintMap;
+                        typedef boost::ptr_map<Clasp::Literal, Constraint> ConstraintMap;
                         CSPSolver();
                         virtual ~CSPSolver();
 			/*

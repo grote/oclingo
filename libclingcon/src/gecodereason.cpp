@@ -275,11 +275,12 @@ CCIRSRA::CCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
-        varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
+        if (varSets_.find(i->first.var()) == varSets_.end())
+            varSets_.insert(std::make_pair(i->first.var(),VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
         i->second->getAllVariables(vec,g);
         for (std::vector<unsigned int>::const_iterator v = vec.begin(); v != vec.end(); ++v)
-            varSets_[i->first].set(*v);
+            varSets_[i->first.var()].set(*v);
         /*
         std::cout << "Var " << g_->num2name(i->first) << "(" << i->first << ")" << std::endl;
         for(size_t x = 0; x < varSets_[i->first].size(); ++x)
@@ -344,10 +345,9 @@ void CCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cla
 
 
             // if the last literal is already derived, we do not need to add it to the reason
-            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+            if(original->getValueOfConstraint(*(begin+it))!=GecodeSolver::SearchSpace::BFREE)
             {
-                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
-                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
+                if (original->getValueOfConstraint(*(begin+it))==GecodeSolver::SearchSpace::BFALSE)
                 {
                     reason.push_back(*(begin+it));
                     delete tester;
@@ -421,11 +421,12 @@ CCRangeRA::CCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLengt
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
-        varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
+        if (varSets_.find(i->first.var()) == varSets_.end())
+            varSets_.insert(std::make_pair(i->first.var(),VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
         i->second->getAllVariables(vec,g);
         for (std::vector<unsigned int>::const_iterator v = vec.begin(); v != vec.end(); ++v)
-            varSets_[i->first].set(*v);
+            varSets_[i->first.var()].set(*v);
         /*
         std::cout << "Var " << g_->num2name(i->first) << "(" << i->first << ")" << std::endl;
         for(size_t x = 0; x < varSets_[i->first].size(); ++x)
@@ -483,10 +484,9 @@ void CCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const C
 
 
             // if the last literal is already derived, we do not need to add it to the reason
-            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+            if(original->getValueOfConstraint(*(begin+it))!=GecodeSolver::SearchSpace::BFREE)
             {
-                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
-                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
+                if (original->getValueOfConstraint(*(begin+it))==GecodeSolver::SearchSpace::BFALSE)
                 {
                     reason.push_back(*(begin+it));
                     goto Ende;

@@ -381,11 +381,11 @@ void RangeCA::shrink(Clasp::LitVec& conflict, bool last)
     //std::cout << "Reduced from " << conflict.size() << " to ";
     while(it>=conflict.begin())
     {
-        if(original->getValueOfConstraint((it)->var())!=GecodeSolver::SearchSpace::BFREE)
+        if(original->getValueOfConstraint(*it)!=GecodeSolver::SearchSpace::BFREE)
         {
             //std::cout << "non free -> ";
-            GecodeSolver::SearchSpace::Value val(original->getValueOfConstraint((it)->var()));
-            if (((it)->sign() && val==GecodeSolver::SearchSpace::BFALSE) || ((!(it->sign())) && val==GecodeSolver::SearchSpace::BTRUE))
+           ;
+            if (original->getValueOfConstraint(*it) == GecodeSolver::SearchSpace::BTRUE)
             {
                 //std::cout << "same sign, skip" << std::endl;
                 --it;
@@ -425,11 +425,12 @@ CCIISCA::CCIISCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
-        varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
+        if (varSets_.find(i->first.var()) == varSets_.end())
+            varSets_.insert(std::make_pair(i->first.var(),VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
         i->second->getAllVariables(vec,g);
         for (std::vector<unsigned int>::const_iterator v = vec.begin(); v != vec.end(); ++v)
-            varSets_[i->first].set(*v);
+            varSets_[i->first.var()].set(*v);
         /*
         std::cout << "Var " << g_->num2name(i->first) << "(" << i->first << ")" << std::endl;
         for(size_t x = 0; x < varSets_[i->first].size(); ++x)
@@ -510,10 +511,9 @@ void CCIISCA::shrink(Clasp::LitVec& conflict, bool last)
 
 
             // if the last literal is already derived, we do not need to add it to the reason
-            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+            if(original->getValueOfConstraint(*(begin+it))!=GecodeSolver::SearchSpace::BFREE)
             {
-                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
-                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
+                if (original->getValueOfConstraint(*(begin+it))==GecodeSolver::SearchSpace::BFALSE)
                 {
                     newConflict.push_back(*(begin+it));
                     delete tester;
@@ -591,11 +591,12 @@ CCRangeCA::CCRangeCA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLengt
 {
     for (GecodeSolver::ConstraintMap::iterator i =  g->constraints_.begin(); i != g->constraints_.end(); ++i)
     {
-        varSets_.insert(std::make_pair(i->first,VarSet(g->getVariables().size())));
+        if (varSets_.find(i->first.var()) == varSets_.end())
+            varSets_.insert(std::make_pair(i->first.var(),VarSet(g->getVariables().size())));
         std::vector<unsigned int> vec;
         i->second->getAllVariables(vec,g);
         for (std::vector<unsigned int>::const_iterator v = vec.begin(); v != vec.end(); ++v)
-            varSets_[i->first].set(*v);
+            varSets_[i->first.var()].set(*v);
     }
 }
 
@@ -660,10 +661,9 @@ void CCRangeCA::shrink(Clasp::LitVec& conflict, bool last)
 
 
             // if the last literal is already derived, we do not need to add it to the reason
-            if(original->getValueOfConstraint((begin+it)->var())!=GecodeSolver::SearchSpace::BFREE)
+            if(original->getValueOfConstraint(*(begin+it))!=GecodeSolver::SearchSpace::BFREE)
             {
-                if ( (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BTRUE && (begin+it)->sign()) ||
-                     (original->getValueOfConstraint((begin+it)->var())==GecodeSolver::SearchSpace::BFALSE && !(begin+it)->sign()) )
+                if (original->getValueOfConstraint(*(begin+it))==GecodeSolver::SearchSpace::BFALSE)
                 {
                     newConflict.push_back(*(begin+it));
                     goto Ende;

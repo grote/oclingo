@@ -529,7 +529,7 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 
                     const Clingcon::CSPSolver::ConstraintMap& m = cspsolver_->getConstraints();
                     for(Clingcon::CSPSolver::ConstraintMap::const_iterator i = m.begin(); i != m.end(); ++i)
-                        solver_.setFrozen(f.api()->getLiteral(i->first).var(),true);
+                        solver_.setFrozen(f.api()->getLiteral(i->first.index()).var(),true);
                     //über csp atom liste rüber gehen und solver atoms setFrozen(var,true)
                             //programbuilder hat getLiteral, liefert literal im solver-> var
                     cspsolver_->setSolver(&solver_);

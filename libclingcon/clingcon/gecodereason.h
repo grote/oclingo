@@ -193,7 +193,7 @@ namespace Clingcon
         unsigned int  props_;
         Timer         t_;
         typedef boost::dynamic_bitset<unsigned int> VarSet;
-        std::map<unsigned int,VarSet> varSets_;
+        std::map<Clasp::Var,VarSet> varSets_;
         unsigned int numCalls_;
         unsigned int sumLength_;
         unsigned int oldLength_;
@@ -225,7 +225,7 @@ namespace Clingcon
         unsigned int  props_;
         Timer         t_;
         typedef boost::dynamic_bitset<unsigned int> VarSet;
-        std::map<unsigned int,VarSet> varSets_;
+        std::map<Clasp::Var,VarSet> varSets_;
         unsigned int numCalls_;
         unsigned int sumLength_;
         unsigned int oldLength_;
