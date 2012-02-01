@@ -21,6 +21,7 @@ import os
 import socket
 import re
 import time
+import json
 from optparse import OptionParser
 from threading import Thread
 
@@ -59,15 +60,6 @@ IN_PARSER = {
 	'retract'		: re.compile("#retract : *.+\."),
 	'stop'			: re.compile("#stop\."),
 }
-PARSER = [
-	re.compile("^Step:\ (\d+)$"),
-	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
-	re.compile("^Input:$"),
-	re.compile("^End of Step.$"),
-	re.compile("^Warning: (?P<series>.+)$"),
-	re.compile("^Error: (?P<series>.+)$"),
-	re.compile("^UNSAT at step (\d+)$")
-]
 
 def main():
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -81,6 +73,15 @@ def main():
 	
 	while not exit:
 		try:
+			if opt.wait == "yes":
+				input = getInput()
+				sendInput(s, input)
+			else:
+				# just in case, should be done before thread terminates
+				if not thread.is_alive():
+					sendInput(s, "#stop.\n")
+					break
+			
 			try:
 				answer_sets = getAnswerSets(s)
 			except RuntimeWarning as e:
@@ -91,15 +92,6 @@ def main():
 			
 			processAnswerSets(answer_sets)
 			
-			if opt.wait == "yes":
-				input = getInput()
-				sendInput(s, input)
-			else:
-				# just in case, should be done before thread terminates
-				if not thread.is_alive():
-					sendInput(s, "#stop.\n")
-					break
-				
 		except socket.error:
 			print "Socket was closed."
 			break
@@ -167,29 +159,27 @@ def getAnswerSets(s):
 			output = recv_until(s, '\0')
 		except socket.error:
 			raise EnvironmentError("Socket was closed.")
-		
-		for line in output.splitlines():
-			matched = False
-			for i in range(len(PARSER)):
-				match = PARSER[i].match(line)
-				if match != None:
-					matched = True
-					if i == 0 and opt.debug:
-						print "Found answer set for step %s." % match.group(1)
-					elif i == 1:
-						answer_sets.append(line.split())
-					elif i == 3:
-						return answer_sets
-					elif i == 4:
-						raise RuntimeWarning(line)
-					elif i == 5:
-						raise RuntimeError(line)
-					elif i == 6:
-						print "Program was unsatisfiable and stopped at step %s!" % match.group(1)
-						return answer_sets
-			if not matched:
-				raise SyntaxError("Unkown output received from server: %s" % line)
-	return answer_sets
+	
+		res = json.loads(output)
+		if "Type" in res:
+			if res["Type"] == "Error" and "Text" in res:
+				raise RuntimeError(res["Text"])
+			elif res["Type"] == "Warning" and "Text" in res:
+				raise RuntimeWarning(res["Text"])
+				continue
+			elif res["Type"] == "Answer" and "Result" in res:
+				if res["Result"] == "UNSATISFIABLE":
+					sys.stdout.write("Program was unsatisfiable and stopped")
+					if "Step" in res:
+						sys.stdout.write(" at step " + str(res["Step"]))
+					print "!"
+					return answer_sets
+				elif res["Result"] == "SATISFIABLE" and "Witnesses" in res:
+					for witness in res["Witnesses"]:
+						answer_sets.append(witness["Value"])
+					return answer_sets
+		raise SyntaxError("Unkown output received from server: %s" % output)
+
 
 def recv_until(s, delimiter):
 	global data_old, exit

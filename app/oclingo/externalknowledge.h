@@ -42,12 +42,14 @@ public:
 	void removePostPropagator();
 
 	void startSocket(int port);
-	void sendModel(std::string model, std::string new_model);
-	bool hasModel();
-	void sendToClient(std::string msg);
 	int poll();
 	void get();
 	void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
+	void sendToClient(std::string msg);
+	void sendModel(std::string model);
+	void sendUNSAT(int step);
+	void sendWarning(std::string msg);
+	void sendError(std::string msg);
 
 	bool addInput();
 	void addStackPtr(GroundProgramBuilder::StackPtr stack);
@@ -56,6 +58,7 @@ public:
 	void savePrematureForget(int step);
 	void savePrematureForget(int from, int to);
 	bool addPrematureKnowledge();
+	bool hasModel();
 	void setControllerStep(int step);
 	int getControllerStep();
 	void setBound(int bound);
@@ -63,6 +66,8 @@ public:
 	bool needsNewStep();
 	void endIteration();
 	void endStep();
+private:
+	void sendPartToClient(std::string msg);
 
 protected:
 	struct PostPropagator : public Clasp::PostPropagator {

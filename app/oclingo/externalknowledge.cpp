@@ -78,36 +78,6 @@ void ExternalKnowledge::startSocket(int port) {
 	if(debug_) std::cerr << "Client connected..." << std::endl;
 }
 
-void ExternalKnowledge::sendModel(std::string model, std::string new_model="") {
-	std::stringstream ss;
-	ss << "Step: " << step_ << "\n" << model;
-
-	if(!model_) {
-		std::cerr << "{\n";
-		std::cerr << "  \"Witnesses\": [\n";
-	}
-	std::cerr << new_model;
-
-	sendToClient(ss.str());
-
-	model_ = true;
-}
-
-bool ExternalKnowledge::hasModel() {
-	return model_;
-}
-
-void ExternalKnowledge::sendToClient(std::string msg) {
-	if(not socket_) startSocket(port_);
-
-	try {
-		boost::asio::write(*socket_, boost::asio::buffer(msg+char(0)), boost::asio::transfer_all());
-	}
-	catch (std::exception& e) {
-		std::cerr << "Warning: Could not send message to controller " << e.what() << std::endl;
-	}
-}
-
 int ExternalKnowledge::poll() {
 	io_service_.reset();
 	int result = io_service_.poll_one();
@@ -129,12 +99,11 @@ void ExternalKnowledge::get() {
 
 			if(not socket_) {
 				std::cerr << "Waiting for connection on port " << port_ << " from controller..." << std::endl;
+				startSocket(port_);
 			} else{
 				std::cerr << "Reading from socket..." << std::endl;
 			}
 			std::cerr.flush();
-
-			sendToClient("Input:\n");
 
 			reading_ = true;
 			boost::asio::async_read_until(*socket_, b_, char(0), boost::bind(&ExternalKnowledge::readUntilHandler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
@@ -160,11 +129,79 @@ void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, siz
 		throw boost::system::system_error(e);
 }
 
-bool ExternalKnowledge::addInput() {
-	if(model_) {
-		sendToClient("End of Step.\n");
-	}
+void ExternalKnowledge::sendToClient(std::string msg) {
+	if(not socket_) startSocket(port_);
 
+	try {
+		boost::asio::write(*socket_, boost::asio::buffer(msg+char(0)), boost::asio::transfer_all());
+	}
+	catch (std::exception& e) {
+		std::cerr << "Warning: Could not send message to controller " << e.what() << std::endl;
+	}
+}
+
+void ExternalKnowledge::sendPartToClient(std::string msg) {
+	if(not socket_) startSocket(port_);
+
+	try {
+		boost::asio::write(*socket_, boost::asio::buffer(msg), boost::asio::transfer_all());
+	}
+	catch (std::exception& e) {
+		std::cerr << "Warning: Could not send message to controller " << e.what() << std::endl;
+	}
+}
+
+void ExternalKnowledge::sendModel(std::string text) {
+	std::stringstream ss;
+
+	if(!model_) {
+		ss << "{\n";
+		ss << "  \"Type\" : \"Answer\",\n";
+		ss << "  \"Step\" : " << step_ << ",\n";
+		ss << "  \"Witnesses\" : [\n";
+		text = text.substr(2, text.size());
+	}
+	ss << text;
+
+	sendPartToClient(ss.str());
+
+	model_ = true;
+}
+
+void ExternalKnowledge::sendUNSAT(int step) {
+	std::stringstream ss;
+	ss << "{\n";
+	ss << "  \"Type\" : \"Answer\",\n";
+	ss << "  \"Step\" : " << step << ",\n";
+	ss << "  \"Result\": \"UNSATISFIABLE\"\n";
+	ss << "}\n";
+
+	sendToClient(ss.str());
+}
+
+void ExternalKnowledge::sendWarning(std::string msg) {
+	std::stringstream ss;
+	ss << "{\n";
+	ss << "  \"Type\" : \"Warning\",\n";
+	ss << "  \"Step\" : " << step_ << ",\n";
+	ss << "  \"Text\": \"" << msg << "\"\n";
+	ss << "}\n";
+
+	sendToClient(ss.str());
+}
+
+void ExternalKnowledge::sendError(std::string msg) {
+	std::stringstream ss;
+	ss << "{\n";
+	ss << "  \"Type\" : \"Error\",\n";
+	ss << "  \"Step\" : " << step_ << ",\n";
+	ss << "  \"Text\": \"" << msg << "\"\n";
+	ss << "}\n";
+
+	sendToClient(ss.str());
+}
+
+bool ExternalKnowledge::addInput() {
 	// wait here for input if there is none so far and we have a model or reached bound
 	if(!new_input_ && (model_ || step_ >= bound_)) {
 		io_service_.reset();
@@ -243,6 +280,10 @@ bool ExternalKnowledge::addPrematureKnowledge() {
 	}
 
 	return added;
+}
+
+bool ExternalKnowledge::hasModel() {
+	return model_;
 }
 
 void ExternalKnowledge::setControllerStep(int step) {

@@ -68,15 +68,13 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 
 			if(solver->hasConflict())
 			{
-				ext.sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
+				ext.sendError("The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else
 			{
 				// inform controller in case there are no models within set bound
 				if(!ext.hasModel() && config.incStep >= ext.getBound()) {
-					std::stringstream s;
-					s << config.incStep;
-					ext.sendToClient("UNSAT at step "+s.str());
+					ext.sendUNSAT(config.incStep);
 				}
 				// get/receive new external input
 				ext.get();
@@ -126,13 +124,12 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 template <>
 void ClingoApp<OCLINGO>::doState(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 	using namespace Clasp;
+	ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge();
 
 	if(clingo.mode == OCLINGO && f.state() == ClaspFacade::state_solve) {
-/*		if(e == ClaspFacade::event_state_enter) {
-			std::cerr << "  SOLVING STARTED" << std::endl;
-		} else*/ if(e == ClaspFacade::event_state_exit) {
-			if(dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().hasModel()) {
-				std::cerr << "\n  ],\n  \"Result\": \"SATISFIABLE\"\n}" << std::endl;
+		if(e == ClaspFacade::event_state_exit) {
+			if(ext.hasModel()) {
+				ext.sendToClient("\n  ],\n  \"Result\": \"SATISFIABLE\"\n}");
 			}
 		}
 	}
@@ -148,21 +145,19 @@ void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade
 	if(clingo.mode == OCLINGO && e == ClaspFacade::event_model)
 	{
 		// TODO unified model output (also minimize + consequences)
-		std::string model = "";
-		std::string new_model = "    {\n      \"Value\" : [\n        ";
+		std::string model = ",\n    {\n      \"Value\" : [\n        ";
 		assert(solver_.strategies().symTab.get());
 		const AtomIndex& index = *solver_.strategies().symTab;
 		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it)
 		{
 			if (solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty())
 			{
-				model += it->second.name + " ";
-				new_model += "\"" + it->second.name + "\", ";
+				model += "\"" + it->second.name + "\", ";
 			}
 		}
-		new_model = new_model.substr(0, new_model.size()-2);
-		new_model += "\n      ]\n    }\n";
+		model = model.substr(0, model.size()-2);
+		model += "\n      ]\n    }";
 
-		dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().sendModel(model, new_model);
+		dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge().sendModel(model);
 	}
 }

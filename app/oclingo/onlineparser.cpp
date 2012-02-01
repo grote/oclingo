@@ -159,10 +159,10 @@ void OnlineParser::add(Type type, uint32_t n) {
 void OnlineParser::setStep(int step, int bound) {
 	if(got_step_) {
 		std::stringstream warning_msg;
-		warning_msg << "Warning: New '#step " << step << ".' without prior '#endstep.' encountered. Ignoring....\n";
+		warning_msg << "New '#step " << step << ".' without prior '#endstep.' encountered. Ignoring....\n";
 
-		std::cerr << warning_msg.str() << std::endl;
-		output_->getExternalKnowledge().sendToClient(warning_msg.str());
+		std::cerr << "Warning: " << warning_msg.str() << std::endl;
+		output_->getExternalKnowledge().sendWarning(warning_msg.str());
 	} else {
 		got_step_ = true;
 		output_->getExternalKnowledge().setControllerStep(step);
