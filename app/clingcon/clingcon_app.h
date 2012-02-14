@@ -285,8 +285,12 @@ void ClingconApp<M>::printVersion() const
 
 template <CSPMode M>
 std::string ClingconApp<M>::getVersion() const {
-	std::string r(GRINGO_VERSION);
-	r += " (clasp ";
+        std::string r;
+        r += " clingcon ";
+        r += CLINGCON_VERSION;
+        r += " (gringo ";
+        r += GRINGO_VERSION;
+        r += ") (clasp ";
 	r += CLASP_VERSION;
 	r += ")";
 	return r;
