@@ -41,9 +41,9 @@ parser.set_defaults(
 def main():
 	c = oclingo.Controller(opt.port, opt.host)
 	c.connect()
-	c.send("#step 1.\ne(1).\n#endstep.\n")
-#	print c.getJSON()
-	print c.getList()
+	c.send("#step 1.\ne(1).\n#endstep.\n#stop.\n")
+	result = c.recv()
+	print oclingo.formatList(result)
 	c.disconnect()
 	return 0
 
