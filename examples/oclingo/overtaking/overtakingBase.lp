@@ -43,6 +43,7 @@ state(P,      C,S) :- state(P,C,T), P != infront,
 #external at(P,C,t) : position(P) : car(C).
 
 % revoke observations at time points below step number
+% FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
 #forget t : t-1.
 
 % observed position implies baseat at corresponding time circle position to hold
