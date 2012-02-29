@@ -33,6 +33,6 @@ account(U,open)   :- user(U), not account(U,closed).
 %%%%%%%%%%%%%%%%%%%%%
 
 #hide.
-#show access/3.  % display user accesses in window
+#show access/3.  % display user accesses
 #show account/2. % and the states of user accounts
 % #show denied/3.  % and denied user access counters
