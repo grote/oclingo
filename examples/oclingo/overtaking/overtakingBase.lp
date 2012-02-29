@@ -71,5 +71,3 @@ state(P,      C,S) :- state(P,C,T), P != infront,
 #hide.
 #show at/3.    % display observed positions in window
 #show state/3. % and progress of overtaking maneuvers
-% #show state(infront,_,_). % currently oclingo complains about anonymous variables
-% #show state(infront,C,S). % and completed overtakings % this gives internal error
