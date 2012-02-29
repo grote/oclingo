@@ -47,7 +47,7 @@ account(U,open)   :- user(U), not account(U,closed). % or open otherwise
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
 % FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
-#forget t : t-2*offset-1.
+% #forget t : t-2*offset-1.
 
 % denied user access implies baseaccess at corresponding time circle position to hold
 :- user(U), access(U,denied,T), not baseaccess(U,denied,T #mod modulo), T := t+offset.

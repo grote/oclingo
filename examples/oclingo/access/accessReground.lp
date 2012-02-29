@@ -38,7 +38,7 @@ signal(denied;granted). % some signals
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
 % FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
-#forget t : t-2*offset-1.
+% #forget t : t-2*offset-1.
 
 
 %%%%%%%%%%%%
