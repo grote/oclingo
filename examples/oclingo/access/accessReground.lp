@@ -37,6 +37,7 @@ signal(denied;granted). % some signals
 #external access(U,S,t+offset) : user(U) : signal(S).
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
+% FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
 #forget t : t-2*offset-1.
 
 

@@ -285,8 +285,12 @@ void ClingconApp<M>::printVersion() const
 
 template <CSPMode M>
 std::string ClingconApp<M>::getVersion() const {
-	std::string r(GRINGO_VERSION);
-	r += " (clasp ";
+        std::string r;
+        r += " clingcon ";
+        r += CLINGCON_VERSION;
+        r += " (gringo ";
+        r += GRINGO_VERSION;
+        r += ") (clasp ";
 	r += CLASP_VERSION;
 	r += ")";
 	return r;
@@ -529,7 +533,7 @@ void ClingconApp<M>::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 
                     const Clingcon::CSPSolver::ConstraintMap& m = cspsolver_->getConstraints();
                     for(Clingcon::CSPSolver::ConstraintMap::const_iterator i = m.begin(); i != m.end(); ++i)
-                        solver_.setFrozen(f.api()->getLiteral(i->first).var(),true);
+                        solver_.setFrozen(f.api()->getLiteral(i->first.index()).var(),true);
                     //über csp atom liste rüber gehen und solver atoms setFrozen(var,true)
                             //programbuilder hat getLiteral, liefert literal im solver-> var
                     cspsolver_->setSolver(&solver_);

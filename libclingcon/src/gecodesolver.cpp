@@ -82,6 +82,10 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
 
     optAll=optAllPar;
 
+    ///////////////////////
+    //// Currently the solver relies on the fact that i have no equivalences/antivalences between constraint literals
+    ///////////////////////
+
     if(ICLString == "bound") ICL = ICL_BND;
     if(ICLString == "domain") ICL = ICL_DOM;
     if(ICLString == "default") ICL = ICL_DEF;
@@ -120,16 +124,16 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
     if(branchValString == "values-max") branchVal = INT_VALUES_MAX;
 
     if (reduceReason == "simple")         reduceReason_ = SIMPLE;
-    if (reduceReason == "linear")         reduceReason_ = LINEAR;
-    if (reduceReason == "linear-fwd")     reduceReason_ = LINEAR_FWD;
+    if (reduceReason == "backward")       reduceReason_ = LINEAR;
+    if (reduceReason == "forward")        reduceReason_ = LINEAR_FWD;
     if (reduceReason == "cc")             reduceReason_ = CC;
     if (reduceReason == "range")          reduceReason_ = RANGE;
     if (reduceReason == "ccrange")        reduceReason_ = CCRANGE;
 
 
     if (reduceConflict == "simple")       reduceConflict_ = SIMPLE;
-    if (reduceConflict == "linear")       reduceConflict_ = LINEAR;
-    if (reduceConflict == "linear-fwd")   reduceConflict_ = LINEAR_FWD;
+    if (reduceConflict == "backward")     reduceConflict_ = LINEAR;
+    if (reduceConflict == "forward")      reduceConflict_ = LINEAR_FWD;
     if (reduceConflict == "cc")           reduceConflict_ = CC;
     if (reduceConflict == "range")        reduceConflict_ = RANGE;
     if (reduceConflict == "ccrange")      reduceConflict_ = CCRANGE;
@@ -164,10 +168,10 @@ void GecodeSolver::reset()
     propQueue_.clear();
 }
 
-void GecodeSolver::addVarToIndex(unsigned int var, unsigned int index)
+void GecodeSolver::addLitToIndex(Clasp::Literal lit, unsigned int index)
 {
-    varToIndex_[var] = index;
-    indexToVar_[index] = var;
+    litToIndex_[lit] = index;
+    indexToLit_[index] = lit;
 }
 
 unsigned int GecodeSolver::currentDL() const
@@ -218,9 +222,9 @@ bool GecodeSolver::initialize()
     while(i != constraints_.end())
     {
 
-        begin = s_->strategies().symTab->lower_bound(begin, i->first);
+        begin = s_->strategies().symTab->lower_bound(begin, i->first.index());
 
-        int newVar = begin->second.lit.var();
+        Clasp::Literal newLit = begin->second.lit;
 
         // convert uids to solver literal ids
 
@@ -240,23 +244,23 @@ bool GecodeSolver::initialize()
         i->second->registerAllVariables(this);
 
         //guess domains of already decided constraints
-        if (s_->isTrue(posLit(newVar)))
+        if (s_->isTrue(newLit))
         {
             guessDomains(i->second, true);
         }
         else
-        if (s_->isFalse(posLit(newVar)))
+        if (s_->isFalse(newLit))
         {
             guessDomains(i->second, false);
         }
         else
         {
-            s_->addWatch(posLit(newVar), clingconPropagator_,0);
-            s_->addWatch(negLit(newVar), clingconPropagator_,0);
+            s_->addWatch(newLit, clingconPropagator_,0);
+            s_->addWatch(~newLit, clingconPropagator_,0);
         }
 
         //newConstraints.insert(std::make_pair(newVar, i->second));
-        newConstraints.insert(newVar, constraints_.release(i).release());
+        newConstraints.insert(newLit, constraints_.release(i).release());
         i = constraints_.begin();
 
     }
@@ -324,9 +328,9 @@ bool GecodeSolver::initialize()
             {
                 //initial lookahead
 
-                for (std::map<unsigned int, unsigned int>::const_iterator i = varToIndex_.begin(); i != varToIndex_.end(); ++i)
+                for (std::map<Clasp::Literal, unsigned int>::const_iterator i = litToIndex_.begin(); i != litToIndex_.end(); ++i)
                 {
-                    Clasp::Literal test(i->first,false);
+                    Clasp::Literal test(i->first);
 
                     for (unsigned int both = 0; both < 2; ++both)
                     {
@@ -398,7 +402,7 @@ bool GecodeSolver::initialize()
                              }
                          }
                         delete tester;
-                        test=Literal(i->first,true);
+                        test=~test;
                     }
                 }
             }
@@ -788,14 +792,19 @@ void GecodeSolver::setConflict(Clasp::LitVec conflict, bool last, bool shrink)
 }
 
 
-unsigned int GecodeSolver::varToIndex(unsigned int var)
+std::pair<unsigned int,bool> GecodeSolver::litToIndex(Clasp::Literal lit)
 {
-    return varToIndex_[var];
+    //assert(litToIndex_.find(lit)!= litToIndex_.end());
+    // this function will return the index only depending on the variable
+    std::map<Clasp::Literal, unsigned int>::iterator f = litToIndex_.find(lit);
+    return std::pair<unsigned int,bool>(f==litToIndex_.end() ? litToIndex_[~lit] : f->second, f!=litToIndex_.end());
+    //return litToIndex_[lit];
 }
 
-unsigned int GecodeSolver::indexToVar(unsigned int index)
+Clasp::Literal GecodeSolver::indexToLit(unsigned int index)
 {
-    return indexToVar_[index];
+    assert(indexToLit_.find(index)!= indexToLit_.end());
+    return indexToLit_[index];
 }
 
 
@@ -843,15 +852,13 @@ bool GecodeSolver::propagate()
     {
         // add if free
         // conflict if contradicting
-        GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(i->var());
+        GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(*i);
         if ( constr == SearchSpace::BFREE)
         {
             clits.push_back(*i);
             //newKnowledge = true;
         }
-        if (( constr == SearchSpace::BFALSE && i->sign()==false ) ||
-                ( constr == SearchSpace::BTRUE  && i->sign()==true  )
-                )
+        if (constr == SearchSpace::BFALSE)
         {
             clits.clear();
             clits.assign(assignment_.begin(), assignment_.begin()+propagated_/*assLength_[spaces_.size()-1]*/);
@@ -1495,12 +1502,13 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     int numReified = 0;
     for(GecodeSolver::ConstraintMap::iterator i = constraints.begin(); i != constraints.end(); ++i)
     {
-        if (csps_->getSolver()->value(i->first) == value_free)
+        if (csps_->getSolver()->value(i->first.var()) == value_free)
             ++numReified;
         else
         {
             //std::cout << "Constraint " << csps_->num2name(i->first) << " is static" << std::endl;
-            generateConstraint(i->second,csps_->getSolver()->value(i->first) == value_true);
+            //generateConstraint(i->second,csps_->getSolver()->value(i->first) == value_true);
+            generateConstraint(i->second,csps_->getSolver()->isTrue(i->first) == value_true);
         }
     }
 
@@ -1509,11 +1517,13 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     unsigned int counter = 0;
     for(GecodeSolver::ConstraintMap::iterator i = constraints.begin(); i != constraints.end(); ++i)
     {
-         if (csps_->getSolver()->value(i->first) == value_free)
+        if (csps_->getSolver()->value(i->first.var()) == value_free)
          {
-             csps_->addVarToIndex(i->first, counter);
+             csps_->addLitToIndex(i->first, counter);
              generateConstraint(i->second, counter);
-             reifwait(*this,csps_,b_[counter], csps_->indexToVar(counter), ICL);
+             // be very careful here, we use vars to refer to constraints, but constraints are literals
+             // and maybe negated literals due to equality preprocessing! Currently this is not the case
+             reifwait(*this,csps_,b_[counter], csps_->indexToLit(counter).var(), ICL);
              ++counter;
          }
     }
@@ -1632,8 +1642,10 @@ void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec::const_iterator& l
 {
     for (Clasp::LitVec::const_iterator i = lvstart; i < lvend; ++i)
     {
-        Int::BoolView bv(b_[csps_->varToIndex(i->var())]);
-        if (!i->sign())
+        std::pair<unsigned int, bool> index(csps_->litToIndex(Clasp::Literal::fromIndex(i->index())));
+
+        Int::BoolView bv(b_[index.first]);
+        if (index.second)
         {
             if(Gecode::Int::ME_BOOL_FAILED == bv.one(*this))
             {
@@ -1654,8 +1666,10 @@ void GecodeSolver::SearchSpace::propagate(const Clasp::LitVec::const_iterator& l
 
 void GecodeSolver::SearchSpace::propagate(const Clasp::Literal& i)
 {
-    Int::BoolView bv(b_[csps_->varToIndex(i.var())]);
-    if (!i.sign())
+    std::pair<unsigned int, bool> index(csps_->litToIndex(Clasp::Literal::fromIndex(i.index())));
+
+    Int::BoolView bv(b_[index.first]);
+    if (index.second)
     {
         if(Gecode::Int::ME_BOOL_FAILED == bv.one(*this))
         {
@@ -1684,13 +1698,14 @@ void GecodeSolver::SearchSpace::print(const std::vector<std::string>& variables)
     }
 }
 
-GecodeSolver::SearchSpace::Value GecodeSolver::SearchSpace::getValueOfConstraint(const Clasp::Var& i)
+GecodeSolver::SearchSpace::Value GecodeSolver::SearchSpace::getValueOfConstraint(const Clasp::Literal& i)
 {
-    Int::BoolView bv(b_[csps_->varToIndex(i)]);
+    std::pair<unsigned int, bool> index(csps_->litToIndex(Clasp::Literal::fromIndex(i.index())));
+    Int::BoolView bv(b_[index.first]);
     if (bv.status() == Int::BoolVarImp::NONE)
         return BFREE;
     else
-	if (bv.status() == Int::BoolVarImp::ONE)
+        if ((bv.status() == Int::BoolVarImp::ONE && index.second)  ||  (bv.status() == Int::BoolVarImp::ZERO && !index.second))
             return BTRUE;
 	else
             return BFALSE;

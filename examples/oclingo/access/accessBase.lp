@@ -43,9 +43,10 @@ account(U,open)   :- user(U), not account(U,closed). % or open otherwise
 #cumulative t.
 
 % expect user accesses at positive time points up to "offset" time beyond step number
-#external access(U,S,t+offset) : user(U) : signal(S) : 0 < t+offset.
+#external access(U,S,t+offset) : user(U) : signal(S).
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
+% FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
 #forget t : t-2*offset-1.
 
 % denied user access implies baseaccess at corresponding time circle position to hold

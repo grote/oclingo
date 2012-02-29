@@ -87,7 +87,7 @@ namespace Clingcon {
 
         // is called when lit is derived via propagation (also by setting it manually?)
         void newlyDerived(Clasp::Literal lit);
-        void addVarToIndex(unsigned int var, unsigned int index);
+        void addLitToIndex(Clasp::Literal lit, unsigned int index);
     private:
 
 
@@ -153,10 +153,11 @@ namespace Clingcon {
         // that have been derived sine last propagation
         Clasp::LitVec derivedLits_;
 
-        std::map<unsigned int, unsigned int> varToIndex_; // translates from clasp Clasp::Literal::Var to boolean csp variable index for reified constraints
-        std::map<unsigned int, unsigned int> indexToVar_; // vice versa
-        unsigned int varToIndex(unsigned int var);
-        unsigned int indexToVar(unsigned int index);
+        std::map<Clasp::Literal, unsigned int> litToIndex_; // translates from clasp Clasp::Literal::Var to boolean csp variable index for reified constraints
+        std::map<unsigned int, Clasp::Literal> indexToLit_; // vice versa
+        //return the index and true if it has been found as is, false if the reverse literal has been stored
+        std::pair<unsigned int,bool> litToIndex(Clasp::Literal lit);
+        Clasp::Literal indexToLit(unsigned int index);
 
         std::vector<SearchSpace*> spaces_; // spaces_[dl_[Y]] is the fully propagated space of decicion level dl[Y]
         SearchSpace* currentSpace_; // the current space
@@ -269,7 +270,7 @@ namespace Clingcon {
             //	bool propagate(const Clasp::Literal lv, Clasp::Solver* s);
             void print(const std::vector<std::string>& variables) const;
             //Clasp::LitVec getAssignment(const Clasp::LitVec& as);
-            Value getValueOfConstraint(const Clasp::Var& i);
+            Value getValueOfConstraint(const Clasp::Literal& i);
             bool updateOptValues(); // update opt values with static data from GecodeSolver
 
             // delete litToVar and all shared memory between the spaces

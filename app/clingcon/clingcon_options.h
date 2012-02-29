@@ -124,8 +124,8 @@ struct ClingconOptions
         {
             std::string temp = toLower(in);
             if      (temp == "simple")            { out = temp; return true; }
-            else if (temp == "linear")            { out = temp; return true; }
-            else if (temp == "linear-fwd")        { out = temp; return true; }
+            else if (temp == "backward")          { out = temp; return true; }
+            else if (temp == "forward")           { out = temp; return true; }
             else if (temp == "cc")                { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
             else if (temp == "ccrange")           { out = temp; return true; }
@@ -137,8 +137,8 @@ struct ClingconOptions
         {
             std::string temp = toLower(in);
             if      (temp == "simple")            { out = temp; return true; }
-            else if (temp == "linear")            { out = temp; return true; }
-            else if (temp == "linear-fwd")        { out = temp; return true; }
+            else if (temp == "backward")          { out = temp; return true; }
+            else if (temp == "forward")           { out = temp; return true; }
             else if (temp == "cc")                { out = temp; return true; }
             else if (temp == "range")             { out = temp; return true; }
             else if (temp == "ccrange")           { out = temp; return true; }
@@ -301,16 +301,16 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
         csp.addOptions()
                 ("csp-reduce-reason", storeTo(cspReason)->defaultValue("simple")->parser(ClingconOptions::checkReduceReason), "Determine the method to reduce the reasons.\n"
                          "      simple         : Do nothin (default)\n"
-                         "      linear         : Do a linear IRS check backward\n"
-                         "      linear-fwd     : Do a linear IRS check forward\n"
+                         "      backward       : Do a linear IRS check backward\n"
+                         "      forward        : Do a linear IRS check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
                          "      cc             : Do an IRS check using the variable dependency tree\n"
                          "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"
                 )
                 ("csp-reduce-conflict", storeTo(cspConflict)->defaultValue("simple")->parser(ClingconOptions::checkReduceConflict), "Determine the method to reduce the conflicts.\n"
                          "      simple         : Do nothin (default)\n"
-                         "      linear         : Do a linear IIS check backward\n"
-                         "      linear-fwd     : Do a linear IIS check forward\n"
+                         "      backward       : Do a linear IIS check backward\n"
+                         "      forward        : Do a linear IIS check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
                          "      cc             : Do an IIS check using the variable dependency tree\n"
                          "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"

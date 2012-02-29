@@ -2,6 +2,9 @@
 
 #include <gringo/gringo.h>
 
+
+#define CLINGCON_VERSION "2.0.0-beta"
+
 namespace Clingcon
 {
 	class ConstraintTerm;

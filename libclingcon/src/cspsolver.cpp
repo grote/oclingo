@@ -67,7 +67,10 @@ const std::vector<std::string>&  CSPSolver::getVariables() const
 void CSPSolver::addConstraint(Constraint* c, int uid)
 {
     //constraints_[uid] = c;//new Clingcon::Constraint(c);
-    constraints_.insert(uid,c);
+    //constraints_.insert(std::make_pair(Clasp::Literal::fromIndex((unsigned int)(uid)),c));
+    //constraints_[Clasp::Literal::fromIndex((unsigned int)(uid))] = c;
+    Clasp::Literal foo(Clasp::Literal::fromIndex((unsigned int)(uid)));
+    constraints_.insert(foo,c);
 
 }
 

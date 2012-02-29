@@ -85,6 +85,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in linear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -117,6 +118,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in fwdlinear reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -147,6 +149,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -177,6 +180,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in scc reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -189,7 +193,7 @@ namespace Clingcon
         unsigned int  props_;
         Timer         t_;
         typedef boost::dynamic_bitset<unsigned int> VarSet;
-        std::map<unsigned int,VarSet> varSets_;
+        std::map<Clasp::Var,VarSet> varSets_;
         unsigned int numCalls_;
         unsigned int sumLength_;
         unsigned int oldLength_;
@@ -208,6 +212,7 @@ namespace Clingcon
         {
             std::cout << props_ << " copys in scc-range reasons in " << t_.total() << std::endl;
             std::cout << numCalls_ << " calls with average length of " << float(sumLength_)/numCalls_ << std::endl;
+            std::cout << numCalls_ << " same with similar old length " << float(oldLength_)/numCalls_ << std::endl;
             std::cout << float(props_)/numCalls_ << " propsR per call" << std::endl;
             std::cout << "ReducedToR " << (float(sumLength_)/float(oldLength_))*100 << " %" << std::endl;
             std::cout << "AnalyzedR " << (float(props_)/float(oldLength_))*100 << " %" << std::endl;
@@ -220,7 +225,7 @@ namespace Clingcon
         unsigned int  props_;
         Timer         t_;
         typedef boost::dynamic_bitset<unsigned int> VarSet;
-        std::map<unsigned int,VarSet> varSets_;
+        std::map<Clasp::Var,VarSet> varSets_;
         unsigned int numCalls_;
         unsigned int sumLength_;
         unsigned int oldLength_;

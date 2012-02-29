@@ -13,16 +13,16 @@ DONE
 - disabled lookahead and --no-lookback
 - support for  csp-opt-val and csp-opt-all
 - optional initial lookahead of gecode constraints
-- dynamic setting of csp-prop-delay, only do csp propagation every n steps
+- csp-prop-delay: only do csp propagation every n steps
 - added Irreducible Infeasible Set algorithms for conflicts and reasons (--csp-reduce-conflict --csp-reduce-reason)
 
 
 TODO
 
+- use advisors instead of reifwait, should be faster
 - test if recomputation instead of trailing can be used to save copying spaces !
 - disable propQueue on force
 - lexical ordering constraint for minimization ?
-- remove memory leaks
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)
 - newest gecode version
 - write Makefile
@@ -30,6 +30,7 @@ TODO
 - add more global aggregates
 - decide between search heuristic! (DFS, BAB)
 - add statistics from Gecode
+- dynamic setting of csp-prop-delay
 	
 - order constraints to the number of variables to speed up initial propagation
 - force statt setconflict benutzen, spart Codepath!?
