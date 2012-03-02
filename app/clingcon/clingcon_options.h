@@ -301,18 +301,18 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
         csp.addOptions()
                 ("csp-reduce-reason", storeTo(cspReason)->defaultValue("simple")->parser(ClingconOptions::checkReduceReason), "Determine the method to reduce the reasons.\n"
                          "      simple         : Do nothin (default)\n"
-                         "      backward       : Do a linear IRS check backward\n"
-                         "      forward        : Do a linear IRS check forward\n"
+                         "      backward       : Do a linear check backward\n"
+                         "      forward        : Do a linear check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
-                         "      cc             : Do an IRS check using the variable dependency tree\n"
+                         "      cc             : Do a check using the variable dependency tree\n"
                          "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"
                 )
                 ("csp-reduce-conflict", storeTo(cspConflict)->defaultValue("simple")->parser(ClingconOptions::checkReduceConflict), "Determine the method to reduce the conflicts.\n"
                          "      simple         : Do nothin (default)\n"
-                         "      backward       : Do a linear IIS check backward\n"
-                         "      forward        : Do a linear IIS check forward\n"
+                         "      backward       : Do a linear check backward\n"
+                         "      forward        : Do a linear check forward\n"
                          "      range          : Take the first range of fitting literals (backwards)\n"
-                         "      cc             : Do an IIS check using the variable dependency tree\n"
+                         "      cc             : Do a check using the variable dependency tree\n"
                          "      ccrange        : Take the first range of fitting literals connected by variables (backwards)\n"
                 );
 
