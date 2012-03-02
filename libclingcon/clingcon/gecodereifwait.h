@@ -211,7 +211,7 @@ namespace Clingcon {
         return sizeof(*this);
     }
 
-
+*/
 
 }
-*/
+
