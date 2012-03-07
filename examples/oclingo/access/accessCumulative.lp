@@ -37,7 +37,7 @@ signal(denied;granted). % some signals
 
 % revoke user accesses before time point t-offset (atoms declared at step t-2*offest)
 % FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
-#forget t : t-2*offset-1.
+% #forget t : t-2*offset-1.
 
 % count consecutive denied user accesses up to a "denial" threshold and forward touch
 denied(U,1,     t) :- access(U,denied,t+offset), user(U).

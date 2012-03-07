@@ -1,0 +1,63 @@
+% Overtaking red car
+
+#step 1.
+#volatile : 6.
+at(behind,red,1).
+#endstep.
+
+#step 2.
+#forget 1.
+#volatile : 6.
+at(nextto,red,2).
+#endstep.
+
+#step 3.
+#forget 2.
+#volatile : 6.
+at(nextto,red,3).
+#endstep.
+
+#step 4.
+#forget 3.
+#volatile : 6.
+at(infront,red,4).
+#endstep.
+
+% Staying in front of red car and overtaking green car
+
+#step 5.
+#forget 4.
+#volatile : 6.
+at(nextto,red,5).
+#endstep.
+
+#step 6.
+#forget 5.
+#volatile : 6.
+at(infront,red,6).
+at(behind,green,6).
+#endstep.
+
+#step 7.
+#forget 6.
+#endstep.
+
+#step 8.
+#forget 7.
+#volatile : 6.
+at(nextto,green,8).
+#endstep.
+
+#step 9.
+#forget 8.
+#volatile : 6.
+at(infront,green,9).
+#endstep.
+
+#step 10.
+#forget 9.
+#volatile : 6.
+at(infront,green,10).
+#endstep.
+
+#stop.

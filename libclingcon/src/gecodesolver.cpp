@@ -1515,6 +1515,9 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
     //TODO: I think the BoolVarArray is now of dynamic size, so i could use this feature to save a loop
     b_ = BoolVarArray(*this,numReified,0,1);
     unsigned int counter = 0;
+
+    Waitress* w = new (*this) Waitress(*this);
+
     for(GecodeSolver::ConstraintMap::iterator i = constraints.begin(); i != constraints.end(); ++i)
     {
         if (csps_->getSolver()->value(i->first.var()) == value_free)
@@ -1523,7 +1526,8 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
              generateConstraint(i->second, counter);
              // be very careful here, we use vars to refer to constraints, but constraints are literals
              // and maybe negated literals due to equality preprocessing! Currently this is not the case
-             reifwait(*this,csps_,b_[counter], csps_->indexToLit(counter).var(), ICL);
+             w->init(*this,csps_, Int::BoolView(b_[counter]), csps_->indexToLit(counter).var());
+             //reifwait(*this,csps_,b_[counter], csps_->indexToLit(counter).var(), ICL);
              ++counter;
          }
     }

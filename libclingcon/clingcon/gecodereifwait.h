@@ -23,6 +23,106 @@
 using namespace Gecode;
 namespace Clingcon {
 
+
+    class Waitress : public Propagator {
+    protected:
+        static GecodeSolver* solver;
+        class Watcher  : public Advisor {
+        public:
+            Int::BoolView b_;
+            Clasp::Var var_;
+            Watcher(Space& home, Propagator& p,
+                    Council<Watcher>& c, Int::BoolView b, Clasp::Var var)
+                : Advisor(home,p,c), b_(b), var_(var)
+            {
+                b_.subscribe(home,*this);
+                //print();
+            }
+
+            Watcher(Space& home, bool share, Watcher& w)
+                : Advisor(home,share,w), var_(w.var_)
+            {
+                b_.update(home,share,w.b_);
+            }
+
+            void print()
+            {
+                std::cout << "Var: " << var_ << std::endl;
+            }
+
+            void dispose(Space& home, Council<Watcher>& c)
+            {
+                b_.cancel(home,*this);
+                Advisor::dispose(home,c);
+            }
+        };
+        Council<Watcher> c_;
+    public:
+        Waitress(Space& home) : Propagator(home), c_(home)
+        {
+            home.notice(*this,AP_DISPOSE);
+        }
+
+        Waitress(Space& home, bool shared, Waitress& p)
+            : Propagator(home,shared,p)
+        {
+            c_.update(home,shared,p.c_);
+        }
+
+        void init(Space& home, GecodeSolver* csps, Int::BoolView b, Clasp::Var var)
+        {
+            solver = csps;
+            if (b.status() == Int::BoolVarImp::ONE)
+                solver->newlyDerived(Clasp::Literal(var, false));
+            else
+            if (b.status() == Int::BoolVarImp::ZERO)
+                solver->newlyDerived(Clasp::Literal(var, true));
+            else
+                (void) new (home) Watcher(home,*this,c_,b,var);
+        }
+
+        /// Perform copying during cloning
+        virtual  Actor* copy(Space& home, bool share) {
+            return new (home) Waitress(home,share,*this);
+        }
+
+        /// Const function (defined as low unary)
+        PropCost cost(const Space&, const ModEventDelta&) const {
+            return PropCost::unary(PropCost::LO);
+        }
+
+        virtual size_t dispose(Space &home) {
+            home.ignore(*this,AP_DISPOSE);
+            c_.dispose(home);
+            (void) Propagator::dispose(home);
+            return sizeof(*this);
+        }
+
+        virtual ExecStatus advise(Space &home, Advisor &a, const Delta &d)
+        {
+            //if (x.status() == Int::BoolVarImp::ONE)
+            //static_cast<Watcher&>(a).print();
+            if(Int::BoolView::one(d))
+                solver->newlyDerived(Clasp::Literal(static_cast<Watcher&>(a).var_, false));
+            else
+            {
+                assert(Int::BoolView::zero(d));
+                solver->newlyDerived(Clasp::Literal(static_cast<Watcher&>(a).var_, true));
+            }
+            //return ES_NOFIX;
+            //return home.ES_NOFIX_DISPOSE(c_,static_cast<Watcher&>(a));
+            return home.ES_FIX_DISPOSE(c_,static_cast<Watcher&>(a));
+        }
+
+        virtual ExecStatus propagate(Space &home, const ModEventDelta &med)
+        {
+            return ES_FIX;
+        }
+
+    };
+
+    GecodeSolver* Waitress::solver = 0;
+/*
     class ReifWait : public Propagator {
     protected:
       /// View to wait for becoming assigned
@@ -111,7 +211,7 @@ namespace Clingcon {
         return sizeof(*this);
     }
 
-
+*/
 
 }
 

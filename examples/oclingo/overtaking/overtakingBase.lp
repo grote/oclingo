@@ -44,7 +44,7 @@ state(P,      C,S) :- state(P,C,T), P != infront,
 
 % revoke observations at time points below step number
 % FIXME next line may trigger (yet) unresolved bug ... uncomment if needed
-#forget t : t-1.
+% #forget t : t-1.
 
 % observed position implies baseat at corresponding time circle position to hold
 :- at(P,C,t), not baseat(P,C,t #mod modulo).
@@ -71,5 +71,3 @@ state(P,      C,S) :- state(P,C,T), P != infront,
 #hide.
 #show at/3.    % display observed positions in window
 #show state/3. % and progress of overtaking maneuvers
-% #show state(infront,_,_). % currently oclingo complains about anonymous variables
-% #show state(infront,C,S). % and completed overtakings % this gives internal error
