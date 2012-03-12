@@ -1,0 +1,217 @@
+Got input:
+#step 1.
+#endstep.
+
+Got input:
+#step 11.
+#forget 10.
+#volatile : 6.
+at(infront,red,11).
+#endstep.
+
+Answer: 1
+  11.  at(infront,red,11)  
+Got input:
+#step 12.
+#forget 11.
+#endstep.
+
+Answer: 1
+  11.  at(infront,red,11)  
+Got input:
+#step 15.
+#forget 14.
+#volatile : 6.
+at(nextto,red,15).
+#endstep.
+
+Answer: 1
+  11.  at(infront,red,11)  
+  15.  at(nextto,red,15)   
+Got input:
+#step 16.
+#forget 15.
+#volatile : 6.
+at(behind,red,16).
+#endstep.
+
+Answer: 1
+  4.  state(behind,red,4)  
+  11.  at(infront,red,11)   
+  15.  at(nextto,red,15)    
+  16.  at(behind,red,16)    
+Got input:
+#step 17.
+#forget 16.
+#endstep.
+
+Answer: 1
+  4.  state(behind,red,4)  
+  5.  state(behind,red,5)  
+  15.  at(nextto,red,15)    
+  16.  at(behind,red,16)    
+Got input:
+#step 18.
+#forget 17.
+#volatile : 6.
+at(nextto,red,18).
+#endstep.
+
+Answer: 1
+  0.  state(nextto,red,0)  
+  4.  state(behind,red,4)  
+  5.  state(behind,red,5)  
+  15.  at(nextto,red,15)    
+  16.  at(behind,red,16)    
+  18.  at(nextto,red,18)    
+Got input:
+#step 19.
+#forget 18.
+#volatile : 6.
+at(nextto,red,19).
+#endstep.
+
+Answer: 1
+  0.  state(nextto,red,0)  
+  1.  state(nextto,red,1)  
+  4.  state(behind,red,4)  
+  5.  state(behind,red,5)  
+  15.  at(nextto,red,15)    
+  16.  at(behind,red,16)    
+  18.  at(nextto,red,18)    
+  19.  at(nextto,red,19)    
+Got input:
+#step 20.
+#forget 19.
+#volatile : 6.
+at(infront,red,20).
+#endstep.
+
+Answer: 1
+   0.  state(nextto,red,0)   
+   1.  state(nextto,red,1)   
+   2.  state(infront,red,2)  
+   4.  state(behind,red,4)   
+   5.  state(behind,red,5)   
+  15.  at(nextto,red,15)     
+  16.  at(behind,red,16)     
+  18.  at(nextto,red,18)     
+  19.  at(nextto,red,19)     
+  20.  at(infront,red,20)    
+Got input:
+#step 21.
+#forget 20.
+#endstep.
+
+Answer: 1
+  0.  state(nextto,red,0)  
+  1.  state(nextto,red,1)  
+  4.  state(behind,red,4)  
+  5.  state(behind,red,5)  
+  16.  at(behind,red,16)    
+  18.  at(nextto,red,18)    
+  19.  at(nextto,red,19)    
+  20.  at(infront,red,20)   
+Got input:
+#step 25.
+#forget 24.
+#volatile : 6.
+at(behind,green,25).
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)  
+  20.  at(infront,red,20)     
+  25.  at(behind,green,25)    
+Got input:
+#step 26.
+#forget 25.
+#volatile : 6.
+at(behind,green,26).
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)  
+  2.  state(behind,green,2)  
+  25.  at(behind,green,25)    
+  26.  at(behind,green,26)    
+Got input:
+#step 27.
+#forget 26.
+#volatile : 6.
+at(nextto,green,27).
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)  
+  2.  state(behind,green,2)  
+  3.  state(nextto,green,3)  
+  25.  at(behind,green,25)    
+  26.  at(behind,green,26)    
+  27.  at(nextto,green,27)    
+Got input:
+#step 28.
+#forget 27.
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)  
+  2.  state(behind,green,2)  
+  3.  state(nextto,green,3)  
+  4.  state(nextto,green,4)  
+  25.  at(behind,green,25)    
+  26.  at(behind,green,26)    
+  27.  at(nextto,green,27)    
+Got input:
+#step 29.
+#forget 28.
+#volatile : 6.
+at(infront,green,29).
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)   
+  2.  state(behind,green,2)   
+  3.  state(nextto,green,3)   
+  4.  state(nextto,green,4)   
+  5.  state(infront,green,5)  
+  25.  at(behind,green,25)     
+  26.  at(behind,green,26)     
+  27.  at(nextto,green,27)     
+  29.  at(infront,green,29)    
+Got input:
+#step 30.
+#forget 29.
+#volatile : 6.
+at(nextto,green,30).
+#endstep.
+
+Answer: 1
+  1.  state(behind,green,1)  
+  2.  state(behind,green,2)  
+  3.  state(nextto,green,3)  
+  4.  state(nextto,green,4)  
+  25.  at(behind,green,25)    
+  26.  at(behind,green,26)    
+  27.  at(nextto,green,27)    
+  29.  at(infront,green,29)   
+  30.  at(nextto,green,30)    
+Got input:
+#step 31.
+#forget 30.
+#volatile : 6.
+at(infront,green,31).
+#endstep.
+
+Answer: 1
+  2.  state(behind,green,2)  
+  3.  state(nextto,green,3)  
+  4.  state(nextto,green,4)  
+  26.  at(behind,green,26)    
+  27.  at(nextto,green,27)    
+  29.  at(infront,green,29)   
+  30.  at(nextto,green,30)    
+  31.  at(infront,green,31)   
+Got input:
+#stop.
+
