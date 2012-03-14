@@ -1,0 +1,41 @@
+Got input:
+#step 1.
+#volatile : 6.
+at(behind,red,1).
+#endstep.
+
+Answer: 1
+  1.  at(behind,red,1)  state(1,behind,red,1)  
+Got input:
+#step 2.
+#forget 1.
+#volatile : 6.
+at(nextto,red,2).
+#endstep.
+
+Answer: 1
+  1.  at(behind,red,1)  state(2,behind,red,1)  
+  2.  at(nextto,red,2)  state(2,nextto,red,2)  
+Got input:
+#step 3.
+#forget 2.
+#volatile : 6.
+at(infront,red,3).
+#endstep.
+
+Answer: 1
+  1.  at(behind,red,1)   state(3,behind,red,1)   
+  2.  at(nextto,red,2)   state(3,nextto,red,2)   
+  3.  at(infront,red,3)  state(3,infront,red,3)  
+Got input:
+#step 4.
+#forget 3.
+#endstep.
+
+Answer: 1
+  1.  at(behind,red,1)   state(4,behind,red,1)  
+  2.  at(nextto,red,2)   state(4,nextto,red,2)  
+  3.  at(infront,red,3)  
+Got input:
+#stop.
+
