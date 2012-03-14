@@ -24,7 +24,7 @@ time(T-window-2*offset+1..T) :- last(T).
 denied(U,1,  T)   :- access(U,denied,T), user(U), time(T), muldenial.
 denied(U,N+1,T+1) :- access(U,denied,T+1), denied(U,N,T), N < denial-1.
 account(U,closed) :- access(U,denied,T+1), denied(U,denial-1,T).
-account(U,closed) :- access(U,denied,_), user(U), time(T), onedenial.
+account(U,closed) :- access(U,denied,T), user(U), time(T), onedenial.
 account(U,open)   :- user(U), not account(U,closed).
 
 
