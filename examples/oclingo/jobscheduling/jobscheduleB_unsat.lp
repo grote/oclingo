@@ -41,14 +41,6 @@ scheduled(I,TA) :- basejob_start(I,TA,S).
 % no unscheduled jobs
 :- basejob_arrived(I,M,D,TA), not scheduled(I,TA).
 
-% Don't schedule in a way that there is an unscheduled job although it is possible to execute it
-%:- basejob_arrived(I,M,D,TA), not scheduled(I,TA), D { not occupied(M,T) : A:=TA..TA+max_step-1 : T:= A #mod modulo }.
-
-% Don't wait for starting the job if you don't need to
-%:- basejob_arrived(I,M,D,TA), basejob_start(I,TA,S), not occupied(M,T), succ(T,S), horizon(TA,T).
-
-% unscheduled jobs
-%unscheduled(I,TA) :- basejob_arrived(I,M,D,TA), not scheduled(I,TA).
 
 % SYNC STREAM WITH BASE PART
 
@@ -73,6 +65,5 @@ scheduled(I,TA) :- basejob_start(I,TA,S).
 #show schedule_job/4.
 #show basejob_arrived/4.
 #show basejob_start/3.
-#show unscheduled/2.
 #show basenow/1.
 #show now/1.
