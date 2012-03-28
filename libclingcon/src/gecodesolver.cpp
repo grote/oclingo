@@ -1108,19 +1108,32 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
             s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
             // this is important to first do propagation and then set assLength, because getCurrentSpace CAN
             // redo propagation
-            getCurrentSpace()->propagate(clits.begin(), clits.end());
+            for(Clasp::LitVec::const_iterator i = clits.begin(); i != clits.end(); ++i)
+            {
+                ++propagated_;
+                getCurrentSpace()->propagate(*i);
+                if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
+                    break;
+            }
             dl_.push_back(s_->decisionLevel());
             assLength_.push_back(assignment_.size());
         }
         else
         {
-            getCurrentSpace()->propagate(clits.begin(), clits.end());
+            //getCurrentSpace()->propagate(clits.begin(), clits.end());
+            for(Clasp::LitVec::const_iterator i = clits.begin(); i != clits.end(); ++i)
+            {
+                ++propagated_;
+                getCurrentSpace()->propagate(*i);
+                if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
+                    break;
+            }
         }
 
 
-        propagated_=assignment_.size();
+        //propagated_=assignment_.size();
         assLength_.back()=propagated_;
-        if (!getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
+        if (!getCurrentSpace()->failed())
         {
             //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
@@ -1198,10 +1211,19 @@ bool GecodeSolver::finishPropagation()
         //currentSpace_ = spaces_.back();
         derivedLits_.clear();
 
-        getCurrentSpace()->propagate(assignment_.begin()+start, assignment_.begin()+end);
-        if (end>propagated_)
-            propagated_=end;
-        if (!getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
+        for(size_t i = start; i < end; ++i)
+        {
+            ++propagated_;
+            getCurrentSpace()->propagate(*(assignment_.begin() + i));
+            if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
+                break;
+        }
+
+        //getCurrentSpace()->propagate(assignment_.begin()+start, assignment_.begin()+end);
+        //assert(end>propagated_);
+        //if (end>propagated_)
+        //    propagated_=end;
+        if (!getCurrentSpace()->failed())
         {
             //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
@@ -1225,7 +1247,7 @@ bool GecodeSolver::finishPropagation()
         else
         {
             //nur alles was currentSpace bisher mitbekommen hat in den Konflikt einbringen !!!
-            Clasp::LitVec ret(assignment_.begin(), assignment_.begin()+end);    // this is the old conflict
+            Clasp::LitVec ret(assignment_.begin(), assignment_.begin()+propagated_);    // this is the old conflict
             setConflict(ret, false);
             return false;
         }
