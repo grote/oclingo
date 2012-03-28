@@ -1102,49 +1102,47 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
                 SearchSpace* t = spaces_.back();
                 spaces_.back()=0;
                 spaces_.push_back(t);
-                getCurrentSpace(); //debug
+                //getCurrentSpace(); //debug
             }
             //register in solver for undo event
             s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
             // this is important to first do propagation and then set assLength, because getCurrentSpace CAN
             // redo propagation
-            for(Clasp::LitVec::const_iterator i = clits.begin(); i != clits.end(); ++i)
-            {
-                ++propagated_;
-                getCurrentSpace()->propagate(*i);
-                if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
-                    break;
-            }
+
+            if (clits.size())
+                getCurrentSpace();
             dl_.push_back(s_->decisionLevel());
             assLength_.push_back(assignment_.size());
+
         }
         else
         {
             //getCurrentSpace()->propagate(clits.begin(), clits.end());
-            for(Clasp::LitVec::const_iterator i = clits.begin(); i != clits.end(); ++i)
+        }
+
+
+
+
+        for(Clasp::LitVec::const_iterator i = clits.begin(); i != clits.end(); ++i)
+        {
+            ++propagated_;
+            getCurrentSpace()->propagate(*i);
+            if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
+                break;
+            else
             {
-                ++propagated_;
-                getCurrentSpace()->propagate(*i);
-                if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
-                    break;
+                assLength_.back()=propagated_;
+                unsigned int oldDL = s_->decisionLevel();
+                if(!propagateNewLiteralsToClasp(spaces_.size()-1))
+                    return false;
+                if (oldDL > s_->decisionLevel()) //we backjumped
+                    return true;
             }
         }
 
-
         //propagated_=assignment_.size();
-        assLength_.back()=propagated_;
-        if (!getCurrentSpace()->failed())
-        {
-            //if (dynamicProp_) {++temp;}
-            // this function avoids propagating already decided literals
-            unsigned int oldDL = s_->decisionLevel();
-            if(!propagateNewLiteralsToClasp(spaces_.size()-1))
-                return false;
-            if (oldDL > s_->decisionLevel()) //we backjumped
-                return true;
-        }
-        // currentSpace_->status() == FAILED
-        else
+
+        if (getCurrentSpace()->failed())
         {
             //assignment already has clits included!
             clits.clear();
@@ -1216,40 +1214,29 @@ bool GecodeSolver::finishPropagation()
             ++propagated_;
             getCurrentSpace()->propagate(*(assignment_.begin() + i));
             if (getCurrentSpace()->failed() || getCurrentSpace()->status() == SS_FAILED)
-                break;
-        }
-
-        //getCurrentSpace()->propagate(assignment_.begin()+start, assignment_.begin()+end);
-        //assert(end>propagated_);
-        //if (end>propagated_)
-        //    propagated_=end;
-        if (!getCurrentSpace()->failed())
-        {
-            //if (dynamicProp_) {++temp;}
-            // this function avoids propagating already decided literals
-            unsigned int oldDL = s_->decisionLevel();
-            if(!propagateNewLiteralsToClasp(spaces_.size()-1))
             {
-                //undo the last space as it might not be fully propagated to clasp
-                delete spaces_.back();
-                spaces_.pop_back();
-                // go back to last real space
-                //currentSpace_ = spaces_.back(); // might be zero
-                propagated_ = assLength_[spaces_.size()-1];// we did not do this propagation
+                Clasp::LitVec ret(assignment_.begin(), assignment_.begin()+propagated_);    // this is the old conflict
+                setConflict(ret, false);
                 return false;
             }
-            if (oldDL > s_->decisionLevel()) // we backjumped!
+            else
             {
-                return true;
+                unsigned int oldDL = s_->decisionLevel();
+                if(!propagateNewLiteralsToClasp(spaces_.size()-1))
+                {
+                    //undo the last space as it might not be fully propagated to clasp
+                    delete spaces_.back();
+                    spaces_.pop_back();
+                    // go back to last real space
+                    //currentSpace_ = spaces_.back(); // might be zero
+                    propagated_ = assLength_[spaces_.size()-1];// we did not do this propagation
+                    return false;
+                }
+                if (oldDL > s_->decisionLevel()) // we backjumped!
+                {
+                    return true;
+                }
             }
-        }
-        // currentSpace_->status() == FAILED
-        else
-        {
-            //nur alles was currentSpace bisher mitbekommen hat in den Konflikt einbringen !!!
-            Clasp::LitVec ret(assignment_.begin(), assignment_.begin()+propagated_);    // this is the old conflict
-            setConflict(ret, false);
-            return false;
         }
     }
     return true;
