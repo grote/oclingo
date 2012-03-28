@@ -159,6 +159,7 @@ struct ClingconOptions
         bool             optAll;           // Default: false
         bool             initialLookahead; // Default: false
         unsigned int     cspPropDelay;     // Default: 1
+        unsigned int     cloning;          // Default: 1
 
 	CSPMode mode;       // default: highest mode the current binary supports
 	bool iStats;     // default: false
@@ -295,6 +296,10 @@ void ClingconOptions<M>::initOptions(ProgramOptions::OptionGroup& root, ProgramO
                         ("csp-prop-delay", storeTo(cspPropDelay)->defaultValue(1), "Do CSP-Propagation only every n steps\n"
                                        "      0          : only on possible model\n"
                                        "      n          : every n steps\n"
+                        )
+                        ("csp-cloning", storeTo(cloning)->defaultValue(1), "Cloning of CP space every n steps\n"
+                                       "      0          : avoid cloning\n"
+                                       "      n          : every n steps (Default: 1)\n"
                         )
                 ;
 

@@ -1,5 +1,9 @@
 DONE
 
+- implemented hybrid Recomputation via --csp-cloning=X
+- use advisors instead of reifwait, should be faster
+
+2.0.0-beta
 - compute domain of intermediate variables more clever, DONE
 - branch on temporary variables, DONE
 - enable lazy learning on options, DONE
@@ -19,8 +23,9 @@ DONE
 
 TODO
 
-- use advisors instead of reifwait, should be faster
 - test if recomputation instead of trailing can be used to save copying spaces !
+- insert propagator for compact order encoding, simply add free variables to clasp!!!
+- implement minimal inconsistent answer, if an answer fails, which constraints are needed, like IIS but with search instead of propagation (high computational efford)
 - disable propQueue on force
 - lexical ordering constraint for minimization ?
 - implement OR and AND aggregates to initially restrict the domain to a set of variables (in WeightAssignmentTree to all possible values of additions? not possible, so less priority)

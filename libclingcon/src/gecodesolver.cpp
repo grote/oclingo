@@ -72,11 +72,12 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                            const std::string& ICLString, const std::string& branchVarString,
                            const std::string& branchValString, std::vector<int> optValueVec,
                            bool optAllPar, bool initialLookahead, const std::string& reduceReason,
-                           const std::string& reduceConflict, unsigned int cspPropDelay) :
-    currentSpace_(0), lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
+                           const std::string& reduceConflict, unsigned int cspPropDelay, unsigned int cloning) :
+    /*currentSpace_(0),*/ lazyLearn_(lazyLearn), weakAS_(weakAS), numAS_(numAS), enumerator_(0), dfsSearchEngine_(0), babSearchEngine_(0),
     dummyReason_(this), updateOpt_(false), conflictAnalyzer_(0), reasonAnalyzer_(0), recording_(true),
-    initialLookahead_(initialLookahead), cspPropDelay_(abs(cspPropDelay)), cspPropDelayCounter_(1), propagated_(0)
+    initialLookahead_(initialLookahead), cspPropDelay_(abs(cspPropDelay)), cspPropDelayCounter_(1), propagated_(0), deepCopy_(cloning), deepCopyCounter_(0)
 {
+    if (deepCopy_==0) deepCopyCounter_=1;
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
     //if (optValues.size()>0) ++optValues.back(); // last element must also be found
 
@@ -186,6 +187,38 @@ unsigned int GecodeSolver::assLength(unsigned int index) const
         return assLength_[index];
 }
 
+GecodeSolver::SearchSpace* GecodeSolver::getCurrentSpace()
+{
+    //return spaces_.back();//currentSpace_;
+    size_t i = spaces_.size()-2;
+
+ //   Ich bekomme unterschiedliche Ergebnisse (Anzahl der Choices) bei deepCopy 1 und 5,
+    if (spaces_.back()!=0)
+    {
+        return spaces_.back();
+    }
+    while(i>=0)
+    {
+
+        if (spaces_[i]!=0)
+        {
+            //assert(assLength_[i]<=propagated_);
+            //if (assLength_[i]<propagated_)
+            //assert(i!=0);
+            //assert(propagated_==assLength_.back()); // at least for the non delay case
+            recording_=false;
+            spaces_.back()=static_cast<GecodeSolver::SearchSpace*>(spaces_[i]->clone());
+            spaces_.back()->propagate(assignment_.begin()+assLength_[i], assignment_.begin()+propagated_);
+
+            SpaceStatus s = spaces_.back()->status();
+            assert(s!=SS_FAILED);
+            recording_=true;
+            return spaces_.back();
+        }
+        --i;
+    }
+}
+
 bool GecodeSolver::initialize()
 {
     dfsSearchEngine_ = 0;
@@ -280,8 +313,7 @@ bool GecodeSolver::initialize()
 
 
     // propagate empty constraint set, maybe some trivial constraints can be fullfilled
-    currentSpace_ = new SearchSpace(this, variables_.size(), constraints_, globalConstraints_);
-    spaces_.push_back(currentSpace_); // special root space
+    spaces_.push_back(new SearchSpace(this, variables_.size(), constraints_, globalConstraints_)); // special root space
     dl_.push_back(0);
     assLength_.push_back(0);
 
@@ -315,7 +347,7 @@ bool GecodeSolver::initialize()
     constraints_.clear();
     globalConstraints_.clear();
 
-    if(!currentSpace_->failed() && currentSpace_->updateOptValues() && !currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+    if(!getCurrentSpace()->failed() && getCurrentSpace()->updateOptValues() && !getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
     {
         if (!propagateNewLiteralsToClasp(0))
         {
@@ -347,7 +379,7 @@ bool GecodeSolver::initialize()
                                 propQueue_.push_back(negLit(0));
                                 return false;
                             }
-                            currentSpace_->propagate(~test);
+                            getCurrentSpace()->propagate(~test);
                         }
                         else
                         {
@@ -421,6 +453,7 @@ bool GecodeSolver::initialize()
 
 void GecodeSolver::newlyDerived(Clasp::Literal lit)
 {
+
     if (recording_)
     {
         derivedLits_.push_back(lit);
@@ -698,9 +731,9 @@ bool GecodeSolver::hasAnswer()
 
     // currently using a depth first search, this could be changed by options
     if (!optimize_)
-        dfsSearchEngine_ = new DFS<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
+        dfsSearchEngine_ = new DFS<GecodeSolver::SearchSpace>(getCurrentSpace(), searchOptions_);
     else
-        babSearchEngine_ = new BAB<GecodeSolver::SearchSpace>(currentSpace_, searchOptions_);
+        babSearchEngine_ = new BAB<GecodeSolver::SearchSpace>(getCurrentSpace(), searchOptions_);
 #ifdef DEBUGTEXT
     //std::cout << "created new SearchEngine_:" << searchEngine_ << std::endl;
     currentSpace_->print(variables_);std::cout << std::endl;
@@ -811,9 +844,9 @@ Clasp::Literal GecodeSolver::indexToLit(unsigned int index)
 void GecodeSolver::printAnswer()
 {
     assert(enumerator_);
-    assert(currentSpace_);
+    assert(getCurrentSpace());
     if (weakAS_)
-        currentSpace_->print(variables_);
+        getCurrentSpace()->print(variables_);
     else
         enumerator_->print(variables_);
 }
@@ -821,7 +854,7 @@ void GecodeSolver::printAnswer()
 bool GecodeSolver::propagate()
 {
     // if already failed, create conflict, this may be on a lower level
-    if (currentSpace_->failed())
+    if (getCurrentSpace()->failed())
     {
         Clasp::LitVec clits(assignment_.begin(), assignment_.begin()+propagated_);
         setConflict(clits, false);
@@ -852,7 +885,7 @@ bool GecodeSolver::propagate()
     {
         // add if free
         // conflict if contradicting
-        GecodeSolver::SearchSpace::Value constr = currentSpace_->getValueOfConstraint(*i);
+        GecodeSolver::SearchSpace::Value constr = getCurrentSpace()->getValueOfConstraint(*i);
         if ( constr == SearchSpace::BFREE)
         {
             clits.push_back(*i);
@@ -1009,8 +1042,8 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
     {
         // do not need to store clits to assignment on level 0
         derivedLits_.clear();
-        currentSpace_->propagate(clits.begin(), clits.end());
-        if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+        getCurrentSpace()->propagate(clits.begin(), clits.end());
+        if (!getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
         {
             // this function avoids propagating already decided literals
             if(!propagateNewLiteralsToClasp(0))
@@ -1053,21 +1086,41 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
         }
 
         assignment_.insert(assignment_.end(), clits.begin(), clits.end());
-        propagated_=assignment_.size();
+
 
         if (s_->decisionLevel() != currentDL())
         {
-            spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
-            currentSpace_ = spaces_.back();
-            dl_.push_back(s_->decisionLevel());
-            assLength_.push_back(assignment_.size());
+            if (deepCopy_) ++deepCopyCounter_;
+            if(deepCopyCounter_==deepCopy_ || spaces_.size()==1)
+            {
+                deepCopyCounter_=0;
+                spaces_.push_back(static_cast<SearchSpace*>(getCurrentSpace()->clone()));
+                //currentSpace_ = spaces_.back();
+            }
+            else
+            {
+                SearchSpace* t = spaces_.back();
+                spaces_.back()=0;
+                spaces_.push_back(t);
+                getCurrentSpace(); //debug
+            }
             //register in solver for undo event
             s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
+            // this is important to first do propagation and then set assLength, because getCurrentSpace CAN
+            // redo propagation
+            getCurrentSpace()->propagate(clits.begin(), clits.end());
+            dl_.push_back(s_->decisionLevel());
+            assLength_.push_back(assignment_.size());
+        }
+        else
+        {
+            getCurrentSpace()->propagate(clits.begin(), clits.end());
         }
 
-        currentSpace_->propagate(clits.begin(), clits.end());
+
+        propagated_=assignment_.size();
         assLength_.back()=propagated_;
-        if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+        if (!getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
         {
             //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
@@ -1126,16 +1179,29 @@ bool GecodeSolver::finishPropagation()
         }
         else
         {
-            spaces_.push_back(static_cast<SearchSpace*>(currentSpace_->clone()));
+            if (deepCopy_) ++deepCopyCounter_;
+            if(deepCopyCounter_==deepCopy_ || spaces_.size()==1)
+            {
+                deepCopyCounter_=0;
+                spaces_.push_back(static_cast<SearchSpace*>(getCurrentSpace()->clone()));
+                //currentSpace_ = spaces_.back();
+            }
+            else
+            {
+                SearchSpace* t = spaces_.back();
+                spaces_.back()=0;
+                spaces_.push_back(t);
+            }
         }
 
-        if (end>propagated_)
-            propagated_=end;
-        currentSpace_ = spaces_.back();
+
+        //currentSpace_ = spaces_.back();
         derivedLits_.clear();
 
-        currentSpace_->propagate(assignment_.begin()+start, assignment_.begin()+end);
-        if (!currentSpace_->failed() && currentSpace_->status() != SS_FAILED)
+        getCurrentSpace()->propagate(assignment_.begin()+start, assignment_.begin()+end);
+        if (end>propagated_)
+            propagated_=end;
+        if (!getCurrentSpace()->failed() && getCurrentSpace()->status() != SS_FAILED)
         {
             //if (dynamicProp_) {++temp;}
             // this function avoids propagating already decided literals
@@ -1145,7 +1211,8 @@ bool GecodeSolver::finishPropagation()
                 //undo the last space as it might not be fully propagated to clasp
                 delete spaces_.back();
                 spaces_.pop_back();
-                currentSpace_ = spaces_.back();
+                // go back to last real space
+                //currentSpace_ = spaces_.back(); // might be zero
                 propagated_ = assLength_[spaces_.size()-1];// we did not do this propagation
                 return false;
             }
@@ -1177,27 +1244,30 @@ bool GecodeSolver::finishPropagation()
      {
          SearchSpace* current = spaces_[i];
          derivedLits_.clear();
-         current->updateOptValues();
+         if (current)
+         {
+             current->updateOptValues();
 
-         //PROBLEM, arbeite direkt auf dem space, dieser kann fehlschlagen!
-         if (current->failed() || current->status()==SS_FAILED)
-         {
-             Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+ (i==spaces_.size()-1 ? propagated_  : assLength_[i] ));
-             propQueue_.clear();
-             setConflict(conflict, false);
-             return false;
-         }
-         else
-         {
-             if (derivedLits_.size()>0)
+             //PROBLEM, arbeite direkt auf dem space, dieser kann fehlschlagen!
+             if (current->failed() || current->status()==SS_FAILED)
              {
-                 unsigned int oldDL = s_->decisionLevel();
-                 if (!propagateNewLiteralsToClasp(i))
-                     return false;
-                 //if (oldDL > s_->decisionLevel()) //we backjumped
-                 //    return true;
-                 if (i+1==spaces_.size() || dl_[i+1] > s_->decisionLevel())
-                    break;
+                 Clasp::LitVec conflict(assignment_.begin(), assignment_.begin()+ (i==spaces_.size()-1 ? propagated_  : assLength_[i] ));
+                 propQueue_.clear();
+                 setConflict(conflict, false);
+                 return false;
+             }
+             else
+             {
+                 if (derivedLits_.size()>0)
+                 {
+                     unsigned int oldDL = s_->decisionLevel();
+                     if (!propagateNewLiteralsToClasp(i))
+                         return false;
+                     //if (oldDL > s_->decisionLevel()) //we backjumped
+                     //    return true;
+                     if (i+1==spaces_.size() || dl_[i+1] > s_->decisionLevel())
+                        break;
+                 }
              }
          }
      }
@@ -1228,7 +1298,7 @@ void GecodeSolver::undo(unsigned int level)
         delete spaces_.back();
         spaces_.pop_back();
     }
-    currentSpace_ = spaces_.back();
+    //currentSpace_ = spaces_.back();
     return;
 }
 
