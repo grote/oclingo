@@ -12,7 +12,7 @@
 #const retain=window+2*offset.   % number of conjoined volatile programs (calculated)
 #const denial=3.                 % account closed when 3 accesses denied (by default)
 
-#iinit 2-retain.
+#iinit 1-offset.
 
 %%%%%%%%
 % BASE %
