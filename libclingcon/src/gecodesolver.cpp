@@ -35,8 +35,6 @@
 #include <clingcon/gecodereason.h>
 #include <clingcon/gecodereifwait.h>
 
-//#define DEBUGTEXT
-
 using namespace Gecode;
 using namespace Clasp;
 namespace Clingcon {
@@ -79,7 +77,6 @@ GecodeSolver::GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
 {
     if (deepCopy_==0) deepCopyCounter_=1;
     optValues.insert(optValues.end(),optValueVec.begin(), optValueVec.end());
-    //if (optValues.size()>0) ++optValues.back(); // last element must also be found
 
     optAll=optAllPar;
 
@@ -189,10 +186,8 @@ unsigned int GecodeSolver::assLength(unsigned int index) const
 
 GecodeSolver::SearchSpace* GecodeSolver::getCurrentSpace()
 {
-    //return spaces_.back();//currentSpace_;
     size_t i = spaces_.size()-2;
 
- //   Ich bekomme unterschiedliche Ergebnisse (Anzahl der Choices) bei deepCopy 1 und 5,
     if (spaces_.back()!=0)
     {
         return spaces_.back();
@@ -202,10 +197,6 @@ GecodeSolver::SearchSpace* GecodeSolver::getCurrentSpace()
 
         if (spaces_[i]!=0)
         {
-            //assert(assLength_[i]<=propagated_);
-            //if (assLength_[i]<propagated_)
-            //assert(i!=0);
-            //assert(propagated_==assLength_.back()); // at least for the non delay case
             recording_=false;
             spaces_.back()=static_cast<GecodeSolver::SearchSpace*>(spaces_[i]->clone());
             spaces_.back()->propagate(assignment_.begin()+assLength_[i], assignment_.begin()+propagated_);
@@ -230,7 +221,6 @@ bool GecodeSolver::initialize()
         numAS_=0;
     }
 
-    //if (domain_.left == std::numeric_limits<int>::min())
     if (domain_.left < Int::Limits::min)
     {
         domain_.left = Int::Limits::min;
@@ -261,19 +251,6 @@ bool GecodeSolver::initialize()
 
         // convert uids to solver literal ids
 
-        /*
-        if (s_->isTrue(Literal(newVar,false)))
-            std::cout << "t ";
-        if (s_->isTrue(Literal(newVar,true)))
-            std::cout << "f ";
-        if (s_->isFalse(Literal(newVar,false)))
-            std::cout << "f ";
-        if (s_->isFalse(Literal(newVar,true)))
-            std::cout << "t ";
-        std::cout << num2name(newVar) << std::endl;
-
-*/
-
         i->second->registerAllVariables(this);
 
         //guess domains of already decided constraints
@@ -292,7 +269,6 @@ bool GecodeSolver::initialize()
             s_->addWatch(~newLit, clingconPropagator_,0);
         }
 
-        //newConstraints.insert(std::make_pair(newVar, i->second));
         newConstraints.insert(newLit, constraints_.release(i).release());
         i = constraints_.begin();
 
@@ -341,9 +317,6 @@ bool GecodeSolver::initialize()
         default: assert(false);
     };
 
-    //TODO: 1. check if already failed through initialitation
-    //for (GecodeSolver::ConstraintMap::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
-    //    delete i->second;
     constraints_.clear();
     globalConstraints_.clear();
 
@@ -395,42 +368,8 @@ bool GecodeSolver::initialize()
                                 if(!gc.end())
                                 {
                                     assert(false); // should not happen as both literals are free before
-                                    //erivedLits_.clear();
-                                    //propQueue_.push_back(negLit(0));
                                     return false;
                                 }
-
-                                //-x \/ y
-                                /*
-                                Gecode::BoolVarArg x;
-                                if (test.sign()) //negative -> x
-                                    x = !(currentSpace_->b_[varToIndex(test.var())]);
-                                else
-                                    x = currentSpace_->b_[varToIndex(test.var())];
-
-                                Gecode::BoolExpr y;
-                                if(j->sign()) //negative -> -y
-                                    y = !(currentSpace_->b_[varToIndex(j->var())]);
-                                else
-                                    y = currentSpace_->b_[varToIndex(j->var())];
-
-                                rel(*currentSpace_, !x || y, ICL);
-
-                                */
-
-                                /*
-                                if (test.sign()) //negative -> x
-                                    if(j->sign()) //negative -> -y
-                                        rel(*currentSpace_, (currentSpace_->b_[varToIndex(test.var())]) || !(currentSpace_->b_[varToIndex(j->var())]), ICL);
-                                    else
-                                        rel(*currentSpace_, (currentSpace_->b_[varToIndex(test.var())]) || (currentSpace_->b_[varToIndex(j->var())]), ICL);
-                                else
-                                    if(j->sign())
-                                        rel(*currentSpace_, !(currentSpace_->b_[varToIndex(test.var())]) || !(currentSpace_->b_[varToIndex(j->var())]), ICL);
-                                    else
-                                        rel(*currentSpace_, !(currentSpace_->b_[varToIndex(test.var())]) || (currentSpace_->b_[varToIndex(j->var())]), ICL);
-                                */
-
                              }
                          }
                         delete tester;
@@ -589,7 +528,6 @@ void addToDomain(GecodeSolver::DomainMap& domain,  const GecodeSolver::DomainMap
             // add it to the domain
             domain.insert(found, std::make_pair(i->first,i->second));
             last = found;
-            //ret[i->first] = i->second;
         }
         else // found
         {
@@ -715,8 +653,6 @@ bool GecodeSolver::hasAnswer()
     dfsSearchEngine_ = 0;
     babSearchEngine_ = 0;
     asCounter_ = 0;
-    //assert(currentSpace_->stable());
-
 
     unsigned int oldDL = s_->decisionLevel();
     if (!finishPropagation())
@@ -734,10 +670,7 @@ bool GecodeSolver::hasAnswer()
         dfsSearchEngine_ = new DFS<GecodeSolver::SearchSpace>(getCurrentSpace(), searchOptions_);
     else
         babSearchEngine_ = new BAB<GecodeSolver::SearchSpace>(getCurrentSpace(), searchOptions_);
-#ifdef DEBUGTEXT
-    //std::cout << "created new SearchEngine_:" << searchEngine_ << std::endl;
-    currentSpace_->print(variables_);std::cout << std::endl;
-#endif
+
     if (enumerator_)
     {
         delete enumerator_;
@@ -747,6 +680,7 @@ bool GecodeSolver::hasAnswer()
         enumerator_ = dfsSearchEngine_->next();
     else
         enumerator_ = babSearchEngine_->next();
+
     if (enumerator_ != NULL)
     {
         if (optimize_)
@@ -813,10 +747,8 @@ void GecodeSolver::setRecording(bool r)
   */
 void GecodeSolver::setConflict(Clasp::LitVec conflict, bool last, bool shrink)
 {
-    //assert(conflict.size()==0 || conflict.size() == assLength(spaces_.size()-1) || conflict.size() == assLength(spaces_.size()-1) +1);
     if (shrink)
         conflictAnalyzer_->shrink(conflict, last);
-
 
     if (conflict.size()==0) // if root level conflict due to global constraints
         conflict.push_back(posLit(0));
@@ -985,11 +917,6 @@ bool GecodeSolver::propagateOldLits()
                                 //std::cout << "reinsert " << j->x_.var() << std::endl;
                                 impliedLits_[s_->level(j->x_.var())].push_back(ImpliedLiteral(j->x_, j->level_, j->reasonLength_));
                             }
-                            //else
-                            //{
-                            //    j = i->second.remove(j); // we can not imply this here, we backjumped too far
-                            //    continue;
-                            //}
                             j = i->second.erase(j);
                             continue;
                         }
@@ -1037,6 +964,7 @@ bool GecodeSolver::propagateOldLits()
 
 bool GecodeSolver::_propagate(Clasp::LitVec& clits)
 {
+
     assert(assLength_.size() > 1 ? assLength_[assLength_.size()-2] < assLength_[assLength_.size()-1] : true);
     if (s_->decisionLevel()==0)
     {
@@ -1049,14 +977,8 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
             if(!propagateNewLiteralsToClasp(0))
                 return false;
         }
-        // currentSpace_->status() == FAILED
         else
         {
-            // could save a bit of conflict size if conflict resultet from propagate function, which does singular propagation
-            //clits.clear();
-            //clits.reserve(assignment_.size()+clits.size());
-            //clits.insert(clits.begin(), assignment_.begin(), assignment_.end()); // this is the complete conflict
-            //on decision level 0 we only can have root conflict
             clits.clear();
             setConflict(clits, false);
             return false;
@@ -1095,14 +1017,12 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
             {
                 deepCopyCounter_=0;
                 spaces_.push_back(static_cast<SearchSpace*>(getCurrentSpace()->clone()));
-                //currentSpace_ = spaces_.back();
             }
             else
             {
                 SearchSpace* t = spaces_.back();
                 spaces_.back()=0;
                 spaces_.push_back(t);
-                //getCurrentSpace(); //debug
             }
             //register in solver for undo event
             s_->addUndoWatch(s_->decisionLevel(),clingconPropagator_);
@@ -1113,11 +1033,6 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
                 getCurrentSpace();
             dl_.push_back(s_->decisionLevel());
             assLength_.push_back(assignment_.size());
-
-        }
-        else
-        {
-            //getCurrentSpace()->propagate(clits.begin(), clits.end());
         }
 
 
@@ -1174,7 +1089,6 @@ bool GecodeSolver::_propagate(Clasp::LitVec& clits)
 
 bool GecodeSolver::finishPropagation()
 {
-    //while(spaces_.size() <= dl_.size())
     while(propagated_ < assLength_.back())
     {
         unsigned int last = spaces_.size()-1;    // the last space index
@@ -1195,7 +1109,6 @@ bool GecodeSolver::finishPropagation()
             {
                 deepCopyCounter_=0;
                 spaces_.push_back(static_cast<SearchSpace*>(getCurrentSpace()->clone()));
-                //currentSpace_ = spaces_.back();
             }
             else
             {
@@ -1205,8 +1118,6 @@ bool GecodeSolver::finishPropagation()
             }
         }
 
-
-        //currentSpace_ = spaces_.back();
         derivedLits_.clear();
 
         for(size_t i = start; i < end; ++i)
@@ -1228,7 +1139,6 @@ bool GecodeSolver::finishPropagation()
                     delete spaces_.back();
                     spaces_.pop_back();
                     // go back to last real space
-                    //currentSpace_ = spaces_.back(); // might be zero
                     propagated_ = assLength_[spaces_.size()-1];// we did not do this propagation
                     return false;
                 }
@@ -1246,8 +1156,6 @@ bool GecodeSolver::finishPropagation()
  bool GecodeSolver::propagateMinimize()
  {
      impliedLits_.clear(); // dont know if this cant be done more clever
-     //Clasp::LitVec oldDerivedLits;
-     //oldDerivedLits.swap(derivedLits_); // maybe something was already propagated
      updateOpt_ = false;
      for (size_t i = 0; i < spaces_.size(); ++i)
      {
@@ -1307,7 +1215,6 @@ void GecodeSolver::undo(unsigned int level)
         delete spaces_.back();
         spaces_.pop_back();
     }
-    //currentSpace_ = spaces_.back();
     return;
 }
 
@@ -1342,9 +1249,6 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
         if (!s_->isTrue(*i))  // if the literal is not already true
             back=true;
     }
-
-    //if (!back)
-    //   return true;
 
     if (!back) // there where no undef literals, so we do not want to backtrack
                // just remember all better reasons
@@ -1410,14 +1314,11 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
         {
             if (s_->value(i->var())==value_free) // propagate the yet undeffed ones
             {
-                //uint32 dl = s_->decisionLevel();
                 Clasp::LitVec reason;
                 createReason(reason,*i,assignment_.begin(), assignment_.begin()+size);
-                //std::cout << "Start asserting " << i->sign() << " " << i->var() << std::endl;
                 gc.startAsserting(Constraint_t::learnt_conflict, *i);
                 for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
                 {
-                    //std::cout << s_->isTrue(*r) << " level:" << s_->level(r->var()) << " var:" << r->var() << " ... ";
                     assert(s_->isTrue(*r));
                     gc.add(~(*r));
                 }
@@ -1426,7 +1327,6 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
                     derivedLits_.clear();
                     return false;
                 }
-                //std::cout << std::endl;
                 assert(s_->isTrue(*i));
 
                 if (s_->decisionLevel() < implyon) // we backjumped too far, the propagation is not valid anymore
@@ -1439,66 +1339,6 @@ bool GecodeSolver::propagateNewLiteralsToClasp(size_t level)
                     break;
                 }
             }
-
-
-/*
-            //if (!s_->isTrue(*i))
-            {
-
-
-                uint32 max = 0;
-                for (Clasp::LitVec::const_iterator j = reason.begin(); j != reason.end(); ++j)
-                {
-                     max = s_->level(j->var()) > max ? s_->level(j->var()) : max;
-                }
-
-                //if (s_->isTrue(*i) && s_->level(i->var())<=max)
-                //    continue;
-
-                if (dl_[level]==max)
-                    gc.startAsserting(Constraint_t::learnt_conflict, *i);
-                else
-                {
-                    gc.start(Constraint_t::learnt_other);
-                    gc.add(*i);
-                }
-
-                for (Clasp::LitVec::const_iterator r = reason.begin(); r != reason.end(); ++r)
-                {
-                    gc.add(~(*r));
-                }
-                if(!gc.end())
-                {
-                    derivedLits_.clear();
-                    return false;
-                }
-
-                if (dl>s_->decisionLevel())
-                {
-                    // we backjumped
-                    if (dl_[level]==s_->decisionLevel())
-                    {
-                        // we just applied it on the implication level and can go on
-                        //int a = 0;
-                    }
-                    else
-                    {
-                        // we applied it on an even lower level due to shrinking or late propagation
-                        // so all further implications are not relevant any more
-                        derivedLits_.clear();
-                        return true;
-                        //break;
-                    }
-                    //%we backjumped, so the derived literals are maybe no longer derived !
-                    //%if they are derived on the last level where we have a space/propagated this is ok,
-                    //%        the others can be derived there true, otherwise we have to break
-                //    assert(false && "Shouldn't occur here");
-                }
-            }
-            //else
-            {
-
-            }*/
         }
         if (!first)
             break;
@@ -1532,7 +1372,6 @@ IntVarArgs GecodeSolver::SearchSpace::iva_;
 GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, GecodeSolver::ConstraintMap& constraints,
                                        LParseGlobalConstraintPrinter::GCvec& gcvec) : Space(),
     x_(*this, numVar),
-    //b_(*this, constraints.size(), 0, 1),
     b_()
 {
     csps_ = csps;
@@ -1548,9 +1387,6 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
         }
         else
             csps_->domains_[i].intersect(def);
-        //std::cout << csps_->domains_[i] << " " << std::endl;
-
-        //std::cout << csps_->domains_[i].size() << " " << std::endl;
         typedef int Range[2];
         Range* array = new Range[csps_->domains_[i].size()];
         unsigned int count=0;
@@ -1569,8 +1405,6 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
 
         IntSet is(array, csps_->domains_[i].size());
         delete[] array;
-        //std::cout << is << " " << std::endl;
-
         x_[i] = IntVar(*this, is);
     }
 
@@ -1585,8 +1419,6 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
             ++numReified;
         else
         {
-            //std::cout << "Constraint " << csps_->num2name(i->first) << " is static" << std::endl;
-            //generateConstraint(i->second,csps_->getSolver()->value(i->first) == value_true);
             generateConstraint(i->second,csps_->getSolver()->isTrue(i->first) == value_true);
         }
     }
@@ -1606,7 +1438,6 @@ GecodeSolver::SearchSpace::SearchSpace(GecodeSolver* csps, unsigned int numVar, 
              // be very careful here, we use vars to refer to constraints, but constraints are literals
              // and maybe negated literals due to equality preprocessing! Currently this is not the case
              w->init(*this,csps_, Int::BoolView(b_[counter]), csps_->indexToLit(counter).var());
-             //reifwait(*this,csps_,b_[counter], csps_->indexToLit(counter).var(), ICL);
              ++counter;
          }
     }
