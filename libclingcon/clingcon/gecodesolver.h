@@ -66,7 +66,7 @@ namespace Clingcon {
 
         GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
-                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay);
+                     bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay, unsigned int cloning);
         std::string num2name( unsigned int);
 
         virtual ~GecodeSolver();
@@ -88,6 +88,10 @@ namespace Clingcon {
         // is called when lit is derived via propagation (also by setting it manually?)
         void newlyDerived(Clasp::Literal lit);
         void addLitToIndex(Clasp::Literal lit, unsigned int index);
+
+        // is called to get the current space,
+        // redoes propagation if backtrack level was not available
+        SearchSpace* getCurrentSpace();
     private:
 
 
@@ -160,9 +164,12 @@ namespace Clingcon {
         Clasp::Literal indexToLit(unsigned int index);
 
         std::vector<SearchSpace*> spaces_; // spaces_[dl_[Y]] is the fully propagated space of decicion level dl[Y]
-        SearchSpace* currentSpace_; // the current space
+        //SearchSpace* currentSpace_; // the current space
         std::vector<unsigned int> dl_; // dl_[Y] = X. spaces_[Y] has decision level X
         std::vector<unsigned int> assLength_; // length of the assignment of space X
+
+        unsigned int deepCopy_; // do a deep copy every n times
+        unsigned int deepCopyCounter_;
 
         typedef std::map<Clasp::Literal, unsigned int> LitToAssPosition;
         //typedef std::map<unsigned int, unsigned int> AssPosToSize;

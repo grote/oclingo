@@ -13,7 +13,7 @@ step(T)   :- at(_,T).
 less(T-1) :- step(T), 1 < T.
 less(T-1) :- less(T), 1 < T.
 last(T)   :- step(T), not less(T).
-time((T-window)+1..T) :- last(T).
+time(T-window+1..T) :- last(T).
 
 % completion of overtaking maneuver indicated by state "infront" at last time
 state(behind, C,T) :- at(behind, C,T), time(T).

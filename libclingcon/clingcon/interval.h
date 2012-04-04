@@ -40,7 +40,10 @@ public:
 
 	void unite(const ValueType &v)
 	{
-		unite(v, list_.begin());
+        if (list_.size())
+            unite(v, list_.begin());
+        else
+            list_.push_back(v);
 	}
 
 	void unite(const IntervalSet<T> &iv)
