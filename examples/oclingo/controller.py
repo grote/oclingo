@@ -17,6 +17,7 @@
 ##########################################################################
 
 import sys
+import time
 import oclingo
 from optparse import OptionParser
 
@@ -39,13 +40,42 @@ parser.set_defaults(
 
 
 def main():
+	if len(args) == 1:
+		input = oclingo.getInputFromFile(args[0])
+
 	c = oclingo.Controller(opt.port, opt.host)
 	c.connect()
-	c.send("#step 1.\ne(1).\n#endstep.\n#stop.\n")
-	result = c.recv()
-	print oclingo.formatList(result)
+
+	while True:
+		current_input = getInput(input)
+		if current_input != '' and current_input != '#stop.\n':
+			c.send(current_input)
+			result = c.recv()
+			print oclingo.formatList(result)
+		else:
+			break
+	
+	# TODO allow oclingo to finish gracefully
 	c.disconnect()
 	return 0
+
+
+def getInput(input):
+	if len(args) == 1:
+		time.sleep(float(opt.time))
+		if len(input) > 0:
+			result = ''.join(input[0])
+			input.pop(0)
+			result += "#endstep.\n"
+		else:
+			result = "#stop.\n"
+			
+		print "Got input:"
+		print result
+#	else:
+#		result = getInputFromSTDIN()
+    
+	return result
 
 
 if __name__ == '__main__':

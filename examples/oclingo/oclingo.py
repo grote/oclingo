@@ -3,6 +3,8 @@ Module oClingo
 TODO
 """
 
+import sys # TODO remove when not needed anymore
+import os
 import socket
 import json
 import re
@@ -46,6 +48,7 @@ class Controller:
 		try:
 			self.s.shutdown(1)
 			self.s.close()
+			self.connected = False
 		except socket.error:
 			print "Socket is already closed."
 
@@ -58,8 +61,8 @@ class Controller:
 			self.s.sendall(input + self.delim)
 		
 #			if re.match("#stop\.", input) != None:
-#				disconnect()
-#				if opt.debug:
+#				self.disconnect()
+#				if self.debug:
 #					print "Exiting Program..."
 		else:
 			raise EnvironmentError("Controller is not yet connected to server.")
@@ -85,26 +88,29 @@ class Controller:
 		"""
 		answer_sets = []
 
-		self._recv_until()
-		res = json.loads(self.current_answer)
- 		if "Type" in res:
-			if res["Type"] == "Error" and "Text" in res:
-				raise RuntimeError(res["Text"])
-			elif res["Type"] == "Warning" and "Text" in res:
-				raise RuntimeWarning(res["Text"])
-			elif res["Type"] == "Answer" and "Result" in res:
-				if res["Result"] == "UNSATISFIABLE":
-					# TODO raise own Warning and handle print out user client side
-					sys.stdout.write("Program was unsatisfiable and stopped")
-					if "Step" in res:
-						sys.stdout.write(" at step " + str(res["Step"]))
-						print "!"
-					return answer_sets
-				elif res["Result"] == "SATISFIABLE" and "Witnesses" in res:
-					for witness in res["Witnesses"]:
-						answer_sets.append(witness["Value"])
-					return answer_sets
-		raise SyntaxError("Unkown output received from server: %s" % self.current_answer)
+		if self.connected:
+			self._recv_until()
+			res = json.loads(self.current_answer)
+			if "Type" in res:
+				if res["Type"] == "Error" and "Text" in res:
+					raise RuntimeError(res["Text"])
+				elif res["Type"] == "Warning" and "Text" in res:
+					raise RuntimeWarning(res["Text"])
+				elif res["Type"] == "Answer" and "Result" in res:
+					if res["Result"] == "UNSATISFIABLE":
+						# TODO raise own Warning and handle print out user client side
+						sys.stdout.write("Program was unsatisfiable and stopped")
+						if "Step" in res:
+							sys.stdout.write(" at step " + str(res["Step"]))
+							print "!"
+						return answer_sets
+					elif res["Result"] == "SATISFIABLE" and "Witnesses" in res:
+						for witness in res["Witnesses"]:
+							answer_sets.append(witness["Value"])
+						return answer_sets
+			raise SyntaxError("Unkown output received from server: %s" % self.current_answer)
+		else:
+			raise EnvironmentError("Controller is not yet connected to server.")
 
 
 	def irecv(self):
@@ -185,3 +191,60 @@ def _formatRow(plan, row_len, time):
 	
 	return result + "\n"
 
+
+def getInputFromFile(file):
+	"""
+	Reads input stream from a file and returns list of predicate lists
+	"""
+	if os.path.exists(file):
+		online_input = [[]]
+		
+		# TODO consider using a real parser
+		PARSER = {
+		    'step'          : re.compile("#step (\d+)( *: *\d+ *)?\."),
+		    'endstep'       : re.compile("#endstep\."),
+		    'cumulative'    : re.compile("#cumulative\."),
+		    'volatile'      : re.compile("#volatile( : *\d+)?\."),
+		    'forget'        : re.compile("#forget (\d+)(\.\.\d+)?\."),
+		    'assert'        : re.compile("#assert : *.+\."),
+		    'retract'       : re.compile("#retract : *.+\."),
+		    'stop'          : re.compile("#stop\."),
+			'fact'			: re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.(\s*%.*)?$"),
+			'integrity'		: re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$"),
+			'rule'			: re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")
+		}
+
+		f = open(file, 'r')
+		i = 0
+		
+		for line in f:
+			# match various statements
+			if PARSER['step'].match(line) != None \
+			or PARSER['fact'].match(line) != None \
+			or PARSER['integrity'].match(line) != None \
+			or PARSER['rule'].match(line) != None \
+			or PARSER['cumulative'].match(line) != None \
+			or PARSER['volatile'].match(line) != None \
+			or PARSER['forget'].match(line) != None \
+			or PARSER['assert'].match(line) != None \
+			or PARSER['retract'].match(line) != None:
+				online_input[i].append(line)
+			# match comment or empty line
+			elif re.match("^%.*\n$", line) != None or re.match("^\n$", line) != None:
+				continue
+			# match end of step and end list
+			elif PARSER['endstep'].match(line) != None:
+				i += 1
+				online_input.insert(i, [])
+			# match end of online knowledge
+			elif PARSER['stop'].match(line) != None:
+				if len(online_input[i]) == 0:
+					online_input.pop(i)
+				break
+			# error: neither fact nor step
+			else:
+				i += 1
+				raise RuntimeError("Invalid rule '%s' after step %d in file '%s'." % (line, i, file))
+		return online_input
+	else:
+		raise RuntimeError("Could not find file '%s'." % file)
