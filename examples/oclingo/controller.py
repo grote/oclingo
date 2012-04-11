@@ -75,8 +75,8 @@ def getInput(input):
 			
 		print "Got input:"
 		print result
-#	else:
-#		result = getInputFromSTDIN()
+	else:
+		result = Input.getFromSTDIN()
     
 	return result
 
