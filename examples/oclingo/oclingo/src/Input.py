@@ -4,7 +4,8 @@ TODO
 """
 
 import os, sys, re
-		
+#import Parser
+
 # TODO consider using a real parser
 PARSER = {
 	'step'          : re.compile("#step (\d+)( *: *\d+ *)?\."),
@@ -29,7 +30,13 @@ def getFromFile(file):
 
 		f = open(file, 'r')
 		i = 0
-		
+	
+#		print f.read()
+#		f.seek(0)
+#		p = Parser.Parser(f.read())
+#		print p.parse_input()
+#		f.seek(0)
+
 		for line in f:
 			# match various statements
 			if PARSER['step'].match(line) != None or\
