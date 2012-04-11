@@ -18,7 +18,7 @@
 
 import sys
 import time
-import oclingo
+from oclingo import Controller, Input, Formatter
 from optparse import OptionParser
 
 # Parse Command Line Options
@@ -40,10 +40,11 @@ parser.set_defaults(
 
 
 def main():
+	input = ''
 	if len(args) == 1:
-		input = oclingo.getInputFromFile(args[0])
+		input = Input.getFromFile(args[0])
 
-	c = oclingo.Controller(opt.port, opt.host)
+	c = Controller.Controller(opt.port, opt.host)
 	c.connect()
 
 	while True:
@@ -51,7 +52,7 @@ def main():
 		if current_input != '' and current_input != '#stop.\n':
 			c.send(current_input)
 			result = c.recv()
-			print oclingo.formatList(result)
+			print Formatter.formatList(result)
 		else:
 			break
 	
@@ -61,6 +62,8 @@ def main():
 
 
 def getInput(input):
+	result = ''
+
 	if len(args) == 1:
 		time.sleep(float(opt.time))
 		if len(input) > 0:
