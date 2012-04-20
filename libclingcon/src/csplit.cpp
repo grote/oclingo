@@ -28,7 +28,7 @@
 namespace Clingcon
 {
 
-    CSPLit::CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b)
+    CSPLit::CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b, bool sign)
         : Lit(loc)
         , t_(t)
         , a_(a)
@@ -36,10 +36,22 @@ namespace Clingcon
         , rhs_(0)
         , lhs_(0)
         , isFact_(false)
+        , sign_(sign)
     {
+        switch(t_)
+        {
+        case CSPLit::GREATER:
+        case CSPLit::GEQUAL:
+        case CSPLit::INEQUAL:
+            revertComparison();
+            sign_=!sign_;
+            break;
+        case CSPLit::ASSIGN:  assert(false);  break;
+
+        }
     }
 
-    CSPLit::CSPLit(const Loc &loc, Type t, CSPLit *a, CSPLit *b)
+    CSPLit::CSPLit(const Loc &loc, Type t, CSPLit *a, CSPLit *b, bool sign)
         : Lit(loc)
         , t_(t)
         , a_(0)
@@ -47,6 +59,7 @@ namespace Clingcon
         , rhs_(a)
         , lhs_(b)
         , isFact_(false)
+        , sign_(sign)
     {
     }
 
@@ -93,10 +106,10 @@ namespace Clingcon
 
             switch(t_)
             {
-            case CSPLit::AND: return lhs_->getValue(g) && rhs_->getValue(g);
-            case CSPLit::OR:  return lhs_->getValue(g) || rhs_->getValue(g);
-            case CSPLit::XOR: return lhs_->getValue(g) ^  rhs_->getValue(g);
-            case CSPLit::EQ:  return lhs_->getValue(g) == rhs_->getValue(g);
+            case CSPLit::AND: return (lhs_->getValue(g) && rhs_->getValue(g))^sign_;
+            case CSPLit::OR:  return (lhs_->getValue(g) || rhs_->getValue(g))^sign_;
+            case CSPLit::XOR: return (lhs_->getValue(g) ^  rhs_->getValue(g))^sign_;
+            case CSPLit::EQ:  return (lhs_->getValue(g) == rhs_->getValue(g))^sign_;
             }
             assert(false);
             return false;
@@ -107,12 +120,12 @@ namespace Clingcon
             {
                 switch(t_)
                 {
-                case CSPLit::GREATER: return a_->val(g).number() > b_->val(g).number();
-                case CSPLit::LOWER:   return a_->val(g).number() < b_->val(g).number();
-                case CSPLit::EQUAL:   return a_->val(g).number() == b_->val(g).number();
-                case CSPLit::GEQUAL:  return a_->val(g).number() >= b_->val(g).number();
-                case CSPLit::LEQUAL:  return a_->val(g).number() <= b_->val(g).number();
-                case CSPLit::INEQUAL: return a_->val(g).number() != b_->val(g).number();
+                case CSPLit::GREATER: return (a_->val(g).number() > b_->val(g).number())^sign_;
+                case CSPLit::LOWER:   return (a_->val(g).number() < b_->val(g).number())^sign_;
+                case CSPLit::EQUAL:   return (a_->val(g).number() == b_->val(g).number())^sign_;
+                case CSPLit::GEQUAL:  return (a_->val(g).number() >= b_->val(g).number())^sign_;
+                case CSPLit::LEQUAL:  return (a_->val(g).number() <= b_->val(g).number())^sign_;
+                case CSPLit::INEQUAL: return (a_->val(g).number() != b_->val(g).number())^sign_;
                 case CSPLit::ASSIGN:  assert(false);  break;
                 }
             }
@@ -173,7 +186,7 @@ namespace Clingcon
             printer->close();
         }
         else
-            printer->normal(t_,ag_,bg_);
+            printer->normal(t_,ag_,bg_,sign_);
         printer->end();
     }
 
@@ -194,6 +207,8 @@ namespace Clingcon
 
     void CSPLit::print(Storage *sto, std::ostream &out) const
     {
+        if (sign_)
+            out << "not ";
         if (lhs_.get())
         {
             out << "(";
@@ -245,13 +260,18 @@ namespace Clingcon
         {
             CSPLit* templ = new CSPLit(*lhs_);
             CSPLit* tempr = new CSPLit(*rhs_);
-            return new CSPLit(loc(), t_, templ, tempr);
+            return new CSPLit(loc(), t_, templ, tempr,sign_);
         }
         else
             return new CSPLit(*this);
     }
 
     void CSPLit::revert()
+    {
+        sign_=!sign_;
+    }
+
+    void CSPLit::revertComparison()
     {
         if (lhs_.get())
         {

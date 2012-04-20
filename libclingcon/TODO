@@ -1,5 +1,7 @@
 DONE
 
+- avoid opposite constraints (X != Y will be transferred to not X == Y, so only ==, < and <= we be in the final program)
+- use complete assignment instead of only using literals that have been assignent by clasp
 - implemented hybrid Recomputation via --csp-cloning=X
 - use advisors instead of reifwait, should be faster
 
@@ -23,7 +25,8 @@ DONE
 
 TODO
 
-- test if recomputation instead of trailing can be used to save copying spaces !
+- test min/max constraints, they already seem to be implemented :)
+- reusing reasons if several lits have been propagated
 - insert propagator for compact order encoding, simply add free variables to clasp!!!
 - implement minimal inconsistent answer, if an answer fails, which constraints are needed, like IIS but with search instead of propagation (high computational efford)
 - disable propQueue on force

@@ -480,13 +480,13 @@ lit(res) ::= FALSE(tok).               { res = new BooleanLit(tok.loc(), false);
 lit(res) ::= term(a) CASSIGN term(b).  { res = new RelLit(a->loc(), RelLit::ASSIGN, a, b); }
 
 
-csplit(res) ::= constraintterm(a) cspcmp(cmp) constraintterm(b). { res = new CSPLit(a->loc(), cmp, a, b); }
+csplit(res) ::= constraintterm(a) cspcmp(cmp) constraintterm(b). { res = new CSPLit(a->loc(), cmp, a, b, false); }
 
 csplit(res) ::= LBRAC csplit(a) RBRAC.       { res = a; }
-csplit(res) ::= csplit(a) CSPAND csplit(b).  { res=new CSPLit(a->loc(), CSPLit::AND, a, b); }
-csplit(res) ::= csplit(a) CSPOR  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::OR,  a, b); }
-csplit(res) ::= csplit(a) CSPXOR csplit(b).  { res=new CSPLit(a->loc(), CSPLit::XOR, a, b); }
-csplit(res) ::= csplit(a) CSPEQ  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::EQ,  a, b); }
+csplit(res) ::= csplit(a) CSPAND csplit(b).  { res=new CSPLit(a->loc(), CSPLit::AND, a, b, false); }
+csplit(res) ::= csplit(a) CSPOR  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::OR,  a, b, false); }
+csplit(res) ::= csplit(a) CSPXOR csplit(b).  { res=new CSPLit(a->loc(), CSPLit::XOR, a, b, false); }
+csplit(res) ::= csplit(a) CSPEQ  csplit(b).  { res=new CSPLit(a->loc(), CSPLit::EQ,  a, b, false); }
 
 
 //does not work yet

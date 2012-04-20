@@ -67,7 +67,7 @@ namespace Clingcon {
         GecodeSolver(bool lazyLearn, bool weakAS, int numAS,
                      const std::string& ICLString, const std::string& BranchVar, const std::string& BranchVal, std::vector<int> optValueVec, bool optAllPar,
                      bool initialLookahead, const std::string& reduceReason, const std::string& reduceConflict, unsigned int cspPropDelay, unsigned int cloning);
-        std::string num2name( unsigned int);
+        std::string num2name(Clasp::Var);
 
         virtual ~GecodeSolver();
         /*
@@ -80,7 +80,6 @@ namespace Clingcon {
         virtual void propagateLiteral(const Clasp::Literal& l, int date);
         virtual bool initialize();
         unsigned int currentDL() const;
-        unsigned int assLength(unsigned int index) const;
         typedef Interval<int>    IntInterval;
         typedef IntervalSet<int> Domain;
         typedef std::map<unsigned int, Domain> DomainMap;
@@ -107,10 +106,10 @@ namespace Clingcon {
         // set if we shall record propagations of gecode
         void setRecording(bool r);
         //virtual bool propagate(const Clasp::LitVec& lv, bool& foundNewLits);
+        bool compare(Clasp::LitVec temp);
         virtual bool propagate();
-        bool propagateOldLits();
         bool _propagate(Clasp::LitVec& );
-        bool finishPropagation();
+        bool finishPropagation(bool onModel=false);
         virtual bool propagateMinimize();
         virtual void reset();
         virtual void undo(unsigned int level);
@@ -165,8 +164,8 @@ namespace Clingcon {
 
         std::vector<SearchSpace*> spaces_; // spaces_[dl_[Y]] is the fully propagated space of decicion level dl[Y]
         //SearchSpace* currentSpace_; // the current space
-        std::vector<unsigned int> dl_; // dl_[Y] = X. spaces_[Y] has decision level X
-        std::vector<unsigned int> assLength_; // length of the assignment of space X
+        std::vector<size_t> dl_; // dl_[Y] = X. spaces_[Y] has decision level X
+        std::vector<size_t> assLength_; // length of the assignment of space X
 
         unsigned int deepCopy_; // do a deep copy every n times
         unsigned int deepCopyCounter_;
@@ -188,15 +187,11 @@ namespace Clingcon {
             size_t reasonLength_;
         };
 
-        typedef std::list<ImpliedLiteral> ImplList;
-
-        // implieadLits_[l] = {(x,y,z)} is the literal x was applied at l, but we found a reason (ass[0]-ass[z]) on level y
-        std::map<size_t, ImplList> impliedLits_;
-
-
-
         //typedef std::map<unsigned int, std::set<unsigned int> > IntToSet;
+
         Clasp::LitVec assignment_; //current/old assignemnt
+        std::list<Clasp::Literal> propToDo_;
+        std::list<size_t> propToDoLength_; //length of the propToDo_ of space X+assLength_.size()
         //			Clasp::LitVec assBeforeProp_; // assignment of (currentDecisionLevel-1) + one currently propagated c-atom
         SearchSpace* enumerator_; // the space for enumerating constraint answer sets
 
@@ -221,7 +216,7 @@ namespace Clingcon {
         Mode              reduceConflict_;
         unsigned int      cspPropDelay_;
         unsigned int      cspPropDelayCounter_;
-        unsigned int      propagated_; // the number of already propagated literals!
+        size_t            propagated_; // the number of already propagated literals!
 
         class CSPDummy : public Clasp::Constraint
         {
@@ -272,7 +267,7 @@ namespace Clingcon {
             virtual SearchSpace* copy(bool share);
             virtual void constrain(const Space& b);
             void propagate(const Clasp::LitVec::const_iterator& lvstart, const Clasp::LitVec::const_iterator& lvend);
-            void propagate(const Clasp::Literal& i);
+            bool propagate(const Clasp::Literal& i);
             //void propagate(const Clasp::LitVec& lv, Clasp::Solver* s);
             //	bool propagate(const Clasp::Literal lv, Clasp::Solver* s);
             void print(const std::vector<std::string>& variables) const;

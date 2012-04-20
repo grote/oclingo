@@ -35,7 +35,7 @@ namespace Clingcon
 	        class Printer : public ::Printer
 	        {
 	        public:
-                    virtual void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b) = 0;
+                    virtual void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b, bool sign) = 0;
                     virtual void start() = 0;
                     virtual void open() = 0;
                     virtual void conn(CSPLit::Type t) = 0;
@@ -44,21 +44,23 @@ namespace Clingcon
                     virtual ~Printer(){};
 		};
 
-                CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b);
-                CSPLit(const Loc &loc, Type t, CSPLit *a, CSPLit *b);
-                void grounded(Grounder *grounder);
-                void normalize(Grounder *g, const Expander& expander);
-                bool fact() const;
-		void accept(::Printer *v);
-                Index* index(Grounder *g, Formula *gr, VarSet &bound);
-		void visit(PrgVisitor *visitor);
-		bool match(Grounder *grounder);
-		void print(Storage *sto, std::ostream &out) const;
-                CSPLit *clone() const;
-		void revert();
-                ~CSPLit();
+            CSPLit(const Loc &loc, Type t, ConstraintTerm *a, ConstraintTerm *b, bool sign);
+            CSPLit(const Loc &loc, Type t, CSPLit *a, CSPLit *b, bool sign);
+            void grounded(Grounder *grounder);
+            void normalize(Grounder *g, const Expander& expander);
+            bool fact() const;
+            void accept(::Printer *v);
+            Index* index(Grounder *g, Formula *gr, VarSet &bound);
+            void visit(PrgVisitor *visitor);
+            bool match(Grounder *grounder);
+            bool sign() const { return sign_; }
+            void print(Storage *sto, std::ostream &out) const;
+            CSPLit *clone() const;
+            void revert();
+            ~CSPLit();
         private:
-                bool isFixed(Grounder *g) const;
+            void revertComparison();
+            bool isFixed(Grounder *g) const;
                 bool getValue(Grounder *g) const;
                 /*static Type switchRel(Type t)
                 {
@@ -94,6 +96,7 @@ namespace Clingcon
                 GroundConstraint*         ag_;
                 GroundConstraint*         bg_;
                 bool                      isFact_;
+                bool                      sign_;
 	};
 
         inline CSPLit* new_clone(const CSPLit& a)

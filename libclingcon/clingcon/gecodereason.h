@@ -56,11 +56,12 @@ namespace Clingcon
 
         virtual void generate(Clasp::LitVec& reason, const Clasp::Literal& , const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& end)
         {
+            unsigned int before = reason.size();
             oldLength_+=end-begin;
             t_.start();
             ++numCalls_;
             reason.insert(reason.end(), begin, end);
-            sumLength_+=reason.size();
+            sumLength_+=reason.size()-before;
             t_.stop();
         }
     private:

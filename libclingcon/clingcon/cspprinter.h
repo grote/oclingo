@@ -29,9 +29,11 @@ namespace Clingcon
                     if (stack_.size()==0)
                         output_->print();
                 }
-                void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b)
+                void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b, bool sign)
 		{
                     std::stringstream ss;
+                    if (sign)
+                        ss << "not ";
 
                     printGroundConstraint(ss,a);
                     switch (t)
@@ -170,7 +172,7 @@ namespace Clingcon
         public:
 
 
-            LParseCSPLitPrinter(LparseConverter *output) : output_(output) { }
+            LParseCSPLitPrinter(LparseConverter *output) : output_(output), sign_(false) { }
             ~LParseCSPLitPrinter()
             {
                 //for (ConstraintVec::iterator i = constraints_.begin(); i != constraints_.end(); ++i)
@@ -181,10 +183,11 @@ namespace Clingcon
             {
             }
 
-            void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b)
+            void normal(CSPLit::Type t, const GroundConstraint* a, const GroundConstraint* b, bool sign)
             {
                 Constraint* c = new Constraint(t,a,b);
                 stack_.push_back(c);
+                sign_ = sign;
 
                 std::stringstream ss;
                 ss << a->getString();
@@ -263,14 +266,14 @@ namespace Clingcon
                     boost::unordered_map<std::string,unsigned int>::iterator i = map_.find(name_[0]);
                     if (i!=map_.end())
                     {
-                        printer->addBody(i->second, false);
+                        printer->addBody(i->second, sign_);
                         constraints_.push_back(std::make_pair(i->second,stack_[0]));
                     }
                     else
                     {
                         uint32_t atom = static_cast<CSPOutputInterface*>(output_)->symbol(name_[0],true);
                         map_[name_[0]]=atom;
-                        printer->addBody(atom, false);
+                        printer->addBody(atom, sign_);
                         constraints_.push_back(std::make_pair(atom,stack_[0]));
                     }
                     name_.pop_back();
@@ -291,6 +294,7 @@ namespace Clingcon
             ConstraintVec constraints_;
             std::vector<Constraint*> stack_;
             std::vector<std::string> name_;
+            bool sign_;
 
         };
 

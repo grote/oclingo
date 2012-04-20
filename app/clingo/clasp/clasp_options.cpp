@@ -345,7 +345,7 @@ void SearchOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 	lookback.addOptions()
                 //("no-lookback"   ,bool_switch(), "Disable all lookback strategies\n")
 
-		("restarts,r", storeTo(parseSolve)->parser(&SolveOptionsWrapper::mapRestarts),
+        ("restarts,r", storeTo(parseSolve)->parser(&SolveOptionsWrapper::mapRestarts),
 			"Configure restart policy\n"
 			"      Default: 100,1.5\n"
 			"      Valid:   <n1[,n2,n3]> (<n1> >= 0, <n2>,<n3> > 0), no\n"

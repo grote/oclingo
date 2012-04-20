@@ -36,6 +36,7 @@ namespace Clingcon
 
 void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    unsigned int before = reason.size();
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
@@ -109,8 +110,8 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
 
     }
     Ende:
-    sumLength_+=reason.size();
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), original->propagate(~l), original->status()==SS_FAILED));
+    sumLength_+=reason.size()-before;
+    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin()+before, reason.end()), original->propagate(~l), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -121,6 +122,7 @@ void LinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const
 
 void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    unsigned int before = reason.size();
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
@@ -193,9 +195,9 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
 
     }
     Ende:
-    sumLength_+=reason.size();
+    sumLength_+=reason.size()-before;
     //std::cout << sumLength_ << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin(), reason.end()), original->propagate(~l), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(reason.begin()+before, reason.end()), original->propagate(~l), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -207,6 +209,7 @@ void FwdLinearIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, co
 
 void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    unsigned int before = reason.size();
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
@@ -261,8 +264,8 @@ void RangeIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const 
     }
 
     Ende:
-    sumLength_+=reason.size();
-    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    sumLength_+=reason.size()-before;
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin()+before, reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
 
@@ -291,6 +294,7 @@ CCIRSRA::CCIRSRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLength_(0
 
 void CCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    unsigned int before = reason.size();
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
@@ -406,10 +410,10 @@ void CCIRSRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Cla
     while (true);
 
     Ende:
-    sumLength_+=reason.size();
+    sumLength_+=reason.size()-before;
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin()+before, reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
@@ -437,6 +441,7 @@ CCRangeRA::CCRangeRA(GecodeSolver *g) : g_(g), props_(0), numCalls_(0), sumLengt
 
 void CCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const Clasp::LitVec::const_iterator& begin, const Clasp::LitVec::const_iterator& ends)
 {
+    unsigned int before = reason.size();
     oldLength_+=ends-begin;
     t_.start();
     ++numCalls_;
@@ -530,10 +535,10 @@ void CCRangeRA::generate(Clasp::LitVec& reason, const Clasp::Literal& l, const C
     while (true);
 
     Ende:
-    sumLength_+=reason.size();
+    sumLength_+=reason.size()-before;
     //std::cout << sumLength_ << std::endl;
     //std::cout << "Ende" << std::endl;
-    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin(), reason.end()), original->status()==SS_FAILED));
+    assert((delete original, original = g_->getRootSpace(), original->propagate(~l), original->propagate(reason.begin()+before, reason.end()), original->status()==SS_FAILED));
     delete original;
     g_->setRecording(true);
     t_.stop();
