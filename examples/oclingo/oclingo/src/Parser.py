@@ -8,6 +8,7 @@ class Parser:
 
 	def __init__(self, input):
 		self.input = input
+		self.online_input = []
 
 
 	def __get_value_type(self, value):
@@ -21,10 +22,12 @@ class Parser:
 	def __return_p(self, p):
 		result = ''
 		for token in p:
-			if token != None: # TODO remove when unnecessary
+			if token != None:
 				result += token
 		return result
-
+	
+	def get_online_input(self):
+		return self.online_input
 
 	def parse_input(self):
 		"""
@@ -89,34 +92,75 @@ class Parser:
 	# grammar definition
 
 	def p_program(self, p):
+		# maybe no stop necessary, then take blocks here directly
+		'''
+		program : blocks STOP DOT
+		'''
+
+	def p_blocks(self, p):
+		'''		
+		blocks : start ENDSTEP DOT
+			   | start expression ENDSTEP DOT
+			   | blocks start ENDSTEP DOT
+			   | blocks start expression ENDSTEP DOT
+		'''
+		p[0] = self.__return_p(p)
+		
+		# add line breaks for nicer output
+		p[0] = p[0].replace('.','.\n')
+		
+		self.online_input.append(p[0])
+
+		# clear old blocks
+		p[0] = ''
+
+	def p_start(self, p):
+		'''
+		start : STEP NUM DOT
+			  | STEP NUM COLON NUM DOT
+		'''
+		if len(p) == 4:
+			p[0] = p[1] + ' ' + p[2] + p[3]
+		elif len(p) == 6:
+			p[0] = p[1] + ' ' + p[2] + ' ' + p[3] + ' ' + p[4] + p[5]
+
+	def p_expression(self, p):
 		'''
 		expression : statement DOT
 				   | expression statement DOT
 		'''
-		print self.__return_p(p)
+		p[0] = self.__return_p(p)
 
 	def p_statement(self, p):
 		'''
 		statement : rule
 				  | meta
 		'''
-		p[0] = p[1]
+		p[0] = self.__return_p(p)
 
 	def p_meta(self, p):
 		'''
-		meta : STEP NUM
-			 | STEP NUM COLON NUM
-			 | ENDSTEP
-			 | CUMULATIVE
+		meta : CUMULATIVE
 			 | VOLATILE
 			 | VOLATILE COLON NUM
 			 | FORGET NUM
 			 | FORGET NUM DOTS NUM
 			 | ASSERT COLON term
 			 | RETRACT COLON term
-			 | STOP
 		'''
-		p[0] = self.__return_p(p)
+		if len(p) == 3:
+			# FORGET NUM
+			p[0] = p[1] + ' ' + p[2]
+		elif len(p) == 4:
+			# VOLATILE COLON NUM
+			# ASSERT COLON term
+			# RETRACT COLON term
+			p[0] = p[1] + ' ' + p[2] + ' ' + p[3]
+		elif len(p) == 5:
+			# FORGET NUM DOTS NUM
+			p[0] = p[1] + ' ' + p[2] + p[3] + p[4]
+		else:
+			p[0] = self.__return_p(p)
 
 	def p_rule(self, p):
 		'''
@@ -124,7 +168,14 @@ class Parser:
 			 | IF body
 			 | predicate IF body
 		'''
-		p[0] = self.__return_p(p)
+		if len(p) == 3:
+			# IF body
+			p[0] = p[1] + ' ' + p[2]
+		elif len(p) == 4:
+			# predicate IF body
+			p[0] = p[1] + ' ' + p[2] + ' ' + p[3]
+		else:
+			p[0] = self.__return_p(p)
 
 	def p_body(self, p):
 		'''
@@ -139,7 +190,11 @@ class Parser:
 				| NOT predicate
 				| relation
 		'''
-		p[0] = self.__return_p(p)
+		if len(p) == 3:
+			# NOT predicate
+			p[0] = p[1] + ' ' + p[2]
+		else:
+			p[0] = self.__return_p(p)
 
 	def p_predicate(self, p):
 		'''

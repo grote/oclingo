@@ -67,9 +67,8 @@ def getInput(input):
 	if len(args) == 1:
 		time.sleep(float(opt.time))
 		if len(input) > 0:
-			result = ''.join(input[0])
+			result = input[0]
 			input.pop(0)
-			result += "#endstep.\n"
 		else:
 			result = "#stop.\n"
 			

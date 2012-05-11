@@ -1,6 +1,6 @@
 Got input:
 #step 2.
-rain(50, 3, 2).
+rain(50,3,2).
 #endstep.
 
 Answer: 1
@@ -13,7 +13,7 @@ Answer: 1
   6.  goal(6)           on(0,table,6)  on(1,0,6)      on(2,1,6)      on(3,2,6)      on(4,3,6)      on(50,table,6)  
 Got input:
 #step 3.
-rain(51, 2, 3).
+rain(51,2,3).
 #endstep.
 
 Answer: 1

@@ -73,7 +73,7 @@ Answer: 3
   5.  at(3,3,5)  won(5)       
 Got input:
 #step 4.
-robot_moved(right, 3).
+robot_moved(right,3).
 #endstep.
 
 Answer: 1
@@ -85,7 +85,7 @@ Answer: 1
   5.  at(3,3,5)  won(5)       
 Got input:
 #step 5.
-robot_moved(down, 4).
+robot_moved(down,4).
 #endstep.
 
 Answer: 1
@@ -99,7 +99,7 @@ Answer: 1
   7.  at(3,3,7)  won(7)       
 Got input:
 #step 6.
-robot_moved(left, 5).
+robot_moved(left,5).
 #endstep.
 
 Answer: 1

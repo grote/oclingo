@@ -162,7 +162,7 @@ def runController(test):
 
 def compareOutput(test, output):
 	try:
-		(result, error) = subprocess.Popen(['diff', '-bB', test.output, '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate(output)
+		(result, error) = subprocess.Popen(['diff', '-wB', test.output, '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate(output)
 		if len(result) > 0:
 			print result
 			return False

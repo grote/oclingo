@@ -73,7 +73,7 @@ Answer: 3
   5.  at(3,3,5)  won(5)       
 Got input:
 #step 4.
-robot_moved(right, 3).
+robot_moved(right,3).
 #endstep.
 
 Answer: 1
