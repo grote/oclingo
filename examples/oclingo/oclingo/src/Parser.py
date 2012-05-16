@@ -9,6 +9,7 @@ class Parser:
 	def __init__(self, input):
 		self.input = input
 		self.online_input = []
+		self.error = False
 
 
 	def __get_value_type(self, value):
@@ -28,6 +29,15 @@ class Parser:
 	
 	def get_online_input(self):
 		return self.online_input
+
+
+	def validate_input(self):
+		self.parse_input()
+		if self.error:
+			return False
+		else:
+			return True
+
 
 	def parse_input(self):
 		"""
@@ -88,21 +98,16 @@ class Parser:
 	def t_error(self, t):
 		sys.stderr.write("Illegal character '%s' on line %d.\n" % (t.value[0], t.lexer.lineno))
 		t.lexer.skip(1)
+		self.error = True
 
 	# grammar definition
 
 	def p_program(self, p):
-		# maybe no stop necessary, then take blocks here directly
 		'''
-		program : blocks STOP DOT
-		'''
-
-	def p_blocks(self, p):
-		'''		
-		blocks : start ENDSTEP DOT
-			   | start expression ENDSTEP DOT
-			   | blocks start ENDSTEP DOT
-			   | blocks start expression ENDSTEP DOT
+		program : start end
+			    | start expression end
+			    | program start end
+			    | program start expression end
 		'''
 		p[0] = self.__return_p(p)
 		
@@ -111,7 +116,7 @@ class Parser:
 		
 		self.online_input.append(p[0])
 
-		# clear old blocks
+		# clear old program block
 		p[0] = ''
 
 	def p_start(self, p):
@@ -123,6 +128,14 @@ class Parser:
 			p[0] = p[1] + ' ' + p[2] + p[3]
 		elif len(p) == 6:
 			p[0] = p[1] + ' ' + p[2] + ' ' + p[3] + ' ' + p[4] + p[5]
+	
+	def p_end(self, p):
+		'''
+		end : ENDSTEP DOT
+			| ENDSTEP DOT STOP DOT
+		'''
+		# ignore stop
+		p[0] = p[1] + p[2]
 
 	def p_expression(self, p):
 		'''
@@ -232,4 +245,5 @@ class Parser:
 			sys.stderr.write("Syntax error '%s' at line %d.\n" % (p.value, p.lexer.lineno))
 		else:
 			sys.stderr.write("Syntax error at EOF.\n")
+		self.error = True
 
