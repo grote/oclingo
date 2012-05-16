@@ -1,6 +1,5 @@
 """
-Module oClingo
-TODO
+a controller class that connects as a client to an oClingo server
 """
 
 import sys # TODO remove when not needed anymore
@@ -12,12 +11,10 @@ import re
 class Controller:
 	"""
 	A controller class that talks to oClingo
+	takes port, host and debug value as constructor arguments
 	"""
 
 	def __init__(self, port=25277, host="localhost", debug=False):
-		"""
-        TODO
-		"""
 		self.port = port
 		self.host = host
 		self.debug = debug
@@ -28,7 +25,8 @@ class Controller:
 
 	def connect(self):
 		"""
-		TODO
+		connect to socket.
+		needs to be called before other functions can be used.
 		"""
 		if(not self.connected):
 			try:
@@ -41,7 +39,7 @@ class Controller:
 
 	def disconnect(self):
 		"""
-		TODO
+		disconnect from socket
 		"""
 		if self.debug:
 			print "Closing socket..."
@@ -55,7 +53,7 @@ class Controller:
 
 	def send(self, input):
 		"""
-		TODO
+		send input to connected oclingo server
 		"""
 		if self.connected:
 			self.s.sendall(input + self.delim)
@@ -84,7 +82,8 @@ class Controller:
 	
 	def recv(self):
 		"""
-		TODO
+		receive answer from connected oclingo server and wait for result.
+		returns list of answer sets
 		"""
 		answer_sets = []
 
@@ -115,7 +114,8 @@ class Controller:
 
 	def irecv(self):
 		"""
-		TODO
+		receive answer from connected oclingo server and do not wait for result.
+		returns list of answer sets
 		"""
 		self.s.setblocking(0)
 		result = self.recv()

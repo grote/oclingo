@@ -3,7 +3,7 @@ import ply.lex as lex, ply.yacc as yacc
 
 class Parser:
 	"""
-	TODO
+	parses online progressions modules
 	"""
 
 	def __init__(self, input):
@@ -28,10 +28,18 @@ class Parser:
 		return result
 	
 	def get_online_input(self):
+		'''
+		returns a list of online progression modules.
+		needs to be run after parse_input()
+		'''
 		return self.online_input
 
 
 	def validate_input(self):
+		'''
+		same as parse_input() except that True is returned when parsing was sucessful
+		and False otherwise.
+		'''
 		self.parse_input()
 		if self.error:
 			return False

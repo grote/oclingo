@@ -1,6 +1,4 @@
 """
-Module oClingo Input
-
 It can be used to retrieve online input via files or STDIN.
 """
 

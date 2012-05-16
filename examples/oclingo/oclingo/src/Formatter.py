@@ -1,6 +1,5 @@
 """
-Module oClingo Formatter
-TODO
+helper function to format answer sets
 """
 
 import re
