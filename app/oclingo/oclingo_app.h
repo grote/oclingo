@@ -124,6 +124,24 @@ bool FromGringo<OCLINGO>::read(Clasp::Solver& s, Clasp::ProgramBuilder* api, int
 /////////////////////////////////////////////////////////////////////////////////////////
 
 template <>
+void ClingoApp<OCLINGO>::doState(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
+	using namespace Clasp;
+	ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge();
+
+	if(clingo.mode == OCLINGO) {
+		if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_exit) {
+			// make sure we are not adding new input while doing propagation in preprocessing
+			ext.removePostPropagator(solver_);
+		}
+		if(f.state() == ClaspFacade::state_solve && e == Clasp::ClaspFacade::event_state_enter) {
+			// make sure we are not adding new input while doing propagation in preprocessing
+			ext.addPostPropagator(solver_);
+		}
+	}
+
+}
+
+template <>
 void ClingoApp<OCLINGO>::doEvent(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f)
 {
 	(void) f;
