@@ -20,10 +20,9 @@
 #include "oclaspoutput.h"
 #include <gringo/grounder.h>
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port, bool import)
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, oClaspOutput* output, uint32_t port, bool import)
 	: grounder_(grounder)
 	, output_(output)
-	, solver_(solver)
 	, socket_(NULL)
 	, port_(port)
 	, reading_(false)
@@ -55,13 +54,13 @@ ExternalKnowledge::~ExternalKnowledge() {
 	if(my_post_) delete post_;
 }
 
-void ExternalKnowledge::addPostPropagator() {
+void ExternalKnowledge::addPostPropagator(Clasp::Solver& solver) {
 	my_post_ = false;
-	solver_->addPost(post_);
+	solver.addPost(post_);
 }
 
-void ExternalKnowledge::removePostPropagator() {
-	solver_->removePost(post_);
+void ExternalKnowledge::removePostPropagator(Clasp::Solver& solver) {
+	solver.removePost(post_);
 	my_post_ = true;
 }
 

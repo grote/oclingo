@@ -36,10 +36,10 @@ class oClaspOutput;
 class ExternalKnowledge
 {
 public:
-	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, Clasp::Solver* solver, uint32_t port, bool import);
+	ExternalKnowledge(Grounder* grounder, oClaspOutput* output, uint32_t port, bool import);
 	~ExternalKnowledge();
-	void addPostPropagator();
-	void removePostPropagator();
+	void addPostPropagator(Clasp::Solver& solver);
+	void removePostPropagator(Clasp::Solver& solver);
 
 	void startSocket(int port);
 	int poll();
@@ -82,7 +82,6 @@ protected:
 private:
 	Grounder* grounder_;
 	oClaspOutput* output_;
-	Clasp::Solver* solver_;
 
 	typedef boost::ptr_list<GroundProgramBuilder::Stack> StackPtrList;
 	StackPtrList stacks_;

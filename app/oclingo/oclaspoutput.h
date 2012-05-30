@@ -26,7 +26,7 @@ class ExternalKnowledge;
 class oClaspOutput : public ClaspOutput
 {
 public:
-	oClaspOutput(Grounder* grounder, Clasp::Solver* solver, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
+	oClaspOutput(Grounder* grounder, bool shiftDisj, IncConfig &config, uint32_t port, bool import);
 	~oClaspOutput();
 	ExternalKnowledge& getExternalKnowledge();
 	uint32_t getQueryAtom();

@@ -126,11 +126,17 @@ void ClingoApp<OCLINGO>::doState(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade
 	using namespace Clasp;
 	ExternalKnowledge& ext = dynamic_cast<oClaspOutput*>(dynamic_cast<FromGringo<OCLINGO>*>(in_.get())->out.get())->getExternalKnowledge();
 
-	if(clingo.mode == OCLINGO && f.state() == ClaspFacade::state_solve) {
-		if(e == ClaspFacade::event_state_exit) {
+	if(clingo.mode == OCLINGO) {
+		if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_exit) {
 			if(ext.hasModel()) {
 				ext.sendToClient("\n  ],\n  \"Result\": \"SATISFIABLE\"\n}");
 			}
+			// make sure we are not adding new input while doing propagation in preprocessing
+			ext.removePostPropagator(solver_);
+		}
+		if(f.state() == ClaspFacade::state_solve && e == Clasp::ClaspFacade::event_state_enter) {
+			// make sure we are not adding new input while doing propagation in preprocessing
+			ext.addPostPropagator(solver_);
 		}
 	}
 
