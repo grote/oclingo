@@ -94,6 +94,7 @@ protected:
 
 	// ClaspFacade::Callback interface
 	void state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
+	virtual void doState(Clasp::ClaspFacade::Event, Clasp::ClaspFacade&) { }
 	void event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
 	virtual void doEvent(Clasp::ClaspFacade::Event, Clasp::ClaspFacade&) { }
 	void warning(const char* msg) { messages.warning.push_back(msg); }
@@ -486,6 +487,7 @@ void ClingoApp<M>::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			solver_.stats.solve.reset();
 		}
 	}
+	doState(e, f);
 }
 
 template <Mode M>
