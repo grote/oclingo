@@ -51,7 +51,10 @@ def main():
 		current_input = getInput(input)
 		if current_input != '' and current_input != '#stop.\n':
 			c.send(current_input)
-			result = c.recv()
+			if opt.wait != 'yes':
+				result = c.irecv()
+			else:
+				result = c.recv()
 			print Formatter.formatList(result)
 		else:
 			break

@@ -117,6 +117,9 @@ class Controller:
 		receive answer from connected oclingo server and do not wait for result.
 		returns list of answer sets
 		"""
+		# TODO implement proper non-blocking reads from socket
+		# asynchat looks very interesting
+		# http://docs.python.org/library/asynchat.html
 		self.s.setblocking(0)
 		result = self.recv()
 		self.s.setblocking(1)
