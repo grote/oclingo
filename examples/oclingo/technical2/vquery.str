@@ -1,0 +1,21 @@
+#step 1.
+#volatile.
+:- not p(2).
+#endstep.
+
+#step 1.
+#volatile.
+:- not p(1).
+#endstep.
+
+#step 1.
+#volatile.
+:- not p(2).
+#endstep.
+
+#step 1.
+#volatile.
+:- not p(1).
+#endstep.
+
+#stop.

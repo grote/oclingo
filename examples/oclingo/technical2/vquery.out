@@ -1,0 +1,35 @@
+Got input:
+#step 1.
+#volatile.
+:- not p(2).
+#endstep.
+
+Answer: 1
+  2.  p(2)  
+Got input:
+#step 1.
+#volatile.
+:- not p(1).
+#endstep.
+
+Answer: 1
+  1.  p(1)  
+Got input:
+#step 1.
+#volatile.
+:- not p(2).
+#endstep.
+
+Answer: 1
+  2.  p(2)  
+Got input:
+#step 1.
+#volatile.
+:- not p(1).
+#endstep.
+
+Answer: 1
+  1.  p(1)  
+Got input:
+#stop.
+

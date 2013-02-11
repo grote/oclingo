@@ -164,9 +164,10 @@ bool ExternalKnowledge::addInput() {
 		io_service_.run_one();
 	}
 
-	output_->deactivateQueryAtom();
+	//output_->deactivateQueryAtom();
 
 	if(new_input_) {
+		output_->deactivateQueryAtom();
 		new_input_ = false;
 
 		std::istream is(&b_);

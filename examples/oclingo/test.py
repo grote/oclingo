@@ -37,6 +37,7 @@ TESTS = [
 	['technical1', 'technical.lp', 'online6.lp', 'online6.out'],
 	['technical1', 'technical.lp', 'online7.lp', 'online7.out'],
 	['technical2', 'volatile1.lp', 'vonline1.lp', 'vonline1.out'],
+	['technical2',  'vquery.lp', 'vquery.str', 'vquery.out'], # Volatile query effective life-time test
 	['tictactoe', 'tictactoe.lp', 'online.lp',   'online.out'],
 	['tictactoe', 'tictactoe.lp', 'online2.lp', 'online2.out'],
 	['tictactoe', 'tictactoe.lp', 'online3.lp', 'online3.out'],
