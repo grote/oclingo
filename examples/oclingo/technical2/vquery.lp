@@ -1,3 +1,5 @@
+% Test for Volatile Query Bug (http://sourceforge.net/p/potassco/bugs/73/)
+
 #base.
 {p(1),p(2)}.
 
