@@ -35,46 +35,59 @@ parser.add_argument('--version', action='version', version='0.2')
 parser.add_argument("-n", "--host", dest="host", help="Hostname of the oClingo server. Default: %(default)s")
 parser.add_argument("-p", "--port", dest="port", type=int, help="Port the oClingo server is listening to. Default: %(default)s")
 parser.add_argument("-t", "--time", dest="time", type=int, help="Time delay in seconds between sending input from online.lp to server. Default: %(default)s")
+parser.add_argument("--to", "--timeout", dest="timeout", action="store_true", help="Changes behaviour of \'-t\' flag to act as a time-out counter")
 parser.add_argument("-w", "--wait", dest="wait", choices=["yes", "no"], help="Wait for answer set before sending new input, yes or no. Default: %(default)s")
 parser.add_argument("-d", "--debug", dest="debug", action="store_true", help="Show debugging output")
+parser.add_argument("--co", "--carry-over", dest="copred", help="All instances of this predicate in the answer set(s) of an stream input are added to the next input event. Default: %(default)s")
+
+# oclingo wrapper
+parser.add_argument("-o", "--oclenc", dest="oclenc", nargs="*", help="Wrapper mode for oClingo server, takes oclingo encoding(s) as input. Default: %(default)s")
+parser.add_argument("--op", "--oclpar", dest="oclpar", nargs="*", help="For oClingo Wrapper mode: takes oclingo command line parameters as input. Default: %(default)s")
+
+# query mode
 parser.add_argument("-q", "--query", dest="query", action="store_true", help="Activate query mode.")
+parser.add_argument("--nv", "--no-volatile", dest="novol", action="store_true", help="For query mode: treats queries as classical clauses, not as volatile queries.")
 parser.add_argument("--qq", dest="qquads", nargs="*", help="""For query mode: quads of the form '<query atom>,<base atom>,<arity>, <precondition>'
 					can be given to establish an equivalence mapping in the encoding. E.g.,  triple 'q,base_q,3,pre' instructs the mapping of 'q/3' to 'base_q/3'
 				 	where precondition 'pre' is applied to guarantee safety . Default: %(default)s""")
 parser.add_argument("--qii", dest="qii", action="store_true", help="""For query mode: automatically increments the incremental step counter for each new query and
 					implicitly adds the counter value as last argument to the query atom, e.g. 'q(1)' becomes 'q(1, <inc step>'. Default: %(default)s""")
-parser.add_argument("-o", "--oclenc", dest="oclenc", nargs="*", help="Wrapper mode for oClingo server, takes oclingo encoding(s) as input. Default: %(default)s")
-parser.add_argument("--op","--oclpar", dest="oclpar", nargs="*", help="For oClingo Wrapper mode: takes oclingo command line parameters as input. Default: %(default)s")
-parser.add_argument("--qws", "--qwindow-size", dest="qWindowSize", type=int, help="""For query mode: specifies the default window size of queries,
-					i.e., for how many input steps a query should be considered. Default: %(default)s""")
+parser.add_argument("--iws", "--iwindow-size", dest="iWindowSize", type=int, help="""For query mode: instead of the default ad-hoc queries specifies an incremental 
+					window (size) for queries, i.e., for how many incremental steps a query should be considered. Default: %(default)s""")
+
 parser.set_defaults(
 	files='',
 	host='localhost',
 	port=25277,
 	time=0,
+	timeout=False,
 	wait="yes",
 	qquads=[],
 	oclenc=[],
 	oclpar=[],
+	copred='',
 	qii=False,
-	qWindowSize=1,
+	iWindowSize=0,
 	# query=False,
 	debug=False
-)
+	)
 args = parser.parse_args()
-equivalEnc = "% Equivalence Additions\n"  # equivalence Encodings for query relations
-currentIncStep = 0
+
 # print args.files
 # print len(args.files)
 # print args.qapairs
 # print len(args.qapairs)
-#print args.oclenc
+# print args.oclenc
 # print args.qquads
 
+equivalEnc = "% Equivalence Additions\n"  # equivalence Encodings for query relations
+currentIncStep = 0
 exit = False
 have_answer_set = False
 data_old = ''
-online_input = [[]]
+online_input = [[]]  # Contains online content if stream is given as file
+co_input = []
+answerTimedOut = False
 
 FACT = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.(\s*%.*)?$")  # Arbitrary fact clause
 FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")  # Fact clause whose last component is a decimal number
@@ -107,31 +120,11 @@ PARSER = [
 					re.compile("^UNSAT at step (\d+)$")
 ]
 
+# Parser for predicates to be carried over
+CO_PARSER = [
+					re.compile(args.copred + "(\((.*?),?(\d+)?\))?")
+]
 
-def addQatomEquival():
-	""" Adds euqivalence mappings specified by '--qp'"""
-	global equivalEnc
-	for q in args.qquads:
-		if QQUAD.match(q):
-			extRel = QQUAD.match(q).group(1)
-			baseRel = QQUAD.match(q).group(2)
-			arity = QQUAD.match(q).group(3)
-			precond = QQUAD.match(q).group(4)
-
-			for i in range(int(arity)):
-				if i == 0:
-					relArgs = "X0"
-				else:
-					relArgs += ",X" + str(i)
-
-			equivalEnc += ("#volatile t.\n"
-							"#external " + extRel + "(" + relArgs + ",t) : " + precond + "(" + relArgs + ")" + ".\n"
-							":- " + extRel + "(" + relArgs + ",t) , " + "not " + baseRel + "(" + relArgs + ").\n"
-							":- not " + extRel + "(" + relArgs + ",t) , " + baseRel + "(" + relArgs + ").\n")
-		else:
-			raise RuntimeError("Invalid query quad format.")
-		if args.debug:
-			print "equivalEnc:\n" + equivalEnc
 
 def main():
 	# Add equivalence assignements for query and base atoms.
@@ -184,11 +177,54 @@ def main():
 	closeSocket(s)
 	return 0
 
+def addQatomEquival():
+	""" Adds euqivalence mappings specified by '--qp'"""
+	global equivalEnc
+	for q in args.qquads:
+		if QQUAD.match(q):
+			extRel = QQUAD.match(q).group(1)
+			baseRel = QQUAD.match(q).group(2)
+			arity = QQUAD.match(q).group(3)
+			precond = QQUAD.match(q).group(4)
+
+			for i in range(int(arity)):
+				if i == 0:
+					relArgs = "X0"
+				else:
+					relArgs += ",X" + str(i)
+
+			equivalEnc += ("#volatile t.\n"
+							"#external " + extRel + "(" + relArgs + ",t) : " + precond + "(" + relArgs + ")" + ".\n"
+							":- " + extRel + "(" + relArgs + ",t) , " + "not " + baseRel + "(" + relArgs + ").\n"
+							":- not " + extRel + "(" + relArgs + ",t) , " + baseRel + "(" + relArgs + ").\n")
+		else:
+			raise RuntimeError("Invalid query quad format.")
+		if args.debug:
+			print "equivalEnc:\n" + equivalEnc
+
+
+def carryOverResults(answer_set):
+	"""Spoofs results from current answer_sets into next stream
+	input"""
+	# only execute if co relation is given in cl
+	if args.copred:
+		global co_input
+		co_input = []
+		for pred in answer_set:
+			for i in range(len(CO_PARSER)):
+				match = CO_PARSER[i].match(pred)
+				if match != None:
+					co_input.append("position" + "(" + match.group(2) + ")")
+					if args.debug: print "found " + pred + "\n"
+		if args.debug: print "CO list is " + ' '.join(co_input)
+
 def connectToSocket(s):
 	try:
 		s.connect((args.host, int(args.port)))
+		# s.setblocking(0)
 	except socket.error:
 		raise EnvironmentError("Could not connect to %s:%s" % (args.host, args.port))
+	return
 
 # Prepares input stream for processing if given as file
 def prepareInput():
@@ -196,7 +232,7 @@ def prepareInput():
 	if len(args.files) == 1:
 		file = args.files[0]
 		if os.path.exists(file):
-			global online_input
+			global online_input, co_input
 
 			f = open(file, 'r')
 			i = 0
@@ -239,7 +275,7 @@ def prepareInput():
 		raise RuntimeError("More than one online file was given")
 
 def getAnswerSets(s):
-	global exit, currentIncStep
+	global exit, currentIncStep, answerTimedOut
 	answer_sets = []
 
 	while not exit:
@@ -274,10 +310,10 @@ def getAnswerSets(s):
 	return answer_sets
 
 def recv_until(s, delimiter):
-	global data_old, exit
+	global data_old, exit, answerTimedOut
 
 	if args.debug:
-		print "Receiving data from socket..."
+		print "Trying to receive data from socket..."
 
 	data_list = data_old.split(delimiter, 1)
 	data = ''
@@ -288,17 +324,27 @@ def recv_until(s, delimiter):
 	else:
 		while not exit:
 			data = ''
+
+			if args.timeout: s.settimeout(args.time)
+
 			try:
 				data = s.recv(2048)
 				if data == '':
 					exit = True
 					raise IOError("Socket was closed by server, probably because '#stop.' was sent, the program is not satisfiable anymore or --imax was reached.")
 					return data_old
+			except socket.timeout:
+				answerTimedOut = True
+				print "Answer timed out."
 			except socket.error:
-				if args.debug:
-					print "Socket was closed. Returning last received data..."
-				exit = True
-				return data + data_old
+ 				if args.debug:
+ 					print "recv: Socket was closed. Returning last received data..."
+ 				exit = True
+ 				return data + data_old
+			finally:
+				s.settimeout(None)
+				# s.settimeout(0.0)
+
 			data = data_old + data
 			data_list = data.split(delimiter, 1)
 			if len(data_list) > 1:
@@ -316,6 +362,7 @@ def processAnswerSets(answer_sets):
 	for answer_set in answer_sets:
 		print "Answer: %d" % i
 		printAnswerSet(answer_set)
+		carryOverResults(answer_set)
 		i += 1
 
 def printAnswerSet(answer_set):
@@ -367,57 +414,110 @@ def printRow(plan, row_len, time):
 
 # Aux method called by InputThread, make sure the main thread is not accessing at the same time
 def getInput():
-	"""Aux method called by InputThread."""
+	"""Central method to retrieve input, either called by main or InputThread."""
+	global co_input, have_answer_set, answerTimedOut
 	if len(args.files) == 1:
-		time.sleep(float(args.time))
-		if len(online_input) > 0:
-			result = ''.join(online_input[0])
-			online_input.pop(0)
-			result += "#endstep.\n"
+		if not args.timeout:
+			time.sleep(float(args.time))
+		# if time-out behaviour of '-t' flag requested
 		else:
-			result = "#stop.\n"
+			while not (have_answer_set or answerTimedOut):
+				time.sleep(1)
 
-		print "Got input:"
-		print result
+# 		else:
+# 			countdown = args.time
+# 			while  countdown > 0:
+# 				time.sleep(1)
+# 				countdown -= 1
+# 				if have_answer_set:
+# 					break
+
+
+		if len(online_input) > 0:
+			input = ''.join(online_input[0])
+			online_input.pop(0)
+
+			# adding carry over atoms
+			if co_input:
+				for pred in co_input:
+					input += ":- not " + pred + ". \n"
+			input += "#endstep.\n"
+			have_answer_set = False  # wait for AS of this new input
+			answerTimedOut = False
+		else:
+			input = "#stop.\n"
 	elif args.query:
-		result = getInputFromSTDINQM()
+		input = getInputFromSTDINQM()
 	else:
-		result = getInputFromSTDIN()
-	return result
+		input = getInputFromSTDIN()
+
+	print "Got input:"
+	print input
+
+	return input
+
 
 # Function to read directly from STDIN with support for
 # adhoc query mode
 def getInputFromSTDINQM():
 	"""Function to read directly from STDIN with support for adhoc query mode"""
 	input = ''
+	assert_line = ''
 	print "Please enter your query (format: single ground clause)"
 	# parse input
 	while True:
 		line = sys.stdin.readline()
-		if 	FACT.match(line) != None or\
-			INTEGRITY.match(line) != None or\
-			RULE.match(line) != None:
-				# In case implicit incremental par is requested by user
-				if	FACT.match(line) != None and args.qii:
-					global currentIncStep
-					currentIncStep += 1
-					substitute = "," + str(currentIncStep) + ")."
-					line = re.sub(r'\)\s*.\s*', substitute, line)
-				input = ("#step " + str(currentIncStep) + ".\n"
-						"#volatile: " + str(args.qWindowSize) + ".\n" +
-		        		line + "\n"
-		        		"#endstep.\n")
-				break
+		if FACT.match(line) != None or\
+		   INTEGRITY.match(line) != None or\
+		   RULE.match(line) != None:
+			# In case implicit incremental par is requested by user
+			if (FACT.match(line)!=None or INTEGRITY.match(line)!= None) and args.qii:
+				global currentIncStep
+				currentIncStep += 1
+				substitute = "," + str(currentIncStep) + ").\n"
+				line = re.sub(r'\)\s*.\s*', substitute, line)
+			# Special handling of assertions - part 2
+			if assert_line:
+				input = ("#step " + str(currentIncStep) + ".\n" +
+					 assert_line +
+					 line +
+					 "#endstep.\n")
+				assert_line = ''
+			# Standard volatile query
+			else:
+				#input-based volatility
+				volatileDirective = "#volatile.\n"
+				#incremental-grounding-based volatiliy
+				if args.iWindowSize:
+					volatileDirective = "#volatile: " + str(args.qWindowSize) + ".\n"
+				#no volatility
+				elif args.novol:
+					volatileDirective = ""
+					
+				input = ("#step " + str(currentIncStep) + ".\n" +
+					volatileDirective +
+					line +
+					"#endstep.\n") 
+			break
 		elif IN_PARSER['incstep'].match(line) != None:  # +1 increment instruction
-			input = ("#step " + str(currentIncStep + 1) + ".\n" 
-					"#endstep.\n")
+			input = ("#step " + str(currentIncStep + 1) + ".\n"
+				 "#endstep.\n")
 			break
 		elif IN_PARSER['incstepd'].match(line) != None:  # +d increment instruction
 			input = ("#step " + IN_PARSER['incstepd'].match(line).group(1) + ".\n"
-					"#endstep.\n")
+				 "#endstep.\n")
 			break
 		elif IN_PARSER['endstep'].match(line) != None or IN_PARSER['stop'].match(line) != None:
 			input = line
+			break
+		# Special handling of assertions - part 1
+		elif IN_PARSER['assert'].match(line) != None:
+			assert_line = line
+		# Special handling of retractions
+		elif IN_PARSER['retract'].match(line) != None:
+			input = ("#step " + str(currentIncStep) + ".\n" +
+				 line +
+				 "#endstep.\n")
 			break
 		else:
 			print "  Warning: Ignoring unknown input."
@@ -456,7 +556,9 @@ def sendInput(s, input):
 		print "Sending following input to controller:"
 		print input
 
-	s.send('%s\0' % input)
+	sent = s.send('%s\0' % input)
+	if sent == 0:
+		raise RuntimeError("Sending input to oclingo failed: socket connection is broken!")
 
 	if re.match("#stop\.", input) != None:
 		endProgram(s)
@@ -482,11 +584,11 @@ class OclingoThread(Thread):
 		Thread.__init__(self)
 	def run(self):
 		# start oclingo
-		#call (["oclingo"] + args.oclenc + args.oclpar)
-		#print "Invoc: \n" + ("xargs echo " + "<" + args.oclenc[0] + " " + equivalEnc +  " | oclingo ")
-		#call ([("xargs echo " + "<" + args.oclenc[0] + " \'" + equivalEnc +  "\'")], shell=True)
-		call([("echo " + " \'" + equivalEnc +  "\' | cat "  + args.oclenc[0] + " - | oclingo ")] + args.oclpar, shell=True)
-		#call ([("xargs echo " + "<" + args.oclenc[0] + " \'" + equivalEnc +  "\' | oclingo ")] + args.oclpar, shell=True)
+		# call (["oclingo"] + args.oclenc + args.oclpar)
+		# print "Invoc: \n" + ("xargs echo " + "<" + args.oclenc[0] + " " + equivalEnc +  " | oclingo ")
+		# call ([("xargs echo " + "<" + args.oclenc[0] + " \'" + equivalEnc +  "\'")], shell=True)
+		call([("echo " + " \'" + equivalEnc + "\' | cat " + args.oclenc[0] + " - | oclingo ")] + args.oclpar, shell=True)
+		# call ([("xargs echo " + "<" + args.oclenc[0] + " \'" + equivalEnc +  "\' | oclingo ")] + args.oclpar, shell=True)
 		return
 # 		proc = subprocess.Popen (["oclingo"] + args.oclenc + args.oclpar,
 # 								stdout=subprocess.PIPE,
