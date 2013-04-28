@@ -54,6 +54,8 @@ parser.add_argument("--qii", dest="qii", action="store_true", help="""For query 
 					implicitly adds the counter value as last argument to the query atom, e.g. 'q(1)' becomes 'q(1, <inc step>'. Default: %(default)s""")
 parser.add_argument("--iws", "--iwindow-size", dest="iWindowSize", type=int, help="""For query mode: instead of the default ad-hoc queries specifies an incremental 
 					window (size) for queries, i.e., for how many incremental steps a query should be considered. Default: %(default)s""")
+parser.add_argument("--ainc", dest="ainc", action="store_true", help="""For qurey mode: Automatically increments the program to the level implicitly indicated by the 
+					inc parameter in the external query atom.""")
 
 parser.set_defaults(
 	files='',
@@ -68,6 +70,7 @@ parser.set_defaults(
 	copred='',
 	qii=False,
 	iWindowSize=0,
+	ainc=False,
 	# query=False,
 	debug=False
 	)
@@ -92,6 +95,7 @@ answerTimedOut = False
 FACT = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.(\s*%.*)?$")  # Arbitrary fact clause
 FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")  # Fact clause whose last component is a decimal number
 INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")  # Integrity constraint clause.
+INTEGRITYT = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\))+\.(\s*%.*)?$")  # Integrity constraint clause with external body atom.
 RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.(\s*%.*)?$")  # Rule clause.
 RELATION = re.compile("[a-z_][a-zA-Z0-9_]*")  # Valid relation name
 QQUAD = re.compile("([a-z_][a-zA-Z0-9_]*),([a-z_][a-zA-Z0-9_]*),([0-9]*),([a-z_][a-zA-Z0-9_]*)")
@@ -461,6 +465,7 @@ def getInput():
 # adhoc query mode
 def getInputFromSTDINQM():
 	"""Function to read directly from STDIN with support for adhoc query mode"""
+	global currentIncStep
 	input = ''
 	assert_line = ''
 	print "Please enter your query (format: single ground clause)"
@@ -470,12 +475,22 @@ def getInputFromSTDINQM():
 		if FACT.match(line) != None or\
 		   INTEGRITY.match(line) != None or\
 		   RULE.match(line) != None:
+			
 			# In case implicit incremental par is requested by user
 			if (FACT.match(line)!=None or INTEGRITY.match(line)!= None) and args.qii:
-				global currentIncStep
 				currentIncStep += 1
 				substitute = "," + str(currentIncStep) + ").\n"
 				line = re.sub(r'\)\s*.\s*', substitute, line)
+			
+			# In case automatic incremental grounding requested by user
+			if args.ainc:
+				if INTEGRITYT.match(line)!=None: 
+					minIncStep = INTEGRITYT.match(line).group(4)
+				elif FACTT.match(line)!=None:
+					minIncStep = FACTT.match(line).group(2)
+				#print "IncVal is "+str(minIncStep)
+				if currentIncStep < minIncStep: currentIncStep = minIncStep
+			
 			# Special handling of assertions - part 2
 			if assert_line:
 				input = ("#step " + str(currentIncStep) + ".\n" +
