@@ -1,0 +1,73 @@
+% COMMAND LINE: controller.py queries.str
+
+% % Setup information initially provided to qontroller wrapper
+% #setup.
+% #domain edge(X,Y) : X := 1..4, Y := 1..4, X != Y.
+% #domain mark(X,C) : X := 1..4, color(C).
+% #choose edge/2.
+% #define edge/2.
+% #query mark/2.
+% #show edge/2.
+% #endsetup.
+
+% #query.
+% #assert : e(1).
+% edge(1,2).
+% edge(1,3).
+% edge(2,3).
+% edge(2,4).
+% edge(3,4).
+% #endquery.
+#step 1 : 0.
+#forget 0.
+#assert : e(1).
+_assert_edge(1,2,1).
+_assert_edge(1,3,1).
+_assert_edge(2,3,1).
+_assert_edge(2,4,1).
+_assert_edge(3,4,1).
+#endstep.
+
+% #query.
+% #assert.
+% mark(1,1).
+% #endquery.
+#step 2 : 0.
+#forget 1.
+#volatile : 1.
+_assert_mark(1,1,2).
+#endstep.
+
+% #query.
+% #assert : e(2).
+% edge(1,4).
+% #endquery.
+#step 3 : 0.
+#forget 2.
+#assert : e(2).
+_assert_edge(1,4,3).
+#endstep.
+
+% #query.
+% #retract : e(2).
+% #assert.
+% mark(1,1).
+% mark(2,2).
+% #endquery.
+#step 4 : 0.
+#forget 3.
+#retract : e(2).
+#volatile : 1.
+_assert_mark(1,1,4).
+_assert_mark(2,2,4).
+#endstep.
+
+% #query.
+% #retract : e(1).
+% #endquery.
+#step 5 : 0.
+#forget 4.
+#retract : e(1).
+#endstep.
+
+#stop.
